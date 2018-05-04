@@ -38,42 +38,22 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_id',
                                   'workgrp':    'work_group',
                                   'xdate':      'obs_date'}
                    }
-''' 
-codenames: -delete codename == education,
-            -delete explanation == 'Denali natural history tour'
-            -delete codename == WINWIN
-            -delete codename == 'SHUTTLE'
-            -delete exlpanation == 'Tundra wildlife tour'
-            -delete codename == 'Other bus'
-            -delete codename == 'CAMPER'
-            -delete codename == 'Eielson VC'
-            -delete codename == 'Fish Creek'
-            -delete codename == 'Mile 17'
-            -change explanation == 'North Face - Camp Denali' to 'North Face/Camp Denali'
-employees: drop nans
-            -change ename where ename.apply(lambda x: 'Matt Christiansen' in x) to 'Matt Christiansen'
-greenstudywg: - delete work_group == "B&U"
-              - delete work_group == "Ranger"
-              - delete work_group == "Rangers"
-              - delete work_group == "Roads"
-              - delete work_group == "Support-Maintenance"
-              - delete work_group == "Trails"
- 
-   
-'''
-
-
-
+# Look-up table for mapping output table names from codetypes
+'''_OUTPUT_TBLS = {'dest': 'destination_codes',
+               'bus': 'bus_codes',
+               'entry': 'nonbus_codes',
+               'blue': 'npsapproved_codes',
+               'W': 'rightofway_codes'
+                }'''
+_OUTPUT_TBLS = {'dest': 'destination_codes'}
+KEEP_CODENAMES = {'bus': 'bus',
+                  'entry': 'nonbus_entry',
+                  'blue': 'npsapproved',
+                  'W': 'rightofway'
+                  }
 
 def split_codenames(df, out_dir):
     ''' split codename table into groups and get rid of extra fields like subcode and codetype'''
-    # Look-up table for mapping output table names from codetypes
-    _OUTPUT_TBLS = {'dest': 'destination_codes',
-                   'bus': 'bus_codes',
-                   'entry': 'nonbus_codes',
-                   'blue': 'bluepermit_codes',
-                   'W': 'rightofway_codes'
-                    }
 
     groupby = df.groupby('codetype')
     '''out_dir = r"C:\Users\shooper\proj\savagedb\db\original\exported_tables\delete"
@@ -141,20 +121,15 @@ def main():
         codename_txt = CODENAME_TXT % 2016
         codenames = pd.read_csv(codename_txt)
         codenames.codeletter = codenames.codeletter.apply(replace_code)
-        #import pdb; pdb.set_trace()
         join = pd.merge(codenames, codenames2016, how='left', on='cid', suffixes=['', '_2016'])
         codenames.codename = join.codename_2016
         codenames.explanation = join.explanation
-
-        # for each codetype, make a new table
-        split_codenames(codenames, os.path.dirname(codename_txt))
 
         # Replace codes in the nonbus table
         nonbus_txt = codename_txt.replace('codenames.csv', 'nonbus.csv')
         nonbus = pd.read_csv(nonbus_txt)
         nonbus.entrytype = nonbus.entrytype.apply(replace_code)
         nonbus.to_csv(nonbus_txt, index=False)
-
 
     # Make all codes consistently uppercase. SQL doesn't care but other programs might
     def make_upper(x):
@@ -180,10 +155,35 @@ def main():
             bustraffic[column] = bustraffic[column].apply(make_upper)
         bustraffic.to_csv(bustraffic_txt, index=False)#'''
 
-        # for each codetype, make a new table
+        # fix codenames table
+        #   delete codes with different codenames from 2016/17
         codenames_txt = os.path.join(this_dir, 'codenames.csv')
         codenames = pd.read_csv(codenames_txt)
+        delete_codenames = ['Education', 'WINWIN', 'SHUTTLE', 'Other bus', 'CAMPER', 'Eielson VC', 'Fish Creek', 'Mile 17']
+        delete_explanations = ['Denali natural history tour', 'Tundra wildlife tour']
+        codenames = codenames.loc[~codenames.codename.isin(delete_codenames) &
+                                  ~codenames.explanation.isin(delete_explanations)]
+        # make codenames more interpretable
+        codenames.loc[codenames.explanation == 'North Face - Camp Denali'] = 'North Face/Camp Denali'
+        # split destination, delete unnecessary code types and columns, and make codetypes more understandable
         split_codenames(codenames, this_dir)
+        codenames = codenames.loc[codenames.codetype.isin([KEEP_CODENAMES])]
+        for cn in codenames:
+            codenames[codenames.codename == cn] = KEEP_CODENAMES[cn]
+        codenames.to_csv(codenames_txt)
+
+        # fix employees table
+        #   drop rows where ename is null
+        employee_txt = os.path.join(this_dir, 'employees.csv')
+        employees = pd.read_csv(employee_txt)
+        employees.dropna(subset='ename', inplace=True)
+        employees.loc[employees.ename.apply(lambda x: 'Matt Christiansen' in x)] = 'Matt Christiansen' # gets rid of '\r'
+        employees.to_csv(employee_txt)
+        # fix greenstudy table
+        greenstudywg_txt = os.path.join(this_dir, 'greenstudywg.csv')
+        greenstudywg = pd.read_csv(greenstudywg_txt)
+        greenstudywg = greenstudywg.loc[~greenstudywg.work_group.isin(['B&U', 'Ranger', 'Rangers', 'Roads', 'Support-Maintenance', 'Trails'])]
+        greenstudywg.to_csv(greenstudywg_txt)
 
         # add year to tables that would otherwise produce duplicate rows when merged
         for table_name in ADD_YEAR_TO:
