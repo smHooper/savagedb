@@ -1,0 +1,397 @@
+{
+	"meta-name": "NPS-Protocol-Specification",
+	"meta-version": 1,
+	"name": "ROAR_2018",
+	"version": 1.0,
+	"date": "2018-04-24",
+	"description": "This survey protocol is for 2018 Denali Road Ecology surveys. Contact William Clark (william_c_clark@nps.gov) for more details. This version has track logging but size 0 so it will not appear on the map. Wildlife Stop = red, Wildlife No Stop = orange, Hiker Wait Time = green, Rest Stop = blue, Other Stop = purple.",
+	"mission": {
+		"attributes": [
+			{"name": "UniqueID",			"type": 700},
+			{"name": "Observer",			"type": 100},
+			{"name": "Weather",				"type": 100},
+			{"name": "TripType",			"type": 100},
+			{"name": "Destination",		"type": 100},
+			{"name": "TripDirection",	"type": 100},
+			{"name": "BusID",					"type": 700},
+			{"name": "Driver",				"type": 700},
+			{"name": "Comments",			"type": 700}
+			],
+			"dialog": {
+				"title": "Trip Introduction (required)",
+				"grouped": true,
+				"sections": [
+					{"elements": [
+						{"type": "QEntryElement","key": "u",	"bind": "textValue:UniqueID",			"title": "Create Unique ID",	"placeholder": "iPad#_MMDDHH",	"autocorrectionType": "No",	"autocapitalizationType": "AllCharacters"},
+						{"type": "QRadioElement","key": "o",	"bind": "selected:Observer",			"title": "Observer",				"items": ["ABankston","JFriese", "JAppignani","LTheander","NFerguson","PEpple","TBracher", "WClark","WHanson","VIP"]},
+						{"type": "QRadioElement","key": "wx",	"bind": "selected:Weather",				"title": "Weather",					"items": ["clear","partly cloudy","mostly cloudy","overcast","obscured (fog/smoke)","drizzle","rain","hail/sleet","snow","other (comment)"]},
+						{"type": "QRadioElement","key": "tt",	"bind": "selected:TripType",			"title": "Trip Type",				"items": ["VTS","NPSO","TWT","KE","Tek Tour","other (comment)"]},
+					 	{"type": "QRadioElement","key": "d",	"bind": "selected:Destination",		"title": "Destination",			"items": ["Tek","Toklat","Stony","EVC","Wonder Lake","Kantishna","NPSO Overnight","other (comment)"]},
+						{"type": "QRadioElement","key": "td",	"bind": "selected:TripDirection",	"title": "Trip Direction",	"items": ["roundtrip","westbound","eastbound","NPSO overnight"]},
+						{"type": "QEntryElement","key": "b",	"bind": "textValue:BusID",				"title": "Bus ID",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"},
+						{"type": "QEntryElement","key": "d2",	"bind": "textValue:Driver",				"title": "Driver",	"placeholder": "last name",		"autocorrectionType": "No",	"autocapitalizationType": "Sentences"},
+						{"type": "QEntryElement","key": "c",	"bind": "textValue:Comments",			"title": "Comments","placeholder": "NEVER use a comma!",	"autocorrectionType": "No",					"autocapitalizationType": "Sentences"}
+						]
+					}
+				]
+		},
+		"symbology": 			{"color":"#FEE5D9","size":0},
+		"on-symbology": 	{"color":"#F2F0F7","size":0},
+		"off-symbology": 	{"color":"#DDDDDD","size":0}
+	},
+	"features": [{
+		"name": "WStop",
+		"attributes": [
+			{"name": "Animal",			"type": 100},
+			{"name": "countCount",	"type": 100},
+			{"name": "countMale",		"type": 100},
+			{"name": "countFemale",	"type": 100},
+			{"name": "countYoung",	"type": 100},
+			{"name": "Behavior",		"type": 100},
+			{"name": "Distance",		"type": 100},
+			{"name": "RoadSide",		"type": 100},
+			{"name": "Milepost",		"type": 700},
+			{"name": "countTour",		"type": 100},
+			{"name": "countVTS",		"type": 100},
+			{"name": "countLodge",	"type": 100},
+			{"name": "countGOV",		"type": 100},
+			{"name": "countPOV",		"type": 100},
+			{"name": "PermitType",	"type": 100},
+			{"name": "Comments",		"type": 700},
+			{"name": "MapNotes",		"type": 700}
+		],
+		"locations": [
+			{"type": "gps",					"default": false,		"allow": true},
+			{"type": "mapTarget",		"default": false,		"allow": true},
+			{"type": "mapTouch",		"default": false,		"allow": false}
+		],
+		"dialog": {
+			"title": "Wildlife Stop",
+			"grouped": true,
+			"sections": [
+				{"title": "WStop Attributes","elements": [
+					{"type": "QRadioElement",		"key": "wa",	"bind": "selected:Animal",				"title": "Animal",		"items": ["bear","caribou","coyote","fox","golden eagle","lynx","moose","ptarmigan","sheep","wolf","other bird","other animal (comment required)","unknown"]},
+					{"type": "QIntegerElement",	"key": "wc",	"bind": "numberValue:countCount",	"title": "Animal Count"},
+					{"type": "QIntegerElement",	"key": "wm",	"bind": "numberValue:countMale",	"title": "Males"},
+					{"type": "QIntegerElement",	"key": "wf",	"bind": "numberValue:countFemale","title": "Females"},
+					{"type": "QIntegerElement",	"key": "wy",	"bind": "numberValue:countYoung",	"title": "Young"},
+					{"type": "QRadioElement",		"key": "wb",	"bind": "selected:Behavior",			"title": "Behavior",	"items": ["feeding/traveling","standing","lying","walking","running","alert","indeterminate","other (comment)"]}
+				]
+				},
+				{"title": "Location",	"elements": [
+					{"type": "QDecimalElement",	"key": "wld",	"bind": "numberValue:Distance",		"title": "Animal Distance (meters)","fractionDigits": 0},
+					{"type": "QRadioElement",		"key": "wls",	"bind": "selected:RoadSide",			"title": "Road Side",	"items": ["north","south"]},
+					{"type": "QEntryElement",		"key": "wm2",	"bind": "textValue:Milepost",			"title": "Milepost",	"autocorrectionType": "No",	"autocapitalizationType": "Sentences"}
+				]
+				},
+				{"title": "Vehicles Present (count your bus)","elements": [
+					{"type": "QIntegerElement",	"key": "wvt",		"bind": "numberValue:countTour",	"title": "Tour"},
+					{"type": "QIntegerElement",	"key": "wvv",		"bind": "numberValue:countVTS",		"title": "VTS"},
+					{"type": "QIntegerElement",	"key": "wvl",		"bind": "numberValue:countLodge",	"title": "Lodge"},
+					{"type": "QIntegerElement",	"key": "wvg",		"bind": "numberValue:countGOV",		"title": "GOV"},
+					{"type": "QIntegerElement",	"key": "wvp",		"bind": "numberValue:countPOV",		"title": "POV"},
+					{"type": "QRadioElement",		"key": "wvp2",	"bind": "selected:PermitType",		"title": "Permit Type",	"items": ["unknown","Right-Of-Way (White)","ProPho/Film (Orange)","Hunting (Yellow)","Accessibility (Purple)","NPS Approved (Blue)","Contractor (Grey)","NPS (Green)","Employee (Red)","Tek Camper (Tan)","mix/other (comment)"]}
+				]
+				},
+				{"title": "","elements": [
+					{"type": "QEntryElement",	"key": "wc2",	"bind": "textValue:Comments",	"title": "Comments",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",	"autocapitalizationType": "Sentences"},
+					{"type": "QEntryElement",	"key": "wm3",	"bind": "textValue:MapNotes",	"title": "Map Notes",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",	"autocapitalizationType": "Sentences"}
+				]
+			}
+		]
+	},
+		"symbology": {"color": "#F03B20","size": 32}
+	},
+	{
+		"name": "WNoStop",
+		"attributes": [
+			{"name": "Animal",			"type": 100},
+			{"name": "countCount",	"type": 100},
+			{"name": "Distance",		"type": 100},
+			{"name": "RoadSide",		"type": 100},
+			{"name": "Milepost",		"type": 700},
+			{"name": "countTour",		"type": 100},
+			{"name": "countVTS",		"type": 100},
+			{"name": "countLodge",	"type": 100},
+			{"name": "countGOV",		"type": 100},
+			{"name": "countPOV",		"type": 100},
+			{"name": "PermitType",	"type": 100},
+			{"name": "Comments",		"type": 700},
+			{"name": "MapNotes",		"type": 700}
+		],
+		"locations": [
+			{"type": "gps",					"default": false,		"allow": true},
+			{"type": "mapTarget",		"default": false,		"allow": true},
+			{"type": "mapTouch",		"default": false,		"allow": false}
+		],
+		"dialog": {
+			"title": "Wildlife No Stop",
+			"grouped": true,
+			"sections": [
+				{"title": "WNoStop Attributes","elements": [
+					{"type": "QRadioElement",		"key": "na",	"bind": "selected:Animal",				"title": "Animal",	"items": ["bear","caribou","coyote","fox","golden eagle","lynx","moose","ptarmigan","sheep","wolf","other bird","other (comment)","unknown"]},
+					{"type": "QIntegerElement",	"key": "nc",	"bind": "numberValue:countCount",	"title": "Animal Count"}
+				]
+				},
+			 	{"title": "Location","elements": [
+					{"type": "QDecimalElement",	"key": "nld",	"bind": "numberValue:Distance",	"title": "Animal Distance (meters)","fractionDigits": 0},
+					{"type": "QRadioElement",		"key": "nls",	"bind": "selected:RoadSide",		"title": "Road Side",	"items": ["north","south"]},
+					{"type": "QEntryElement",		"key": "nm",	"bind": "textValue:Milepost",		"title": "Milepost",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"}
+					]
+					},
+					{"title": "Vehicles Present (count your bus)","elements": [
+						{"type": "QIntegerElement",	"key": "nvt",		"bind": "numberValue:countTour",		"title": "Tour"},
+						{"type": "QIntegerElement",	"key": "nvv",		"bind": "numberValue:countVTS",			"title": "VTS"},
+						{"type": "QIntegerElement",	"key": "nvl",		"bind": "numberValue:countLodge",		"title": "Lodge"},
+						{"type": "QIntegerElement",	"key": "nvg",		"bind": "numberValue:countGOV",			"title": "GOV"},
+						{"type": "QIntegerElement",	"key": "nvp",		"bind": "numberValue:countPOV",			"title": "POV"},
+						{"type": "QRadioElement",		"key": "nvp2",	"bind": "selected:PermitType",			"title": "Permit Type",		"items": ["unknown","Right-Of-Way (White)","ProPho/Film (Orange)","Hunting (Yellow)","Accessibility (Purple)","NPS Approved (Blue)","Contractor (Grey)","NPS (Green)","Employee (Red)","Tek Camper (Tan)","mix/other (comment)"]}
+					]
+					},
+					{"title": "","elements": [
+						{"type": "QEntryElement",	"key": "nc2",		"bind": "textValue:Comments",		"title": "Comments",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"},
+						{"type": "QEntryElement",	"key": "nm2",		"bind": "textValue:MapNotes",		"title": "Map Notes",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"}
+					]
+				}
+			]
+	},
+		"symbology": {"color": "#FECC5C","size": 32}
+	},
+	{
+		"name": "RStop",
+		"attributes": [
+			{"name": "RestStopName",	"type": 100},
+			{"name": "countTour",			"type": 100},
+			{"name": "countVTS",			"type": 100},
+			{"name": "countLodge",		"type": 100},
+			{"name": "countGOV",			"type": 100},
+			{"name": "countPOV",			"type": 100},
+			{"name": "PermitType",		"type": 100},
+			{"name": "Comments",			"type": 700},
+			{"name": "MapNotes",			"type": 700}
+		],
+		"locations": [
+			{"type": "gps",					"default": false,		"allow": true},
+			{"type": "mapTarget",		"default": false,		"allow": true},
+			{"type": "mapTouch",		"default": false,		"allow": false}
+		],
+		"dialog": {
+			"title": "Rest Stop",
+			"grouped": true,
+			"sections": [
+				{"title": "RStop Attributes","elements": [
+					{"type": "QRadioElement",		"key": "rs",	"bind": "selected:RestStopName",	"title": "Rest Stop",	"items": ["Tek","Toklat","EVC","Stony (TWT trip only)"]}
+				]
+				},
+				{"title": "Vehicles Present (count your bus)",	"elements": [
+					{"type": "QIntegerElement",	"key": "nvt",	"bind": "numberValue:countTour",	"title": "Tour"},
+					{"type": "QIntegerElement",	"key": "nvv",	"bind": "numberValue:countVTS",		"title": "VTS"},
+					{"type": "QIntegerElement",	"key": "nvl",	"bind": "numberValue:countLodge",	"title": "Lodge"},
+					{"type": "QIntegerElement",	"key": "nvg",	"bind": "numberValue:countGOV",		"title": "GOV"},
+					{"type": "QIntegerElement",	"key": "nvp",	"bind": "numberValue:countPOV",		"title": "POV"},
+					{"type": "QRadioElement",		"key": "nvp2","bind": "selected:PermitType",		"title": "Permit Type",	"items": ["unknown","Right-Of-Way (White)","ProPho/Film (Orange)","Hunting (Yellow)","Accessibility (Purple)","NPS Approved (Blue)","Contractor (Grey)","NPS (Green)","Employee (Red)","Tek Camper (Tan)","mix/other (comment)"]}
+				]
+				},
+				{"title": "","elements": [
+					{"type": "QEntryElement",	"key": "nc2",		"bind": "textValue:Comments",		"title": "Comments",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",	"autocapitalizationType": "Sentences"},
+					{"type": "QEntryElement",	"key": "nm2",		"bind": "textValue:MapNotes",		"title": "Map Notes",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",	"autocapitalizationType": "Sentences"}
+				]
+			}
+		]
+	},
+		"symbology": {"color": "#045A8D","size": 32}
+	},
+	{
+		"name": "HStop",
+		"attributes": [
+			{"name": "countHikers",		"type": 100},
+			{"name": "countONHikers",	"type": 100},
+			{"name": "PickedUp",			"type": 100},
+			{"name": "AskedWaitTime",	"type": 100},
+			{"name": "WaitTime",			"type": 100},
+			{"name": "HikerDirection","type": 100},
+			{"name": "Milepost",			"type": 700},
+			{"name": "Comments",			"type": 700},
+			{"name": "MapNotes",			"type": 700}
+		],
+		"locations": [
+			{"type": "gps",					"default": false,		"allow": true},
+			{"type": "mapTarget",		"default": false,		"allow": true},
+			{"type": "mapTouch",		"default": false,		"allow": false}
+		],
+		"dialog": {
+			"title": "Hiker Stop",
+			"grouped": true,
+			"sections": [
+				{"title": "HStop Attributes","elements": [
+					{"type": "QIntegerElement",		"key": "hc",		"bind": "numberValue:countHikers",		"title": "# of Day Hikers"},
+					{"type": "QIntegerElement",		"key": "hc2",		"bind": "numberValue:countONHikers",	"title": "# of Overnight Hikers"},
+					{"type": "QRadioElement",			"key": "hp",		"bind": "selected:PickedUp",					"title": "Picked Up?",							"items": ["yes","no - full","no - other reason (comment required)"]},
+					{"type": "QRadioElement",			"key": "hw",		"bind": "selected:AskedWaitTime",			"title": "Driver asked Wait Time?",	"items": ["yes","no"]},
+					{"type": "QRadioElement",			"key": "ht",		"bind": "selected:WaitTime",					"title": "Wait Time",								"items": ["<30 min",">30 and <60 min",">60 and <90 min",">90 min"]},
+					{"type": "QRadioElement",			"key": "hd",		"bind": "selected:HikerDirection",		"title": "Hiker Direction",					"items": ["eastbound","westbound"]},
+					{"type": "QEntryElement",			"key": "hm",		"bind": "textValue:Milepost",					"title": "Milepost",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"}
+					]
+					},
+				{"title": "","elements": [
+					{"type": "QEntryElement",			"key": "hc3",		"bind": "textValue:Comments",		"title": "Comments",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"},
+					{"type": "QEntryElement",			"key": "hm2",		"bind": "textValue:MapNotes",		"title": "Map Notes",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"}
+					]
+				}
+			]
+	},
+		"symbology": {"color": "#31A354","size": 32}
+	},
+	{
+	"name":"BStop",
+		    "attributes":[
+	      	{"name":"countBikers",     "type":100},
+					{"name":"countMale",       "type":100},
+		      {"name":"countFemale",     "type":100},
+		      {"name":"TravelDirection", "type":100},
+		      {"name":"Comments",        "type":700},
+		      {"name":"MapNotes",        "type":700}
+		    ],
+		    "locations":[
+		      {"type":"gps",       "default":false, "allow":true},
+		      {"type":"mapTarget", "default":false, "allow":true},
+		      {"type":"mapTouch",  "default":false, "allow":false}
+		    ],
+		    "dialog":{
+		      "title":"Biker Stop",
+					"grouped":true,
+		      "sections":[
+		        {"title":"Biker Attributes", "elements":[
+							 {"type":"QIntegerElement", "key":"bc", "bind":"numberValue:countBikers",  "title":"No. of bikers"},
+		           {"type":"QIntegerElement", "key":"bm", "bind":"numberValue:countMale",    "title":"No. of males"},
+		           {"type":"QIntegerElement", "key":"bf", "bind":"numberValue:countFemale",  "title":"No. of females"},
+		           {"type":"QRadioElement",   "key":"bd", "bind":"selected:TravelDirection", "title":"Travel Direction", "items":["eastbound","westbound"]}
+		        	]
+						},
+		        {"title":"Notes", "elements":[
+		           {"type":"QEntryElement",  "key":"bc2", "bind":"textValue:Comments", "title":"Comments", 	"placeholder":"NEVER use a comma", "autocorrectionType":"No", "autocapitalizationType":"Sentences"},
+		           {"type":"QEntryElement",  "key":"bm2", "bind":"textValue:MapNotes", "title":"Map Notes", 	"placeholder":"NEVER use a comma", "autocorrectionType":"No", "autocapitalizationType":"Sentences"}
+		        	]
+						}
+		    	]
+				},
+		    "symbology":{"color":"#F9DF72","size":32}
+	},
+	{
+		"name": "Parked",
+		"attributes": [
+			{"name": "VehicleType",		"type": 100},
+			{"name": "Count",					"type": 100},
+			{"name": "PermitType",		"type": 100},
+			{"name": "VehicleName",		"type": 100},
+			{"name": "GroupSize",			"type": 100},
+			{"name": "RoadSide",			"type": 100},
+			{"name": "Comments",			"type": 700},
+			{"name": "MapNotes",			"type": 700}
+		],
+		"locations": [
+			{"type": "gps",				"default": false,		"allow": true},
+			{"type": "mapTarget",	"default": false,		"allow": true},
+			{"type": "mapTouch",	"default": false,		"allow": false}
+		],
+		"dialog":{
+		"title": "Parked Vehicle",
+		"grouped": true,
+		"sections":	[
+			{"title": "Parked Attributes","elements":	[
+				{"type": "QRadioElement",		"key": "pvt",	"bind": "selected:VehicleType",		"title": "Type of Vehicle",			"items": ["Lodge Bus", "Lodge Van", "POV"]},
+				{"type": "QIntegerElement",	"key": "pvc", "bind": "numberValue:Count",			"title": "Count of Vehicles"},
+				{"type": "QRadioElement",		"key": "pvp", "bind": "selected:PermitType", 		"title": "Permit Type",					"items": ["unknown","Right-Of-Way (White)","ProPho/Film (Orange)","Hunting (Yellow)","Accessibility (Purple)","NPS Approved (Blue)","Contractor (Grey)","NPS (Green)","Employee (Red)","Tek Camper (Tan)","mix/other (comment)"]},
+				{"type": "QRadioElement",		"key": "pvn",	"bind":	"selected:VehicleName",		"title": "Vehicle Name",				"items": ["Kingfisher", "Dipper", "Phalarope", "Tattler", "Jaeger", "Wheatear", "Pintail", "Pipit", "Other (comment)"]}
+			]
+			},
+			{"title": "Hiker Group Nearby", "elements":[
+				{"type": "QIntegerElement",		"key": "pvg",	"bind": "numberValue:GroupSize",		"title": "Group Size"},
+				{"type": "QRadioElement",			"key": "pvr",	"bind": "selected:RoadSide",				"title": "Road Side",							"items": ["north", "south"]}
+			]
+			},
+			{"title": "","elements": [
+				{"type": "QEntryElement",		"key": "pvc",	"bind":	"textValue:Comments",		"title": "Comments",		"placeholder": "NEVER use a comma!", "autocorrectionType": "No",	"autocapitalizationType": "Sentences"},
+				{"type": "QEntryElement",		"key": "pvm",	"bind":	"textValue:MapNotes",		"title": "Map Notes", 	"placeholder": "NEVER use a comma!", "autocorrectionType": "No",	"autocapitalizationType": "Sentences"}
+			]
+			}
+		]
+	},
+			"symbology": {"color":	"#9DC6E8", "size": 32}
+	},
+	{
+		"name": "OStop",
+		"attributes": [
+			{"name": "StopReason",			"type": 100},
+			{"name": "countPassPickUp",	"type": 100},
+		  {"name": "countPassDropOff","type": 100},
+			{"name": "countTour",				"type": 100},
+			{"name": "countVTS",				"type": 100},
+			{"name": "countLodge",			"type": 100},
+			{"name": "countGOV",				"type": 100},
+			{"name": "countPOV",				"type": 100},
+			{"name": "PermitType",			"type": 100},
+			{"name": "Milepost",				"type": 700},
+			{"name": "Comments",				"type": 700},
+			{"name": "MapNotes",				"type": 700}
+		],
+		"locations": [
+			{"type": "gps",					"default": false,		"allow": true},
+			{"type": "mapTarget",		"default": false,		"allow": true},
+			{"type": "mapTouch",		"default": false,		"allow": false}
+		],
+		"dialog": {
+			"title": "Other Stop",
+			"grouped": true,
+			"sections": [
+				{"title": "OStop Attributes","elements":[
+					{"type": "QRadioElement",			"key": "or",		"bind": "selected:StopReason",					"title": "Stop Reason",		"items": ["campground stop","scenery","construction","hiker drop off (not at campground)","unknown","other (comment)"]},
+					{"type": "QIntegerElement",		"key": "op",		"bind": "numberValue:countPassPickUp",	"title": "# Pax Picked Up"},
+					{"type": "QIntegerElement",		"key": "od",		"bind": "numberValue:countPassDropOff",	"title": "# Pax Dropped Off"},
+					{"type": "QIntegerElement",		"key": "ot",		"bind": "numberValue:countTour",				"title": "Tour"},
+					{"type": "QIntegerElement",		"key": "ov",		"bind": "numberValue:countVTS",					"title": "VTS"},
+					{"type": "QIntegerElement",		"key": "ol",		"bind": "numberValue:countLodge",				"title": "Lodge"},
+					{"type": "QIntegerElement",		"key": "og",		"bind": "numberValue:countGOV",					"title": "GOV"},
+					{"type": "QIntegerElement",		"key": "op2",		"bind": "numberValue:countPOV",					"title": "POV"},
+					{"type": "QRadioElement",			"key": "nvp2",	"bind": "selected:PermitType",					"title": "Permit Type",		"items": ["unknown","Right-Of-Way (White)","ProPho/Film (Orange)","Hunting (Yellow)","Accessibility (Purple)","NPS Approved (Blue)","Contractor (Grey)","NPS (Green)","Employee (Red)","Tek Camper (Tan)","mix/other (comment)"]},
+					{"type": "QEntryElement",			"key": "om",		"bind": "textValue:Milepost",						"title": "Milepost",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"}
+					]
+					},
+				{"title": "","elements": [
+					{"type": "QEntryElement",		"key": "oc",		"bind": "textValue:Comments",		"title": "Comments",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"},
+					{"type": "QEntryElement",		"key": "om2",		"bind": "textValue:MapNotes",		"title": "Map Notes",	"placeholder": "NEVER use a comma!",	"autocorrectionType": "No",		"autocapitalizationType": "Sentences"}
+					]
+				}
+			]
+	},
+		"symbology": {"color": "#7B377E","size": 32}
+	}
+	],
+	"csv": {
+		"gps_points": {
+			"name": "GpsPoints",
+			"field_names": ["Timestamp","Latitude","Longitude","Datum","Error_radius_m","Course","Speed_mps","Altitude_m","Vert_error_m"],
+			"field_types": ["TEXT","DOUBLE","DOUBLE","TEXT","DOUBLE","DOUBLE","DOUBLE","DOUBLE","DOUBLE"],
+			"key_indexes": [0,2,1]
+		},
+		"track_logs": {
+			"name": "TrackLogs",
+			"field_names": ["Observing","Start_UTC","Start_Local","Year","Day_of_Year","End_UTC","End_Local","Duration_sec","Start_Latitude","Start_Longitude","End_Latitude","End_Longitude","Datum","Length_m"],
+			"field_types": ["TEXT","TEXT","TEXT","SHORT","SHORT","TEXT","TEXT","DOUBLE","DOUBLE","DOUBLE","DOUBLE","DOUBLE","TEXT","DOUBLE"],
+			"start_key_indexes": [1,9,8],
+			"end_key_indexes": [5,11,10]
+		},
+		"features": {
+			"header": "Timestamp_UTC,Timestamp_Local,Year,Day_of_Year,Feature_Latitude,Feature_Longitude,Observer_Latitude,Observer_Longitude,Datum,Map_Name,Map_Author,Map_Date,Angle,Distance,Perp_Meters",
+			"feature_field_names": ["Timestamp_UTC","Timestamp_Local","Year","Day_of_Year","Latitude","Longitude","Datum"],
+			"feature_field_types": ["DATE","DATE","SHORT","SHORT","DOUBLE","DOUBLE","TEXT"],
+			"feature_field_map": [0,1,2,3,4,5,8],
+			"feature_key_indexes": [0,5,4],
+			"obs_name": "Observations",
+			"obs_field_names": ["Timestamp_UTC","Timestamp_Local","Year","Day_of_Year","Map_Name","Map_Author","Map_Date","Angle","Distance","Perp_meters","Latitude","Longitude","Datum"],
+			"obs_field_types": ["TEXT","TEXT","SHORT","SHORT","TEXT","TEXT","TEXT","DOUBLE","DOUBLE","DOUBLE","DOUBLE","DOUBLE","TEXT"],
+			"obs_field_map": [0,1,2,3,9,10,11,12,13,14,6,7,8],
+			"obs_key_indexes": [0,11,10]
+		}
+	}
+}

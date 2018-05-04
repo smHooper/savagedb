@@ -1,0 +1,425 @@
+{
+  "meta-name": "NPS-Protocol-Specification",
+  "meta-version": 1,
+  "name": "BIC protocol",
+  "version": 1,
+  "date": "2015-07-28",
+  "description": "This survey protocol is for Denali back country over-flights. Contact _____ for more details. This version has track logging but font size = 0 so it will not appear on the map.",
+  "mission": {
+    "attributes": [{
+      "name": "Observers",
+      "type": 700
+    }],
+    "dialog": {
+      "title": "Observation Attributes",
+      "grouped": true,
+      "sections": [{
+        "elements": [{
+          "type": "QEntryElement",
+          "key": "o",
+          "bind": "textValue:Observers",
+          "title": "Observers",
+			    "placeholder": "Type Names",
+          "autocorrectionType": "No",
+          "autocapitalizationType": "Sentences"
+        }]
+      }]
+    },
+    "symbology": {
+      "color": "#FEE5D9",
+      "size": 0
+    },
+    "on-symbology": {
+      "color": "#F2F0F7",
+      "size": 0
+    },
+    "off-symbology": {
+      "color": "#DDDDDD",
+      "size": 0
+    }
+  },
+  "features": [{
+	 "name": "Over-flights",
+	 "attributes": [{
+		"name": "BackcountryUnit",
+   	"type": 100
+	  }, {
+		 "name": "Duration",
+	   "type": 100
+		}, {
+	   "name": "Intensity",
+		 "type": 100
+		}, {
+		 "name": "PropNumber",
+		 "type": 100
+		}, {
+		 "name": "JetNumber",
+		 "type": 100
+		}, {
+		 "name": "HeloNumber",
+		 "type": 100
+		}, {
+		 "name": "Visibility",
+		 "type": 100
+	  }, {
+      "name": "Precipitation",
+      "type": 100
+    }, {
+      "name": "Wind",
+      "type": 100
+    }, {
+      "name": "CloudCeiling",
+      "type": 100
+    }, {
+		  "name": "AvoidZone",
+		  "type": 100
+		}, {
+		  "name": "Under8000",
+		  "type": 100
+		}, {
+		  "name": "Under500",
+		  "type": 100
+		}, {
+      "name": "WindsAloft",
+      "type": 100
+    }, {
+      "name": "Smoke",
+      "type": 100
+    }, {
+      "name": "Comments",
+      "type": 700
+    }],
+      "locations": [{
+        "type": "gps",
+        "default": false,
+        "allow": true
+    }, {
+      "type": "mapTarget",
+      "default": false,
+      "allow": true
+    }, {
+      "type": "mapTouch",
+      "default": false,
+      "allow": true
+    }],
+    "dialog": {
+      "title": "Over-flight!",
+      "grouped": true,
+      "sections": [{
+        "title": "Observation Attributes",
+        "elements": [{
+          "type": "QDecimalElement",
+          "key": "bu",
+          "bind": "numberValue:BackcountryUnit",
+          "title": "BC Unit#",
+          "fractionDigits": 0
+		    }, {
+          "type": "QRadioElement",
+          "key": "d",
+          "bind": "selected:Duration",
+          "title": "Duration",
+          "items": [
+			      "<1 min",
+            "1-5 min",
+            ">5 min"
+          ]
+		    }, {
+          "type": "QRadioElement",
+          "key": "v",
+          "bind": "selected:Intensity",
+          "title": "Intensity",
+          "items": [
+			      "1",
+            "2",
+            "3"
+          ]
+        }, {
+          "type": "QIntegerElement",
+          "key": "p",
+          "bind": "numberValue:PropNumber",
+          "title": "Prop #"
+        }, {
+          "type": "QIntegerElement",
+          "key": "j",
+          "bind": "numberValue:JetNumber",
+          "title": "Jet #"
+        }, {
+          "type": "QIntegerElement",
+          "key": "h",
+          "bind": "numberValue:HeloNumber",
+          "title": "Helos #"
+        }]
+		  }, {
+		    "title": "Weather",
+		    "elements": [{
+			    "type": "QRadioElement",
+			    "key": "i",
+			    "bind": "selected:Visibility",
+			    "title": "Visibility",
+			    "items": [
+			      ">5 mi",
+			      "3-5 mi",
+			      "1-3 mi",
+    			  "<1 mi"
+			    ]
+		    }, {
+			    "type": "QRadioElement",
+			    "key": "p2",
+			    "bind": "selected:Precipitation",
+			    "title": "Precip",
+			    "items": [
+			      "None",
+			      "Light",
+			      "Moderate",
+			      "Heavy"
+			    ]
+		    }, {
+          "type": "QRadioElement",
+          "key": "w",
+          "bind": "selected:Wind",
+          "title": "Wind",
+          "items": [
+            "calm/light",
+            "moderate",
+            "strong",
+			      "extreme"
+          ]
+        }, {
+          "type": "QRadioElement",
+          "key": "c",
+          "bind": "selected:CloudCeiling",
+          "title": "Cloud Ceiling",
+          "items": [
+			      "no clouds",
+			      "above mts",
+			      "below mts",
+			      "in the clouds"
+		      ]
+        }]
+		  }, {
+		    "title": "Behavior",
+		    "elements": [{
+			    "type": "QRadioElement",
+			    "key": "az",
+			    "bind": "selected:AvoidZone",
+			    "title": "Avoid Zone?",
+			    "items": [
+			      "yes",
+			      "no"
+			    ]
+		    }, {
+			    "type": "QRadioElement",
+			    "key": "u8",
+		      "bind": "selected:Under8000",
+			    "title": "Under 8000?",
+			    "items": [
+			      "yes",
+			      "no"
+			    ]
+		    }, {
+			    "type": "QRadioElement",
+			    "key": "u5",
+			    "bind": "selected:Under500",
+			    "title": "Under 500?",
+			    "items": [
+			      "yes",
+			      "no"
+			    ]
+		    }, {
+          "type": "QRadioElement",
+          "key": "wa",
+          "bind": "selected:WindsAloft",
+          "title": "Winds Aloft?",
+          "items": [
+			      "yes",
+			      "no"
+		      ]
+        }, {
+          "type": "QRadioElement",
+          "key": "s",
+          "bind": "selected:Smoke",
+          "title": "Smoke?",
+          "items": [
+			      "yes",
+			      "no"
+		      ]
+		    }, {
+          "type": "QEntryElement",
+          "key": "wm3",
+          "bind": "textValue:MapNotes",
+          "title": "Map Notes",
+          "placeholder": "location comments",
+          "autocorrectionType": "No",
+          "autocapitalizationType": "Sentences"
+        }]
+		  }]
+	  },
+ 	  "symbology": {
+ 		  "color": "#F03B20",
+ 		  "size": 16
+ 	  }
+   }],
+   "csv": {
+     "gps_points": {
+       "name": "GpsPoints",
+       "field_names": [
+         "Timestamp",
+         "Latitude",
+         "Longitude",
+         "Datum",
+         "Error_radius_m",
+         "Course",
+         "Speed_mps",
+         "Altitude_m",
+         "Vert_error_m"
+       ],
+       "field_types": [
+         "TEXT",
+         "DOUBLE",
+         "DOUBLE",
+         "TEXT",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE"
+       ],
+       "key_indexes": [
+         0,
+         2,
+         1
+       ]
+     },
+     "track_logs": {
+       "name": "TrackLogs",
+       "field_names": [
+         "Observing",
+         "Start_UTC",
+         "Start_Local",
+         "Year",
+         "Day_of_Year",
+         "End_UTC",
+         "End_Local",
+         "Duration_sec",
+         "Start_Latitude",
+         "Start_Longitude",
+         "End_Latitude",
+         "End_Longitude",
+         "Datum",
+         "Length_m"
+       ],
+       "field_types": [
+         "TEXT",
+         "TEXT",
+         "TEXT",
+         "SHORT",
+         "SHORT",
+         "TEXT",
+         "TEXT",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "TEXT",
+         "DOUBLE"
+       ],
+       "start_key_indexes": [
+         1,
+         9,
+         8
+       ],
+       "end_key_indexes": [
+         5,
+         11,
+         10
+      ]
+     },
+     "features": {
+       "header": "Timestamp_UTC,Timestamp_Local,Year,Day_of_Year,Feature_Latitude,Feature_Longitude,Observer_Latitude,Observer_Longitude,Datum,Map_Name,Map_Author,Map_Date,Angle,Distance,Perp_Meters",
+       "feature_field_names": [
+         "Timestamp_UTC",
+         "Timestamp_Local",
+         "Year",
+         "Day_of_Year",
+         "Latitude",
+         "Longitude",
+         "Datum"
+       ],
+       "feature_field_types": [
+         "DATE",
+         "DATE",
+         "SHORT",
+         "SHORT",
+         "DOUBLE",
+         "DOUBLE",
+         "TEXT"
+       ],
+       "feature_field_map": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         8
+       ],
+       "feature_key_indexes": [
+         0,
+         5,
+         4
+       ],
+       "obs_name": "Observations",
+       "obs_field_names": [
+       "Timestamp_UTC",
+       "Timestamp_Local",
+       "Year",
+       "Day_of_Year",
+       "Map_Name",
+       "Map_Author",
+       "Map_Date",
+       "Angle",
+       "Distance",
+       "Perp_meters",
+       "Latitude",
+       "Longitude",
+       "Datum"
+     ],
+     "obs_field_types": [
+       "TEXT",
+       "TEXT",
+       "SHORT",
+       "SHORT",
+       "TEXT",
+       "TEXT",
+       "TEXT",
+       "DOUBLE",
+       "DOUBLE",
+       "DOUBLE",
+       "DOUBLE",
+       "DOUBLE",
+       "TEXT"
+     ],
+     "obs_field_map": [
+       0,
+       1,
+       2,
+       3,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       6,
+       7,
+        8
+      ],
+      "obs_key_indexes": [
+        0,
+        11,
+        10
+      ]
+    }
+  }
+}

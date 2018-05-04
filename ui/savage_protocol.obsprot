@@ -1,0 +1,426 @@
+{
+  "meta-name": "NPS-Protocol-Specification",
+  "meta-version": 1,
+  "name": "savageUI",
+  "version": 0.1,
+  "date": "2018-05-01",
+  "description": "Test UI for Savage Box data entry",
+  "mission": {
+    "attributes": [
+      {"name": "observer", "type": 700},
+      {"name": "open_time", "type": 900},
+      {"name": "close_time", "type": 900}
+    ],
+    "dialog": {
+      "title": "Observation Attributes",
+      "grouped": true,
+      "sections": [{
+        "elements": [
+          {"type": "QRadioElement", "key": "o",  "bind": "selected:observer",     "title": "Observer", "items": ["Nick Virgil", "Jakara Hubbard", "NJ Gates", "Stephen Arnold", "Marinell Chandler", "Stony Yanuchi", "Cara Jones", "Shelby Galvin", "Jenn Boyd", "Riley Hays"]},
+          {"type": "QTimeElement",  "key": "ot", "bind": "timeValue:open_time",   "title": "Savage Box Open time"},
+          {"type": "QTimeElement",  "key": "ct", "bind": "timeValue:close_time",  "title": "Savage Box Close time"}
+        ]
+      }]
+    },
+    "symbology": {
+      "color": "#FEE5D9",
+      "size": 0
+    },
+    "on-symbology": {
+      "color": "#F2F0F7",
+      "size": 0
+    },
+    "off-symbology": {
+      "color": "#DDDDDD",
+      "size": 0
+    }
+  },
+  "features": [
+    {
+      "name": "bus",
+      "attributes": [
+        {"name": "bus_id",       "type": 700},
+        {"name": "bus_type",     "type": 700},
+        {"name": "training",     "type": 800},
+        {"name": "destination",  "type": 700},
+        {"name": "n_passengers", "type": 100},
+        {"name": "n_overnight",  "type": 100},
+        {"name": "comments",     "type": 700}
+      ],
+      "locations": [
+        {"type": "gps",        "default": true,  "allow": true},
+        {"type": "mapTarget",  "default": false, "allow": false},
+        {"type": "mapTouch",   "default": false, "allow": false}
+      ],
+      "dialog": {
+        "title": "Bus entry",
+        "grouped": true,
+        "sections": [{
+          "title": "Bus info",
+          "elements": [
+            {"type": "QEntryElement", "key": "id",  "bind": "textValue:bus_id",   "title": "JV Bus ID or Lodge permit #", "autocorrectionType": "No",	"autocapitalizationType": "None"},
+            {"type": "QRadioElement", "key": "bt",  "bind": "textValue:bus_type", "title": "Bus type", "items": [
+              "Shuttle/Disco bus",
+              "Camper bus",
+              "Denali Natural History Tour",
+              "Windows into Wilderness",
+              "Tundra Wildernress Tour",
+              "Eielson Excursion",
+              "Kantishna Experience",
+              "Denali Backcountry Lodge",
+              "Kantishna Roadhouse",
+              "North Face/Camp Denali",
+              "Other"]},
+            {"type": "QBoolElement",  "key": "tr", "bind": "selected:training",   "title": "Training"},
+            {"type": "QRadioElement", "key": "ds", "bind": "selected:destination","title": "Farthest destination", "items": [
+              "Primrose/Mile 17",
+              "Teklanika",
+              "Polychrome",
+              "Toklat",
+              "Stony Ovelook",
+              "Eielson",
+              "Wonder Lake",
+              "Kantishna",
+              "Other"]},
+            {"type": "QIntegerElement", "key": "np", "bind": "numberValue:n_passengers", "title": "# of passengers"},
+            {"type": "QIntegerElement", "key": "nl", "bind": "numberValue:n_overnight",  "title": "# of overnight lodge guests"},
+            {"type": "QEntryElement",   "key": "bc", "bind": "textValue:comments", "title": "Comments", "autocorrectionType": "No", "autocapitalizationType": "Sentences"}
+          ]
+        }]
+      },
+ 	    "symbology": {
+ 		     "color": "#F03B20",
+ 		     "size": 0
+       }
+     },
+
+     {
+       "name": "nps_vehicle",
+       "attributes": [
+         {"name": "work_group",      "type": 700},
+         {"name": "destination",     "type": 700},
+         {"name": "n_passengers",    "type": 100},
+         {"name": "driver_last",     "type": 700},
+         {"name": "supervisor_last", "type": 700},
+         {"name": "trip_purpose",    "type": 700},
+         {"name": "comments",        "type": 700}
+       ],
+       "locations": [
+         {"type": "gps",        "default": true,  "allow": true},
+         {"type": "mapTarget",  "default": false, "allow": false},
+         {"type": "mapTouch",   "default": false, "allow": false}
+       ],
+       "dialog": {
+         "title": "NPS Vehicle",
+         "grouped": true,
+         "sections": [{
+           "title": "Vehicle info",
+           "elements": [
+             {"type": "QRadioElement", "key": "wg",  "bind": "textValue:work_group", "title": "Work group", "items": [
+               "Administration",
+               "Concessions",
+               "Interpretation",
+               "Maintenance-BnU",
+               "Maintenance-Roads",
+               "Maintenance-Trails",
+               "Maintenance-Support",
+               "Natural-Cultural Resources",
+               "Planning",
+               "Superintendent's Office",
+               "VRP Rangers",
+               "Other"]},
+             {"type": "QRadioElement", "key": "ds", "bind": "selected:destination","title": "Farthest destination", "items": [
+               "Primrose/Mile 17",
+               "Teklanika",
+               "Polychrome",
+               "Toklat",
+               "Stony Ovelook",
+               "Eielson",
+               "Wonder Lake",
+               "Kantishna",
+               "Other"]},
+             {"type": "QIntegerElement", "key": "np", "bind": "numberValue:n_passengers", "title": "# of passengers"},
+             {"type": "QEntryElement",   "key": "dl", "bind": "textValue:driver_last", "title": "Driver's last name", "autocorrectionType": "No", "autocapitalizationType": "Sentences"},
+             {"type": "QEntryElement",   "key": "sl", "bind": "textValue:supervisor_last", "title": "Supervisor's last name", "autocorrectionType": "No", "autocapitalizationType": "Sentences"},
+             {"type": "QEntryElement",   "key": "nc", "bind": "selected:trip_purpose", "title": "Trip purpose", "items":[
+               "Routine Work",
+               "Special Projects (5yrs or less)",
+               "Return to duty station",
+               "Orientation Trip",
+               "Other (note in comment)"
+               ]},
+             {"type": "QEntryElement",   "key": "nc", "bind": "textValue:comments", "title": "Comments", "autocorrectionType": "No", "autocapitalizationType": "Sentences"}
+           ]
+         }]
+       },
+        "symbology": {
+           "color": "#F03B20",
+           "size": 0
+        }
+      }
+
+      {
+        "name": "employee_resident",
+        "attributes": [
+          {"name": "destination",     "type": 700},
+          {"name": "n_passengers",    "type": 100},
+          {"name": "driver_last",     "type": 700},
+          {"name": "supervisor_last", "type": 700},
+          {"name": "trip_purpose",    "type": 700},
+          {"name": "comments",        "type": 700}
+        ],
+        "locations": [
+          {"type": "gps",        "default": true,  "allow": true},
+          {"type": "mapTarget",  "default": false, "allow": false},
+          {"type": "mapTouch",   "default": false, "allow": false}
+        ],
+        "dialog": {
+          "title": "Employee Resident",
+          "grouped": true,
+          "sections": [{
+            "title": "Vehicle info",
+            "elements": [
+              {"type": "QRadioElement", "key": "ds", "bind": "selected:destination","title": "Farthest destination", "items": [
+                "Primrose/Mile 17",
+                "Teklanika",
+                "Polychrome",
+                "Toklat",
+                "Stony Ovelook",
+                "Eielson",
+                "Wonder Lake",
+                "Kantishna",
+                "Other"]},
+              {"type": "QIntegerElement", "key": "np", "bind": "numberValue:n_passengers", "title": "# of passengers"},
+              {"type": "QEntryElement",   "key": "dl", "bind": "textValue:driver_last", "title": "Driver's last name", "autocorrectionType": "No", "autocapitalizationType": "Sentences"},
+              {"type": "QEntryElement",   "key": "sl", "bind": "textValue:supervisor_last", "title": "Supervisor's last name", "autocorrectionType": "No", "autocapitalizationType": "Sentences"},
+              {"type": "QRadioElement",   "key": "nc", "bind": "selected:trip_purpose", "title": "Trip purpose", "items":[
+                "Return to duty station",
+                "Orientation Trip",
+                "Other (note in comment)"
+                ]},
+              {"type": "QEntryElement",   "key": "nc", "bind": "textValue:comments", "title": "Comments", "autocorrectionType": "No", "autocapitalizationType": "Sentences"}
+            ]
+          }]
+        },
+         "symbology": {
+            "color": "#F03B20",
+            "size": 0
+         }
+       }
+
+       {
+         "name": "nps_approved",
+         "attributes": [
+           {"name": "category",        "type": 700},
+           {"name": "destination",     "type": 700},
+           {"name": "n_passengers",    "type": 100},
+           {"name": "driver_last",     "type": 700},
+           {"name": "supervisor_last", "type": 700},
+           {"name": "trip_purpose",    "type": 700},
+           {"name": "comments",        "type": 700}
+         ],
+         "locations": [
+           {"type": "gps",        "default": true,  "allow": true},
+           {"type": "mapTarget",  "default": false, "allow": false},
+           {"type": "mapTouch",   "default": false, "allow": false}
+         ],
+         "dialog": {
+           "title": "NPS Approved",
+           "grouped": true,
+           "sections": [{
+             "title": "Vehicle info",
+             "elements": [
+               {"type": "QRadioElement", "key": "ct", "bind": "selected:category","title": "Approved vehicle type", "items": [
+                 "JV",
+                 "Researcher",
+                 "MSLC",
+                 "Other"
+                 ]},
+               {"type": "QRadioElement", "key": "ds", "bind": "selected:destination","title": "Farthest destination", "items": [
+                 "Primrose/Mile 17",
+                 "Teklanika",
+                 "Polychrome",
+                 "Toklat",
+                 "Stony Ovelook",
+                 "Eielson",
+                 "Wonder Lake",
+                 "Kantishna",
+                 "Other"]},
+               {"type": "QIntegerElement", "key": "np", "bind": "numberValue:n_passengers", "title": "# of passengers"},
+               {"type": "QEntryElement",   "key": "dl", "bind": "textValue:driver_last", "title": "Driver's last name", "autocorrectionType": "No", "autocapitalizationType": "Sentences"},
+               {"type": "QEntryElement",   "key": "nc", "bind": "textValue:trip_purpose", "title": "Trip purpose", "autocorrectionType": "No", "autocapitalizationType": "Sentences"},
+               {"type": "QEntryElement",   "key": "nc", "bind": "textValue:comments", "title": "Comments", "autocorrectionType": "No", "autocapitalizationType": "Sentences"}
+             ]
+           }]
+         },
+          "symbology": {
+             "color": "#F03B20",
+             "size": 0
+          }
+        }
+ ],
+
+   "csv": {
+     "gps_points": {
+       "name": "GpsPoints",
+       "field_names": [
+         "Timestamp",
+         "Latitude",
+         "Longitude",
+         "Datum",
+         "Error_radius_m",
+         "Course",
+         "Speed_mps",
+         "Altitude_m",
+         "Vert_error_m"
+       ],
+       "field_types": [
+         "TEXT",
+         "DOUBLE",
+         "DOUBLE",
+         "TEXT",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE"
+       ],
+       "key_indexes": [
+         0,
+         2,
+         1
+       ]
+     },
+     "track_logs": {
+       "name": "TrackLogs",
+       "field_names": [
+         "Observing",
+         "Start_UTC",
+         "Start_Local",
+         "Year",
+         "Day_of_Year",
+         "End_UTC",
+         "End_Local",
+         "Duration_sec",
+         "Start_Latitude",
+         "Start_Longitude",
+         "End_Latitude",
+         "End_Longitude",
+         "Datum",
+         "Length_m"
+       ],
+       "field_types": [
+         "TEXT",
+         "TEXT",
+         "TEXT",
+         "SHORT",
+         "SHORT",
+         "TEXT",
+         "TEXT",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "DOUBLE",
+         "TEXT",
+         "DOUBLE"
+       ],
+       "start_key_indexes": [
+         1,
+         9,
+         8
+       ],
+       "end_key_indexes": [
+         5,
+         11,
+         10
+      ]
+     },
+     "features": {
+       "header": "Timestamp_UTC,Timestamp_Local,Year,Day_of_Year,Feature_Latitude,Feature_Longitude,Observer_Latitude,Observer_Longitude,Datum,Map_Name,Map_Author,Map_Date,Angle,Distance,Perp_Meters",
+       "feature_field_names": [
+         "Timestamp_UTC",
+         "Timestamp_Local",
+         "Year",
+         "Day_of_Year",
+         "Latitude",
+         "Longitude",
+         "Datum"
+       ],
+       "feature_field_types": [
+         "DATE",
+         "DATE",
+         "SHORT",
+         "SHORT",
+         "DOUBLE",
+         "DOUBLE",
+         "TEXT"
+       ],
+       "feature_field_map": [
+         0,
+         1,
+         2,
+         3,
+         4,
+         5,
+         8
+       ],
+       "feature_key_indexes": [
+         0,
+         5,
+         4
+       ],
+       "obs_name": "Observations",
+       "obs_field_names": [
+       "Timestamp_UTC",
+       "Timestamp_Local",
+       "Year",
+       "Day_of_Year",
+       "Map_Name",
+       "Map_Author",
+       "Map_Date",
+       "Angle",
+       "Distance",
+       "Perp_meters",
+       "Latitude",
+       "Longitude",
+       "Datum"
+     ],
+     "obs_field_types": [
+       "TEXT",
+       "TEXT",
+       "SHORT",
+       "SHORT",
+       "TEXT",
+       "TEXT",
+       "TEXT",
+       "DOUBLE",
+       "DOUBLE",
+       "DOUBLE",
+       "DOUBLE",
+       "DOUBLE",
+       "TEXT"
+     ],
+     "obs_field_map": [
+       0,
+       1,
+       2,
+       3,
+       9,
+       10,
+       11,
+       12,
+       13,
+       14,
+       6,
+       7,
+        8
+      ],
+      "obs_key_indexes": [
+        0,
+        11,
+        10
+      ]
+    }
+  }
+}
