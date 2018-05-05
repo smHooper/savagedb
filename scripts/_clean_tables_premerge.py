@@ -6,8 +6,8 @@ import sys, os
 import pandas as pd
 
 
-BASEPATH = r"C:\Users\shooper\proj\savagedb\db\original\exported_tables"
-CODENAME_TXT = r'C:\Users\shooper\proj\savagedb\db\original\exported_tables\%s\codenames.csv'
+BASEPATH = r"C:\Users\shooper\proj\savagedb\db\exported_tables"
+CODENAME_TXT = r'C:\Users\shooper\proj\savagedb\db\exported_tables\%s\codenames.csv'
 #CODENAME_TXT % 2016 = r"C:\Users\shooper\proj\savagedb\db\original\exported_tables\2016\codenames.csv"
 CODELETTERS = {'G': 'N',
                'Z': 'G',
@@ -84,7 +84,7 @@ def replace_code(x):
 def main():
 
     # add cid column to pre-2000 tables and make cid 46 == 55 in tables with year <= 2001
-    print 'Adding "cid" column to pre-2000 tables...\n'
+    print '\nAdding "cid" column to pre-2000 tables...\n'
     codenames2001 = pd.read_csv(CODENAME_TXT % 2001)
     for yr in range(1997, 2000):
         year = str(yr)
@@ -167,8 +167,8 @@ def main():
         codenames.loc[codenames.explanation == 'North Face - Camp Denali'] = 'North Face/Camp Denali'
         # split destination, delete unnecessary code types and columns, and make codetypes more understandable
         split_codenames(codenames, this_dir)
-        codenames = codenames.loc[codenames.codetype.isin([KEEP_CODENAMES])]
-        for cn in codenames:
+        codenames = codenames.loc[codenames.codetype.isin(KEEP_CODENAMES)]
+        for cn in KEEP_CODENAMES:
             codenames[codenames.codename == cn] = KEEP_CODENAMES[cn]
         codenames.to_csv(codenames_txt)
 
@@ -176,14 +176,16 @@ def main():
         #   drop rows where ename is null
         employee_txt = os.path.join(this_dir, 'employees.csv')
         employees = pd.read_csv(employee_txt)
-        employees.dropna(subset='ename', inplace=True)
+        employees.dropna(subset=['ename'], inplace=True)
         employees.loc[employees.ename.apply(lambda x: 'Matt Christiansen' in x)] = 'Matt Christiansen' # gets rid of '\r'
         employees.to_csv(employee_txt)
+
         # fix greenstudy table
         greenstudywg_txt = os.path.join(this_dir, 'greenstudywg.csv')
-        greenstudywg = pd.read_csv(greenstudywg_txt)
-        greenstudywg = greenstudywg.loc[~greenstudywg.work_group.isin(['B&U', 'Ranger', 'Rangers', 'Roads', 'Support-Maintenance', 'Trails'])]
-        greenstudywg.to_csv(greenstudywg_txt)
+        if os.path.isfile(greenstudywg_txt):
+            greenstudywg = pd.read_csv(greenstudywg_txt)
+            greenstudywg = greenstudywg.loc[~greenstudywg.work_group.isin(['B&U', 'Ranger', 'Rangers', 'Roads', 'Support-Maintenance', 'Trails'])]
+            greenstudywg.to_csv(greenstudywg_txt)
 
         # add year to tables that would otherwise produce duplicate rows when merged
         for table_name in ADD_YEAR_TO:
