@@ -11,6 +11,31 @@ import XCTest
 
 class test_savageTests: XCTestCase {
     
+    //MARK: Observation class test
+    func testObservationInitializationSucceeds(){
+        
+        // Zero rating
+        let zeroRatingObservaton = Observation.init(name: "Zero", image: nil, rating: 0)
+        XCTAssertNotNil(zeroRatingObservaton)
+        
+        //Highest postive rating
+        let positiveRatingObservaton = Observation.init(name: "Zero", image: nil, rating: 5)
+        XCTAssertNotNil(positiveRatingObservaton)
+    }
+    
+    // Test class initialization
+    func testObservationInitializationFails(){
+        
+        // Negative rating
+        let negativeRatingMeal = Observation.init(name: "Negative", image: nil, rating: -1)
+        XCTAssertNil(negativeRatingMeal)
+        
+        // Empty String
+        let emptyStringMeal = Observation.init(name: "", image: nil, rating: 0)
+        XCTAssertNil(emptyStringMeal)
+        
+    }
+    
     override func setUp() {
         super.setUp()
         // Put setup code here. This method is called before the invocation of each test method in the class.
@@ -32,5 +57,7 @@ class test_savageTests: XCTestCase {
             // Put the code you want to measure the time of here.
         }
     }
+    
+
     
 }
