@@ -56,7 +56,7 @@
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                 <textInputTraits key="textInputTraits"/>
                                                 <connections>
-                                                    <action selector="closeTimeTextFieldEditing:" destination="BYZ-38-t0r" eventType="editingDidBegin" id="iEP-DN-9gG"/>
+                                                    <action selector="openTimeTextFieldEditing:" destination="BYZ-38-t0r" eventType="editingDidBegin" id="3y5-NY-i0l"/>
                                                 </connections>
                                             </textField>
                                         </subviews>
@@ -78,6 +78,9 @@
                                                 <nil key="textColor"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                 <textInputTraits key="textInputTraits"/>
+                                                <connections>
+                                                    <action selector="closeTimeTextFieldEditing:" destination="BYZ-38-t0r" eventType="editingDidEnd" id="VKO-Lx-bJu"/>
+                                                </connections>
                                             </textField>
                                         </subviews>
                                         <constraints>
