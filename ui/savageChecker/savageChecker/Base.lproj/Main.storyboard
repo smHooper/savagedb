@@ -118,7 +118,7 @@
         <!--Vehicles-->
         <scene sceneID="nVo-k8-1Qb">
             <objects>
-                <tableViewController id="063-tN-YMe" sceneMemberID="viewController">
+                <tableViewController id="063-tN-YMe" customClass="ObservationTableViewController" customModule="savageChecker" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="90" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="y0A-hX-k5m">
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -174,14 +174,14 @@
                     <navigationItem key="navigationItem" title="Vehicles" id="ry0-Mv-uUR">
                         <barButtonItem key="rightBarButtonItem" systemItem="add" id="cIm-EP-Cbt">
                             <connections>
-                                <segue destination="6Yq-z6-mSg" kind="show" identifier="showObservation" id="Wvk-7D-cAk"/>
+                                <segue destination="6Yq-z6-mSg" kind="show" identifier="addObservation" id="Wvk-7D-cAk"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yp5-Ye-2cc" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3748" y="32.833583208395808"/>
+            <point key="canvasLocation" x="2882" y="33"/>
         </scene>
         <!--New Vehicle-->
         <scene sceneID="SHp-h4-0YL">
@@ -315,7 +315,7 @@
                         <barButtonItem key="leftBarButtonItem" title="Cancel" id="KfC-aq-Ozz"/>
                         <barButtonItem key="rightBarButtonItem" title="Save" id="KLy-NQ-TR0">
                             <connections>
-                                <segue destination="fpf-cH-9SK" kind="unwind" unwindAction="unwindToObservationListWithSender:" id="JCj-hc-nUa"/>
+                                <segue destination="fpf-cH-9SK" kind="unwind" unwindAction="unwindToObservationListWithSender:" id="djM-z0-LXi"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>
@@ -331,25 +331,7 @@
                 <placeholder placeholderIdentifier="IBFirstResponder" id="vU7-ef-v4h" userLabel="First Responder" sceneMemberID="firstResponder"/>
                 <exit id="fpf-cH-9SK" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
-            <point key="canvasLocation" x="5748" y="32.833583208395808"/>
-        </scene>
-        <!--Navigation Controller-->
-        <scene sceneID="khB-Rb-9aP">
-            <objects>
-                <navigationController automaticallyAdjustsScrollViewInsets="NO" id="CJo-Gf-0me" sceneMemberID="viewController">
-                    <toolbarItems/>
-                    <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="ddd-5N-q5F">
-                        <rect key="frame" x="0.0" y="20" width="375" height="44"/>
-                        <autoresizingMask key="autoresizingMask"/>
-                    </navigationBar>
-                    <nil name="viewControllers"/>
-                    <connections>
-                        <segue destination="063-tN-YMe" kind="relationship" relationship="rootViewController" id="NsP-nS-lMz"/>
-                    </connections>
-                </navigationController>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="iZ7-M7-Ctx" userLabel="First Responder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="2713" y="463"/>
+            <point key="canvasLocation" x="4956" y="33"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="AjN-U0-nIo">
@@ -367,7 +349,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="y7S-vw-ahX" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="4808.8000000000002" y="32.833583208395808"/>
+            <point key="canvasLocation" x="3956" y="33"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="ehn-g6-7AX">
@@ -391,7 +373,4 @@
     <resources>
         <image name="shuttleBusImg" width="132" height="132"/>
     </resources>
-    <inferredMetricsTieBreakers>
-        <segue reference="NsP-nS-lMz"/>
-    </inferredMetricsTieBreakers>
 </document>

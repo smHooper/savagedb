@@ -30,6 +30,17 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         driverNameTextField.delegate = self
         destinationTextField.delegate = self
         
+        // The observation already exists and is open for viewing/editing
+        if let observation = observation {
+            observerNameTextField.text = observation.observerName
+            dateTextField.text = observation.date
+            timeTextField.text = observation.time
+            driverNameTextField.text = observation.driverName
+            destinationTextField.text = observation.destination
+            
+        }
+        //createDatePicker()
+        createTimePicker()
     }
 
     override func didReceiveMemoryWarning() {
@@ -40,7 +51,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
 
     
     // MARK: - Navigation
-
     // Configure view controller before it's presented
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         super.prepare(for: segue, sender: sender)
@@ -51,18 +61,20 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         }
         
         guard let destinationController = segue.destination as? ObservationTableViewController else {
-            os_log("The view controller isn't an ObservationTableViewController", log: OSLog.default, type: .debug)
+            os_log("The destination controller isn't an ObservationTableViewController", log: OSLog.default, type: .debug)
             return
         }
-        let session = destinationController.session!
+        let session = destinationController.session
+        print("session observer: \(session?.observerName)")
         let observerName = observerNameTextField.text
         let date = observerNameTextField.text
         let time = timeTextField.text
         let driverName = driverNameTextField.text
         let destination = destinationTextField.text
+        print("Printing destination for saved obs: \(destination)" ?? "")
         //let session = Session(observerName: observerName, givenDate: date)
         
-        observation = Observation(session: session, time: time!, driverName: driverName!, destination: destination!)
+        observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!)
     }
     
 
@@ -126,8 +138,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         timeFormatter.timeStyle = .short
         timeTextField.text = timeFormatter.string(from: sender.date)
     }
-    // Make a tool bar for the date picker with an ok button and a done button
-    func createCloseDatePicker(){//textField: UITextField) {
+    
+    func createTimePicker(){//textField: UITextField) {
         
         let toolBar = UIToolbar(frame: CGRect(x: 0, y: self.view.frame.size.height/6, width: self.view.frame.size.width, height: 40.0))
         toolBar.layer.position = CGPoint(x: self.view.frame.size.width/2, y: self.view.frame.size.height-20.0)
@@ -137,7 +149,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         toolBar.setItems([flexSpace, doneButton, flexSpace], animated: true)
         
         // Make sure this is added to the controller when openTimeTextFieldEditing is called
-        //openTimeTextField.inputAccessoryView = toolBar
         timeTextField.inputAccessoryView = toolBar
     }
     

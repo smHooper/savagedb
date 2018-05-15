@@ -11,14 +11,16 @@ import UIKit
 class ObservationTableViewController: UITableViewController {
     
     //MARK: Properties
-    var observations: [Observation] = []
-    var session: Session!
-    var observationTable: ObservationViewController!
+    var observations = [Observation]()
+    var session: Session?
+    var sessionController: SessionViewController?
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.session = Session(observerName: "Hooper", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2018")
+        //self.session = Session(observerName: "Hooper", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2018")
+        loadSampleObservations()
+        
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
 
@@ -123,7 +125,7 @@ class ObservationTableViewController: UITableViewController {
         guard let obs2 = Observation(session: session!, time: "12:30 PM", driverName: "Johnston", destination: "Eielson") else {
             fatalError("Unable to instantiate obs1")
         }
-
+        
         observations += [obs1, obs2]
     }
 

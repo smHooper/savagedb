@@ -15,7 +15,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
     
-    // This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed as part of when a new session begins.
+    // This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var session: Session?
 
     
@@ -39,7 +39,6 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         
         createOpenDatePicker()//textField: openTimeTextField)
         createCloseDatePicker()//textField: closeTimeTextField)
-        
         
     }
 
@@ -105,6 +104,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         timeFormatter.dateStyle = .none
         timeFormatter.timeStyle = .short
         closeTimeTextField.text = timeFormatter.string(from: sender.date)
+        print("")
     }
     // Make a tool bar for the date picker with an ok button and a done button
     func createCloseDatePicker(){//textField: UITextField) {
