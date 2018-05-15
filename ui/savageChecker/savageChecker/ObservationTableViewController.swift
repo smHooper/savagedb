@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import os.log
 
 class ObservationTableViewController: UITableViewController {
     
@@ -33,6 +34,7 @@ class ObservationTableViewController: UITableViewController {
         // Dispose of any resources that can be recreated.
     }
 
+    
     // MARK: - Table view data source
     override func numberOfSections(in tableView: UITableView) -> Int {
         return 1
@@ -62,6 +64,7 @@ class ObservationTableViewController: UITableViewController {
         return cell
     }
     
+    
     //MARK: Actions
     @IBAction func unwindToObservationList(sender: UIStoryboardSegue) {
         if let sourceViewController = sender.source as? ObservationViewController, let observation = sourceViewController.observation{
@@ -71,6 +74,18 @@ class ObservationTableViewController: UITableViewController {
             tableView.insertRows(at: [newIndexPath], with: .automatic)
         }
     }
+    
+    /*override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "showVehicleTable"{
+            guard let sourceViewController = segue.source as? SessionViewController else {
+                os_log("The destination controller isn't a SessionViewController", log: OSLog.default, type: .debug)
+                return
+            }
+            
+            self.session = sourceViewController.session
+        }
+        print(segue.identifier ?? "couldn't unwrap")
+    }*/
     /*
     // Override to support conditional editing of the table view.
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
@@ -118,11 +133,12 @@ class ObservationTableViewController: UITableViewController {
     //MARK: Private Methods
     
     private func loadSampleObservations() {
-        let session = Session(observerName: "Joe", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2017")
-        guard let obs1 = Observation(session: session!, time: "12:00 PM", driverName: "Hooper", destination: "Eielson") else {
+        let session = self.session!//Session(observerName: "Joe", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2017")
+        print(session.date)
+        guard let obs1 = Observation(session: session, time: "12:00 PM", driverName: "Hooper", destination: "Eielson") else {
             fatalError("Unable to instantiate obs1")
         }
-        guard let obs2 = Observation(session: session!, time: "12:30 PM", driverName: "Johnston", destination: "Eielson") else {
+        guard let obs2 = Observation(session: session, time: "12:30 PM", driverName: "Johnston", destination: "Eielson") else {
             fatalError("Unable to instantiate obs1")
         }
         

@@ -19,7 +19,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="30" translatesAutoresizingMaskIntoConstraints="NO" id="dOP-i0-K6p">
-                                <rect key="frame" x="8" y="84" width="359" height="235.5"/>
+                                <rect key="frame" x="8" y="84" width="359" height="324"/>
                                 <subviews>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="iQu-XA-TbG">
                                         <rect key="frame" x="0.0" y="0.0" width="359" height="58.5"/>
@@ -41,8 +41,28 @@
                                             <constraint firstAttribute="trailing" secondItem="uh2-RN-UJk" secondAttribute="trailing" id="mAJ-Wr-ZYR"/>
                                         </constraints>
                                     </stackView>
-                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Ref-s8-fxL">
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="3Ga-HD-VdB">
                                         <rect key="frame" x="0.0" y="88.5" width="359" height="58.5"/>
+                                        <subviews>
+                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Date" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="gmh-2V-Xds">
+                                                <rect key="frame" x="0.0" y="0.0" width="359" height="20.5"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                <nil key="textColor"/>
+                                                <nil key="highlightedColor"/>
+                                            </label>
+                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter the date" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="WSW-t2-lto">
+                                                <rect key="frame" x="0.0" y="28.5" width="359" height="30"/>
+                                                <nil key="textColor"/>
+                                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                <textInputTraits key="textInputTraits"/>
+                                                <connections>
+                                                    <action selector="dateFieldEditing:" destination="BYZ-38-t0r" eventType="editingDidBegin" id="CmR-2m-znb"/>
+                                                </connections>
+                                            </textField>
+                                        </subviews>
+                                    </stackView>
+                                    <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Ref-s8-fxL">
+                                        <rect key="frame" x="0.0" y="177" width="359" height="58.5"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Check station open" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ndS-tq-ajz">
                                                 <rect key="frame" x="0.0" y="0.0" width="148.5" height="20.5"/>
@@ -65,7 +85,7 @@
                                         </constraints>
                                     </stackView>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="yQO-7Q-64y">
-                                        <rect key="frame" x="0.0" y="177" width="359" height="58.5"/>
+                                        <rect key="frame" x="0.0" y="265.5" width="359" height="58.5"/>
                                         <subviews>
                                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Check station close" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="w9b-Kq-ejY">
                                                 <rect key="frame" x="0.0" y="0.0" width="150.5" height="20.5"/>
@@ -79,7 +99,7 @@
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                 <textInputTraits key="textInputTraits"/>
                                                 <connections>
-                                                    <action selector="closeTimeTextFieldEditing:" destination="BYZ-38-t0r" eventType="editingDidEnd" id="VKO-Lx-bJu"/>
+                                                    <action selector="closeTimeTextFieldEditing:" destination="BYZ-38-t0r" eventType="editingDidBegin" id="lhy-GV-H28"/>
                                                 </connections>
                                             </textField>
                                         </subviews>
@@ -107,8 +127,10 @@
                     </navigationItem>
                     <connections>
                         <outlet property="closeTimeTextField" destination="OlI-ez-eN6" id="akC-lp-0NY"/>
+                        <outlet property="dateTextField" destination="WSW-t2-lto" id="UdN-qm-GfK"/>
                         <outlet property="observerTextField" destination="uh2-RN-UJk" id="lD5-Jc-q8D"/>
                         <outlet property="openTimeTextField" destination="fZp-da-jTa" id="Sbw-xR-2oQ"/>
+                        <outlet property="viewVehiclesButton" destination="2Kb-vx-EHR" id="NjH-AI-rhA"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>

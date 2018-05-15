@@ -65,13 +65,13 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             return
         }
         let session = destinationController.session
-        print("session observer: \(session?.observerName)")
+        print("session observer: \(session?.observerName ?? "")")
         let observerName = observerNameTextField.text
         let date = observerNameTextField.text
         let time = timeTextField.text
         let driverName = driverNameTextField.text
         let destination = destinationTextField.text
-        print("Printing destination for saved obs: \(destination)" ?? "")
+        print("Printing destination for saved obs: \(destination!)" )
         //let session = Session(observerName: observerName, givenDate: date)
         
         observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!)

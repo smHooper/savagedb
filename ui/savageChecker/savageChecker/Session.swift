@@ -15,11 +15,10 @@ class Session {
     //MARK: Properties
     var observerName: String
     var date: String // Store as string because Swift almost certainly uses different epoch than Python
-    // Make open/close times optional because in a given session, someone probably either opens, closes, or neither
     var openTime: String
     var closeTime: String
     
-    init?(observerName: String, openTime: String?, closeTime: String?, givenDate: String?){
+    init?(observerName: String, openTime: String?, closeTime: String?, givenDate: String? = ""){
         
         // Check that all required attributes are non-mepty
         guard !observerName.isEmpty else {
@@ -36,7 +35,7 @@ class Session {
         if !(givenDate?.isEmpty)! {
             let now = Date()
             let formatter = DateFormatter()
-            formatter.dateStyle = .medium
+            formatter.dateStyle = .short
             self.date = formatter.string(from: now)
         } else {
             self.date = givenDate!
