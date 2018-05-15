@@ -13,22 +13,22 @@ import UIKit
 class Session {
     
     //MARK: Properties
-    var observer: String
+    var observerName: String
     var date: String // Store as string because Swift almost certainly uses different epoch than Python
     // Make open/close times optional because in a given session, someone probably either opens, closes, or neither
     var openTime: String
     var closeTime: String
     
-    init?(observer: String, openTime: String, closeTime: String, givenDate: String?){
+    init?(observerName: String, openTime: String?, closeTime: String?, givenDate: String?){
         
         // Check that all required attributes are non-mepty
-        guard !observer.isEmpty else {
+        guard !observerName.isEmpty else {
             return nil
         }
-        guard !openTime.isEmpty else {
+        guard !(openTime?.isEmpty)! else {
             return nil
         }
-        guard !closeTime.isEmpty else {
+        guard !(closeTime?.isEmpty)! else {
             return nil
         }
         
@@ -42,9 +42,9 @@ class Session {
             self.date = givenDate!
         }
 
-        self.observer = observer
-        self.openTime = openTime
-        self.closeTime = closeTime
+        self.observerName = observerName
+        self.openTime = openTime!
+        self.closeTime = closeTime!
     }
     
     

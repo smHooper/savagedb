@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		AF5E82F020A9FB8300386083 /* CustomDatePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82EF20A9FB8300386083 /* CustomDatePicker.swift */; };
+		AF5E82F420AA1F3000386083 /* ObservationTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */; };
+		AF5E82F620AA2A2200386083 /* ObservationTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F520AA2A2200386083 /* ObservationTableViewController.swift */; };
+		AF5E82F820AA2A9300386083 /* Observation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F720AA2A9300386083 /* Observation.swift */; };
+		AF5E82FA20AA4D8400386083 /* ObservationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F920AA4D8400386083 /* ObservationViewController.swift */; };
 		AF67170120A4C58F0039C490 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67170020A4C58F0039C490 /* AppDelegate.swift */; };
 		AF67170320A4C58F0039C490 /* SessionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67170220A4C58F0039C490 /* SessionViewController.swift */; };
 		AF67170620A4C58F0039C490 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AF67170420A4C58F0039C490 /* Main.storyboard */; };
@@ -29,6 +33,10 @@
 
 /* Begin PBXFileReference section */
 		AF5E82EF20A9FB8300386083 /* CustomDatePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomDatePicker.swift; path = ../CustomDatePicker.swift; sourceTree = "<group>"; };
+		AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationTableViewCell.swift; sourceTree = "<group>"; };
+		AF5E82F520AA2A2200386083 /* ObservationTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationTableViewController.swift; sourceTree = "<group>"; };
+		AF5E82F720AA2A9300386083 /* Observation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Observation.swift; sourceTree = "<group>"; };
+		AF5E82F920AA4D8400386083 /* ObservationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationViewController.swift; sourceTree = "<group>"; };
 		AF6716FD20A4C58F0039C490 /* savageChecker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = savageChecker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF67170020A4C58F0039C490 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AF67170220A4C58F0039C490 /* SessionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewController.swift; sourceTree = "<group>"; };
@@ -85,6 +93,10 @@
 				AF67170220A4C58F0039C490 /* SessionViewController.swift */,
 				AF67172020A4D0AC0039C490 /* Session.swift */,
 				AF5E82EF20A9FB8300386083 /* CustomDatePicker.swift */,
+				AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */,
+				AF5E82F520AA2A2200386083 /* ObservationTableViewController.swift */,
+				AF5E82F720AA2A9300386083 /* Observation.swift */,
+				AF5E82F920AA4D8400386083 /* ObservationViewController.swift */,
 				AF67170420A4C58F0039C490 /* Main.storyboard */,
 				AF67170720A4C5910039C490 /* Assets.xcassets */,
 				AF67170920A4C5910039C490 /* LaunchScreen.storyboard */,
@@ -204,7 +216,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF5E82F020A9FB8300386083 /* CustomDatePicker.swift in Sources */,
+				AF5E82F420AA1F3000386083 /* ObservationTableViewCell.swift in Sources */,
+				AF5E82F620AA2A2200386083 /* ObservationTableViewController.swift in Sources */,
+				AF5E82F820AA2A9300386083 /* Observation.swift in Sources */,
 				AF67170320A4C58F0039C490 /* SessionViewController.swift in Sources */,
+				AF5E82FA20AA4D8400386083 /* ObservationViewController.swift in Sources */,
 				AF67170120A4C58F0039C490 /* AppDelegate.swift in Sources */,
 				AF67172120A4D0AC0039C490 /* Session.swift in Sources */,
 			);

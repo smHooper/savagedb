@@ -14,6 +14,9 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var observerTextField: UITextField!
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
+    
+    // This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed as part of when a new session begins.
+    var session: Session?
 
     
     // Either a session has already started and user is returning to edit or this is a new session
@@ -25,16 +28,18 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         observerTextField.delegate = self
         openTimeTextField.delegate = self
         closeTimeTextField.delegate = self
-        
+
         // The session has already started
-        /*if let session = session {
-            observerTextField.text = session.observer
+        if let session = session {
+            observerTextField.text = session.observerName
             openTimeTextField.text = session.openTime
             closeTimeTextField.text = session.closeTime
             
-        }*/
+        }
+        
         createOpenDatePicker()//textField: openTimeTextField)
         createCloseDatePicker()//textField: closeTimeTextField)
+        
         
     }
 
@@ -120,10 +125,8 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @objc func closeDonePressed(sender: UIBarButtonItem) {
         closeTimeTextField.resignFirstResponder()
     }
-    /*override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        self.view.endEditing(true)
-    }
-    */
+    
+    //
 
 }
 
