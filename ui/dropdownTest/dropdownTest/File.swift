@@ -1,52 +1,18 @@
 //
-//  ViewController.swift
-//  sdafjkbslib
+//  File.swift
+//  dropdownTest
 //
-//  Created by Davidson Family on 11/1/17.
-//  Copyright © 2017 Archetapp. All rights reserved.
+//  Created by Sam Hooper on 5/15/18.
+//  Copyright © 2018 Sam Hooper. All rights reserved.
 //
 
 import UIKit
-
-class ViewController: UIViewController {
-    
-    var button = dropDownBtn()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        
-        
-        //Configure the button
-        button = dropDownBtn.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-        button.placeholder = "Select employee"
-        button.translatesAutoresizingMaskIntoConstraints = false
-        
-        //Add Button to the View Controller
-        self.view.addSubview(button)
-        
-        //button Constraints
-        button.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        button.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        button.widthAnchor.constraint(equalToConstant: 100).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        
-        //Set the drop down menu's options
-        button.dropView.dropDownOptions = ["Sam Hooper", "Jen Johnston"]
-        
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-}
 
 protocol dropDownProtocol {
     func dropDownPressed(string : String)
 }
 
-class dropDownBtn: UITextField, dropDownProtocol {
+@IBDesignable class DropDownTextField: UITextField, dropDownProtocol {
     
     func dropDownPressed(string: String) {
         self.text = string// for: .normal)
@@ -54,7 +20,6 @@ class dropDownBtn: UITextField, dropDownProtocol {
     }
     
     var dropView = dropDownView()
-    
     var height = NSLayoutConstraint()
     
     
@@ -125,7 +90,7 @@ class dropDownBtn: UITextField, dropDownProtocol {
     }
     
     required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
     }
 }
 
@@ -133,7 +98,7 @@ class dropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
     
     var dropDownOptions = [String]()
     
-    var tableView = UITableView()
+    @IBInspectable var tableView = UITableView()
     
     var delegate : dropDownProtocol!
     
@@ -184,23 +149,3 @@ class dropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
     }
     
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
