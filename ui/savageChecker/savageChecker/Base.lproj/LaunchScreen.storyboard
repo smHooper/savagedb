@@ -18,60 +18,13 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="o7j-TH-XQb">
-                                <rect key="frame" x="0.0" y="40" width="375" height="58.5"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Observer" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="5el-0g-2gH">
-                                        <rect key="frame" x="0.0" y="0.0" width="71" height="20.5"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter observer's name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="Zvh-rM-6rH">
-                                        <rect key="frame" x="0.0" y="28.5" width="375" height="30"/>
-                                        <nil key="textColor"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                        <textInputTraits key="textInputTraits"/>
-                                    </textField>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstAttribute="trailing" secondItem="Zvh-rM-6rH" secondAttribute="trailing" id="lqW-4i-0sP"/>
-                                </constraints>
-                            </stackView>
-                            <stackView opaque="NO" contentMode="scaleToFill" misplaced="YES" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="rrm-DK-wrK">
-                                <rect key="frame" x="0.0" y="138" width="375" height="282.5"/>
-                                <subviews>
-                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Opening time" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cwL-zi-gN4">
-                                        <rect key="frame" x="0.0" y="0.0" width="103" height="20.5"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                        <nil key="textColor"/>
-                                        <nil key="highlightedColor"/>
-                                    </label>
-                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter check station opening time" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="bcq-xz-8qB">
-                                        <rect key="frame" x="0.0" y="28.5" width="375" height="30"/>
-                                        <nil key="textColor"/>
-                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                        <textInputTraits key="textInputTraits"/>
-                                    </textField>
-                                    <datePicker contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" datePickerMode="dateAndTime" minuteInterval="1" translatesAutoresizingMaskIntoConstraints="NO" id="2gV-xj-PGU">
-                                        <rect key="frame" x="0.0" y="66.5" width="320" height="216"/>
-                                        <date key="date" timeIntervalSinceReferenceDate="547670896.44978297">
-                                            <!--2018-05-10 18:48:16 +0000-->
-                                        </date>
-                                    </datePicker>
-                                </subviews>
-                                <constraints>
-                                    <constraint firstAttribute="trailing" secondItem="bcq-xz-8qB" secondAttribute="trailing" id="eU1-RP-uQJ"/>
-                                </constraints>
+                            <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="rrm-DK-wrK">
+                                <rect key="frame" x="0.0" y="138" width="375" height="20.5"/>
                             </stackView>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
                             <constraint firstItem="rrm-DK-wrK" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="7LD-mJ-ID6"/>
-                            <constraint firstItem="o7j-TH-XQb" firstAttribute="top" secondItem="6Tk-OE-BBY" secondAttribute="top" constant="20" id="L67-B6-qoq"/>
-                            <constraint firstItem="rrm-DK-wrK" firstAttribute="leading" secondItem="o7j-TH-XQb" secondAttribute="leading" id="N98-P9-0Sx"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="o7j-TH-XQb" secondAttribute="trailing" id="SUB-M8-p9d"/>
-                            <constraint firstItem="o7j-TH-XQb" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="eeI-yv-QH1"/>
                             <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="rrm-DK-wrK" secondAttribute="trailing" id="xpM-Qr-X3i"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>

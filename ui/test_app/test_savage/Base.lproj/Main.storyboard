@@ -78,8 +78,8 @@
                         <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" alignment="center" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="P6b-iH-SQv">
-                                <rect key="frame" x="0.0" y="84" width="375" height="410"/>
+                            <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" alignment="center" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="P6b-iH-SQv">
+                                <rect key="frame" x="0.0" y="84" width="375" height="416"/>
                                 <subviews>
                                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Type your name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="aXg-ZX-Wic">
                                         <rect key="frame" x="0.0" y="0.0" width="375" height="30"/>
@@ -97,8 +97,8 @@
                                             <outletCollection property="gestureRecognizers" destination="iNe-gP-xab" appends="YES" id="hPO-Q5-3WR"/>
                                         </connections>
                                     </imageView>
-                                    <stackView opaque="NO" contentMode="scaleToFill" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Vor-Ju-d7e" customClass="RatingControl" customModule="test_savage" customModuleProvider="target">
-                                        <rect key="frame" x="61.5" y="366" width="252" height="44"/>
+                                    <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="Vor-Ju-d7e" customClass="RatingControl" customModule="test_savage" customModuleProvider="target">
+                                        <rect key="frame" x="61.5" y="366" width="252" height="50"/>
                                     </stackView>
                                 </subviews>
                                 <constraints>

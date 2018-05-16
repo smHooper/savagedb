@@ -15,3 +15,7 @@ let now = Date()
 let formatter = DateFormatter()
 formatter.dateStyle = .short
 print(formatter.string(from: now))
+
+
+let textField = UITextField()
+textField.CG

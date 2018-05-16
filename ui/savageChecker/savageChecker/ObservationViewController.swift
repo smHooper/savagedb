@@ -39,7 +39,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             destinationTextField.text = observation.destination
             
         }
-        //createDatePicker()
+        createDatePicker()
         createTimePicker()
     }
 
@@ -66,8 +66,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         }
         let session = destinationController.session
         print("session observer: \(session?.observerName ?? "")")
-        let observerName = observerNameTextField.text
-        let date = observerNameTextField.text
+        //observerNameTextField.text = session?.observerName
+        //dateTextField.text = session?.date
         let time = timeTextField.text
         let driverName = driverNameTextField.text
         let destination = destinationTextField.text
@@ -100,8 +100,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     @objc func handleDatePicker(sender: UIDatePicker) {
         let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .medium
-        dateFormatter.timeStyle = .short
+        dateFormatter.dateStyle = .short
+        dateFormatter.timeStyle = .none
         dateTextField.text = dateFormatter.string(from: sender.date)
     }
     // Make a tool bar for the date picker with an ok button and a done button
@@ -114,8 +114,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
         toolBar.setItems([flexSpace, doneButton, flexSpace], animated: true)
         
-        // Make sure this is added to the controller when openTimeTextFieldEditing is called
-        //openTimeTextField.inputAccessoryView = toolBar
+        // Make sure this is added to the controller when textFieldEditing is called
         dateTextField.inputAccessoryView = toolBar
     }
     
@@ -123,7 +122,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @objc func dateDonePressed(sender: UIBarButtonItem) {
         dateTextField.resignFirstResponder()
     }
-    
     
     @IBAction func timeTextFieldEditing(_ sender: UITextField) {
         let timePickerView: UIDatePicker = UIDatePicker()

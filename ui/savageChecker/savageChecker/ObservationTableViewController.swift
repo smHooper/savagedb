@@ -15,6 +15,7 @@ class ObservationTableViewController: UITableViewController {
     var observations = [Observation]()
     var session: Session?
     var sessionController: SessionViewController?
+    @IBOutlet weak var addNewObservation: UIBarButtonItem!
     
     
     override func viewDidLoad() {
@@ -121,15 +122,40 @@ class ObservationTableViewController: UITableViewController {
     }
     */
 
-    /*
+    
     // MARK: - Navigation
 
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
+    // Prep observation view with info from session
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+        super.prepare(for: segue, sender: sender)
+        
+        guard let button = sender as? UIBarButtonItem, button === addNewObservation else {
+            os_log("addNewObs button not pressed", log: OSLog.default, type: .debug)
+            return
+        }
+        //print("Segue destination for add button: \(segue.destination)")
+        /*guard let destinationController = segue.destination as? ObservationViewController else {
+            os_log("The destination controller isn't an ObservationViewController", log: OSLog.default, type: .debug)
+            return
+        }*/
+        
+        
+        let controllers = segue.destination.navigationController?.topViewController
+        print("Type of destination cotroller after add button pressed: \(type(of:controllers))")
+        /*guard let destinationController = segue.destination as? ObservationViewController, segue.identifier == "addObservation" else {
+            os_log("The destination controller isn't an ObservationViewController", log: OSLog.default, type: .debug)
+            return
+        }*/
+        
+        // Set default text field values
+        
+        //let dateTextField =
+        print("session observer in obser table controller: \(session?.observerName ?? "unwrap failed")")
+        //destinationController.observerNameTextField.text = session?.observerName
+        //destinationController.destinationTextField.text = session?.date
     }
-    */
+    
+    
     //MARK: Private Methods
     
     private func loadSampleObservations() {

@@ -200,6 +200,9 @@
                             </connections>
                         </barButtonItem>
                     </navigationItem>
+                    <connections>
+                        <outlet property="addNewObservation" destination="cIm-EP-Cbt" id="wBh-A8-hjr"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yp5-Ye-2cc" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -251,6 +254,9 @@
                                                 <nil key="textColor"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                 <textInputTraits key="textInputTraits"/>
+                                                <connections>
+                                                    <action selector="dateTextFieldEditing:" destination="0Yy-lz-LCs" eventType="editingDidBegin" id="9Hp-nb-trF"/>
+                                                </connections>
                                             </textField>
                                         </subviews>
                                         <constraints>
@@ -272,6 +278,9 @@
                                                 <nil key="textColor"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                 <textInputTraits key="textInputTraits"/>
+                                                <connections>
+                                                    <action selector="timeTextFieldEditing:" destination="0Yy-lz-LCs" eventType="editingDidBegin" id="6pg-zt-kIJ"/>
+                                                </connections>
                                             </textField>
                                         </subviews>
                                         <constraints>

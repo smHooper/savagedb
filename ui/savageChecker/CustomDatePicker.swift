@@ -8,15 +8,13 @@
 
 /*import UIKit
 
-class CustomDatePicker: UIDatePicker {
+class CustomDatePicker {
     
     var assignedTextField: UITextField!
     var viewController: UIViewController!
 
     init(textField: UITextField, viewController: UIViewController){
-        //super.init()
 
-        
         self.assignedTextField = textField
         self.viewController = viewController
         
@@ -32,14 +30,12 @@ class CustomDatePicker: UIDatePicker {
         assignedTextField.inputAccessoryView = toolBar
     }
     
-    required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     // Check that the done button on custom DatePicker was pressed
     @objc func donePressed(sender: UIBarButtonItem) {
         assignedTextField.resignFirstResponder()
     }
+    
+    
     
 }*/
 
