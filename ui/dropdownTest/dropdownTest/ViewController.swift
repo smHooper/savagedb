@@ -28,11 +28,11 @@ class ViewController: UIViewController {
         //button Constraints
         button.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
         button.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        button.widthAnchor.constraint(equalToConstant: 100).isActive = true
+        button.widthAnchor.constraint(equalToConstant: 300).isActive = true
         button.heightAnchor.constraint(equalToConstant: 40).isActive = true
         
         //Set the drop down menu's options
-        button.dropView.dropDownOptions = ["Sam Hooper", "Jen Johnston"]
+        button.dropView.dropDownOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy"]
         
     }
     
@@ -140,8 +140,9 @@ class dropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        tableView.backgroundColor = UIColor.darkGray
-        self.backgroundColor = UIColor.darkGray
+        //tableView.backgroundColor = UIColor.darkGray
+        //self.backgroundColor = UIColor.darkGray
+        
         
         
         tableView.delegate = self
@@ -155,6 +156,16 @@ class dropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
         tableView.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
         tableView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
         tableView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
+        
+        tableView.layer.borderWidth = 0.5
+        tableView.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
+        
+        /*tableView.layer.shadowOffset = CGSize(width:2, height:2)
+        tableView.layer.shadowColor = UIColor.black.cgColor
+        tableView.layer.shadowRadius = 4
+        tableView.layer.shadowOpacity = 0.25
+        tableView.layer.masksToBounds = false
+        tableView.clipsToBounds = false*/
         
     }
     
@@ -174,7 +185,10 @@ class dropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
         let cell = UITableViewCell()
         
         cell.textLabel?.text = dropDownOptions[indexPath.row]
-        cell.backgroundColor = UIColor.darkGray
+        cell.backgroundColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+        cell.layer.borderWidth = 0.25
+        cell.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
+        cell.textLabel?.textAlignment = .center
         return cell
     }
     
