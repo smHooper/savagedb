@@ -8,14 +8,19 @@
 
 import UIKit
 
-class ViewController: UIViewController {
+
+class ViewController: UIViewController, UITextFieldDelegate {
     
-    var button = dropDownBtn()
+    //var button = dropDownBtn()
+    @IBOutlet weak var button: dropDownBtn!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
         
+        //Get the bounds from the storyboard
+        let textFieldBounds = button.layer.bounds
+        let centerX = button.centerXAnchor
+        let centerY = button.centerYAnchor
         
         //Configure the button
         button = dropDownBtn.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
@@ -26,46 +31,75 @@ class ViewController: UIViewController {
         self.view.addSubview(button)
         
         //button Constraints
-        button.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        button.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        button.widthAnchor.constraint(equalToConstant: 300).isActive = true
-        button.heightAnchor.constraint(equalToConstant: 40).isActive = true
+        button.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        button.centerYAnchor.constraint(equalTo: centerY).isActive = true
+        button.widthAnchor.constraint(equalToConstant: textFieldBounds.width).isActive = true
+        button.heightAnchor.constraint(equalToConstant: textFieldBounds.height).isActive = true//*/
         
         //Set the drop down menu's options
-        button.dropView.dropDownOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy"]
-        
+        button.dropView.dropDownOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
+        button.delegate = self
     }
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    //MARK: UITextFieldDelegate
+    //####################################################################################################################
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        guard let text = button.text else {
+            return false
+            }
+        if text == "Other" {
+            return true
+        } else {
+            return false
+        }
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        // Hide the keyboard
+        textField.resignFirstResponder()
+        return true
+    }
+    
 }
 
 protocol dropDownProtocol {
     func dropDownPressed(string : String)
 }
 
-class dropDownBtn: UITextField, dropDownProtocol {
+@IBDesignable class dropDownBtn: UITextField, dropDownProtocol {
     
     func dropDownPressed(string: String) {
-        self.text = string// for: .normal)
-        self.dismissDropDown()
+        if string == "Other" {
+            self.delegate?.
+            self.becomeFirstResponder()
+            self.dismissDropDown()
+        } else {
+            self.text = string// for: .normal)
+            self.dismissDropDown()
+        }
     }
     
     var dropView = dropDownView()
+    @IBInspectable var height = NSLayoutConstraint()
     
-    var height = NSLayoutConstraint()
-    
+    func setupDropView(){
+        dropView = dropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
+        dropView.delegate = self
+        dropView.translatesAutoresizingMaskIntoConstraints = false
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        //self.backgroundColor = UIColor.darkGray
-        
-        dropView = dropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
+        /*dropView = dropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
         dropView.delegate = self
-        dropView.translatesAutoresizingMaskIntoConstraints = false
+        dropView.translatesAutoresizingMaskIntoConstraints = false*/
+        setupDropView()
     }
     
     override func didMoveToSuperview() {
@@ -124,8 +158,12 @@ class dropDownBtn: UITextField, dropDownProtocol {
         }, completion: nil)
     }
     
+
+    
     required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
+        setupDropView()
+        //fatalError("init(coder:) has not been implemented")
     }
 }
 
@@ -160,7 +198,7 @@ class dropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
         tableView.layer.borderWidth = 0.5
         tableView.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
         
-        /*tableView.layer.shadowOffset = CGSize(width:2, height:2)
+        /*tableView.layer.shadowOffset = CGSize(width:4, height:4)
         tableView.layer.shadowColor = UIColor.black.cgColor
         tableView.layer.shadowRadius = 4
         tableView.layer.shadowOpacity = 0.25

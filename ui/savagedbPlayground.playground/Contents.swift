@@ -18,4 +18,9 @@ print(formatter.string(from: now))
 
 
 let textField = UITextField()
-textField.CG
+let bounds = textField.layer.bounds
+bounds.height
+
+/*
+ block
+ */
