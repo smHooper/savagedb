@@ -20,7 +20,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
     // This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var session: Session?
-    var employees = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy"]
+    var employees = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -86,10 +86,30 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         
         //Set the drop down menu's options
         observerTextField.dropView.dropDownOptions = menuOptions//
+        observerTextField.delegate = self
     }
     
     //MARK: UITextFieldDelegate
     //####################################################################################################################
+    // Indicate what to do when the text field is tapped
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        if textField is DropDownTextField {
+            let field = textField as! DropDownTextField
+            guard let text = textField.text else {
+                print("Guard failed")
+                return
+            }
+            // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+            if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
+                print("resigning")
+                textField.resignFirstResponder()
+            } else {
+                print("not resigning")
+            }
+        }
+        //Otherwise, do stuff as usual
+    }
+    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         // Hide the keyboard
         // Try to create a session instance after the keyboard is dismissed

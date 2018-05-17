@@ -13,9 +13,27 @@ protocol dropDownProtocol {
 
 @IBDesignable class DropDownTextField: UITextField, dropDownProtocol {
     
+    // Keep track of whether the dropDownMenu was pressed. This helps suppress the keyboard the first time the text field is pressed
+    var dropDownWasPressed = false
+    
     func dropDownPressed(string: String) {
-        self.text = string// for: .normal)
-        self.dismissDropDown()
+        if (self.dropView.dropDownOptions.contains(string) && string != "Other"){
+            print("Selection not 'other'")
+            self.resignFirstResponder()
+            self.text = string// for: .normal)
+            self.dismissDropDown()
+        }
+        else {
+            //self.delegate?.textFieldDidBeginEditing!(self)
+            //self.delegate?.
+            print("text == 'Other'")
+            self.text?.removeAll()
+            self.becomeFirstResponder()
+            self.dismissDropDown()
+        }
+        
+        // Indicate that the dropdown button has been pressed so the keyboard will appear when "Other" is selected
+        dropDownWasPressed = true
     }
     
     var dropView = DropDownView()
