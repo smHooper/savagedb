@@ -30,7 +30,7 @@
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter observer's name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="uh2-RN-UJk">
+                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="14" translatesAutoresizingMaskIntoConstraints="NO" id="Y4p-TD-QGa" customClass="DropDownTextField" customModule="savageChecker" customModuleProvider="target">
                                                 <rect key="frame" x="0.0" y="28.5" width="359" height="30"/>
                                                 <nil key="textColor"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
@@ -38,7 +38,8 @@
                                             </textField>
                                         </subviews>
                                         <constraints>
-                                            <constraint firstAttribute="trailing" secondItem="uh2-RN-UJk" secondAttribute="trailing" id="mAJ-Wr-ZYR"/>
+                                            <constraint firstAttribute="trailing" secondItem="Y4p-TD-QGa" secondAttribute="trailing" id="hN6-wG-5FY"/>
+                                            <constraint firstItem="Y4p-TD-QGa" firstAttribute="leading" secondItem="iQu-XA-TbG" secondAttribute="leading" id="q7U-tq-vCS"/>
                                         </constraints>
                                     </stackView>
                                     <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="3Ga-HD-VdB">
@@ -50,7 +51,7 @@
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter the date" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="WSW-t2-lto">
+                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter the date" textAlignment="natural" minimumFontSize="10" translatesAutoresizingMaskIntoConstraints="NO" id="WSW-t2-lto">
                                                 <rect key="frame" x="0.0" y="28.5" width="359" height="30"/>
                                                 <nil key="textColor"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
@@ -128,7 +129,7 @@
                     <connections>
                         <outlet property="closeTimeTextField" destination="OlI-ez-eN6" id="akC-lp-0NY"/>
                         <outlet property="dateTextField" destination="WSW-t2-lto" id="UdN-qm-GfK"/>
-                        <outlet property="observerTextField" destination="uh2-RN-UJk" id="lD5-Jc-q8D"/>
+                        <outlet property="observerTextField" destination="Y4p-TD-QGa" id="7e4-Ae-3mv"/>
                         <outlet property="openTimeTextField" destination="fZp-da-jTa" id="Sbw-xR-2oQ"/>
                         <outlet property="viewVehiclesButton" destination="2Kb-vx-EHR" id="NjH-AI-rhA"/>
                     </connections>

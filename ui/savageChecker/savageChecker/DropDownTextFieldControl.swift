@@ -7,66 +7,33 @@
 //
 import UIKit
 
-
-@IBDesignable class DropDownTextFieldControl: UIViewController {
-    
-    var textField = DropDownTextField()
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        // Do any additional setup after loading the view, typically from a nib.
-        
-        
-        //Configure the button
-        textField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-        //set placeholder text textField.set("Colors", for: .normal)
-        textField.translatesAutoresizingMaskIntoConstraints = false
-        
-        //Add Button to the View Controller
-        //self.view.addSubview(button)
-        
-        //button Constraints
-        //textField.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        //button.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        //button.widthAnchor.constraint//(equalToConstant: 100).isActive = true
-        //button.heightAnchor.constraint(equalToConstant: 40).isActive = true
-        
-        //Set the drop down menu's options
-        textField.dropView.dropDownOptions = ["Blue", "Green", "Magenta", "White", "Black", "Pink"]
-        
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-}
-
-
 protocol dropDownProtocol {
     func dropDownPressed(string : String)
 }
 
-class DropDownTextField: UITextField, dropDownProtocol {
+@IBDesignable class DropDownTextField: UITextField, dropDownProtocol {
     
     func dropDownPressed(string: String) {
-        self.text = string
+        self.text = string// for: .normal)
         self.dismissDropDown()
     }
     
-    // Properties
-    var dropView = CustomDropDownView()
+    var dropView = DropDownView()
     @IBInspectable var height = NSLayoutConstraint()
     
+    func setupDropView(){
+        dropView = DropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
+        dropView.delegate = self
+        dropView.translatesAutoresizingMaskIntoConstraints = false
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        //self.backgroundColor = UIColor.darkGray
-        
-        dropView = CustomDropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
-        dropView.delegate = self
-        dropView.translatesAutoresizingMaskIntoConstraints = false
+        /*dropView = dropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
+         dropView.delegate = self
+         dropView.translatesAutoresizingMaskIntoConstraints = false*/
+        setupDropView()
     }
     
     override func didMoveToSuperview() {
@@ -91,7 +58,6 @@ class DropDownTextField: UITextField, dropDownProtocol {
             } else {
                 self.height.constant = self.dropView.tableView.contentSize.height
             }
-            
             
             NSLayoutConstraint.activate([self.height])
             
@@ -126,25 +92,21 @@ class DropDownTextField: UITextField, dropDownProtocol {
     }
     
     required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
+        setupDropView()
+        //fatalError("init(coder:) has not been implemented")
     }
 }
 
-
-class CustomDropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
+class DropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
     
     //MARK: Properties
     var dropDownOptions = [String]()
     var tableView = UITableView()
     var delegate : dropDownProtocol!
-    var textField: UITextField!
     
     override init(frame: CGRect) {
         super.init(frame: frame)
-        
-        //tableView.backgroundColor = UIColor.darkGray
-        //self.backgroundColor = UIColor.darkGray
-        
         
         tableView.delegate = self
         tableView.dataSource = self
@@ -153,10 +115,20 @@ class CustomDropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
         
         self.addSubview(tableView)
         
-        tableView.leftAnchor.constraint(equalTo: textField.leftAnchor).isActive = true
-        tableView.rightAnchor.constraint(equalTo: textField.rightAnchor).isActive = true
-        tableView.topAnchor.constraint(equalTo: textField.topAnchor).isActive = true
-        tableView.bottomAnchor.constraint(equalTo: textField.bottomAnchor).isActive = true
+        tableView.leftAnchor.constraint(equalTo: self.leftAnchor).isActive = true
+        tableView.rightAnchor.constraint(equalTo: self.rightAnchor).isActive = true
+        tableView.topAnchor.constraint(equalTo: self.topAnchor).isActive = true
+        tableView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
+        
+        tableView.layer.borderWidth = 0.5
+        tableView.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
+        
+        /*tableView.layer.shadowOffset = CGSize(width:4, height:4)
+         tableView.layer.shadowColor = UIColor.black.cgColor
+         tableView.layer.shadowRadius = 4
+         tableView.layer.shadowOpacity = 0.25
+         tableView.layer.masksToBounds = false
+         tableView.clipsToBounds = false*/
         
     }
     
@@ -176,7 +148,11 @@ class CustomDropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
         let cell = UITableViewCell()
         
         cell.textLabel?.text = dropDownOptions[indexPath.row]
-        cell.backgroundColor = UIColor.darkGray
+        cell.backgroundColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+        cell.layer.borderWidth = 0.25
+        cell.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
+        cell.textLabel?.textAlignment = .center
+        //cell.textLabel?.font = UIFont(name:"Helvetica", size:14)
         return cell
     }
     

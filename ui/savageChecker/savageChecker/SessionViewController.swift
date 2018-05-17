@@ -12,18 +12,21 @@ import os.log
 class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
-    @IBOutlet weak var observerTextField: UITextField!
+    //@IBOutlet weak var observerTextField: UITextField!
+    @IBOutlet weak var observerTextField: DropDownTextField!
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
     @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
     // This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var session: Session?
+    var employees = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        observerTextField.delegate = self
+        //observerTextField.delegate = self
+        addObserverTextField(menuOptions: self.employees)
         dateTextField.delegate = self
         openTimeTextField.delegate = self
         closeTimeTextField.delegate = self
@@ -56,6 +59,33 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
+    }
+    
+    //MARK: CustomDropDownTextField
+    func addObserverTextField(menuOptions: [String]){
+        
+        //Get the bounds from the storyboard's text field
+        let textFieldBounds = observerTextField.layer.bounds
+        let centerX = observerTextField.centerXAnchor
+        let centerY = observerTextField.centerYAnchor
+        
+        //Configure the text field
+        observerTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+        //observerTextField.minimumFontSize = 10
+        observerTextField.translatesAutoresizingMaskIntoConstraints = false
+        
+        //Add Button to the View Controller
+        self.view.addSubview(observerTextField)
+        
+        //button Constraints
+        observerTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        observerTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
+        observerTextField.widthAnchor.constraint(equalToConstant: textFieldBounds.width).isActive = true
+        observerTextField.heightAnchor.constraint(equalToConstant: textFieldBounds.height).isActive = true//*/
+        observerTextField.placeholder = "Select observer name"
+        
+        //Set the drop down menu's options
+        observerTextField.dropView.dropDownOptions = menuOptions//
     }
     
     //MARK: UITextFieldDelegate

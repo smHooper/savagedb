@@ -96,6 +96,14 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         datePickerView.datePickerMode = UIDatePickerMode.date
         sender.inputView = datePickerView
         datePickerView.addTarget(self, action: #selector(handleDatePicker), for: UIControlEvents.valueChanged)
+        // Set the default date to today
+        if (timeTextField.text?.isEmpty)! {
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            formatter.timeStyle = .none
+            dateTextField.text = formatter.string(from: now)
+        }
     }
     
     @objc func handleDatePicker(sender: UIDatePicker) {
@@ -128,6 +136,14 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         timePickerView.datePickerMode = UIDatePickerMode.time
         sender.inputView = timePickerView
         timePickerView.addTarget(self, action: #selector(handleTimePicker), for: UIControlEvents.valueChanged)
+        // Set the default time to now
+        if (timeTextField.text?.isEmpty)! {
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.dateStyle = .none
+            formatter.timeStyle = .short
+            timeTextField.text = formatter.string(from: now)
+        }
     }
     
     @objc func handleTimePicker(sender: UIDatePicker) {
