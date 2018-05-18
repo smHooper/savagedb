@@ -12,7 +12,6 @@ import os.log
 class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
-    //@IBOutlet weak var observerTextField: UITextField!
     @IBOutlet weak var observerTextField: DropDownTextField!
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var openTimeTextField: UITextField!
@@ -31,14 +30,22 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         openTimeTextField.delegate = self
         closeTimeTextField.delegate = self
         
-        // The session has already started
-        if let session = session {
+        // The user is opening the app again after closing it
+        if let session = loadSession() {
             observerTextField.text = session.observerName
             dateTextField.text = session.date
             openTimeTextField.text = session.openTime
             closeTimeTextField.text = session.closeTime
             viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
-            
+        }
+        // The user is returning to the session scene from another scene
+        else if let session = session {
+            observerTextField.text = session.observerName
+            dateTextField.text = session.date
+            openTimeTextField.text = session.openTime
+            closeTimeTextField.text = session.closeTime
+            viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+        // The user has opened the app for the first time since data were cleared
         }  else {
             // date defaults to today
             let now = Date()
@@ -259,6 +266,8 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             return
         }
         destinationController.session = self.session
+        //save the session before leaving
+        saveSession()
     }
     
     
@@ -275,7 +284,22 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             print("Session updated")
             viewVehiclesButton.isEnabled = true
         }
-        
+    }
+    
+    private func saveSession() {
+        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(session, toFile: Session.ArchiveURL.path)
+        if isSuccessfulSave {
+            os_log("Session successfully saved.", log: OSLog.default, type: .debug)
+        } else {
+            os_log("Failed to save session...", log: OSLog.default, type: .error)
+        }
+    }
+
+    private func loadSession() -> Session? {
+        os_log("Trying to load session", log: OSLog.default, type: .debug)
+        let thisSession = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+        print(thisSession?.observerName)
+        return thisSession
     }
     
     //

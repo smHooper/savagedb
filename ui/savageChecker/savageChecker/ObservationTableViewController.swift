@@ -20,15 +20,18 @@ class ObservationTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        //self.session = Session(observerName: "Hooper", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2018")
-        // Change this method here so sample obs are only loaded the first time
-        loadSampleObservations()
-        
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
 
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem
+        self.navigationItem.rightBarButtonItem = self.editButtonItem
+        
+        
+        if let savedObservations = loadObservations(){//savedObservations.count != 0 {
+            observations += savedObservations
+        } else {
+            // Change this method here so sample obs are only loaded the first time
+            loadSampleObservations()
+        }
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -71,6 +74,7 @@ class ObservationTableViewController: UITableViewController {
     @IBAction func unwindToObservationList(sender: UIStoryboardSegue) {
         if let sourceViewController = sender.source as? ObservationViewController, let observation = sourceViewController.observation{
             if let selectedIndexPath = tableView.indexPathForSelectedRow {
+                // Update an existing observation
                 observations[selectedIndexPath.row] = observation
                 tableView.reloadRows(at: [selectedIndexPath], with: .none)
             }
@@ -80,6 +84,8 @@ class ObservationTableViewController: UITableViewController {
                 observations.append(observation)
                 tableView.insertRows(at: [newIndexPath], with: .automatic)
             }
+            // Save observations
+            saveObservations()
         }
     }
     
@@ -102,17 +108,17 @@ class ObservationTableViewController: UITableViewController {
     }
     */
 
-    /*
     // Override to support editing the table view.
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             // Delete the row from the data source
+            observations.remove(at: indexPath.row)
+            saveObservations()
             tableView.deleteRows(at: [indexPath], with: .fade)
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }    
     }
-    */
 
     /*
     // Override to support rearranging the table view.
@@ -160,7 +166,6 @@ class ObservationTableViewController: UITableViewController {
     
     
     //MARK: Private Methods
-    
     private func loadSampleObservations() {
         let session = self.session!//Session(observerName: "Joe", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2017")
         print(session.date)
@@ -172,6 +177,20 @@ class ObservationTableViewController: UITableViewController {
         }
         
         observations += [obs1, obs2]
+    }
+    
+    private func saveObservations() {
+        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(observations, toFile: Observation.ArchiveURL.path)
+        
+        if isSuccessfulSave {
+            os_log("Observations successfully saved.", log: OSLog.default, type: .debug)
+        } else {
+            os_log("Failed to save observations...", log: OSLog.default, type: .error)
+        }
+    }
+    
+    private func loadObservations() -> [Observation]?{
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Observation.ArchiveURL.path) as? [Observation]
     }
 
 }
