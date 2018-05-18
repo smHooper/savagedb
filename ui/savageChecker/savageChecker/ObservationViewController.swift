@@ -51,7 +51,25 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
 
     
     // MARK: - Navigation
-    // Configure view controller before it's presented
+    //#######################################################################
+    @IBAction func cancel(_ sender: UIBarButtonItem) {
+        // Depending on style of presentation (modal or push presentation), this view controller needs to be dismissed in two different ways
+        let isAddingObservation = presentingViewController is UINavigationController
+        
+        if isAddingObservation {
+            dismiss(animated: true, completion: nil)
+        }
+        else if let owningNavigationController = navigationController {
+            owningNavigationController.popViewController(animated: true)
+            
+        }
+        else {
+            fatalError("The ObservationViewController is not inside a navigation controller")
+        }
+    }
+    
+    
+    // Configure tableview controller before it's presented
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         super.prepare(for: segue, sender: sender)
         

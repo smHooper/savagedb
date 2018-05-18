@@ -186,6 +186,7 @@
                                     <outlet property="destinationLabel" destination="D1d-KA-UWF" id="NpP-xr-edV"/>
                                     <outlet property="driverLabel" destination="l7W-NU-53q" id="4Yf-8p-GLI"/>
                                     <outlet property="iconImage" destination="FTL-cZ-jfc" id="XHl-Mv-CwU"/>
+                                    <segue destination="0Yy-lz-LCs" kind="show" identifier="showObservationDetail" id="DZp-5g-GNw"/>
                                 </connections>
                             </tableViewCell>
                         </prototypes>
@@ -344,7 +345,11 @@
                         <viewLayoutGuide key="safeArea" id="PeQ-c2-msk"/>
                     </view>
                     <navigationItem key="navigationItem" title="New Vehicle" id="MHt-XJ-koQ">
-                        <barButtonItem key="leftBarButtonItem" title="Cancel" id="KfC-aq-Ozz"/>
+                        <barButtonItem key="leftBarButtonItem" title="Cancel" id="KfC-aq-Ozz">
+                            <connections>
+                                <action selector="cancel:" destination="0Yy-lz-LCs" id="8SU-HZ-KmU"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" title="Save" id="KLy-NQ-TR0">
                             <connections>
                                 <segue destination="fpf-cH-9SK" kind="unwind" unwindAction="unwindToObservationListWithSender:" id="djM-z0-LXi"/>
@@ -381,7 +386,7 @@
                 </navigationController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="y7S-vw-ahX" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="3956" y="33"/>
+            <point key="canvasLocation" x="3942" y="453"/>
         </scene>
         <!--Navigation Controller-->
         <scene sceneID="ehn-g6-7AX">
@@ -405,4 +410,7 @@
     <resources>
         <image name="shuttleBusImg" width="132" height="132"/>
     </resources>
+    <inferredMetricsTieBreakers>
+        <segue reference="DZp-5g-GNw"/>
+    </inferredMetricsTieBreakers>
 </document>

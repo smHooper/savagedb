@@ -129,7 +129,27 @@ class ObservationTableViewController: UITableViewController {
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         super.prepare(for: segue, sender: sender)
         
-        guard let button = sender as? UIBarButtonItem, button === addNewObservation else {
+        switch(segue.identifier ?? ""){
+        case "addObservation":
+            os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
+        case "showObservationDetail":
+            guard let observationViewController = segue.destination as? ObservationViewController else {
+                fatalError("Unexpected sender: \(sender)")
+            }
+            guard let selectedObservationCell = sender as? ObservationTableViewCell else {
+                fatalError("Unexpected sener: \(sender)")
+            }
+            guard let indexPath = tableView.indexPath(for: selectedObservationCell) else {
+                fatalError("The selected cell is not being displayed by the table")
+            }
+            
+            let selectedObservation = observations[indexPath.row]
+            observationViewController.observation = selectedObservation
+        default:
+            fatalError("Unexpeced Segue Identifier: \(segue.identifier)")
+        }
+        
+        /*guard let button = sender as? UIBarButtonItem, button === addNewObservation else {
             os_log("addNewObs button not pressed", log: OSLog.default, type: .debug)
             return
         }
@@ -152,7 +172,7 @@ class ObservationTableViewController: UITableViewController {
         //let dateTextField =
         print("session observer in obser table controller: \(session?.observerName ?? "unwrap failed")")
         //destinationController.observerNameTextField.text = session?.observerName
-        //destinationController.destinationTextField.text = session?.date
+        //destinationController.destinationTextField.text = session?.date*/
     }
     
     
