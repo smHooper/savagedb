@@ -129,7 +129,7 @@
                     <connections>
                         <outlet property="closeTimeTextField" destination="OlI-ez-eN6" id="akC-lp-0NY"/>
                         <outlet property="dateTextField" destination="WSW-t2-lto" id="UdN-qm-GfK"/>
-                        <outlet property="observerTextField" destination="Y4p-TD-QGa" id="7e4-Ae-3mv"/>
+                        <outlet property="observerTextField" destination="Y4p-TD-QGa" id="JwP-wK-9j0"/>
                         <outlet property="openTimeTextField" destination="fZp-da-jTa" id="Sbw-xR-2oQ"/>
                         <outlet property="viewVehiclesButton" destination="2Kb-vx-EHR" id="NjH-AI-rhA"/>
                     </connections>
@@ -230,7 +230,7 @@
                                                 <nil key="textColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Enter the observer's name" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="gpj-R2-6B7">
+                                            <textField opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="gpj-R2-6B7">
                                                 <rect key="frame" x="0.0" y="28.5" width="359" height="30"/>
                                                 <nil key="textColor"/>
                                                 <fontDescription key="fontDescription" type="system" pointSize="14"/>
@@ -323,7 +323,7 @@
                                                         <nil key="textColor"/>
                                                         <nil key="highlightedColor"/>
                                                     </label>
-                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Select the destination" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="W7u-Rl-6mJ">
+                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="W7u-Rl-6mJ" customClass="DropDownTextField" customModule="savageChecker" customModuleProvider="target">
                                                         <rect key="frame" x="0.0" y="28.5" width="359" height="30"/>
                                                         <nil key="textColor"/>
                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
@@ -358,7 +358,7 @@
                     </navigationItem>
                     <connections>
                         <outlet property="dateTextField" destination="5Ts-7B-deO" id="955-Oz-GC2"/>
-                        <outlet property="destinationTextField" destination="W7u-Rl-6mJ" id="oY2-0r-uG9"/>
+                        <outlet property="destinationTextField" destination="W7u-Rl-6mJ" id="5ct-S1-8oo"/>
                         <outlet property="driverNameTextField" destination="HtP-32-NtV" id="VXc-gG-0JN"/>
                         <outlet property="observerNameTextField" destination="gpj-R2-6B7" id="s8v-6v-3aZ"/>
                         <outlet property="saveButton" destination="KLy-NQ-TR0" id="8tn-fP-hKw"/>

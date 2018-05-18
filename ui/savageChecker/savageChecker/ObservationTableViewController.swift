@@ -22,7 +22,7 @@ class ObservationTableViewController: UITableViewController {
         super.viewDidLoad()
 
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        self.navigationItem.rightBarButtonItem = self.editButtonItem
+        //self.navigationItem.leftBarButtonItem = self.editButtonItem
         
         
         if let savedObservations = loadObservations(){//savedObservations.count != 0 {

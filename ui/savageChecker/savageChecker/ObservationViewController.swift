@@ -13,17 +13,24 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
     
-    @IBOutlet weak var observerNameTextField: UITextField!
+    @IBOutlet weak var observerNameTextField: DropDownTextField!
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var timeTextField: UITextField!
     @IBOutlet weak var driverNameTextField: UITextField!
-    @IBOutlet weak var destinationTextField: UITextField!
+    @IBOutlet weak var destinationTextField: DropDownTextField!
     @IBOutlet weak var saveButton: UIBarButtonItem!
     var observation: Observation?
+    let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
+    let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        // Configure custom delegates
+        addObserverTextField(menuOptions: self.observerOptions)
+        addDestinationTextField(menuOptions: self.destinationOptions)
+        createDatePicker()
+        createTimePicker()
         observerNameTextField.delegate = self
         dateTextField.delegate = self
         timeTextField.delegate = self
@@ -39,8 +46,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             destinationTextField.text = observation.destination
             
         }
-        createDatePicker()
-        createTimePicker()
     }
 
     override func didReceiveMemoryWarning() {
@@ -48,7 +53,84 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         // Dispose of any resources that can be recreated.
     }
     
+    //MARK: Add dropdown text fields
+    //######################################################################################################
+    func addObserverTextField(menuOptions: [String]){
+        
+        //Get the bounds from the storyboard's text field
+        let frame = observerNameTextField.frame
+        let font = observerNameTextField.font
+        let centerX = observerNameTextField.centerXAnchor
+        let centerY = observerNameTextField.centerYAnchor
+        
+        //Configure the text field
+        observerNameTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+        observerNameTextField.translatesAutoresizingMaskIntoConstraints = false
+        
+        //Add Button to the View Controller
+        self.view.addSubview(observerNameTextField)
+        
+        //button Constraints
+        //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
+        observerNameTextField.font = font
+        observerNameTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        observerNameTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
+        observerNameTextField.widthAnchor.constraint(equalToConstant: frame.width).isActive = true
+        observerNameTextField.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
+        observerNameTextField.placeholder = "Select or enter observer name"
+        
+        //Set the drop down menu's options
+        observerNameTextField.dropView.dropDownOptions = menuOptions//
+        
+        //observerNameTextField.delegate = self
+        
+        // Set up dropView constraints. If this is in DropDownTextFieldControl.swift, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
+        observerNameTextField.superview?.addSubview(observerNameTextField.dropView)
+        observerNameTextField.superview?.bringSubview(toFront: observerNameTextField.dropView)
+        observerNameTextField.dropView.topAnchor.constraint(equalTo: observerNameTextField.bottomAnchor).isActive = true
+        observerNameTextField.dropView.centerXAnchor.constraint(equalTo: observerNameTextField.centerXAnchor).isActive = true
+        observerNameTextField.dropView.widthAnchor.constraint(equalTo: observerNameTextField.widthAnchor).isActive = true
+        observerNameTextField.height = observerNameTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
+    }
 
+    func addDestinationTextField(menuOptions: [String]){
+        
+        //Get the bounds from the storyboard's text field
+        let frame = destinationTextField.frame
+        let font = destinationTextField.font
+        let centerX = destinationTextField.centerXAnchor
+        let centerY = destinationTextField.centerYAnchor
+        
+        //Configure the text field
+        destinationTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+        destinationTextField.translatesAutoresizingMaskIntoConstraints = false
+        
+        //Add Button to the View Controller
+        self.view.addSubview(destinationTextField)
+        
+        //button Constraints
+        //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
+        destinationTextField.font = font
+        destinationTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        destinationTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
+        destinationTextField.widthAnchor.constraint(equalToConstant: frame.width).isActive = true
+        destinationTextField.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
+        destinationTextField.placeholder = "Select or enter destination"
+        
+        //Set the drop down menu's options
+        destinationTextField.dropView.dropDownOptions = menuOptions//
+        
+        //destinationTextField.delegate = self
+        
+        // Set up dropView constraints. If this is in DropDownTextFieldControl.swift, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
+        destinationTextField.superview?.addSubview(destinationTextField.dropView)
+        destinationTextField.superview?.bringSubview(toFront: destinationTextField.dropView)
+        destinationTextField.dropView.topAnchor.constraint(equalTo: destinationTextField.bottomAnchor).isActive = true
+        destinationTextField.dropView.centerXAnchor.constraint(equalTo: destinationTextField.centerXAnchor).isActive = true
+        destinationTextField.dropView.widthAnchor.constraint(equalTo: destinationTextField.widthAnchor).isActive = true
+        destinationTextField.height = destinationTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
+    }
+    
     
     // MARK: - Navigation
     //#######################################################################
@@ -92,15 +174,33 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         print("Printing destination for saved obs: \(destination!)" )
         //let session = Session(observerName: observerName, givenDate: date)
         
+        // Figure out why app fails at this point sometimes
         observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!)
     }
     
 
     
-
-    
     //MARK: UITextFieldDelegate
     //####################################################################################################################
+    // Indicate what to do when the text field is tapped
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        if textField is DropDownTextField {
+            let field = textField as! DropDownTextField
+            guard let text = textField.text else {
+                print("Guard failed")
+                return
+            }
+            // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+            if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
+                print("resigning")
+                textField.resignFirstResponder()
+            } else {
+                print("not resigning")
+            }
+        }
+        //Otherwise, do stuff as usual
+    }
+    
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         // Hide the keyboard
         textField.resignFirstResponder()

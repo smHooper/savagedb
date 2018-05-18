@@ -13,19 +13,23 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
     @IBOutlet weak var observerTextField: DropDownTextField!
+    //@IBOutlet weak var templateObserverField: UITextField!
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
     @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
-    // This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
-    var session: Session?
+
+    var session: Session?// This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var employees = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        //observerTextField.delegate = self
+        // Set up delegates for text fields
         addObserverTextField(menuOptions: self.employees)
+        //observerTextField = DropDownTextField(frame: CGRect(x:0, y: 0, width:0, height:0))//give it no height or width at first
+        //observerTextField.configureTextField(templateTextField: templateObserverField, menuOptions: employees)
+        observerTextField.delegate = self
         dateTextField.delegate = self
         openTimeTextField.delegate = self
         closeTimeTextField.delegate = self
@@ -72,28 +76,38 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     func addObserverTextField(menuOptions: [String]){
         
         //Get the bounds from the storyboard's text field
-        let textFieldBounds = observerTextField.layer.bounds
+        let frame = observerTextField.frame
+        let font = observerTextField.font
         let centerX = observerTextField.centerXAnchor
         let centerY = observerTextField.centerYAnchor
         
         //Configure the text field
         observerTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-        //observerTextField.minimumFontSize = 10
         observerTextField.translatesAutoresizingMaskIntoConstraints = false
         
         //Add Button to the View Controller
         self.view.addSubview(observerTextField)
         
         //button Constraints
+        //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
+        observerTextField.font = font
         observerTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
         observerTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
-        observerTextField.widthAnchor.constraint(equalToConstant: textFieldBounds.width).isActive = true
-        observerTextField.heightAnchor.constraint(equalToConstant: textFieldBounds.height).isActive = true//*/
+        observerTextField.widthAnchor.constraint(equalToConstant: frame.width).isActive = true
+        observerTextField.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
         observerTextField.placeholder = "Select observer name"
         
         //Set the drop down menu's options
         observerTextField.dropView.dropDownOptions = menuOptions//
-        observerTextField.delegate = self
+        //observerTextField.delegate = self
+        
+        // Set up drop view constraints
+        observerTextField.superview?.addSubview(observerTextField.dropView)
+        observerTextField.superview?.bringSubview(toFront: observerTextField.dropView)
+        observerTextField.dropView.topAnchor.constraint(equalTo: observerTextField.bottomAnchor).isActive = true
+        observerTextField.dropView.centerXAnchor.constraint(equalTo: observerTextField.centerXAnchor).isActive = true
+        observerTextField.dropView.widthAnchor.constraint(equalTo: observerTextField.widthAnchor).isActive = true
+        observerTextField.height = observerTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
     }
     
     //MARK: UITextFieldDelegate
@@ -271,7 +285,6 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     }
     
     
-    
     //MARK: Private methods
     private func updateSession(){
         // Check that all text fields are filled in
@@ -296,13 +309,8 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     }
 
     private func loadSession() -> Session? {
-        os_log("Trying to load session", log: OSLog.default, type: .debug)
-        let thisSession = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
-        print(thisSession?.observerName)
-        return thisSession
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
     }
-    
-    //
 
 }
 
