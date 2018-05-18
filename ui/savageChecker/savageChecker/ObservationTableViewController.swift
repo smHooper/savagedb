@@ -21,6 +21,7 @@ class ObservationTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         //self.session = Session(observerName: "Hooper", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2018")
+        // Change this method here so sample obs are only loaded the first time
         loadSampleObservations()
         
         // Uncomment the following line to preserve selection between presentations
@@ -69,10 +70,16 @@ class ObservationTableViewController: UITableViewController {
     //MARK: Actions
     @IBAction func unwindToObservationList(sender: UIStoryboardSegue) {
         if let sourceViewController = sender.source as? ObservationViewController, let observation = sourceViewController.observation{
-            // Add new observation
-            let newIndexPath = IndexPath(row: observations.count, section: 0)
-            observations.append(observation)
-            tableView.insertRows(at: [newIndexPath], with: .automatic)
+            if let selectedIndexPath = tableView.indexPathForSelectedRow {
+                observations[selectedIndexPath.row] = observation
+                tableView.reloadRows(at: [selectedIndexPath], with: .none)
+            }
+            else {
+                // Add new observation
+                let newIndexPath = IndexPath(row: observations.count, section: 0)
+                observations.append(observation)
+                tableView.insertRows(at: [newIndexPath], with: .automatic)
+            }
         }
     }
     
@@ -134,10 +141,10 @@ class ObservationTableViewController: UITableViewController {
             os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
         case "showObservationDetail":
             guard let observationViewController = segue.destination as? ObservationViewController else {
-                fatalError("Unexpected sender: \(sender)")
+                fatalError("Unexpected sender: \(sender!)")
             }
             guard let selectedObservationCell = sender as? ObservationTableViewCell else {
-                fatalError("Unexpected sener: \(sender)")
+                fatalError("Unexpected sener: \(sender!)")
             }
             guard let indexPath = tableView.indexPath(for: selectedObservationCell) else {
                 fatalError("The selected cell is not being displayed by the table")
@@ -146,33 +153,9 @@ class ObservationTableViewController: UITableViewController {
             let selectedObservation = observations[indexPath.row]
             observationViewController.observation = selectedObservation
         default:
-            fatalError("Unexpeced Segue Identifier: \(segue.identifier)")
+            fatalError("Unexpeced Segue Identifier: \(segue.identifier!)")
         }
         
-        /*guard let button = sender as? UIBarButtonItem, button === addNewObservation else {
-            os_log("addNewObs button not pressed", log: OSLog.default, type: .debug)
-            return
-        }
-        //print("Segue destination for add button: \(segue.destination)")
-        /*guard let destinationController = segue.destination as? ObservationViewController else {
-            os_log("The destination controller isn't an ObservationViewController", log: OSLog.default, type: .debug)
-            return
-        }*/
-        
-        
-        let controllers = segue.destination.navigationController?.topViewController
-        print("Type of destination cotroller after add button pressed: \(type(of:controllers))")
-        /*guard let destinationController = segue.destination as? ObservationViewController, segue.identifier == "addObservation" else {
-            os_log("The destination controller isn't an ObservationViewController", log: OSLog.default, type: .debug)
-            return
-        }*/
-        
-        // Set default text field values
-        
-        //let dateTextField =
-        print("session observer in obser table controller: \(session?.observerName ?? "unwrap failed")")
-        //destinationController.observerNameTextField.text = session?.observerName
-        //destinationController.destinationTextField.text = session?.date*/
     }
     
     
