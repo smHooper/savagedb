@@ -13,22 +13,23 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
     @IBOutlet weak var observerTextField: DropDownTextField!
-    //@IBOutlet weak var templateObserverField: UITextField!
+    @IBOutlet weak var templateObserverField: UITextField!
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
     @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
 
     var session: Session?// This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
-    var employees = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
+    var observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
 
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Set up delegates for text fields
-        addObserverTextField(menuOptions: self.employees)
-        //observerTextField = DropDownTextField(frame: CGRect(x:0, y: 0, width:0, height:0))//give it no height or width at first
-        //observerTextField.configureTextField(templateTextField: templateObserverField, menuOptions: employees)
+        //observerTextField = DropDownTextField(frame: templateObserverField.frame)//give it no height or width at first
+        //observerTextField.configureTextField(menuOptions: employees, templateTextField: templateObserverField, placeholderText: "Select observer name")
+        //self.view.addSubview(observerTextField)
+        addObserverTextField(menuOptions: observerOptions)
         observerTextField.delegate = self
         dateTextField.delegate = self
         openTimeTextField.delegate = self
@@ -49,8 +50,9 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             openTimeTextField.text = session.openTime
             closeTimeTextField.text = session.closeTime
             viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+        }
         // The user has opened the app for the first time since data were cleared
-        }  else {
+        else {
             // date defaults to today
             let now = Date()
             let formatter = DateFormatter()
@@ -74,15 +76,14 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: CustomDropDownTextField
     func addObserverTextField(menuOptions: [String]){
-        
         //Get the bounds from the storyboard's text field
-        let frame = observerTextField.frame
+        let frame = self.view.frame
         let font = observerTextField.font
         let centerX = observerTextField.centerXAnchor
-        let centerY = observerTextField.centerYAnchor
+        let centerY = templateObserverField.centerYAnchor
         
         //Configure the text field
-        observerTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
+        observerTextField = DropDownTextField.init(frame: frame)
         observerTextField.translatesAutoresizingMaskIntoConstraints = false
         
         //Add Button to the View Controller
@@ -91,10 +92,10 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         //button Constraints
         //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
         observerTextField.font = font
-        observerTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        observerTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
         observerTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
-        observerTextField.widthAnchor.constraint(equalToConstant: frame.width).isActive = true
-        observerTextField.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
+        observerTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
+        observerTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//*/
         observerTextField.placeholder = "Select observer name"
         
         //Set the drop down menu's options

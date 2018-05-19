@@ -60,8 +60,7 @@ protocol dropDownProtocol {
         height = dropView.heightAnchor.constraint(equalToConstant: 0)
     }*/
     
-    
-    private func configureTextField(menuOptions: [String], templateTextField: Any?, placeholderText: String = ""){
+    /*func configureTextField(menuOptions: [String], templateTextField: Any?, placeholderText: String = ""){
         guard let template = templateTextField as? UITextField else {
             fatalError("Failed to convert templateTextField to UITextField in convenience initializer: \(templateTextField)")
         }
@@ -91,8 +90,9 @@ protocol dropDownProtocol {
         self.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
         self.placeholder = placeholderText
         //Set the drop down menu's options
-        self.dropView.dropDownOptions = menuOptions//
+        self.dropView.dropDownOptions = menuOptions
     }
+    */*/
     
     
     var isOpen = false

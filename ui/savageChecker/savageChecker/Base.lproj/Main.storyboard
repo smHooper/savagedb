@@ -131,6 +131,7 @@
                         <outlet property="dateTextField" destination="WSW-t2-lto" id="UdN-qm-GfK"/>
                         <outlet property="observerTextField" destination="Y4p-TD-QGa" id="JwP-wK-9j0"/>
                         <outlet property="openTimeTextField" destination="fZp-da-jTa" id="Sbw-xR-2oQ"/>
+                        <outlet property="templateObserverField" destination="Y4p-TD-QGa" id="MF9-8R-tKr"/>
                         <outlet property="viewVehiclesButton" destination="2Kb-vx-EHR" id="NjH-AI-rhA"/>
                     </connections>
                 </viewController>
@@ -159,21 +160,21 @@
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                         </imageView>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Destination" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="D1d-KA-UWF">
-                                            <rect key="frame" x="98" y="29" width="277" height="21"/>
+                                            <rect key="frame" x="98" y="35" width="277" height="21"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Datetime" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="MqJ-l1-G5I">
-                                            <rect key="frame" x="98" y="58" width="277" height="21"/>
+                                            <rect key="frame" x="98" y="63" width="277" height="21"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                             <nil key="textColor"/>
                                             <nil key="highlightedColor"/>
                                         </label>
                                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" text="Driver" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="l7W-NU-53q">
-                                            <rect key="frame" x="98" y="0.0" width="277" height="21"/>
+                                            <rect key="frame" x="98" y="0.0" width="277" height="32"/>
                                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="24"/>
                                             <nil key="textColor"/>
@@ -208,7 +209,7 @@
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="yp5-Ye-2cc" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
-            <point key="canvasLocation" x="2882" y="33"/>
+            <point key="canvasLocation" x="2880.8000000000002" y="32.833583208395808"/>
         </scene>
         <!--New Vehicle-->
         <scene sceneID="SHp-h4-0YL">
@@ -362,6 +363,8 @@
                         <outlet property="driverNameTextField" destination="HtP-32-NtV" id="VXc-gG-0JN"/>
                         <outlet property="observerNameTextField" destination="gpj-R2-6B7" id="s8v-6v-3aZ"/>
                         <outlet property="saveButton" destination="KLy-NQ-TR0" id="8tn-fP-hKw"/>
+                        <outlet property="templateDestinationField" destination="W7u-Rl-6mJ" id="0dD-gz-EYn"/>
+                        <outlet property="templateObserverField" destination="gpj-R2-6B7" id="yvu-hJ-ac2"/>
                         <outlet property="timeTextField" destination="4g8-oZ-Bei" id="Nj4-gx-ZP4"/>
                     </connections>
                 </viewController>

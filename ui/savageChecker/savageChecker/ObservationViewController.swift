@@ -19,6 +19,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var driverNameTextField: UITextField!
     @IBOutlet weak var destinationTextField: DropDownTextField!
     @IBOutlet weak var saveButton: UIBarButtonItem!
+    @IBOutlet weak var templateObserverField: UITextField!
+    @IBOutlet weak var templateDestinationField: DropDownTextField!
     var observation: Observation?
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
@@ -58,7 +60,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     func addObserverTextField(menuOptions: [String]){
         
         //Get the bounds from the storyboard's text field
-        let frame = observerNameTextField.frame
+        let frame = self.view.frame
         let font = observerNameTextField.font
         let centerX = observerNameTextField.centerXAnchor
         let centerY = observerNameTextField.centerYAnchor
@@ -72,17 +74,18 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         
         //button Constraints
         //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
-        observerNameTextField.font = font
-        observerNameTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        
+        observerNameTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
         observerNameTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
-        observerNameTextField.widthAnchor.constraint(equalToConstant: frame.width).isActive = true
-        observerNameTextField.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
+        observerNameTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
+        observerNameTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//*/
+        
+        // Configure text
+        observerNameTextField.font = font
         observerNameTextField.placeholder = "Select or enter observer name"
         
         //Set the drop down menu's options
         observerNameTextField.dropView.dropDownOptions = menuOptions//
-        
-        //observerNameTextField.delegate = self
         
         // Set up dropView constraints. If this is in DropDownTextFieldControl.swift, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
         observerNameTextField.superview?.addSubview(observerNameTextField.dropView)
@@ -96,7 +99,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     func addDestinationTextField(menuOptions: [String]){
         
         //Get the bounds from the storyboard's text field
-        let frame = destinationTextField.frame
+        let frame = self.view.frame
         let font = destinationTextField.font
         let centerX = destinationTextField.centerXAnchor
         let centerY = destinationTextField.centerYAnchor
@@ -110,11 +113,13 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         
         //button Constraints
         //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
-        destinationTextField.font = font
-        destinationTextField.centerXAnchor.constraint(equalTo: centerX).isActive = true
+        destinationTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
         destinationTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
-        destinationTextField.widthAnchor.constraint(equalToConstant: frame.width).isActive = true
-        destinationTextField.heightAnchor.constraint(equalToConstant: frame.height).isActive = true//*/
+        destinationTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
+        destinationTextField.heightAnchor.constraint(equalToConstant: templateDestinationField.frame.size.height).isActive = true//*/
+        
+        // Configure text
+        destinationTextField.font = font
         destinationTextField.placeholder = "Select or enter destination"
         
         //Set the drop down menu's options
