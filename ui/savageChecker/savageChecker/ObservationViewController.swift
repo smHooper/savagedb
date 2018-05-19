@@ -179,7 +179,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         print("Printing destination for saved obs: \(destination!)" )
         //let session = Session(observerName: observerName, givenDate: date)
         
-        // Figure out why app fails at this point sometimes
+        // Fails becuase session observerName is nil. Not sure why
         observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!)
     }
     
@@ -293,4 +293,19 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @objc func timeDonePressed(sender: UIBarButtonItem) {
         timeTextField.resignFirstResponder()
     }
+    
+    //MARK: Private methods
+    /*private func updateSession(){
+        // Check that all text fields are filled in
+        let observerName = observerNameTextField.text ?? ""
+        let date = dateTextField.text ?? ""
+        let time = timeTextField.text ?? ""
+        let driverName = driverNameTextField.text ?? ""
+        let destination = destinationTextField.text ?? ""
+        if !observerName.isEmpty && !date.isEmpty && !closeTime.isEmpty{
+            self.session = Session(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+            print("Session updated")
+            viewVehiclesButton.isEnabled = true
+        }
+    }*/
 }
