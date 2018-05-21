@@ -14,7 +14,7 @@ class ObservationTableViewController: UITableViewController {
     //MARK: Properties
     var observations = [Observation]()
     var session: Session?
-    var sessionController: SessionViewController?
+    //var sessionController: SessionViewController?
     @IBOutlet weak var addNewObservation: UIBarButtonItem!
     
     
@@ -24,6 +24,9 @@ class ObservationTableViewController: UITableViewController {
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         //self.navigationItem.leftBarButtonItem = self.editButtonItem
         
+        // Load the session
+        self.session = loadSession()
+        print("Session observer from ObsTableView.veiwDidLoad(): \(session?.observerName)")
         
         if let savedObservations = loadObservations(){//savedObservations.count != 0 {
             observations += savedObservations
@@ -143,11 +146,23 @@ class ObservationTableViewController: UITableViewController {
         super.prepare(for: segue, sender: sender)
         
         switch(segue.identifier ?? ""){
+        
         case "addObservation":
+            guard let observationViewController = segue.destination.childViewControllers.first! as? ObservationViewController else {
+                fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
+            }
+            
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            let time = formatter.string(from: now)
+            observationViewController.observation = Observation(session: session!, time: time, driverName: "", destination: "")
             os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
+        
         case "showObservationDetail":
             guard let observationViewController = segue.destination as? ObservationViewController else {
-                fatalError("Unexpected sender: \(sender!)")
+                fatalError("Unexpected sender: \(segue.destination)")
             }
             guard let selectedObservationCell = sender as? ObservationTableViewCell else {
                 fatalError("Unexpected sener: \(sender!)")
@@ -191,6 +206,10 @@ class ObservationTableViewController: UITableViewController {
     
     private func loadObservations() -> [Observation]?{
         return NSKeyedUnarchiver.unarchiveObject(withFile: Observation.ArchiveURL.path) as? [Observation]
+    }
+    
+    private func loadSession() -> Session? {
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
     }
 
 }

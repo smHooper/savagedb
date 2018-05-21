@@ -22,6 +22,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var templateObserverField: UITextField!
     @IBOutlet weak var templateDestinationField: DropDownTextField!
     var observation: Observation?
+    var session: Session?
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
     
@@ -46,7 +47,15 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             timeTextField.text = observation.time
             driverNameTextField.text = observation.driverName
             destinationTextField.text = observation.destination
+        }
+        // This is a new observation. Try to load the session from disk and fill in text fields
+        else {
+            // This shouldn't fail because the session should have been saved at the Session scene.
+            self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+            //observerNameTextField.text = self.session?.observerName
+            //dateTextField.text = self.session?.date
             
+            //timeTextField.text =
         }
     }
 
@@ -165,11 +174,11 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             return
         }
         
-        guard let destinationController = segue.destination as? ObservationTableViewController else {
+        /*guard let destinationController = segue.destination as? ObservationTableViewController else {
             os_log("The destination controller isn't an ObservationTableViewController", log: OSLog.default, type: .debug)
             return
-        }
-        let session = destinationController.session
+        }*/
+        //let session = destinationController.session
         print("session observer: \(session?.observerName ?? "")")
         //observerNameTextField.text = session?.observerName
         //dateTextField.text = session?.date
@@ -295,17 +304,17 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     }
     
     //MARK: Private methods
-    /*private func updateSession(){
+    private func updateObservation(){
         // Check that all text fields are filled in
         let observerName = observerNameTextField.text ?? ""
         let date = dateTextField.text ?? ""
         let time = timeTextField.text ?? ""
         let driverName = driverNameTextField.text ?? ""
         let destination = destinationTextField.text ?? ""
-        if !observerName.isEmpty && !date.isEmpty && !closeTime.isEmpty{
-            self.session = Session(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+        if !observerName.isEmpty && !date.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty {
+            //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             print("Session updated")
-            viewVehiclesButton.isEnabled = true
+            saveButton.isEnabled = true
         }
-    }*/
+    }
 }

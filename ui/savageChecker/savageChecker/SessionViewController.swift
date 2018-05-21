@@ -109,7 +109,12 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         observerTextField.dropView.centerXAnchor.constraint(equalTo: observerTextField.centerXAnchor).isActive = true
         observerTextField.dropView.widthAnchor.constraint(equalTo: observerTextField.widthAnchor).isActive = true
         observerTextField.height = observerTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
+        
+        // Set a listener to see if the text field changed
+        //observerTextField.addTarget(self, action: #selector(SessionViewController.observerTextFieldDidChange), for: UIControlEvents.)//editingChanged)
+        //observerTextField.dropView.addTarget(self, action: #selector(SessionViewController.observerTextFieldDidChange), for: UIControlEvents.editingChanged)
     }
+    
     
     //MARK: UITextFieldDelegate
     //####################################################################################################################
@@ -139,6 +144,12 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         textField.resignFirstResponder()
         return true
     }
+    
+    @objc func observerTextFieldDidChange(){
+        print("Value changed")
+        updateSession()
+    }
+    
     
     // MARK: Fill datetime fields
     // #####################################################################################################################
@@ -280,9 +291,10 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             os_log("The destination controller isn't an ObservationTableViewController", log: OSLog.default, type: .debug)
             return
         }
+        updateSession()
         destinationController.session = self.session
         //save the session before leaving
-        saveSession()
+        //saveSession()
     }
     
     
@@ -297,6 +309,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             self.session = Session(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             print("Session updated")
             viewVehiclesButton.isEnabled = true
+            saveSession()
         }
     }
     
