@@ -16,6 +16,7 @@ protocol dropDownProtocol {
     
     // Keep track of whether the dropDownMenu was pressed. This helps suppress the keyboard the first time the text field is pressed
     var dropDownWasPressed = false
+    var dropDownID: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
     
     func dropDownPressed(string: String) {
         if (self.dropView.dropDownOptions.contains(string) && string != "Other"){
@@ -23,7 +24,7 @@ protocol dropDownProtocol {
             self.resignFirstResponder()
             self.text = string// for: .normal)
             self.dismissDropDown()
-            NotificationCenter.default.post(name: Notification.Name("dropDownPressed"), object: nil)
+            NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: nil)
         }
         else {
             //self.delegate?.textFieldDidBeginEditing!(self)

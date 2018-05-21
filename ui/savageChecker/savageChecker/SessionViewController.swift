@@ -111,8 +111,8 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         observerTextField.height = observerTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
         
         // Set a listener to see if the text field changed
-        NotificationCenter.default.addObserver(self, selector: #selector(observerTextFieldDidChange), name: Notification.Name("dropDownPressed"), object: nil)
-        //observerTextField.addTarget(self, action: #selector(SessionViewController.observerTextFieldDidChange), for: UIControlEvents.)//editingChanged)
+        observerTextField.dropDownID = "observer"
+        NotificationCenter.default.addObserver(self, selector: #selector(updateSession), name: Notification.Name("dropDownPressed:observer"), object: nil)
         //observerTextField.dropView.addTarget(self, action: #selector(SessionViewController.observerTextFieldDidChange), for: UIControlEvents.editingChanged)
     }
     
@@ -144,11 +144,6 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         updateSession()
         textField.resignFirstResponder()
         return true
-    }
-    
-    @objc func observerTextFieldDidChange(){
-        print("Value changed")
-        updateSession()
     }
     
     
@@ -300,7 +295,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     
     
     //MARK: Private methods
-    private func updateSession(){
+    @objc private func updateSession(){
         // Check that all text fields are filled in
         let observerName = observerTextField.text ?? ""
         let date = dateTextField.text ?? ""

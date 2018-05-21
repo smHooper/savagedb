@@ -107,6 +107,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         observerNameTextField.dropView.centerXAnchor.constraint(equalTo: observerNameTextField.centerXAnchor).isActive = true
         observerNameTextField.dropView.widthAnchor.constraint(equalTo: observerNameTextField.widthAnchor).isActive = true
         observerNameTextField.height = observerNameTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
+        
+        // Add listener for notification from DropDownTextField.dropDownPressed()
+        observerNameTextField.dropDownID = "observer"
+        NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:observer"), object: nil)
     }
 
     func addDestinationTextField(menuOptions: [String]){
@@ -147,6 +151,9 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         destinationTextField.dropView.centerXAnchor.constraint(equalTo: destinationTextField.centerXAnchor).isActive = true
         destinationTextField.dropView.widthAnchor.constraint(equalTo: destinationTextField.widthAnchor).isActive = true
         destinationTextField.height = destinationTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
+        
+        destinationTextField.dropDownID = "destination"
+        NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:destination"), object: nil)
     }
     
     
@@ -312,7 +319,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Private methods
     //###############################################################################################
-    private func updateObservation(){
+    @objc private func updateObservation(){
         // Check that all text fields are filled in
         let observerName = observerNameTextField.text ?? ""
         let date = dateTextField.text ?? ""
