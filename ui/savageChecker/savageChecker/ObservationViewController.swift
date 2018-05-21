@@ -40,8 +40,13 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         driverNameTextField.delegate = self
         destinationTextField.delegate = self
         
+        
+        guard let observation = observation else {
+            fatalError("No valid observation passed from TableViewController")
+        }
         // The observation already exists and is open for viewing/editing
-        if let observation = observation {
+        if !observation.driverName.isEmpty {
+            print("loaded observation")
             observerNameTextField.text = observation.observerName
             dateTextField.text = observation.date
             timeTextField.text = observation.time
@@ -51,11 +56,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         // This is a new observation. Try to load the session from disk and fill in text fields
         else {
             // This shouldn't fail because the session should have been saved at the Session scene.
-            self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
-            //observerNameTextField.text = self.session?.observerName
-            //dateTextField.text = self.session?.date
-            
-            //timeTextField.text =
+             self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+             observerNameTextField.text = session?.observerName
+             dateTextField.text = session?.date
+             saveButton.isEnabled = false
         }
     }
 
@@ -243,6 +247,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .none
         dateTextField.text = dateFormatter.string(from: sender.date)
+        updateObservation()
     }
     // Make a tool bar for the date picker with an ok button and a done button
     func createDatePicker(){//textField: UITextField) {
@@ -283,6 +288,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         timeFormatter.dateStyle = .none
         timeFormatter.timeStyle = .short
         timeTextField.text = timeFormatter.string(from: sender.date)
+        updateObservation()
     }
     
     func createTimePicker(){//textField: UITextField) {
@@ -303,7 +309,9 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         timeTextField.resignFirstResponder()
     }
     
+    
     //MARK: Private methods
+    //###############################################################################################
     private func updateObservation(){
         // Check that all text fields are filled in
         let observerName = observerNameTextField.text ?? ""

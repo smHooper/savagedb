@@ -111,6 +111,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         observerTextField.height = observerTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
         
         // Set a listener to see if the text field changed
+        NotificationCenter.default.addObserver(self, selector: #selector(observerTextFieldDidChange), name: Notification.Name("dropDownPressed"), object: nil)
         //observerTextField.addTarget(self, action: #selector(SessionViewController.observerTextFieldDidChange), for: UIControlEvents.)//editingChanged)
         //observerTextField.dropView.addTarget(self, action: #selector(SessionViewController.observerTextFieldDidChange), for: UIControlEvents.editingChanged)
     }

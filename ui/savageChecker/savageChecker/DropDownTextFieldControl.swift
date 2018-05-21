@@ -23,6 +23,7 @@ protocol dropDownProtocol {
             self.resignFirstResponder()
             self.text = string// for: .normal)
             self.dismissDropDown()
+            NotificationCenter.default.post(name: Notification.Name("dropDownPressed"), object: nil)
         }
         else {
             //self.delegate?.textFieldDidBeginEditing!(self)
