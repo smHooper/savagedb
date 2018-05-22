@@ -18,6 +18,7 @@ class Observation: NSObject, NSCoding {
     var observerName: String
     var driverName: String
     var destination: String
+    var nPassengers: String
     
     //MARK: Archiving paths
     static let DocumentsDirectory = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -85,6 +86,24 @@ class Observation: NSObject, NSCoding {
         }
         let session = Session(observerName: observerName, openTime: "12:00 AM", closeTime: "12:00 PM", givenDate: date)
         self.init(session: session!, time: time, driverName: driverName, destination: destination)
-        
     }
 }
+
+
+class BusObservation: Observation {
+    
+    var busNumber: String?
+    var busType: String?
+    
+    init?(session: Session, time: String, driverName: String, destination: String, busType: String, busNumber: String){
+        super.init(session: session, time: time, driverName: driverName, destination: destination)
+        
+        self.busType = busType
+        self.busNumber = busNumber
+        
+    }
+    
+    
+}
+
+

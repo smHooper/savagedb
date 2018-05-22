@@ -26,9 +26,6 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         super.viewDidLoad()
         
         // Set up delegates for text fields
-        //observerTextField = DropDownTextField(frame: templateObserverField.frame)//give it no height or width at first
-        //observerTextField.configureTextField(menuOptions: employees, templateTextField: templateObserverField, placeholderText: "Select observer name")
-        //self.view.addSubview(observerTextField)
         addObserverTextField(menuOptions: observerOptions)
         observerTextField.delegate = self
         dateTextField.delegate = self
@@ -124,10 +121,10 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         if textField is DropDownTextField {
             let field = textField as! DropDownTextField
             guard let text = textField.text else {
-                print("Guard failed")
-                return
+                fatalError("Could not get text from text field with ID: \(field.dropDownID)")
             }
             // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+            // ############### This doesn't work when "other" is selected first before anything else #############
             if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
                 print("resigning")
                 textField.resignFirstResponder()
@@ -289,8 +286,6 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         }
         updateSession()
         destinationController.session = self.session
-        //save the session before leaving
-        //saveSession()
     }
     
     
@@ -301,11 +296,15 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         let date = dateTextField.text ?? ""
         let openTime = openTimeTextField.text ?? ""
         let closeTime = closeTimeTextField.text ?? ""
-        if !observerName.isEmpty && !openTime.isEmpty && !closeTime.isEmpty{
+        if !observerName.isEmpty && !openTime.isEmpty && !closeTime.isEmpty && !date.isEmpty {
             self.session = Session(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             print("Session updated")
             viewVehiclesButton.isEnabled = true
             saveSession()
+        }
+        // Disable the view vehicles button until all fields are filled in
+        else {
+            viewVehiclesButton.isEnabled = false
         }
     }
     

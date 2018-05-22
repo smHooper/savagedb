@@ -56,10 +56,15 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         // This is a new observation. Try to load the session from disk and fill in text fields
         else {
             // This shouldn't fail because the session should have been saved at the Session scene.
-             self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
-             observerNameTextField.text = session?.observerName
-             dateTextField.text = session?.date
-             saveButton.isEnabled = false
+            self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+            observerNameTextField.text = session?.observerName
+            dateTextField.text = session?.date
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            timeTextField.text = formatter.string(from: now)
+            saveButton.isEnabled = false
         }
     }
 
@@ -184,22 +189,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             os_log("The save button was not pressed, cancelling", log: OSLog.default, type: .debug)
             return
         }
-        
-        /*guard let destinationController = segue.destination as? ObservationTableViewController else {
-            os_log("The destination controller isn't an ObservationTableViewController", log: OSLog.default, type: .debug)
-            return
-        }*/
-        //let session = destinationController.session
-        print("session observer: \(session?.observerName ?? "")")
-        //observerNameTextField.text = session?.observerName
-        //dateTextField.text = session?.date
+
         let time = timeTextField.text
         let driverName = driverNameTextField.text
         let destination = destinationTextField.text
-        print("Printing destination for saved obs: \(destination!)" )
-        //let session = Session(observerName: observerName, givenDate: date)
-        
-        // Fails becuase session observerName is nil. Not sure why
         observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!)
     }
     

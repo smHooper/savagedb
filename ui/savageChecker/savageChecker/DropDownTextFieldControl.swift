@@ -20,17 +20,15 @@ protocol dropDownProtocol {
     
     func dropDownPressed(string: String) {
         if (self.dropView.dropDownOptions.contains(string) && string != "Other"){
-            print("Selection not 'other'")
             self.resignFirstResponder()
             self.text = string// for: .normal)
             self.dismissDropDown()
             NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: nil)
         }
+        // If other was selected, show the keyboard
         else {
-            //self.delegate?.textFieldDidBeginEditing!(self)
-            //self.delegate?.
-            print("text == 'Other'")
             self.text?.removeAll()
+            NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: nil)
             self.becomeFirstResponder()
             self.dismissDropDown()
         }

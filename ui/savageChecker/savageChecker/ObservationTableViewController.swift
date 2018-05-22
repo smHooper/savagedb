@@ -21,12 +21,15 @@ class ObservationTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        /*
+         To implement SQLite data storage and persistence:
+            - in prepare for sender
+        */
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         //self.navigationItem.leftBarButtonItem = self.editButtonItem
         
         // Load the session
         self.session = loadSession()
-        print("Session observer from ObsTableView.veiwDidLoad(): \(session?.observerName)")
         
         if let savedObservations = loadObservations(){//savedObservations.count != 0 {
             observations += savedObservations
@@ -152,12 +155,7 @@ class ObservationTableViewController: UITableViewController {
                 fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
             }
             
-            let now = Date()
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            formatter.dateStyle = .none
-            let time = formatter.string(from: now)
-            observationViewController.observation = Observation(session: session!, time: time, driverName: "", destination: "")
+            observationViewController.observation = Observation(session: session!, time: "", driverName: "", destination: "")
             os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
         
         case "showObservationDetail":
