@@ -31,9 +31,10 @@ class Observation: NSObject, NSCoding {
         static let observerName = "observerName"
         static let driverName = "driverName"
         static let destination = "destination"
+        static let nPassengers = "nPassengers"
     }
     
-    init?(session: Session, time: String, driverName: String, destination: String){
+    init?(session: Session, time: String, driverName: String, destination: String, nPassengers: String){
         // All observations must belong to a session, and observer name and date are pulled directly from that session
         if session.observerName.isEmpty {
             return nil
@@ -42,15 +43,15 @@ class Observation: NSObject, NSCoding {
             return nil
         }
         
+        
         //Initialized stored properties
         //self.session = session
         self.time = time // make this optional and set to now if empty
         self.driverName = driverName
         self.destination = destination
+        self.nPassengers = nPassengers
         self.date = session.date
         self.observerName = session.observerName
-
-        
     }
     
     //MARK: NSCoding
@@ -84,8 +85,12 @@ class Observation: NSObject, NSCoding {
             os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
             return nil
         }
+        guard let nPassengers = aDecoder.decodeObject(forKey: PropertyKey.nPassengers) as? String else {
+            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
+            return nil
+        }
         let session = Session(observerName: observerName, openTime: "12:00 AM", closeTime: "12:00 PM", givenDate: date)
-        self.init(session: session!, time: time, driverName: driverName, destination: destination)
+        self.init(session: session!, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
     }
 }
 
@@ -95,12 +100,16 @@ class BusObservation: Observation {
     var busNumber: String?
     var busType: String?
     
-    init?(session: Session, time: String, driverName: String, destination: String, busType: String, busNumber: String){
-        super.init(session: session, time: time, driverName: driverName, destination: destination)
+    init?(session: Session, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String){
+        super.init(session: session, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
         
         self.busType = busType
         self.busNumber = busNumber
         
+    }
+    
+    required convenience init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
     
     

@@ -155,7 +155,7 @@ class ObservationTableViewController: UITableViewController {
                 fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
             }
             
-            observationViewController.observation = Observation(session: session!, time: "", driverName: "", destination: "")
+            observationViewController.observation = Observation(session: session!, time: "", driverName: "", destination: "", nPassengers: "")
             os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
         
         case "showObservationDetail":
@@ -182,10 +182,10 @@ class ObservationTableViewController: UITableViewController {
     private func loadSampleObservations() {
         let session = self.session!//Session(observerName: "Joe", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2017")
         print(session.date)
-        guard let obs1 = Observation(session: session, time: "12:00 PM", driverName: "Hooper", destination: "Eielson") else {
+        guard let obs1 = Observation(session: session, time: "12:00 PM", driverName: "Hooper", destination: "Eielson", nPassengers: "48") else {
             fatalError("Unable to instantiate obs1")
         }
-        guard let obs2 = Observation(session: session, time: "12:30 PM", driverName: "Johnston", destination: "Eielson") else {
+        guard let obs2 = Observation(session: session, time: "12:30 PM", driverName: "Johnston", destination: "Eielson", nPassengers: "48") else {
             fatalError("Unable to instantiate obs1")
         }
         

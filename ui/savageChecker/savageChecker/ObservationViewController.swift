@@ -21,6 +21,9 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var saveButton: UIBarButtonItem!
     @IBOutlet weak var templateObserverField: UITextField!
     @IBOutlet weak var templateDestinationField: DropDownTextField!
+    @IBOutlet weak var nPassengersTextField: UITextField!
+    
+    
     var observation: Observation?
     var session: Session?
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
@@ -28,6 +31,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.hideKeyboardWhenTappedAround()
         
         // Configure custom delegates
         addObserverTextField(menuOptions: self.observerOptions)
@@ -39,6 +43,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         timeTextField.delegate = self
         driverNameTextField.delegate = self
         destinationTextField.delegate = self
+        nPassengersTextField.delegate = self
         
         
         guard let observation = observation else {
@@ -52,6 +57,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             timeTextField.text = observation.time
             driverNameTextField.text = observation.driverName
             destinationTextField.text = observation.destination
+            nPassengersTextField.text = observation.nPassengers
         }
         // This is a new observation. Try to load the session from disk and fill in text fields
         else {
@@ -162,6 +168,12 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     }
     
     
+    //MARK: UITextFieldDelegate
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        // Check to see if the save button should be enabled
+        updateObservation()
+    }
+    
     // MARK: - Navigation
     //#######################################################################
     @IBAction func cancel(_ sender: UIBarButtonItem) {
@@ -193,7 +205,9 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let time = timeTextField.text
         let driverName = driverNameTextField.text
         let destination = destinationTextField.text
-        observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!)
+        let nPassengers = nPassengersTextField.text
+        // Can force unwrap all text fields because saveButton in inactive until all are filled
+        observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!, nPassengers: nPassengers!)
     }
     
 
@@ -319,9 +333,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let time = timeTextField.text ?? ""
         let driverName = driverNameTextField.text ?? ""
         let destination = destinationTextField.text ?? ""
-        if !observerName.isEmpty && !date.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty {
+        let nPassengers = nPassengersTextField.text ?? ""
+        print(nPassengers.isEmpty)
+        if !observerName.isEmpty && !date.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty && !nPassengers.isEmpty {
             //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
-            print("Session updated")
             saveButton.isEnabled = true
         }
     }

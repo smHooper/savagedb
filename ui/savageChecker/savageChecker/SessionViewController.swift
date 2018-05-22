@@ -24,6 +24,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.hideKeyboardWhenTappedAround()
         
         // Set up delegates for text fields
         addObserverTextField(menuOptions: observerOptions)
