@@ -10,9 +10,10 @@ import Foundation
 import os.log
 
 
-class Observation: NSObject, NSCoding {
+class Observation {//: NSObject, NSCoding {
     
     //MARK: Properties
+    var id: Int
     var time: String
     var date: String
     var observerName: String
@@ -34,7 +35,7 @@ class Observation: NSObject, NSCoding {
         static let nPassengers = "nPassengers"
     }
     
-    init?(session: Session, time: String, driverName: String, destination: String, nPassengers: String){
+    init?(session: Session, id: Int, time: String, driverName: String, destination: String, nPassengers: String){
         // All observations must belong to a session, and observer name and date are pulled directly from that session
         if session.observerName.isEmpty {
             return nil
@@ -43,9 +44,9 @@ class Observation: NSObject, NSCoding {
             return nil
         }
         
-        
-        //Initialized stored properties
+        //Initialize stored properties
         //self.session = session
+        self.id = id
         self.time = time // make this optional and set to now if empty
         self.driverName = driverName
         self.destination = destination
@@ -54,7 +55,7 @@ class Observation: NSObject, NSCoding {
         self.observerName = session.observerName
     }
     
-    //MARK: NSCoding
+    /*//MARK: NSCoding
     func encode(with aCoder: NSCoder) {
         aCoder.encode(time, forKey: PropertyKey.time)
         aCoder.encode(date, forKey: PropertyKey.date)
@@ -91,11 +92,11 @@ class Observation: NSObject, NSCoding {
         }
         let session = Session(observerName: observerName, openTime: "12:00 AM", closeTime: "12:00 PM", givenDate: date)
         self.init(session: session!, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
-    }
+    }*/
 }
 
 
-class BusObservation: Observation {
+/*class BusObservation: Observation {
     
     var busNumber: String?
     var busType: String?
@@ -113,6 +114,6 @@ class BusObservation: Observation {
     }
     
     
-}
+}*/
 
 

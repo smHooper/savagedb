@@ -94,6 +94,7 @@
 			isa = PBXGroup;
 			children = (
 				AF67170020A4C58F0039C490 /* AppDelegate.swift */,
+				AF7F9D7020B4995E000231E2 /* SQLiteDatabase.swift */,
 				AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */,
 				AF67170220A4C58F0039C490 /* SessionViewController.swift */,
 				AF67172020A4D0AC0039C490 /* Session.swift */,
@@ -102,7 +103,6 @@
 				AF5E82F520AA2A2200386083 /* ObservationTableViewController.swift */,
 				AF5E82F720AA2A9300386083 /* Observation.swift */,
 				AF5E82F920AA4D8400386083 /* ObservationViewController.swift */,
-				AF7F9D7020B4995E000231E2 /* SQLiteDatabase.swift */,
 				AF67170420A4C58F0039C490 /* Main.storyboard */,
 				AF67170720A4C5910039C490 /* Assets.xcassets */,
 				AF67170920A4C5910039C490 /* LaunchScreen.storyboard */,

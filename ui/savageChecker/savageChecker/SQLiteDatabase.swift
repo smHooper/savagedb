@@ -10,9 +10,9 @@ import Foundation
 import SQLite3
 
 class SQLiteDatabase {
-    fileprivate let dbPointer: OpaquePointer?
+    let dbPointer: OpaquePointer?
     
-    fileprivate var errorMessage: String {
+    var errorMessage: String {
         if let errorPointer = sqlite3_errmsg(dbPointer) {
             let errorMessage = String(cString: errorPointer)
             return errorMessage
@@ -21,20 +21,16 @@ class SQLiteDatabase {
         }
     }
     
+    static let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+    static let path = "\(documentsDirectory)/savageChecker.db"
+    
     init(dbPointer: OpaquePointer?) {
         self.dbPointer = dbPointer
     }
     
     deinit {
+        print("Closing the database...")
         sqlite3_close(dbPointer)
-    }
-    
-    //MARK: Types
-    enum SQLiteError: Error {
-        case OpenDatabase(message: String)
-        case Prepare(message: String)
-        case Step(message: String)
-        case Bind(message: String)
     }
     
     //MARK: Static methods
@@ -61,15 +57,82 @@ class SQLiteDatabase {
         }
     }
     
+    func prepareStatement(sql: String) throws -> OpaquePointer? {
+        var statement: OpaquePointer? = nil
+        guard sqlite3_prepare_v2(dbPointer, sql, -1, &statement, nil) == SQLITE_OK else {
+            throw SQLiteError.Prepare(message: errorMessage)
+        }
+        
+        return statement
+    }
+    
+    func createTable(sql: String) throws {
+        let statement = try prepareStatement(sql: sql)
+        defer {
+            sqlite3_finalize(statement)
+        }
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw SQLiteError.Step(message: errorMessage)
+        }
+    }
+    
+    /*func insert(sql: String) throws {
+        let insertStatement = try prepareStatement(sql: sql)
+        defer {
+            sqlite3_finalize(insertStatement)
+        }
+        
+        let name: NSString = contact.name
+        guard sqlite3_bind_int(insertStatement, 1, contact.id) == SQLITE_OK  &&
+            sqlite3_bind_text(insertStatement, 2, name.utf8String, -1, nil) == SQLITE_OK else {
+                throw SQLiteError.Bind(message: errorMessage)
+        }
+        
+        guard sqlite3_step(insertStatement) == SQLITE_DONE else {
+            throw SQLiteError.Step(message: errorMessage)
+        }
+        
+        print("Successfully inserted row.")
+    }*/
+    
+    func update(sql: String) {
+        var updateStatement: OpaquePointer? = nil
+        if sqlite3_prepare_v2(dbPointer, sql, -1, &updateStatement, nil) == SQLITE_OK {
+            if sqlite3_step(updateStatement) == SQLITE_DONE {
+                print("Successfully updated row.")
+            } else {
+                print("Could not update row.")
+                let errorMessage = String.init(cString: sqlite3_errmsg(dbPointer))
+                print("Statement could not be prepared: \(errorMessage)")
+            }
+        } else {
+            print("UPDATE statement could not be prepared")
+            let errorMessage = String.init(cString: sqlite3_errmsg(dbPointer))
+            print("Statement could not be prepared: \(errorMessage)")
+        }
+        sqlite3_finalize(updateStatement)
+    }
+    
+
+    
+    
+    
 }
 
+//MARK: Custom error handling
+enum SQLiteError: Error {
+    case OpenDatabase(message: String)
+    case Prepare(message: String)
+    case Step(message: String)
+    case Bind(message: String)
+}
 
 protocol SQLTable {
     static var createStatement: String { get }
 }
 
 
-extension SQLiteDatabase {
+/*extension SQLiteDatabase {
     
     func prepareStatement(sql: String) throws -> OpaquePointer? {
         var statement: OpaquePointer? = nil
@@ -95,7 +158,9 @@ extension SQLiteDatabase {
         print("\(table) table created.")
     }
     
-}
+    //func getAllRows(table: SQLTable.Type, )
+    
+}*/
 
 
 

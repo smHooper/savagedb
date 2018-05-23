@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SQLite3
 import os.log
 
 class ObservationViewController: UIViewController, UITextFieldDelegate {
@@ -23,15 +24,27 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var templateDestinationField: DropDownTextField!
     @IBOutlet weak var nPassengersTextField: UITextField!
     
-    
+    var db: SQLiteDatabase!
     var observation: Observation?
     var session: Session?
+    var isAddingNewObservation: Bool!
+    
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAround()
+        
+        // Open connection to the DB
+        do {
+            db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
+            print("Successfully opened connection to database.")
+        } catch SQLiteError.OpenDatabase(let message) {
+            fatalError("Unable to establish database connection")
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
         
         // Configure custom delegates
         addObserverTextField(menuOptions: self.observerOptions)
@@ -192,7 +205,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         }
     }
     
-    
     // Configure tableview controller before it's presented
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         super.prepare(for: segue, sender: sender)
@@ -207,10 +219,20 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let destination = destinationTextField.text
         let nPassengers = nPassengersTextField.text
         // Can force unwrap all text fields because saveButton in inactive until all are filled
-        observation = Observation(session: session!, time: time!, driverName: driverName!, destination: destination!, nPassengers: nPassengers!)
+        observation = Observation(session: session!, id: -1, time: time!, driverName: driverName!, destination: destination!, nPassengers: nPassengers!)
+        
+        //Update the database
+        if isAddingNewObservation {
+            do {
+                try insertObservation()
+            } catch {
+                print(db.errorMessage)
+            }
+        } else {
+              // some update logic
+            }
     }
     
-
     
     //MARK: UITextFieldDelegate
     //####################################################################################################################
@@ -339,5 +361,48 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             saveButton.isEnabled = true
         }
+    }
+    
+    private func insertObservation() throws {
+        
+        // Force unwrap all text field strings because this will only be called after save button is enabled
+        let observerName = observerNameTextField.text!
+        let date = dateTextField.text!
+        let time = timeTextField.text!
+        let driverName = driverNameTextField.text!
+        let destination = destinationTextField.text!
+        let nPassengers = nPassengersTextField.text!
+        
+        //the insert query
+        let sql = "INSERT INTO observations (observerName, date, time, driverName, destination, nPassengers) VALUES (?,?,?,?,?,?);"
+        
+        //preparing the query
+        let statement = try db.prepareStatement(sql: sql)
+        
+        //binding the parameters
+        guard sqlite3_bind_text(statement, 1, observerName, -1, nil) == SQLITE_OK else {
+            throw SQLiteError.Bind(message: db.errorMessage)
+        }
+        guard sqlite3_bind_text(statement, 2, date, -1, nil) == SQLITE_OK else{
+            throw SQLiteError.Bind(message: db.errorMessage)
+        }
+        guard sqlite3_bind_text(statement, 3, time, -1, nil) == SQLITE_OK else{
+            throw SQLiteError.Bind(message: db.errorMessage)
+        }
+        guard sqlite3_bind_text(statement, 4, driverName, -1, nil) == SQLITE_OK else{
+            throw SQLiteError.Bind(message: db.errorMessage)
+        }
+        guard sqlite3_bind_text(statement, 5, destination, -1, nil) != SQLITE_OK else{
+            throw SQLiteError.Bind(message: db.errorMessage)
+        }
+        guard sqlite3_bind_text(statement, 6, nPassengers, -1, nil) != SQLITE_OK else{
+            throw SQLiteError.Bind(message: db.errorMessage)
+        }
+        
+        //executing the query to insert values
+        guard sqlite3_step(statement) == SQLITE_DONE else {
+            throw SQLiteError.Step(message: db.errorMessage)
+        }
+        print("record added to DB")
     }
 }

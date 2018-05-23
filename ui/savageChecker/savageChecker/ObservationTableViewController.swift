@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SQLite3
 import os.log
 
 class ObservationTableViewController: UITableViewController {
@@ -14,30 +15,41 @@ class ObservationTableViewController: UITableViewController {
     //MARK: Properties
     var observations = [Observation]()
     var session: Session?
+    var db: SQLiteDatabase!
     //var sessionController: SessionViewController?
     @IBOutlet weak var addNewObservation: UIBarButtonItem!
     
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        /*
-         To implement SQLite data storage and persistence:
-            - in prepare for sender
-        */
+        
+        // Open connection to the DB
+        do {
+            db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
+            print("Successfully opened connection to database.")
+        } catch SQLiteError.OpenDatabase(let message) {
+            fatalError("Unable to establish database connection")
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         //self.navigationItem.leftBarButtonItem = self.editButtonItem
         
-        // Load the session
+        // Load the session. This is stored as a file using NSCoding.
         self.session = loadSession()
         
-        if let savedObservations = loadObservations(){//savedObservations.count != 0 {
+        do {
+            print("trying to load observations")
+            if let savedObservations = try loadObservations(){
             observations += savedObservations
-        } else {
-            // Change this method here so sample obs are only loaded the first time
-            loadSampleObservations()
+            } else {
+                // Change this method here so sample obs are only loaded the first time
+                //loadSampleObservations()
+            }
+        } catch {
+            fatalError(db.errorMessage)
         }
-
     }
 
     override func didReceiveMemoryWarning() {
@@ -91,7 +103,7 @@ class ObservationTableViewController: UITableViewController {
                 tableView.insertRows(at: [newIndexPath], with: .automatic)
             }
             // Save observations
-            saveObservations()
+            //saveObservations()
         }
     }
     
@@ -119,7 +131,11 @@ class ObservationTableViewController: UITableViewController {
         if editingStyle == .delete {
             // Delete the row from the data source
             observations.remove(at: indexPath.row)
-            saveObservations()
+            
+            //################ delete row from DB #########################
+            
+            //saveObservations()
+            
             tableView.deleteRows(at: [indexPath], with: .fade)
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
@@ -154,8 +170,11 @@ class ObservationTableViewController: UITableViewController {
             guard let observationViewController = segue.destination.childViewControllers.first! as? ObservationViewController else {
                 fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
             }
+            //############### Change observations.count to get the actual next id value ############################
+            observationViewController.observation = Observation(session: session!, id: -1, time: "", driverName: "", destination: "", nPassengers: "")
             
-            observationViewController.observation = Observation(session: session!, time: "", driverName: "", destination: "", nPassengers: "")
+            // Let the view controller know to insert a new row in the DB
+            observationViewController.isAddingNewObservation = true
             os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
         
         case "showObservationDetail":
@@ -171,6 +190,8 @@ class ObservationTableViewController: UITableViewController {
             
             let selectedObservation = observations[indexPath.row]
             observationViewController.observation = selectedObservation
+            // Let the view controller know to update an existing row in the DB
+            observationViewController.isAddingNewObservation = false
         default:
             fatalError("Unexpeced Segue Identifier: \(segue.identifier!)")
         }
@@ -179,7 +200,7 @@ class ObservationTableViewController: UITableViewController {
     
     
     //MARK: Private Methods
-    private func loadSampleObservations() {
+    /*private func loadSampleObservations() {
         let session = self.session!//Session(observerName: "Joe", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2017")
         print(session.date)
         guard let obs1 = Observation(session: session, time: "12:00 PM", driverName: "Hooper", destination: "Eielson", nPassengers: "48") else {
@@ -190,9 +211,10 @@ class ObservationTableViewController: UITableViewController {
         }
         
         observations += [obs1, obs2]
-    }
+    }*/
     
-    private func saveObservations() {
+    // Comment this function out
+    /*private func saveObservations() {
         let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(observations, toFile: Observation.ArchiveURL.path)
         
         if isSuccessfulSave {
@@ -200,10 +222,33 @@ class ObservationTableViewController: UITableViewController {
         } else {
             os_log("Failed to save observations...", log: OSLog.default, type: .error)
         }
-    }
+    }*/
     
-    private func loadObservations() -> [Observation]?{
-        return NSKeyedUnarchiver.unarchiveObject(withFile: Observation.ArchiveURL.path) as? [Observation]
+    private func loadObservations() throws -> [Observation]?{
+        //return NSKeyedUnarchiver.unarchiveObject(withFile: Observation.ArchiveURL.path) as? [Observation]
+        // ************* check that the table exists first **********************
+        let sql = "SELECT * FROM \("observations");"
+        
+        let statement = try db.prepareStatement(sql: sql)
+        defer {
+            sqlite3_finalize(statement)
+        }
+        //observerName, date, time, driverName, destination, nPassengers
+        var loadedObservations = [Observation]()
+        while sqlite3_step(statement) == SQLITE_ROW {
+            var id = sqlite3_column_int(statement, 0)
+            var observerName = String(cString: sqlite3_column_text(statement, 1)!)
+            var date = String(cString: sqlite3_column_text(statement, 2)!)
+            var time = String(cString: sqlite3_column_text(statement, 3)!)
+            var driverName = String(cString: sqlite3_column_text(statement, 4)!)
+            var destination = String(cString: sqlite3_column_text(statement, 5)!)
+            var nPassengers = String(cString: sqlite3_column_text(statement, 6)!)
+            var thisSession = Session(observerName: observerName, openTime: session?.openTime, closeTime: session?.closeTime)
+            var observation = Observation(session: thisSession!, id: Int(id), time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+            loadedObservations.append(observation!)
+        }
+        print("loaded all observations")
+        return loadedObservations
     }
     
     private func loadSession() -> Session? {
