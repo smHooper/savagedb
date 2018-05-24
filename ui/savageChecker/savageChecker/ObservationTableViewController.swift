@@ -8,6 +8,7 @@
 
 import UIKit
 import SQLite3
+import SQLite
 import os.log
 
 class ObservationTableViewController: UITableViewController {
@@ -15,23 +16,40 @@ class ObservationTableViewController: UITableViewController {
     //MARK: Properties
     var observations = [Observation]()
     var session: Session?
-    var db: SQLiteDatabase!
+    //var db: SQLiteDatabase!
     //var sessionController: SessionViewController?
     @IBOutlet weak var addNewObservation: UIBarButtonItem!
     
+    var db: Connection!// SQLiteDatabase!
+    
+    // DB columns
+    let idColumn = Expression<Int64>("id")
+    let observerNameColumn = Expression<String>("observerName")
+    let dateColumn = Expression<String>("date")
+    let timeColumn = Expression<String>("time")
+    let driverNameColumn = Expression<String>("driverName")
+    let destinationColumn = Expression<String>("destination")
+    let nPassengersColumn = Expression<String>("nPassengers")
+    
+    let observationsTable = Table("observations")
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Open connection to the DB
         do {
+            db = try Connection(dbPath)
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        /*do {
             db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
             print("Successfully opened connection to database.")
         } catch SQLiteError.OpenDatabase(let message) {
             fatalError("Unable to establish database connection")
         } catch let error {
             fatalError(error.localizedDescription)
-        }
+        }*/
         
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         //self.navigationItem.leftBarButtonItem = self.editButtonItem
@@ -47,8 +65,8 @@ class ObservationTableViewController: UITableViewController {
                 // Change this method here so sample obs are only loaded the first time
                 //loadSampleObservations()
             }
-        } catch {
-            fatalError(db.errorMessage)
+        } catch let error{
+            fatalError(error.localizedDescription)
         }
     }
 
@@ -227,7 +245,15 @@ class ObservationTableViewController: UITableViewController {
     private func loadObservations() throws -> [Observation]?{
         //return NSKeyedUnarchiver.unarchiveObject(withFile: Observation.ArchiveURL.path) as? [Observation]
         // ************* check that the table exists first **********************
-        let sql = "SELECT * FROM observations;"
+        let rows = Array(try db.prepare(observationsTable))
+        var loadedObservations = [Observation]()
+        for row in rows{
+            let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+            let observation = Observation(session: session!, id: Int(row[idColumn]), time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn])
+            loadedObservations.append(observation!)
+        }
+        
+        /*let sql = "SELECT * FROM observations;"
         
         let statement = try db.prepareStatement(sql: sql)
         defer {
@@ -248,9 +274,10 @@ class ObservationTableViewController: UITableViewController {
             print("\(id), \(observerName), \(date), \(time), \(driverName), \(destination), \(nPassengers)")
             loadedObservations.append(observation!)
             print(id)
-        }
+        }*/
         print("loaded all observations")
         return loadedObservations
+        
     }
     
     private func loadSession() -> Session? {
