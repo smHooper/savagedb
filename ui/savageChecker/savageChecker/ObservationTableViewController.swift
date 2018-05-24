@@ -227,7 +227,7 @@ class ObservationTableViewController: UITableViewController {
     private func loadObservations() throws -> [Observation]?{
         //return NSKeyedUnarchiver.unarchiveObject(withFile: Observation.ArchiveURL.path) as? [Observation]
         // ************* check that the table exists first **********************
-        let sql = "SELECT * FROM \("observations");"
+        let sql = "SELECT * FROM observations;"
         
         let statement = try db.prepareStatement(sql: sql)
         defer {
@@ -236,16 +236,18 @@ class ObservationTableViewController: UITableViewController {
         //observerName, date, time, driverName, destination, nPassengers
         var loadedObservations = [Observation]()
         while sqlite3_step(statement) == SQLITE_ROW {
-            var id = sqlite3_column_int(statement, 0)
-            var observerName = String(cString: sqlite3_column_text(statement, 1)!)
-            var date = String(cString: sqlite3_column_text(statement, 2)!)
-            var time = String(cString: sqlite3_column_text(statement, 3)!)
-            var driverName = String(cString: sqlite3_column_text(statement, 4)!)
-            var destination = String(cString: sqlite3_column_text(statement, 5)!)
-            var nPassengers = String(cString: sqlite3_column_text(statement, 6)!)
-            var thisSession = Session(observerName: observerName, openTime: session?.openTime, closeTime: session?.closeTime)
-            var observation = Observation(session: thisSession!, id: Int(id), time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+            let id = sqlite3_column_int(statement, 0)
+            let observerName = String(cString: sqlite3_column_text(statement, 1)!)
+            let date = String(cString: sqlite3_column_text(statement, 2)!)
+            let time = String(cString: sqlite3_column_text(statement, 3)!)
+            let driverName = String(cString: sqlite3_column_text(statement, 4)!)
+            let destination = String(cString: sqlite3_column_text(statement, 5)!)
+            let nPassengers = String(cString: sqlite3_column_text(statement, 6)!)
+            let thisSession = Session(observerName: observerName, openTime: session?.openTime, closeTime: session?.closeTime, givenDate: date)
+            let observation = Observation(session: thisSession!, id: Int(id), time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+            print("\(id), \(observerName), \(date), \(time), \(driverName), \(destination), \(nPassengers)")
             loadedObservations.append(observation!)
+            print(id)
         }
         print("loaded all observations")
         return loadedObservations

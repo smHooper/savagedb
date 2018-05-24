@@ -95,22 +95,18 @@ class SQLiteDatabase {
         print("Successfully inserted row.")
     }*/
     
-    func update(sql: String) {
-        var updateStatement: OpaquePointer? = nil
-        if sqlite3_prepare_v2(dbPointer, sql, -1, &updateStatement, nil) == SQLITE_OK {
-            if sqlite3_step(updateStatement) == SQLITE_DONE {
-                print("Successfully updated row.")
-            } else {
-                print("Could not update row.")
-                let errorMessage = String.init(cString: sqlite3_errmsg(dbPointer))
-                print("Statement could not be prepared: \(errorMessage)")
-            }
+    func update(sql: String) throws {
+        let statement = try prepareStatement(sql: sql)
+        defer {
+            sqlite3_finalize(statement)
+        }
+        if sqlite3_step(statement) == SQLITE_DONE {
+            print("Successfully updated row.")
         } else {
-            print("UPDATE statement could not be prepared")
+            print("Could not update row.")
             let errorMessage = String.init(cString: sqlite3_errmsg(dbPointer))
             print("Statement could not be prepared: \(errorMessage)")
-        }
-        sqlite3_finalize(updateStatement)
+            }
     }
     
 

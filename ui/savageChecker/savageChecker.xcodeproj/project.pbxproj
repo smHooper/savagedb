@@ -20,6 +20,7 @@
 		AF67170B20A4C5910039C490 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AF67170920A4C5910039C490 /* LaunchScreen.storyboard */; };
 		AF67171620A4C5910039C490 /* savageCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67171520A4C5910039C490 /* savageCheckerTests.swift */; };
 		AF67172120A4D0AC0039C490 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67172020A4D0AC0039C490 /* Session.swift */; };
+		AF7B986820B64F7000D315C3 /* SQLite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF7B985A20B64F0C00D315C3 /* SQLite.framework */; };
 		AF7F9D7120B4995E000231E2 /* SQLiteDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF7F9D7020B4995E000231E2 /* SQLiteDatabase.swift */; };
 /* End PBXBuildFile section */
 
@@ -31,9 +32,61 @@
 			remoteGlobalIDString = AF6716FC20A4C58F0039C490;
 			remoteInfo = savageChecker;
 		};
+		AF7B985920B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EE247AD31C3F04ED00AE3E12;
+			remoteInfo = "SQLite iOS";
+		};
+		AF7B985B20B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EE247ADD1C3F04ED00AE3E12;
+			remoteInfo = "SQLiteTests iOS";
+		};
+		AF7B985D20B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EE247B3C1C3F3ED000AE3E12;
+			remoteInfo = "SQLite Mac";
+		};
+		AF7B985F20B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = EE247B451C3F3ED000AE3E12;
+			remoteInfo = "SQLiteTests Mac";
+		};
+		AF7B986120B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 03A65E5A1C6BB0F50062603F;
+			remoteInfo = "SQLite tvOS";
+		};
+		AF7B986320B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 03A65E631C6BB0F60062603F;
+			remoteInfo = "SQLiteTests tvOS";
+		};
+		AF7B986520B64F0C00D315C3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = A121AC451CA35C79005A31D1;
+			remoteInfo = "SQLite watchOS";
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		024B337833BF0946F43452C4 /* Pods-savageChecker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-savageChecker.debug.xcconfig"; path = "Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker.debug.xcconfig"; sourceTree = "<group>"; };
+		77DF342FDA407ACFC81BE419 /* Pods_savageChecker.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_savageChecker.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		ACADEF357EBD71DEAAC2C99D /* Pods-savageChecker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-savageChecker.release.xcconfig"; path = "Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker.release.xcconfig"; sourceTree = "<group>"; };
 		AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownTextFieldControl.swift; sourceTree = "<group>"; };
 		AF5E82EF20A9FB8300386083 /* CustomDatePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CustomDatePicker.swift; path = ../CustomDatePicker.swift; sourceTree = "<group>"; };
 		AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationTableViewCell.swift; sourceTree = "<group>"; };
@@ -51,6 +104,7 @@
 		AF67171520A4C5910039C490 /* savageCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = savageCheckerTests.swift; sourceTree = "<group>"; };
 		AF67171720A4C5910039C490 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AF67172020A4D0AC0039C490 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
+		AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQLite.xcodeproj; path = ../SQLite.swift/SQLite.xcodeproj; sourceTree = "<group>"; };
 		AF7F9D7020B4995E000231E2 /* SQLiteDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteDatabase.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -59,6 +113,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF7B986820B64F7000D315C3 /* SQLite.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,12 +127,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		256ED0BBD28C60A64B028D6E /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				024B337833BF0946F43452C4 /* Pods-savageChecker.debug.xcconfig */,
+				ACADEF357EBD71DEAAC2C99D /* Pods-savageChecker.release.xcconfig */,
+			);
+			name = Pods;
+			sourceTree = "<group>";
+		};
 		AF6716F420A4C58F0039C490 = {
 			isa = PBXGroup;
 			children = (
 				AF6716FF20A4C58F0039C490 /* savageChecker */,
 				AF67171420A4C5910039C490 /* savageCheckerTests */,
 				AF6716FE20A4C58F0039C490 /* Products */,
+				AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */,
+				AF7B986720B64F7000D315C3 /* Frameworks */,
+				256ED0BBD28C60A64B028D6E /* Pods */,
 			);
 			sourceTree = "<group>";
 		};
@@ -120,6 +187,28 @@
 			path = savageCheckerTests;
 			sourceTree = "<group>";
 		};
+		AF7B985020B64F0C00D315C3 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AF7B985A20B64F0C00D315C3 /* SQLite.framework */,
+				AF7B985C20B64F0C00D315C3 /* SQLiteTests iOS.xctest */,
+				AF7B985E20B64F0C00D315C3 /* SQLite.framework */,
+				AF7B986020B64F0C00D315C3 /* SQLiteTests Mac.xctest */,
+				AF7B986220B64F0C00D315C3 /* SQLite.framework */,
+				AF7B986420B64F0C00D315C3 /* SQLiteTests tvOS.xctest */,
+				AF7B986620B64F0C00D315C3 /* SQLite.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AF7B986720B64F7000D315C3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				77DF342FDA407ACFC81BE419 /* Pods_savageChecker.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -127,9 +216,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = AF67171A20A4C5910039C490 /* Build configuration list for PBXNativeTarget "savageChecker" */;
 			buildPhases = (
+				5AB97C058FCDD72178CD2874 /* [CP] Check Pods Manifest.lock */,
 				AF6716F920A4C58F0039C490 /* Sources */,
 				AF6716FA20A4C58F0039C490 /* Frameworks */,
 				AF6716FB20A4C58F0039C490 /* Resources */,
+				378053D981A8741965438169 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -188,6 +279,12 @@
 			mainGroup = AF6716F420A4C58F0039C490;
 			productRefGroup = AF6716FE20A4C58F0039C490 /* Products */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = AF7B985020B64F0C00D315C3 /* Products */;
+					ProjectRef = AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				AF6716FC20A4C58F0039C490 /* savageChecker */,
@@ -195,6 +292,58 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		AF7B985A20B64F0C00D315C3 /* SQLite.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SQLite.framework;
+			remoteRef = AF7B985920B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		AF7B985C20B64F0C00D315C3 /* SQLiteTests iOS.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "SQLiteTests iOS.xctest";
+			remoteRef = AF7B985B20B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		AF7B985E20B64F0C00D315C3 /* SQLite.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SQLite.framework;
+			remoteRef = AF7B985D20B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		AF7B986020B64F0C00D315C3 /* SQLiteTests Mac.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "SQLiteTests Mac.xctest";
+			remoteRef = AF7B985F20B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		AF7B986220B64F0C00D315C3 /* SQLite.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SQLite.framework;
+			remoteRef = AF7B986120B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		AF7B986420B64F0C00D315C3 /* SQLiteTests tvOS.xctest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "SQLiteTests tvOS.xctest";
+			remoteRef = AF7B986320B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		AF7B986620B64F0C00D315C3 /* SQLite.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = SQLite.framework;
+			remoteRef = AF7B986520B64F0C00D315C3 /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		AF6716FB20A4C58F0039C490 /* Resources */ = {
@@ -215,6 +364,45 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		378053D981A8741965438169 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/SQLite.swift/SQLite.framework",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SQLite.framework",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		5AB97C058FCDD72178CD2874 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-savageChecker-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AF6716F920A4C58F0039C490 /* Sources */ = {
@@ -388,6 +576,7 @@
 		};
 		AF67171B20A4C5910039C490 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 024B337833BF0946F43452C4 /* Pods-savageChecker.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -405,6 +594,7 @@
 		};
 		AF67171C20A4C5910039C490 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = ACADEF357EBD71DEAAC2C99D /* Pods-savageChecker.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;

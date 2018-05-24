@@ -7,7 +7,11 @@
 //
 
 import UIKit
-import SQLite3
+//import SQLite3
+import SQLite
+
+
+let dbPath = "\(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)/savageChecker.db"
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,7 +21,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Connect to DB and create all necessary tables
-        let db: SQLiteDatabase
+        let db : Connection
+        do {
+            db = try Connection(dbPath)
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        /*let db: SQLiteDatabase
         do {
             db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
             print("Successfully opened connection to database.")
@@ -25,18 +35,33 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             fatalError("Unable to establish database connection")
         } catch let error {
             fatalError(error.localizedDescription)
-        }
+        }*/
 
         // Make tables
-        /*let createSessionSQL = "CREATE TABLE IF NOT EXISTS sessions (id INTEGER PRIMARY KEY AUTOINCREMENT, observerName TEXT, date TEXT, openTime TEXT, closeTime TEXT);"
-        do {
-            try db.createTable(sql: createSessionSQL)
-            print("Successfully created session table")
-        } catch {
-            print(db.errorMessage)
-        }*/
+        let idColumn = Expression<Int64>("id")
+        let observerNameColumn = Expression<String>("observerName")
+        let dateColumn = Expression<String>("date")
+        let timeColumn = Expression<String>("time")
+        let driverNameColumn = Expression<String>("driverName")
+        let destinationColumn = Expression<String>("destination")
+        let nPassengersColumn = Expression<String>("nPassengers")
         
-        let createObservationsSQL = "CREATE TABLE IF NOT EXISTS observations (id INTEGER PRIMARY KEY AUTOINCREMENT, observerName TEXT, date TEXT, time TEXT, driverName TEXT, destination TEXT, nPassengers TEXT);"
+        let observations = Table("observations")
+        
+        do {
+            try db.run(observations.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        /*let createObservationsSQL = "CREATE TABLE IF NOT EXISTS observations (id INTEGER PRIMARY KEY AUTOINCREMENT, observerName TEXT, date TEXT, time TEXT, driverName TEXT, destination TEXT, nPassengers TEXT);"
         do {
             try db.createTable(sql: createObservationsSQL)
             print("Successfully created session table")
@@ -44,7 +69,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             fatalError(db.errorMessage)
         }
         
-        // Close the database so another view can connect to it
+        // Close the database so another view can connect to it*/
+        
         
         
         return true

@@ -1,0 +1,6 @@
+framework module Pods_savageChecker {
+  umbrella header "Pods-savageChecker-umbrella.h"
+
+  export *
+  module * { export * }
+}
