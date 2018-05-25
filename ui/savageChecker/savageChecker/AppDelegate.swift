@@ -27,6 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch let error {
             fatalError(error.localizedDescription)
         }
+
         /*let db: SQLiteDatabase
         do {
             db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
@@ -61,6 +62,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch let error {
             fatalError(error.localizedDescription)
         }
+
         /*let createObservationsSQL = "CREATE TABLE IF NOT EXISTS observations (id INTEGER PRIMARY KEY AUTOINCREMENT, observerName TEXT, date TEXT, time TEXT, driverName TEXT, destination TEXT, nPassengers TEXT);"
         do {
             try db.createTable(sql: createObservationsSQL)

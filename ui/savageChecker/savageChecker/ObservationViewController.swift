@@ -53,14 +53,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         } catch let error {
             fatalError(error.localizedDescription)
         }
-        /*do {
-            db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
-            print("Successfully opened connection to database.")
-        } catch SQLiteError.OpenDatabase(let message) {
-            fatalError("Unable to establish database connection")
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }*/
+        
+        //Load the session
+        // This shouldn't fail because the session should have been saved at the Session scene.
+        self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
         
         // Configure custom delegates
         addObserverTextField(menuOptions: self.observerOptions)
@@ -88,10 +84,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             destinationTextField.text = observation.destination
             nPassengersTextField.text = observation.nPassengers
         }
-        // This is a new observation. Try to load the session from disk and fill in text fields
+        // This is a new observation. Try to fill in text fields
         else {
-            // This shouldn't fail because the session should have been saved at the Session scene.
-            self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
             observerNameTextField.text = session?.observerName
             dateTextField.text = session?.date
             let now = Date()
@@ -229,21 +223,56 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             os_log("The save button was not pressed, cancelling", log: OSLog.default, type: .debug)
             return
         }
-
-        let time = timeTextField.text
-        let driverName = driverNameTextField.text
-        let destination = destinationTextField.text
-        let nPassengers = nPassengersTextField.text
+        
+        let observerName = observerNameTextField.text!
+        let date = dateTextField.text!
+        let time = timeTextField.text!
+        let driverName = driverNameTextField.text!
+        let destination = destinationTextField.text!
+        let nPassengers = nPassengersTextField.text!
         // Can force unwrap all text fields because saveButton in inactive until all are filled
-        let thisSession = Session(observerName: observerNameTextField.text!, openTime: "12:00 AM", closeTime: "11:59 PM", givenDate: dateTextField.text!)
-        observation = Observation(session: thisSession!, id: -1, time: time!, driverName: driverName!, destination: destination!, nPassengers: nPassengers!)
+        let thisSession = Session(observerName: observerName, openTime: self.session?.openTime, closeTime: self.session?.closeTime, givenDate: date)
+        
+        // Update the Observation instance
+        // Temporarily just say the id = -1. The id column is autoincremented anyway, so it doesn't matter.
+        observation = Observation(session: thisSession!, id: -1, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
         
         //Update the database
+        // Add a new record
         if isAddingNewObservation {
             insertObservation()
+        
+        // Update an existing record
         } else {
-              // some update logic
+            
+            do {
+                // Select the record to update
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- observerName,
+                                            dateColumn <- date,
+                                            timeColumn <- time,
+                                            driverNameColumn <- driverName,
+                                            destinationColumn <- destination,
+                                            nPassengersColumn <- nPassengers)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
             }
+        }
+        
+        // Now get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
     }
     
     
@@ -259,10 +288,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             }
             // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
             if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
-                print("resigning")
                 textField.resignFirstResponder()
             } else {
-                print("not resigning")
             }
         }
         //Otherwise, do stuff as usual
@@ -369,7 +396,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let driverName = driverNameTextField.text ?? ""
         let destination = destinationTextField.text ?? ""
         let nPassengers = nPassengersTextField.text ?? ""
-        print(nPassengers.isEmpty)
         if !observerName.isEmpty && !date.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty && !destination.isEmpty && !nPassengers.isEmpty {
             //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             saveButton.isEnabled = true
@@ -386,6 +412,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let destination = observation?.destination
         let nPassengers = observation?.nPassengers
         
+        // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
                                                             dateColumn <- date!,
@@ -397,59 +424,6 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         } catch {
             print("insertion failed: \(error)")
         }
-        /*//the insert query
-        //"INSERT INTO Contact (Id, Name) VALUES (?, ?);"
-        let sql = "INSERT INTO observations (observerName, date, time, driverName, destination, nPassengers) VALUES (?, ?, ?, ?, ?, ?);"
-        
-        //preparing the query
-        let statement = try db.prepareStatement(sql: sql)
-        
-        //binding the parameters
-        //print("should be index of observer: \(sqlite3_bind_parameter_name(statement, 1))")
-        guard sqlite3_bind_text(statement, 1, observerName, -1, nil) == SQLITE_OK else {
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error binding observerName: \(errmsg)")
-            throw SQLiteError.Bind(message: db.errorMessage)
-        }
-        //print("index of observer: \(sqlite3_bind_parameter_index(statement, "date"))")
-        guard sqlite3_bind_text(statement, 2, date, -1, nil) == SQLITE_OK else{
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error binding date: \(errmsg)")
-            throw SQLiteError.Bind(message: db.errorMessage)
-        }
-        //print("index of observer: \(sqlite3_bind_parameter_index(statement, "time"))")
-        guard sqlite3_bind_text(statement, 3, time, -1, nil) == SQLITE_OK else{
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error binding time: \(errmsg)")
-            throw SQLiteError.Bind(message: db.errorMessage)
-        }
-        //print("index of observer: \(sqlite3_bind_parameter_index(statement, "driverName"))")
-        guard sqlite3_bind_text(statement, 4, driverName, -1, nil) == SQLITE_OK else{
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error binding driverName: \(errmsg)")
-            throw SQLiteError.Bind(message: db.errorMessage)
-        }
-        //print("index of observer: \(sqlite3_bind_parameter_index(statement, "destination"))")
-        guard sqlite3_bind_text(statement, 5, destination, -1, nil) == SQLITE_OK else{
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error binding destination: \(errmsg)")
-            throw SQLiteError.Bind(message: db.errorMessage)
-        }
-        //print("index of observer: \(sqlite3_bind_parameter_index(statement, "nPassengers"))")
-        guard sqlite3_bind_text(statement, 6, nPassengers, -1, nil) == SQLITE_OK else{
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error binding nPass: \(errmsg)")
-            throw SQLiteError.Bind(message: db.errorMessage)
-        }
-        
-        //executing the query to insert values
-        guard sqlite3_step(statement) == SQLITE_DONE else {
-            let errmsg = String(cString: sqlite3_errmsg(db.dbPointer)!)
-            print("error creating table: \(errmsg)")
-            throw SQLiteError.Step(message: db.errorMessage)
-        }
-        print(SQLiteDatabase.path)*/
-        
         
     }
 }

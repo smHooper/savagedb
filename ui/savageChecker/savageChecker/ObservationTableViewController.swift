@@ -52,7 +52,7 @@ class ObservationTableViewController: UITableViewController {
         }*/
         
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        //self.navigationItem.leftBarButtonItem = self.editButtonItem
+        self.navigationItem.leftBarButtonItem = self.editButtonItem
         
         // Load the session. This is stored as a file using NSCoding.
         self.session = loadSession()
@@ -148,11 +148,15 @@ class ObservationTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             // Delete the row from the data source
+            let id = observations[indexPath.row].id
+            print("Deleting \(id)")
             observations.remove(at: indexPath.row)
-            
-            //################ delete row from DB #########################
-            
-            //saveObservations()
+            let recordToRemove = observationsTable.where(idColumn == id.datatypeValue)
+            do {
+                try db.run(recordToRemove.delete())
+            } catch let error{
+                print(error.localizedDescription)
+            }
             
             tableView.deleteRows(at: [indexPath], with: .fade)
         } else if editingStyle == .insert {
