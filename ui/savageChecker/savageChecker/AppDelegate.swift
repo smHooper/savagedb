@@ -27,7 +27,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch let error {
             fatalError(error.localizedDescription)
         }
-
+        print(dbPath)
         /*let db: SQLiteDatabase
         do {
             db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
@@ -46,11 +46,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let driverNameColumn = Expression<String>("driverName")
         let destinationColumn = Expression<String>("destination")
         let nPassengersColumn = Expression<String>("nPassengers")
+        let commentsColumn = Expression<String>("comments")
         
-        let observations = Table("observations")
+        let observationsTable = Table("observations")
         
         do {
-            try db.run(observations.create(ifNotExists: true) { t in
+            try db.run(observationsTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -58,6 +59,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
             })
         } catch let error {
             fatalError(error.localizedDescription)

@@ -24,6 +24,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var templateObserverField: UITextField!
     @IBOutlet weak var templateDestinationField: DropDownTextField!
     @IBOutlet weak var nPassengersTextField: UITextField!
+    @IBOutlet weak var commentsTextField: UITextField!
     
     var db: Connection!// SQLiteDatabase!
     var observation: Observation?
@@ -38,6 +39,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     let driverNameColumn = Expression<String>("driverName")
     let destinationColumn = Expression<String>("destination")
     let nPassengersColumn = Expression<String>("nPassengers")
+    let commentsColumn = Expression<String>("comments")
     
     let observationsTable = Table("observations")
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
@@ -69,7 +71,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         driverNameTextField.delegate = self
         destinationTextField.delegate = self
         nPassengersTextField.delegate = self
-        
+        commentsTextField.delegate = self
         
         guard let observation = observation else {
             fatalError("No valid observation passed from TableViewController")
@@ -83,6 +85,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             driverNameTextField.text = observation.driverName
             destinationTextField.text = observation.destination
             nPassengersTextField.text = observation.nPassengers
+            commentsTextField.text = observation.comments
         }
         // This is a new observation. Try to fill in text fields
         else {
@@ -109,7 +112,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         //Get the bounds from the storyboard's text field
         let frame = self.view.frame
         let font = observerNameTextField.font
-        let centerX = observerNameTextField.centerXAnchor
+        //let centerX = observerNameTextField.centerXAnchor
         let centerY = observerNameTextField.centerYAnchor
         
         //Configure the text field
@@ -152,7 +155,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         //Get the bounds from the storyboard's text field
         let frame = self.view.frame
         let font = destinationTextField.font
-        let centerX = destinationTextField.centerXAnchor
+        //let centerX = destinationTextField.centerXAnchor
         let centerY = destinationTextField.centerYAnchor
         
         //Configure the text field
@@ -224,16 +227,14 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             return
         }
         
-        // Can force unwrap all text fields because saveButton in inactive until all are filled
+        // Force unwrap all text fields because saveButton in inactive until all are filled
         let observerName = observerNameTextField.text!
         let date = dateTextField.text!
         let time = timeTextField.text!
         let driverName = driverNameTextField.text!
         let destination = destinationTextField.text!
         let nPassengers = nPassengersTextField.text!
-        
-        let thisSession = Session(observerName: observerName, openTime: self.session?.openTime, closeTime: self.session?.closeTime, givenDate: date)
-        print("ObservationViewController.prepare(): date: \(date)")
+        let comments = commentsTextField.text!
         
         // Update the Observation instance
         // Temporarily just say the id = -1. The id column is autoincremented anyway, so it doesn't matter.
@@ -243,13 +244,12 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         self.observation?.driverName = driverName
         self.observation?.destination = destination
         self.observation?.nPassengers = nPassengers
-        //observation = Observation(session: thisSession!, id: observation, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        self.observation?.comments = comments
         
-        //Update the database
+        // Update the database
         // Add a new record
         if isAddingNewObservation {
             insertObservation()
-        
         // Update an existing record
         } else {
             
@@ -421,7 +421,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         let driverName = observation?.driverName
         let destination = observation?.destination
         let nPassengers = observation?.nPassengers
-        
+        let comments = observation?.comments
+        print(comments!)
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
@@ -429,11 +430,14 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
                                                             timeColumn <- time!,
                                                             driverNameColumn <- driverName!,
                                                             destinationColumn <- destination!,
-                                                            nPassengersColumn <- nPassengers!))
-            print("inserted id: \(rowid)")
+                                                            nPassengersColumn <- nPassengers!,
+                                                            commentsColumn <- comments!))
+            let recordComments = observationsTable.select(commentsColumn).filter(idColumn == rowid)
+            print("inserted record: \(recordComments)")
         } catch {
             print("insertion failed: \(error)")
         }
+        
         
     }
 }

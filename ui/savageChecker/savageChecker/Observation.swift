@@ -20,6 +20,7 @@ class Observation {//: NSObject, NSCoding {
     var driverName: String
     var destination: String
     var nPassengers: String
+    var comments: String
     
     //MARK: Archiving paths
     static let DocumentsDirectory = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -35,7 +36,7 @@ class Observation {//: NSObject, NSCoding {
         static let nPassengers = "nPassengers"
     }
     
-    init?(session: Session, id: Int, time: String, driverName: String, destination: String, nPassengers: String){
+    init?(session: Session, id: Int, time: String, driverName: String, destination: String, nPassengers: String, comments: String = ""){
         // All observations must belong to a session, and observer name and date are pulled directly from that session
         if session.observerName.isEmpty {
             return nil
@@ -53,6 +54,7 @@ class Observation {//: NSObject, NSCoding {
         self.nPassengers = nPassengers
         self.date = session.date
         self.observerName = session.observerName
+        self.comments = comments
     }
     
     /*//MARK: NSCoding
