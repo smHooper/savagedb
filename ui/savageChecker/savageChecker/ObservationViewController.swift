@@ -224,18 +224,26 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             return
         }
         
+        // Can force unwrap all text fields because saveButton in inactive until all are filled
         let observerName = observerNameTextField.text!
         let date = dateTextField.text!
         let time = timeTextField.text!
         let driverName = driverNameTextField.text!
         let destination = destinationTextField.text!
         let nPassengers = nPassengersTextField.text!
-        // Can force unwrap all text fields because saveButton in inactive until all are filled
+        
         let thisSession = Session(observerName: observerName, openTime: self.session?.openTime, closeTime: self.session?.closeTime, givenDate: date)
+        print("ObservationViewController.prepare(): date: \(date)")
         
         // Update the Observation instance
         // Temporarily just say the id = -1. The id column is autoincremented anyway, so it doesn't matter.
-        observation = Observation(session: thisSession!, id: -1, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        self.observation?.observerName = observerName
+        self.observation?.date = date
+        self.observation?.time = time
+        self.observation?.driverName = driverName
+        self.observation?.destination = destination
+        self.observation?.nPassengers = nPassengers
+        //observation = Observation(session: thisSession!, id: observation, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
         
         //Update the database
         // Add a new record
@@ -247,6 +255,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             
             do {
                 // Select the record to update
+                print("Record id: \((observation?.id.datatypeValue)!)")
                 let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
                 print(record)
                 // Update all fields
@@ -265,7 +274,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             }
         }
         
-        // Now get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
+        // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
         var max: Int64!
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
@@ -388,6 +397,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Private methods
     //###############################################################################################
+    // Update save button status
     @objc private func updateObservation(){
         // Check that all text fields are filled in
         let observerName = observerNameTextField.text ?? ""
@@ -402,8 +412,8 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         }
     }
     
+    // Add record to DB
     private func insertObservation() {
-        print("adding record to DB")
         // Can just get text values from the observation because it has to be updated before saveButton is enabled
         let observerName = observation?.observerName
         let date = observation?.date
