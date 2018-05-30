@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SQLite
 import os.log
 
 class SessionViewController: UIViewController, UITextFieldDelegate {
@@ -19,12 +20,29 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var closeTimeTextField: UITextField!
     @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
     
+
     var session: Session?// This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
+    
+    // DB properties
+    var db: Connection!
+    let sessionsTable = Table("sessions")
+    let idColumn = Expression<Int64>("id")
+    let observerNameColumn = Expression<String>("observerName")
+    let dateColumn = Expression<String>("date")
+    let openTimeColumn = Expression<String>("openTime")
+    let closeTimeColumn = Expression<String>("closeTime")
 
     override func viewDidLoad() {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAround()
+        
+        // Open connection to the DB
+        do {
+            db = try Connection(dbPath)
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
         
         // Set up delegates for text fields
         addObserverTextField(menuOptions: observerOptions)
@@ -33,7 +51,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         openTimeTextField.delegate = self
         closeTimeTextField.delegate = self
         
-        // The user is opening the app again after closing it
+        // The user is opening the app again after closing it or returning from another scene
         if let session = loadSession() {
             observerTextField.text = session.observerName
             dateTextField.text = session.date
@@ -298,10 +316,53 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         let openTime = openTimeTextField.text ?? ""
         let closeTime = closeTimeTextField.text ?? ""
         if !observerName.isEmpty && !openTime.isEmpty && !closeTime.isEmpty && !date.isEmpty {
-            self.session = Session(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+            // Update the DB
+            //self.session = Session(id: -1, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+            if let session = loadSession() {
+                // The session already exists in the DB, so update it
+                do {
+                    // Select the record to update
+                    //print("Record id: \((session?.id.datatypeValue)!)")
+                    let record = sessionsTable.filter(idColumn == session.id.datatypeValue)
+                    // Update all fields
+                    if try db.run(record.update(observerNameColumn <- observerName,
+                                                dateColumn <- date,
+                                                openTimeColumn <- openTime,
+                                                closeTimeColumn <- closeTime)) > 0 {
+                        print("updated record")
+                    } else {
+                        print("record not found")
+                    }
+                } catch {
+                    print("Update failed")
+                }
+                // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
+                var max: Int64!
+                do {
+                    max = try db.scalar(sessionsTable.select(idColumn.max))
+                } catch {
+                    print(error.localizedDescription)
+                }
+                let thisId = Int(max)
+                self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+            } else {
+                // This is a new session so create a new recod in the DB
+                do {
+                    let rowid = try db.run(sessionsTable.insert(observerNameColumn <- observerName,
+                                                                dateColumn <- date,
+                                                                openTimeColumn <- openTime,
+                                                                closeTimeColumn <- closeTime))
+                    self.session?.id = Int(rowid)
+                } catch {
+                    print("Session insertion failed: \(error)")
+                }
+            }
+            
             print("Session updated")
+            
+            // Enable the nav button
             viewVehiclesButton.isEnabled = true
-            saveSession()
+            
         }
         // Disable the view vehicles button until all fields are filled in
         else {
@@ -317,10 +378,27 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             os_log("Failed to save session...", log: OSLog.default, type: .error)
         }
     }
-
+    
     private func loadSession() -> Session? {
-        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+        // ************* check that the table exists first **********************
+        var rows = [Row]()
+        do {
+            rows = Array(try db.prepare(sessionsTable))
+        } catch {
+            fatalError(error.localizedDescription)
+        }
+        if rows.count > 1 {
+            fatalError("Multiple sessions found")
+        }
+        for row in rows{
+            session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+        }
+        print("loaded all session")
+        return session
     }
+    /*private func loadSession() -> Session? {
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+    }*/
 
 }
 

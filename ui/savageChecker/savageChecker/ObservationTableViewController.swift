@@ -16,13 +16,11 @@ class ObservationTableViewController: UITableViewController {
     //MARK: Properties
     var observations = [Observation]()
     var session: Session?
-    //var db: SQLiteDatabase!
-    //var sessionController: SessionViewController?
     @IBOutlet weak var addNewObservation: UIBarButtonItem!
     
     var db: Connection!// SQLiteDatabase!
     
-    // DB columns
+    // observation DB properties
     let idColumn = Expression<Int64>("id")
     let observerNameColumn = Expression<String>("observerName")
     let dateColumn = Expression<String>("date")
@@ -31,6 +29,11 @@ class ObservationTableViewController: UITableViewController {
     let destinationColumn = Expression<String>("destination")
     let nPassengersColumn = Expression<String>("nPassengers")
     let commentsColumn = Expression<String>("comments")
+    
+    // session DB properties
+    let sessionsTable = Table("sessions")
+    let openTimeColumn = Expression<String>("openTime")
+    let closeTimeColumn = Expression<String>("closeTime")
     
     let observationsTable = Table("observations")
     
@@ -43,23 +46,16 @@ class ObservationTableViewController: UITableViewController {
         } catch let error {
             fatalError(error.localizedDescription)
         }
-        /*do {
-            db = try SQLiteDatabase.open(path: SQLiteDatabase.path)
-            print("Successfully opened connection to database.")
-        } catch SQLiteError.OpenDatabase(let message) {
-            fatalError("Unable to establish database connection")
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }*/
         
         // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
         self.navigationItem.leftBarButtonItem = self.editButtonItem
         
         // Load the session. This is stored as a file using NSCoding.
-        self.session = loadSession()
+        //self.session = loadSession()
         
         do {
             print("trying to load observations")
+            try loadSession()
             if let savedObservations = try loadObservations(){
             observations += savedObservations
             } else {
@@ -194,7 +190,7 @@ class ObservationTableViewController: UITableViewController {
                 fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
             }
             //############### Change observations.count to get the actual next id value ############################
-            observationViewController.observation = Observation(session: session!, id: -1, time: "", driverName: "", destination: "", nPassengers: "")
+            observationViewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
             
             // Let the view controller know to insert a new row in the DB
             observationViewController.isAddingNewObservation = true
@@ -252,8 +248,8 @@ class ObservationTableViewController: UITableViewController {
         let rows = Array(try db.prepare(observationsTable))
         var loadedObservations = [Observation]()
         for row in rows{
-            let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-            let observation = Observation(session: session!, id: Int(row[idColumn]), time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
+            //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+            let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
             loadedObservations.append(observation!)
         }
         
@@ -262,8 +258,19 @@ class ObservationTableViewController: UITableViewController {
         
     }
     
-    private func loadSession() -> Session? {
-        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+    private func loadSession() throws { //}-> Session?{
+        // ************* check that the table exists first **********************
+        let rows = Array(try db.prepare(sessionsTable))
+        if rows.count > 1 {
+            fatalError("Multiple sessions found")
+        }
+        for row in rows{
+            self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+        }
+        print("loaded all session")
     }
+    /*private func loadSession() -> Session? {
+        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+    }*/
 
 }

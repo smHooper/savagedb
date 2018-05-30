@@ -36,24 +36,25 @@ class Observation {//: NSObject, NSCoding {
         static let nPassengers = "nPassengers"
     }
     
-    init?(session: Session, id: Int, time: String, driverName: String, destination: String, nPassengers: String, comments: String = ""){
-        // All observations must belong to a session, and observer name and date are pulled directly from that session
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, comments: String = ""){
+        /*// All observations must belong to a session, and observer name and date are pulled directly from that session
         if session.observerName.isEmpty {
             return nil
         }
         if session.date.isEmpty {
             return nil
-        }
+        }*/
+        
         
         //Initialize stored properties
         //self.session = session
         self.id = id
+        self.observerName = observerName
+        self.date = date
         self.time = time // make this optional and set to now if empty
         self.driverName = driverName
         self.destination = destination
         self.nPassengers = nPassengers
-        self.date = session.date
-        self.observerName = session.observerName
         self.comments = comments
     }
     

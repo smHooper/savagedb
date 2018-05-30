@@ -31,7 +31,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     var session: Session?
     var isAddingNewObservation: Bool!
     
-    // DB columns
+    // observation DB columns
     let idColumn = Expression<Int64>("id")
     let observerNameColumn = Expression<String>("observerName")
     let dateColumn = Expression<String>("date")
@@ -40,8 +40,14 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     let destinationColumn = Expression<String>("destination")
     let nPassengersColumn = Expression<String>("nPassengers")
     let commentsColumn = Expression<String>("comments")
-    
     let observationsTable = Table("observations")
+    
+    // session DB properties
+    let sessionsTable = Table("sessions")
+    let openTimeColumn = Expression<String>("openTime")
+    let closeTimeColumn = Expression<String>("closeTime")
+    
+    
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
     
@@ -58,7 +64,12 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         
         //Load the session
         // This shouldn't fail because the session should have been saved at the Session scene.
-        self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+        //self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
+        do {
+            try loadSession()
+        } catch {
+            fatalError(error.localizedDescription)
+        }
         
         // Configure custom delegates
         addObserverTextField(menuOptions: self.observerOptions)
@@ -437,7 +448,17 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         } catch {
             print("insertion failed: \(error)")
         }
-        
-        
+    }
+    
+    private func loadSession() throws { //}-> Session?{
+        // ************* check that the table exists first **********************
+        let rows = Array(try db.prepare(sessionsTable))
+        if rows.count > 1 {
+            fatalError("Multiple sessions found")
+        }
+        for row in rows{
+            self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+        }
+        print("loaded all session")
     }
 }

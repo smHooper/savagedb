@@ -39,17 +39,34 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }*/
 
         // Make tables
+        
+        // Session table
         let idColumn = Expression<Int64>("id")
         let observerNameColumn = Expression<String>("observerName")
         let dateColumn = Expression<String>("date")
+        let openTimeColumn = Expression<String>("openTime")
+        let closeTimeColumn = Expression<String>("closeTime")
+        
+        let sessionsTable = Table("sessions")
+        do {
+            try db.run(sessionsTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(openTimeColumn)
+                t.column(closeTimeColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // Observations table
         let timeColumn = Expression<String>("time")
         let driverNameColumn = Expression<String>("driverName")
         let destinationColumn = Expression<String>("destination")
         let nPassengersColumn = Expression<String>("nPassengers")
         let commentsColumn = Expression<String>("comments")
-        
         let observationsTable = Table("observations")
-        
         do {
             try db.run(observationsTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -64,17 +81,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         } catch let error {
             fatalError(error.localizedDescription)
         }
-
-        /*let createObservationsSQL = "CREATE TABLE IF NOT EXISTS observations (id INTEGER PRIMARY KEY AUTOINCREMENT, observerName TEXT, date TEXT, time TEXT, driverName TEXT, destination TEXT, nPassengers TEXT);"
-        do {
-            try db.createTable(sql: createObservationsSQL)
-            print("Successfully created session table")
-        } catch {
-            fatalError(db.errorMessage)
-        }
-        
-        // Close the database so another view can connect to it*/
-        
         
         
         return true

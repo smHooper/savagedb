@@ -11,9 +11,10 @@ import UIKit
 import os.log
 
 
-class Session: NSObject, NSCoding {
+class Session {//}: NSObject, NSCoding {
     
     //MARK: Properties
+    var id: Int
     var observerName: String
     var date: String // Store as string because Swift almost certainly uses different epoch than Python
     var openTime: String
@@ -31,7 +32,7 @@ class Session: NSObject, NSCoding {
         static let closeTime = "closeTime"
     }
     
-    init?(observerName: String, openTime: String?, closeTime: String?, givenDate: String? = ""){
+    init?(id: Int, observerName: String, openTime: String?, closeTime: String?, givenDate: String? = ""){
         
         // Check that all required attributes are non-mepty
         guard !observerName.isEmpty else {
@@ -53,13 +54,14 @@ class Session: NSObject, NSCoding {
         } else {
             self.date = givenDate!
         }
-
+        
+        self.id = id
         self.observerName = observerName
         self.openTime = openTime!
         self.closeTime = closeTime!
     }
     
-    //MARK: NSCoding
+    /*//MARK: NSCoding
     func encode(with aCoder: NSCoder) {
         aCoder.encode(observerName, forKey: PropertyKey.observerName)
         aCoder.encode(date, forKey: PropertyKey.date)
@@ -88,6 +90,6 @@ class Session: NSObject, NSCoding {
         }
 
         self.init(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
-    }
+    }*/
     
 }
