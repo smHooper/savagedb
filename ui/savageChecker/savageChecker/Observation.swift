@@ -10,7 +10,7 @@ import Foundation
 import os.log
 
 
-class Observation {//: NSObject, NSCoding {
+class Observation {
     
     //MARK: Properties
     var id: Int
@@ -58,65 +58,29 @@ class Observation {//: NSObject, NSCoding {
         self.comments = comments
     }
     
-    /*//MARK: NSCoding
-    func encode(with aCoder: NSCoder) {
-        aCoder.encode(time, forKey: PropertyKey.time)
-        aCoder.encode(date, forKey: PropertyKey.date)
-        aCoder.encode(observerName, forKey: PropertyKey.observerName)
-        aCoder.encode(driverName, forKey: PropertyKey.driverName)
-        aCoder.encode(destination, forKey: PropertyKey.destination)
-    }
-    
-    required convenience init?(coder aDecoder: NSCoder) {
-        // Try to initialize all required attributes
-        guard let time = aDecoder.decodeObject(forKey: PropertyKey.time) as? String else {
-            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let date = aDecoder.decodeObject(forKey: PropertyKey.date) as? String else {
-            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let observerName = aDecoder.decodeObject(forKey: PropertyKey.observerName) as? String else {
-            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let driverName = aDecoder.decodeObject(forKey: PropertyKey.driverName) as? String else {
-            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let destination = aDecoder.decodeObject(forKey: PropertyKey.destination) as? String else {
-            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let nPassengers = aDecoder.decodeObject(forKey: PropertyKey.nPassengers) as? String else {
-            os_log("Unable to decode the name for an Observation object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        let session = Session(observerName: observerName, openTime: "12:00 AM", closeTime: "12:00 PM", givenDate: date)
-        self.init(session: session!, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
-    }*/
 }
 
 
-/*class BusObservation: Observation {
+class BusObservation: Observation {
     
     var busNumber: String?
     var busType: String?
+    var isTraining: Bool?
+    var nOvernightPassengers = 0
     
-    init?(session: Session, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String){
-        super.init(session: session, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+    // Not stored in DB
+    private var isLodgeBus = false
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, nOvernightPassengers: Int = 0){
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
         
         self.busType = busType
         self.busNumber = busNumber
+        self.isTraining = isTraining
+        self.nOvernightPassengers = nOvernightPassengers
         
     }
-    
-    required convenience init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
-    
-}*/
+
+}
 
 

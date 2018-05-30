@@ -14,7 +14,6 @@ import os.log
 class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
-    
     @IBOutlet weak var observerNameTextField: DropDownTextField!
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var timeTextField: UITextField!
@@ -88,18 +87,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             fatalError("No valid observation passed from TableViewController")
         }
         // The observation already exists and is open for viewing/editing
-        if !observation.driverName.isEmpty {
-            print("loaded observation")
-            observerNameTextField.text = observation.observerName
-            dateTextField.text = observation.date
-            timeTextField.text = observation.time
-            driverNameTextField.text = observation.driverName
-            destinationTextField.text = observation.destination
-            nPassengersTextField.text = observation.nPassengers
-            commentsTextField.text = observation.comments
-        }
-        // This is a new observation. Try to fill in text fields
-        else {
+        if isAddingNewObservation {
             observerNameTextField.text = session?.observerName
             dateTextField.text = session?.date
             let now = Date()
@@ -108,7 +96,16 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             formatter.dateStyle = .none
             timeTextField.text = formatter.string(from: now)
             saveButton.isEnabled = false
+        } else {
+            observerNameTextField.text = observation.observerName
+            dateTextField.text = observation.date
+            timeTextField.text = observation.time
+            driverNameTextField.text = observation.driverName
+            destinationTextField.text = observation.destination
+            nPassengersTextField.text = observation.nPassengers
+            commentsTextField.text = observation.comments
         }
+
     }
 
     override func didReceiveMemoryWarning() {
@@ -461,4 +458,9 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         }
         print("loaded all session")
     }
+}
+
+
+class BusObservationViewController: ObservationViewController {
+    
 }
