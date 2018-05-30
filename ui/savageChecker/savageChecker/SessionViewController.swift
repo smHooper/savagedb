@@ -18,7 +18,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
     @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
-
+    
     var session: Session?// This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
 

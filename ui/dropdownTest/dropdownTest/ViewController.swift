@@ -18,7 +18,7 @@ class ViewController: UIViewController, UITextFieldDelegate {
         super.viewDidLoad()
         
         //Get the bounds from the storyboard
-        let textFieldBounds = button.layer.bounds
+        let textFieldBounds = button.frame
         let centerX = button.centerXAnchor
         let centerY = button.centerYAnchor
         
@@ -48,14 +48,18 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: UITextFieldDelegate
     //####################################################################################################################
-    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        guard let text = button.text else {
-            return false
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        let field = textField as! dropDownBtn
+        guard let text = textField.text else {
+            print("Guard failed")
+            return
             }
-        if text == "Other" {
-            return true
+        // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+        if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
+            print("resigning")
+            textField.resignFirstResponder()
         } else {
-            return false
+            print("not resigning")
         }
     }
     
@@ -67,21 +71,35 @@ class ViewController: UIViewController, UITextFieldDelegate {
     
 }
 
+
+
 protocol dropDownProtocol {
     func dropDownPressed(string : String)
 }
 
 @IBDesignable class dropDownBtn: UITextField, dropDownProtocol {
     
+    // Keep track of whether the dropDownMenu was pressed. This helps suppress the keyboard the first time the text field is pressed
+    var dropDownWasPressed = false
+    
     func dropDownPressed(string: String) {
-        if string == "Other" {
-            self.delegate?.
-            self.becomeFirstResponder()
-            self.dismissDropDown()
-        } else {
+        if (self.dropView.dropDownOptions.contains(string) && string != "Other"){
+            print("Selection not 'other'")
+            self.resignFirstResponder()
             self.text = string// for: .normal)
             self.dismissDropDown()
         }
+        else {
+            //self.delegate?.textFieldDidBeginEditing!(self)
+            //self.delegate?.
+            print("text == 'Other'")
+            self.text?.removeAll()
+            self.becomeFirstResponder()
+            self.dismissDropDown()
+        }
+        
+        // Indicate that the dropdown button has been pressed so the keyboard will appear when "Other" is selected
+        dropDownWasPressed = true
     }
     
     var dropView = dropDownView()
