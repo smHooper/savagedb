@@ -2,33 +2,40 @@
 //  ObservationViewController.swift
 //  savageChecker
 //
-//  Created by Sam Hooper on 5/14/18.
+//  Created by Sam Hooper on 5/31/18.
 //  Copyright © 2018 Sam Hooper. All rights reserved.
 //
 
 import UIKit
-//import SQLite3
 import SQLite
 import os.log
 
-class ObservationViewController: UIViewController, UITextFieldDelegate {
+class BaseObservationViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
-    @IBOutlet weak var observerNameTextField: DropDownTextField!
-    @IBOutlet weak var dateTextField: UITextField!
-    @IBOutlet weak var timeTextField: UITextField!
-    @IBOutlet weak var driverNameTextField: UITextField!
-    @IBOutlet weak var destinationTextField: DropDownTextField!
-    @IBOutlet weak var saveButton: UIBarButtonItem!
-    @IBOutlet weak var templateObserverField: UITextField!
-    @IBOutlet weak var templateDestinationField: DropDownTextField!
-    @IBOutlet weak var nPassengersTextField: UITextField!
-    @IBOutlet weak var commentsTextField: UITextField!
+    var observerNameTextField: DropDownTextField!
+    var dateTextField: UITextField!
+    var timeTextField: UITextField!
+    var driverNameTextField: UITextField!
+    var destinationTextField: DropDownTextField!
+    var nPassengersTextField: UITextField!
+    var commentsTextField: UITextField!
+    
+    
+    weak var saveButton: UIBarButtonItem!
+    weak var templateObserverField: UITextField!
+    weak var templateDestinationField: DropDownTextField!
     
     var db: Connection!// SQLiteDatabase!
     var observation: Observation?
     var session: Session?
     var isAddingNewObservation: Bool!
+    
+    // layout properties
+    let topSpacing = 40.0
+    let sideSpacing = 8.0
+    let textFieldSpacing = 30.0
+    
     
     // observation DB columns
     let idColumn = Expression<Int64>("id")
@@ -46,9 +53,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     let openTimeColumn = Expression<String>("openTime")
     let closeTimeColumn = Expression<String>("closeTime")
     
-    
+    // dropdown menu options
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -70,7 +78,10 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             fatalError(error.localizedDescription)
         }
         
-        // Configure custom delegates
+        // Lay out all text fields
+        setupLayout()
+        
+        /*// Configure custom delegates
         addObserverTextField(menuOptions: self.observerOptions)
         addDestinationTextField(menuOptions: self.destinationOptions)
         createDatePicker()
@@ -104,14 +115,88 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
             destinationTextField.text = observation.destination
             nPassengersTextField.text = observation.nPassengers
             commentsTextField.text = observation.comments
-        }
-
+        }*/
+        
     }
-
+    
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        if UIDevice.current.orientation.isLandscape {
+            print("Landscape")
+        } else {
+            print("Portrait")
+        }
+        
+    }
+    
+    // Set up the text fields in place
+    func setupLayout(){
+        print("Did layout")
+        let textFieldOrder = [(label: "Observer name", textField: observerNameTextField, placeholder: "Select or enter the observer's name"),
+                              (label: "Date",          textField: dateTextField,         placeholder: "Select the observation date"),
+                              (label: "Time",          textField: timeTextField,         placeholder: "Select the observation time"),
+                              (label: "Driver's name", textField: driverNameTextField,   placeholder: "Enter the driver's last name"),
+                              (label: "Destination",   textField: destinationTextField,  placeholder: "Select or enter the destination"),
+                              (label: "Number of passengers", textField: nPassengersTextField, placeholder: "Enter the number of passengers"),
+                              (label: "Comments",      textField: commentsTextField,     placeholder: "Enter any additional comments (optional)")
+                              ]
+        
+        // Set up the container
+        let container = UIView()
+        let safeArea = self.view.safeAreaInsets
+        self.view.addSubview(container)
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        container.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor).isActive = true
+        container.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right).isActive = true
+        container.heightAnchor.constraint(equalToConstant: self.view.frame.height - CGFloat(self.topSpacing * 2) - safeArea.top - safeArea.bottom).isActive = true
+        
+        var lastBottomAnchor = container.topAnchor
+        for (i, field) in textFieldOrder.enumerated() {
+            // Combine the label and the textField in a vertical stack view
+            let stack = UIStackView()
+            stack.axis = .vertical
+            stack.spacing = CGFloat(self.sideSpacing)
+            container.addSubview(stack)
+            stack.translatesAutoresizingMaskIntoConstraints = false
+            stack.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
+            
+            if i == 0 {
+                stack.topAnchor.constraint(equalTo: lastBottomAnchor).isActive = true
+            } else {
+                stack.topAnchor.constraint(lessThanOrEqualTo: lastBottomAnchor, constant: CGFloat(self.textFieldSpacing)).isActive = true
+            }
+            
+            let label = UILabel()
+            label.text = field.label
+            label.font = UIFont.systemFont(ofSize: 17.0)
+            stack.addArrangedSubview(label)
+            label.translatesAutoresizingMaskIntoConstraints = false
+            label.leftAnchor.constraint(equalTo: stack.leftAnchor).isActive = true
+            
+            
+            let textField = UITextField()
+            textField.placeholder = field.placeholder
+            textField.font = UIFont.systemFont(ofSize: 14.0)
+            textField.layer.cornerRadius = 5
+            textField.borderStyle = .roundedRect
+            textField.layer.borderColor = UIColor.lightGray.cgColor
+            textField.layer.borderWidth = 0.25
+            textField.frame.size.height = 28.5
+            stack.addArrangedSubview(textField)
+            textField.translatesAutoresizingMaskIntoConstraints = false
+            textField.leftAnchor.constraint(equalTo: stack.leftAnchor).isActive = true
+            textField.widthAnchor.constraint(equalTo: container.widthAnchor).isActive = true
+            
+            lastBottomAnchor = stack.bottomAnchor
+        }
+    }
+    
+    
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
     
     //MARK: Add dropdown text fields
     //######################################################################################################
@@ -157,7 +242,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         observerNameTextField.dropDownID = "observer"
         NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:observer"), object: nil)
     }
-
+    
     func addDestinationTextField(menuOptions: [String]){
         
         //Get the bounds from the storyboard's text field
@@ -258,7 +343,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         // Add a new record
         if isAddingNewObservation {
             insertObservation()
-        // Update an existing record
+            // Update an existing record
         } else {
             
             do {
@@ -458,4 +543,9 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         }
         print("loaded all session")
     }
+}
+
+
+class BusObservationViewController: ObservationViewController {
+    
 }

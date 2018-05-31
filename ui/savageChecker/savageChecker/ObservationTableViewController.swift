@@ -178,18 +178,19 @@ class ObservationTableViewController: UITableViewController {
 
     
     // MARK: - Navigation
-
+    
     // Prep observation view with info from session
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    /*override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         super.prepare(for: segue, sender: sender)
         
         switch(segue.identifier ?? ""){
         
-        case "addObservation":
+        
+        case "addObservation": // This should never be true
             guard let observationViewController = segue.destination.childViewControllers.first! as? ObservationViewController else {
                 fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
             }
-            //############### Change observations.count to get the actual next id value ############################
+            
             observationViewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
             
             // Let the view controller know to insert a new row in the DB
@@ -215,7 +216,7 @@ class ObservationTableViewController: UITableViewController {
             fatalError("Unexpeced Segue Identifier: \(segue.identifier!)")
         }
         
-    }
+    }*/
     
     
     //MARK: Private Methods

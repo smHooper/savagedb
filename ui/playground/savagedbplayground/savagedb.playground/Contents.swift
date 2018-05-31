@@ -31,6 +31,4 @@ func f(str:String){
 
 let dict = [(name: "a", function: f)]
 
-for (name, function) in dict{
-    function(name)
-}
+print(icons[0])

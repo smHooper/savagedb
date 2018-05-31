@@ -15,6 +15,8 @@ import UIKit
     static let width = 150.0
     var height = 158.0 // Changes depending on text in label
     var buttonSize = 120.0
+    var labelText: String?
+    var button = UIButton()
     
     //MARK: Initialization
     override init(frame: CGRect) {
@@ -39,11 +41,13 @@ import UIKit
         let bundle = Bundle(for: type(of: self))
         let image = UIImage(named: imageName, in: bundle, compatibleWith: self.traitCollection)
         button.setImage(image, for: .normal)
-        addArrangedSubview(button)
+        self.button = button
+        addArrangedSubview(self.button)
         
         // Add a label
         let label = UILabel()
         label.text = labelText
+        self.labelText = labelText
         label.font = UIFont.systemFont(ofSize: 25.0)
         label.translatesAutoresizingMaskIntoConstraints = false
         addArrangedSubview(label)

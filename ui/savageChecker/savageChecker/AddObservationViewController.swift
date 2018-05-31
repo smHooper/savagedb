@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import os.log
+import SQLite
 
 class AddObservationViewController: UIViewController {
     
@@ -14,8 +16,7 @@ class AddObservationViewController: UIViewController {
     let menuPadding = 50.0
     var buttons = [VehicleButtonControl]()
     
-    /*var icons: DictionaryLiteral = ["JV Bus": "busIcon",
-                                    "Lodge Bus": "busIcon",
+    var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "NPS Vehicle": "busIcon",
                                     "NPS Approved": "busIcon",
                                     "NPS Contractor": "busIcon",
@@ -27,9 +28,9 @@ class AddObservationViewController: UIViewController {
                                     "Accessibility": "busIcon",
                                     "Hunting": "busIcon",
                                     "Road lottery": "busIcon",
-                                    "Other": "busIcon"]*/
+                                    "Other": "busIcon"]//*/
     
-    let icons = [
+    /*let icons = [
         (labelText: "JV Bus", iconName: "busIcon", function: "a"),
         (labelText: "Lodge Bus", iconName: "busIcon", function: "a"),
         (labelText: "NPS Vehicle", iconName: "busIcon", function: "a"),
@@ -44,15 +45,17 @@ class AddObservationViewController: UIViewController {
         (labelText: "Hunting", iconName: "busIcon", function: "a"),
         (labelText: "Road lottery", iconName: "busIcon", function: "a"),
         (labelText: "Other", iconName: "busIcon", function: "a")
-    ]
+    ]*/
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         // Add make buttons to arrange
-        for (labelText, iconName, function) in self.icons {
+        for (offset: index, (key: labelText, value: iconName)) in self.icons.enumerated() {
             let thisButton = VehicleButtonControl()
             thisButton.setupButtonLayout(imageName: iconName, labelText: labelText)
+            thisButton.tag = index
+            thisButton.button.addTarget(self, action: #selector(AddObservationViewController.moveToObservationViewController(button:)), for: .touchUpInside)
             buttons.append(thisButton)
         }
         
@@ -65,6 +68,13 @@ class AddObservationViewController: UIViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    // Redo the layout when rotated
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        setupMenuLayout()
+    }
+    
     
     //MARK: Private methods
     private func setupMenuLayout(){
@@ -125,15 +135,88 @@ class AddObservationViewController: UIViewController {
         }
     }
 
-    /*
+    
     // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    
+    @objc func moveToObservationViewController(button: UIButton){
+        let session = loadSession()
+        let labelText = icons[button.tag].key
+        switch (labelText){
+        case "JV Bus":
+                let viewController = ObservationViewController()
+                viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
+                present(viewController, animated: true, completion: nil)
+        default:
+            fatalError("Didn't understand which controller to move to")
+            }
+        }
+    
+    // Prep observation view with info from session
+    /*override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        super.prepare(for: segue, sender: sender)
+        
+        switch(segue.identifier ?? ""){
+            
+        case "addObservation":
+            guard let observationViewController = segue.destination.childViewControllers.first! as? ObservationViewController else {
+                fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
+            }
+            let session = loadSession()
+            observationViewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
+            
+            // Let the view controller know to insert a new row in the DB
+            observationViewController.isAddingNewObservation = true
+            os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
+            
+        /*case "showObservationDetail":
+            guard let observationViewController = segue.destination as? ObservationViewController else {
+                fatalError("Unexpected sender: \(segue.destination)")
+            }
+            guard let selectedObservationCell = sender as? ObservationTableViewCell else {
+                fatalError("Unexpected sener: \(sender!)")
+            }
+            guard let indexPath = tableView.indexPath(for: selectedObservationCell) else {
+                fatalError("The selected cell is not being displayed by the table")
+            }
+            
+            let selectedObservation = observations[indexPath.row]
+            observationViewController.observation = selectedObservation
+            // Let the view controller know to update an existing row in the DB
+            observationViewController.isAddingNewObservation = false
+             */
+        default:
+            fatalError("Unexpeced Segue Identifier: \(segue.identifier!)")
+        }
+        
+    }*/
+    
+    // MARK: Private methods
+    private func loadSession() -> Session? {
+        // ************* check that the table exists first **********************
+        var rows = [Row]()
+        let db: Connection!
+        let sessionsTable = Table("sessions")
+        let idColumn = Expression<Int64>("id")
+        let observerNameColumn = Expression<String>("observerName")
+        let dateColumn = Expression<String>("date")
+        let openTimeColumn = Expression<String>("openTime")
+        let closeTimeColumn = Expression<String>("closeTime")
+        do {
+            db = try Connection(dbPath)
+            rows = Array(try db.prepare(sessionsTable))
+        } catch {
+            fatalError(error.localizedDescription)
+        }
+        if rows.count > 1 {
+            fatalError("Multiple sessions found")
+        }
+        var session: Session?
+        for row in rows{
+            session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+        }
+        print("loaded all session. Observername: \(session?.observerName)")
+        return session
     }
-    */
 
 }
 
