@@ -10,21 +10,29 @@ import UIKit
 import SQLite
 import os.log
 
-class BaseObservationViewController: UIViewController, UITextFieldDelegate {
+class BaseObservationViewController: UIViewController, UITextFieldDelegate {//}, UITableViewDelegate, UITableViewDataSource {
     
     //MARK: Properties
-    var observerNameTextField: DropDownTextField!
-    var dateTextField: UITextField!
-    var timeTextField: UITextField!
-    var driverNameTextField: UITextField!
-    var destinationTextField: DropDownTextField!
-    var nPassengersTextField: UITextField!
-    var commentsTextField: UITextField!
+    var observerNameTextField = DropDownTextField()
+    var dateTextField = UITextField()
+    var timeTextField = UITextField()
+    var driverNameTextField = UITextField()
+    var destinationTextField = DropDownTextField()
+    var nPassengersTextField = UITextField()
+    var commentsTextField = UITextField()
     
+    var textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "normal"),
+                        (label: "Date",          placeholder: "Select the observation date", type: "normal"),
+                        (label: "Time",          placeholder: "Select the observation time", type: "normal"),
+                        (label: "Driver's name", placeholder: "Enter the driver's last name", type: "normal"),
+                        (label: "Destination",   placeholder: "Select or enter the destination", type: "normal"),
+                        (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "normal"),
+                        (label: "Comments",      placeholder: "Enter any additional comments (optional)", type: "normal")
+    ]
+    var textFields = [UITextField]()
+    let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     
-    weak var saveButton: UIBarButtonItem!
-    weak var templateObserverField: UITextField!
-    weak var templateDestinationField: DropDownTextField!
+    var saveButton: UIBarButtonItem!
     
     var db: Connection!// SQLiteDatabase!
     var observation: Observation?
@@ -35,7 +43,6 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
     let topSpacing = 40.0
     let sideSpacing = 8.0
     let textFieldSpacing = 30.0
-    
     
     // observation DB columns
     let idColumn = Expression<Int64>("id")
@@ -78,7 +85,39 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
             fatalError(error.localizedDescription)
         }
         
+        /*let safeArea = self.view.safeAreaInsets
+        for i in 0..<textFieldIds.count{
+            let textField = UITextField()
+            switch(textFieldIds[i].type){
+            case "normal":
+                textField.placeholder = textFieldIds[i].placeholder
+                textField.borderStyle = .roundedRect
+                textField.layer.borderColor = UIColor.lightGray.cgColor
+                textField.layer.borderWidth = 0.25
+                textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.8)
+                textField.font = UIFont.systemFont(ofSize: 14.0)
+                textField.layer.cornerRadius = 5
+                textField.frame.size.height = 28.5
+                textField.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
+                textField.tag = i
+            default:
+                fatalError("Did not understand text field type: \(textFieldIds[i])")
+            }
+            textFields.append(textField)
+            
+        }
         // Lay out all text fields
+        self.view.addSubview(tableView)
+        tableView.dataSource = self
+        tableView.delegate = self
+        tableView.register(TextFieldCell.self, forCellReuseIdentifier: "cell")
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        
+        tableView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        tableView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        tableView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+        tableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true*/
+        
         setupLayout()
         
         /*// Configure custom delegates
@@ -93,7 +132,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
         destinationTextField.delegate = self
         nPassengersTextField.delegate = self
         commentsTextField.delegate = self
-        
+
         guard let observation = observation else {
             fatalError("No valid observation passed from TableViewController")
         }
@@ -119,78 +158,124 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
         
     }
     
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        if UIDevice.current.orientation.isLandscape {
+
+    // On rotation, recalculate positions of fields
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        for subview in self.view.subviews {
+            subview.removeFromSuperview()
+        }
+        setupLayout()
+        /*if UIDevice.current.orientation.isLandscape {
             print("Landscape")
         } else {
             print("Portrait")
-        }
-        
-    }
+        }*/
+     
+     }
     
     // Set up the text fields in place
+    
     func setupLayout(){
         print("Did layout")
-        let textFieldOrder = [(label: "Observer name", textField: observerNameTextField, placeholder: "Select or enter the observer's name"),
-                              (label: "Date",          textField: dateTextField,         placeholder: "Select the observation date"),
-                              (label: "Time",          textField: timeTextField,         placeholder: "Select the observation time"),
-                              (label: "Driver's name", textField: driverNameTextField,   placeholder: "Enter the driver's last name"),
-                              (label: "Destination",   textField: destinationTextField,  placeholder: "Select or enter the destination"),
-                              (label: "Number of passengers", textField: nPassengersTextField, placeholder: "Enter the number of passengers"),
-                              (label: "Comments",      textField: commentsTextField,     placeholder: "Enter any additional comments (optional)")
-                              ]
+        /*let textFieldOrder = */
+ 
         
         // Set up the container
-        let container = UIView()
+        let container = UIStackView()
         let safeArea = self.view.safeAreaInsets
         self.view.addSubview(container)
+        container.backgroundColor = UIColor.cyan
         container.translatesAutoresizingMaskIntoConstraints = false
         container.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        container.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor).isActive = true
+        container.topAnchor.constraint(lessThanOrEqualTo: self.view.safeAreaLayoutGuide.topAnchor, constant: CGFloat(self.topSpacing)).isActive = true
         container.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right).isActive = true
-        container.heightAnchor.constraint(equalToConstant: self.view.frame.height - CGFloat(self.topSpacing * 2) - safeArea.top - safeArea.bottom).isActive = true
+        //container.heightAnchor.constraint(equalToConstant: self.view.frame.height - CGFloat(self.topSpacing * 2) - safeArea.top - safeArea.bottom).isActive = true
+        container.axis = .vertical
+        container.spacing = CGFloat(self.textFieldSpacing)
+        container.alignment = .fill
+        container.distribution = .equalCentering
+        //let containerFrame = container.frame
         
-        var lastBottomAnchor = container.topAnchor
-        for (i, field) in textFieldOrder.enumerated() {
+        var containerHeight = CGFloat(0.0)
+        var stackViews = [UIStackView]()
+        for i in 0..<textFieldIds.count {
             // Combine the label and the textField in a vertical stack view
-            let stack = UIStackView()
-            stack.axis = .vertical
-            stack.spacing = CGFloat(self.sideSpacing)
-            container.addSubview(stack)
-            stack.translatesAutoresizingMaskIntoConstraints = false
-            stack.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
-            
-            if i == 0 {
-                stack.topAnchor.constraint(equalTo: lastBottomAnchor).isActive = true
-            } else {
-                stack.topAnchor.constraint(lessThanOrEqualTo: lastBottomAnchor, constant: CGFloat(self.textFieldSpacing)).isActive = true
-            }
-            
             let label = UILabel()
-            label.text = field.label
-            label.font = UIFont.systemFont(ofSize: 17.0)
-            stack.addArrangedSubview(label)
-            label.translatesAutoresizingMaskIntoConstraints = false
-            label.leftAnchor.constraint(equalTo: stack.leftAnchor).isActive = true
-            
+            let thisLabelText = textFieldIds[i].label
+            let font = UIFont.systemFont(ofSize: 17.0)
+            let labelWidth = thisLabelText.width(withConstrainedHeight: 28.5, font: font)
+            label.text = thisLabelText
+            label.font = font
+            label.frame = CGRect(x: safeArea.left, y: 0, width: labelWidth, height: 28.5)
             
             let textField = UITextField()
-            textField.placeholder = field.placeholder
-            textField.font = UIFont.systemFont(ofSize: 14.0)
-            textField.layer.cornerRadius = 5
+            textField.placeholder = textFieldIds[i].placeholder
             textField.borderStyle = .roundedRect
             textField.layer.borderColor = UIColor.lightGray.cgColor
             textField.layer.borderWidth = 0.25
+            textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.8)
+            textField.font = UIFont.systemFont(ofSize: 14.0)
+            textField.layer.cornerRadius = 5
             textField.frame.size.height = 28.5
-            stack.addArrangedSubview(textField)
-            textField.translatesAutoresizingMaskIntoConstraints = false
-            textField.leftAnchor.constraint(equalTo: stack.leftAnchor).isActive = true
-            textField.widthAnchor.constraint(equalTo: container.widthAnchor).isActive = true
+            textField.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
+            textField.tag = i
+            textFields.append(textField)
+            textField.delegate = self
             
-            lastBottomAnchor = stack.bottomAnchor
+            let stack = UIStackView()
+            let stackHeight = label.frame.height + CGFloat(self.sideSpacing) + textFields[i].frame.height
+            stack.axis = .vertical
+            stack.spacing = CGFloat(self.sideSpacing)
+            stack.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: stackHeight)
+            stack.addArrangedSubview(label)
+            stack.addArrangedSubview(textFields[i])
+            container.addArrangedSubview(stack)
+            stackViews.append(stack)
+            containerHeight += stackHeight + CGFloat(self.textFieldSpacing)
+            
         }
+        print(commentsTextField.frame.maxY)
+        container.heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
     }
     
+    
+    //MARK: Tableview methods
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return textFields.count
+    }
+    
+    // Configure the cell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        let cell = TextFieldCell()
+        
+        let label = UILabel()
+        label.text = textFieldIds[indexPath.row].label
+        label.font = UIFont.systemFont(ofSize: 17.0)
+        label.textAlignment = .left
+        cell.label = label
+        print(textFields[0].placeholder)
+        print("Cell label text at \(indexPath.row): \(cell.label?.text)")
+        
+        cell.textField = textFields[indexPath.row]
+        cell.backgroundColor = UIColor.clear
+        cell.layer.borderColor = UIColor.clear.cgColor
+        
+        cell.addSubview(cell.label!)
+        cell.addSubview(cell.textField!)
+
+        return cell
+    }
+    
+    
+    /*func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print(textFieldIds[indexPath.row])
+    }*/
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -221,7 +306,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
         observerNameTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
         observerNameTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
         observerNameTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
-        observerNameTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//*/
+        //observerNameTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//*/
         
         // Configure text
         observerNameTextField.font = font
@@ -263,7 +348,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
         destinationTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
         destinationTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
         destinationTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
-        destinationTextField.heightAnchor.constraint(equalToConstant: templateDestinationField.frame.size.height).isActive = true//*/
+        //destinationTextField.heightAnchor.constraint(equalToConstant: templateDestinationField.frame.size.height).isActive = true//*/
         
         // Configure text
         destinationTextField.font = font
@@ -546,6 +631,3 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {
 }
 
 
-class BusObservationViewController: ObservationViewController {
-    
-}

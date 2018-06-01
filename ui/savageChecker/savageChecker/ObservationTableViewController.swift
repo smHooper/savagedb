@@ -220,29 +220,6 @@ class ObservationTableViewController: UITableViewController {
     
     
     //MARK: Private Methods
-    /*private func loadSampleObservations() {
-        let session = self.session!//Session(observerName: "Joe", openTime: "7:00 AM", closeTime: "7:00 PM", givenDate: "May 14 2017")
-        print(session.date)
-        guard let obs1 = Observation(session: session, time: "12:00 PM", driverName: "Hooper", destination: "Eielson", nPassengers: "48") else {
-            fatalError("Unable to instantiate obs1")
-        }
-        guard let obs2 = Observation(session: session, time: "12:30 PM", driverName: "Johnston", destination: "Eielson", nPassengers: "48") else {
-            fatalError("Unable to instantiate obs1")
-        }
-        
-        observations += [obs1, obs2]
-    }*/
-    
-    // Comment this function out
-    /*private func saveObservations() {
-        let isSuccessfulSave = NSKeyedArchiver.archiveRootObject(observations, toFile: Observation.ArchiveURL.path)
-        
-        if isSuccessfulSave {
-            os_log("Observations successfully saved.", log: OSLog.default, type: .debug)
-        } else {
-            os_log("Failed to save observations...", log: OSLog.default, type: .error)
-        }
-    }*/
     
     private func loadObservations() throws -> [Observation]?{
         // ************* check that the table exists first **********************

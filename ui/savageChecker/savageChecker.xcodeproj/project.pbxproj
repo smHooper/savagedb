@@ -25,6 +25,8 @@
 		AF7F9D7120B4995E000231E2 /* SQLiteDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF7F9D7020B4995E000231E2 /* SQLiteDatabase.swift */; };
 		AFF2A2F120BDEE0B007201F6 /* VehicleButtonControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */; };
 		AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */; };
+		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
+		AFF3E16720C0AC7D0079A389 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E16620C0AC7D0079A389 /* TextFieldCell.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -112,6 +114,8 @@
 		AF7F9D7020B4995E000231E2 /* SQLiteDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SQLiteDatabase.swift; sourceTree = "<group>"; };
 		AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleButtonControl.swift; sourceTree = "<group>"; };
 		AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddObservationViewController.swift; sourceTree = "<group>"; };
+		AFF3E15D20C084980079A389 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		AFF3E16620C0AC7D0079A389 /* TextFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,6 +181,8 @@
 				AF5E82F720AA2A9300386083 /* Observation.swift */,
 				AF5E82F920AA4D8400386083 /* ObservationViewController.swift */,
 				AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */,
+				AFF3E16620C0AC7D0079A389 /* TextFieldCell.swift */,
+				AFF3E15D20C084980079A389 /* Extensions.swift */,
 				AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */,
 				AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */,
 				AF67170420A4C58F0039C490 /* Main.storyboard */,
@@ -431,6 +437,8 @@
 				AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */,
 				AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */,
 				AF67172120A4D0AC0039C490 /* Session.swift in Sources */,
+				AFF3E15E20C084980079A389 /* Extensions.swift in Sources */,
+				AFF3E16720C0AC7D0079A389 /* TextFieldCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
