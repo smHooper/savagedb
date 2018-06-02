@@ -103,7 +103,9 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
         } catch {
             fatalError(error.localizedDescription)
         }
-        setupLayout()
+        self.setupLayout()
+        self.setNavigationBar()
+        self.view.backgroundColor = UIColor.white
         /*let safeArea = self.view.safeAreaInsets
         for i in 0..<textFieldIds.count{
             let textField = UITextField()
@@ -460,6 +462,28 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
     
     // MARK: - Navigation
     //#######################################################################
+    func setNavigationBar() {
+        let screenSize: CGRect = UIScreen.main.bounds
+        let navBar = UINavigationBar(frame: CGRect(x: 0, y: 0, width: screenSize.width, height: 44))
+        let navItem = UINavigationItem(title: "New Vehicle")
+        self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))//(barButtonSystemItem: self.saveButton, target: nil, action: #selector(save))
+        //self.saveButton = "Save"
+        navItem.rightBarButtonItem = self.saveButton
+        navBar.setItems([navItem], animated: false)
+        self.view.addSubview(navBar)
+        // Set the height
+        /*navBar.translatesAutoresizingMaskIntoConstraints = false
+        navBar.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+        navBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        navBar.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
+        navBar.heightAnchor.constraint(equalToConstant: screenSize.height/5.0).isActive = true*/
+        
+    }
+    
+    @objc func save() {
+        print("save")
+    }
+    
     @IBAction func cancel(_ sender: UIBarButtonItem) {
         // Depending on style of presentation (modal or push presentation), this view controller needs to be dismissed in two different ways
         let isAddingObservation = presentingViewController is UINavigationController

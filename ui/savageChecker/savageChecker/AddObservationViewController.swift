@@ -142,8 +142,8 @@ class AddObservationViewController: UIViewController {
         let session = loadSession()
         let labelText = icons[button.tag].key
         switch (labelText){
-        case "JV Bus":
-                let viewController = ObservationViewController()
+        case "Bus":
+                let viewController = BaseObservationViewController()
                 viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
                 present(viewController, animated: true, completion: nil)
         default:
