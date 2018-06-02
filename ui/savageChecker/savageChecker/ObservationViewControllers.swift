@@ -27,14 +27,14 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
                         (label: "Time",          placeholder: "Select the observation time", type: "time"),
                         (label: "Driver's name", placeholder: "Enter the driver's last name", type: "normal"),
                         (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                        (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
-                        (label: "Comments",      placeholder: "Enter any additional comments (optional)", type: "normal"),
+                        (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number")]//,
+                        /*(label: "Comments",      placeholder: "Enter any additional comments (optional)", type: "normal"),
                         (label: "Observer nam", placeholder: "Select or enter the observer's name", type: "normal"),
                         (label: "Observer na", placeholder: "Select or enter the observer's name", type: "normal"),
                         (label: "Observer n", placeholder: "Select or enter the observer's name", type: "normal"),
                         (label: "Observer ", placeholder: "Select or enter the observer's name", type: "normal"),
                         (label: "Observer", placeholder: "Select or enter the observer's name", type: "normal")
-    ]
+    ]*/
     var textFields = [Int: UITextField]()
     var dropDownTextFields = [Int: DropDownTextField]()
     var labels = [UILabel]()
@@ -196,7 +196,9 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
         //let container = UIStackView()
         let safeArea = self.view.safeAreaInsets
         let scrollView = UIScrollView()
-        //scrollView.
+        scrollView.showsHorizontalScrollIndicator = false
+        //scrollView.bounces = false
+        
         self.view.addSubview(scrollView)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor).isActive = true
@@ -365,6 +367,13 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
         //  Add a flag property to notify the controller that it will or will not need to handle when the keyboard obscures a text field
         //  Then, in editingDidBegin, set the scroll view position so the field is just above the keyboard
         
+    }
+    
+    // MARK: Scrollview Delegate
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView.contentOffset.x != 0 {
+            scrollView.contentOffset.x = 0
+        }
     }
     
     
