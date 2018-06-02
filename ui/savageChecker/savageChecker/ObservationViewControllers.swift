@@ -10,7 +10,7 @@ import UIKit
 import SQLite
 import os.log
 
-class BaseObservationViewController: UIViewController, UITextFieldDelegate {//}, UITableViewDelegate, UITableViewDataSource {
+class BaseObservationViewController: UIViewController, UITextFieldDelegate, UIScrollViewDelegate {//}, UITableViewDelegate, UITableViewDataSource {
     
     //MARK: Properties
     var observerNameTextField = DropDownTextField()
@@ -23,12 +23,17 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
     
     
     var textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                        (label: "Date",          placeholder: "Select the observation date", type: "normal"),
-                        (label: "Time",          placeholder: "Select the observation time", type: "normal"),
+                        (label: "Date",          placeholder: "Select the observation date", type: "date"),
+                        (label: "Time",          placeholder: "Select the observation time", type: "time"),
                         (label: "Driver's name", placeholder: "Enter the driver's last name", type: "normal"),
-                        (label: "Destination",   placeholder: "Select or enter the destination", type: "normal"),
-                        (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "normal"),
-                        (label: "Comments",      placeholder: "Enter any additional comments (optional)", type: "normal")
+                        (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
+                        (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                        (label: "Comments",      placeholder: "Enter any additional comments (optional)", type: "normal"),
+                        (label: "Observer nam", placeholder: "Select or enter the observer's name", type: "normal"),
+                        (label: "Observer na", placeholder: "Select or enter the observer's name", type: "normal"),
+                        (label: "Observer n", placeholder: "Select or enter the observer's name", type: "normal"),
+                        (label: "Observer ", placeholder: "Select or enter the observer's name", type: "normal"),
+                        (label: "Observer", placeholder: "Select or enter the observer's name", type: "normal")
     ]
     var textFields = [Int: UITextField]()
     var dropDownTextFields = [Int: DropDownTextField]()
@@ -57,6 +62,13 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
     let destinationColumn = Expression<String>("destination")
     let nPassengersColumn = Expression<String>("nPassengers")
     let commentsColumn = Expression<String>("comments")
+    var dbColumns = [Expression<String>("observerName"),
+                   Expression<String>("date"),
+                   Expression<String>("time"),
+                   Expression<String>("driverName"),
+                   Expression<String>("destination"),
+                   Expression<String>("nPassengers"),
+                   Expression<String>("comments")]
     let observationsTable = Table("observations")
     
     // session DB properties
@@ -67,8 +79,8 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
     // dropdown menu options
     let destinationOptions = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     let observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
-    let dropDownMenuOptions = ["Observer name": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                               "Destination": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
+    let dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                               "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
     ]
     
     
@@ -91,7 +103,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
         } catch {
             fatalError(error.localizedDescription)
         }
-        
+        setupLayout()
         /*let safeArea = self.view.safeAreaInsets
         for i in 0..<textFieldIds.count{
             let textField = UITextField()
@@ -125,15 +137,8 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
         tableView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
         tableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true*/
         
-        setupLayout()
-        
-        /*// Configure custom delegates
-        addObserverTextField(menuOptions: self.observerOptions)
-        addDestinationTextField(menuOptions: self.destinationOptions)
-        createDatePicker()
-        createTimePicker()
 
-        guard let observation = observation else {
+        /*guard let observation = observation else {
             fatalError("No valid observation passed from TableViewController")
         }
         // The observation already exists and is open for viewing/editing
@@ -159,34 +164,57 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
     }
     
     // On rotation, recalculate positions of fields
-    override func viewDidLayoutSubviews() {
+    /*override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         
         // If rotated, clear the views and redo the layout. If I don't check for the orientation change,
-        //  this will dismiss the keyboard every time a key is pressed
-        if UIDevice.current.orientation != deviceOrientation {
+        //  this will dismiss the keyboard every time a key is pressed. self.deviceOrientation starts
+        //  out with .rawValue == 0 (after loading it changes), so check that this isn't the first load
+        if UIDevice.current.orientation != deviceOrientation && self.deviceOrientation.rawValue != 0 {
+            // Clear views
+            // Get textfield values
+            /*var fieldValues = [String]()
+            for index in 0..<self.textFieldIds.count {
+                if self.textFields.keys.contains(index){
+                    fieldValues
+                }
+            }*/
+            
             for subview in self.view.subviews {
                 subview.removeFromSuperview()
             }
+            // Redo layout
             setupLayout()
         }
         // Reset the orientation
-        deviceOrientation = UIDevice.current.orientation
-     }
+        self.deviceOrientation = UIDevice.current.orientation
+     }*/
     
     // Set up the text fields in place
     func setupLayout(){
         // Set up the container
         //let container = UIStackView()
-        let container = UIView()
         let safeArea = self.view.safeAreaInsets
-        self.view.addSubview(container)
-        container.translatesAutoresizingMaskIntoConstraints = false
+        let scrollView = UIScrollView()
+        //scrollView.
+        self.view.addSubview(scrollView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor).isActive = true
+        scrollView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: CGFloat(self.topSpacing)).isActive = true
+        scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right).isActive = true
+        scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+
+        //scrollView.addSubview(container)
+        
+        let container = UIView()
+        scrollView.addSubview(container)
         
         // Set up constrations. Don't set the height constaint until all text fields have been added. This way, the container stackview will always be the extact height of the text fields with spacing.
-        container.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        container.topAnchor.constraint(lessThanOrEqualTo: self.view.safeAreaLayoutGuide.topAnchor, constant: CGFloat(self.topSpacing)).isActive = true
-        container.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right).isActive = true
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
+        container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
+        container.widthAnchor.constraint(equalTo: scrollView.widthAnchor).isActive = true
+        container.heightAnchor.constraint(equalTo: scrollView.heightAnchor).isActive = true
         /*container.axis = .vertical
         container.spacing = CGFloat(self.textFieldSpacing)
         container.alignment = .fill
@@ -216,7 +244,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
             
             
             
-            var textField = UITextField()
+            let textField = UITextField()
             textField.placeholder = textFieldIds[i].placeholder
             textField.borderStyle = .roundedRect
             textField.layer.borderColor = UIColor.lightGray.cgColor
@@ -232,16 +260,16 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
             
             let stack = UIStackView()
             //let stackHeight = label.frame.height + CGFloat(self.sideSpacing) + textFields[i].frame.height
-            let stackHeight = label.frame.height + CGFloat(self.sideSpacing) + textField.frame.height
+            let stackHeight = (label.text?.height(withConstrainedWidth: labelWidth, font: label.font))! + CGFloat(self.sideSpacing) + textField.frame.height
             stack.axis = .vertical
             stack.spacing = CGFloat(self.sideSpacing)
             stack.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: stackHeight)
 
             //stackViews.append(stack)
             containerHeight += stackHeight + CGFloat(self.textFieldSpacing)
-            
+
             switch(textFieldIds[i].type) {
-            case "normal":
+            case "normal", "date", "time", "number":
                 // Don't do anything special
                 //textFields.append(textField)
                 textFields[i] = textField
@@ -280,7 +308,6 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
                 dropDownTextFields[i]!.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
                 dropDownTextFields[i]!.rightAnchor.constraint(equalTo: container.rightAnchor).isActive = true
                 dropDownTextFields[i]!.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
-                print("Dropdown constraints: \(dropDownTextFields[i]!.constraints)")
                 lastBottomAnchor = dropDownTextFields[i]!.bottomAnchor
                 
                 //stack.addArrangedSubview(label)
@@ -302,7 +329,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
                 //Set the drop down menu's options
                 dropDownTextFields[i]!.dropView.dropDownOptions = dropDownMenuOptions[textFieldIds[i].label]!
                 
-                // Set up dropView constraints. If this is in DropDownTextFieldControl.swift, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
+                // Set up dropView constraints. If this is in DropDownTextField, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
                 self.view.addSubview(dropDownTextFields[i]!.dropView)
                 self.view.bringSubview(toFront: dropDownTextFields[i]!.dropView)
                 dropDownTextFields[i]!.dropView.leftAnchor.constraint(equalTo: dropDownTextFields[i]!.leftAnchor).isActive = true
@@ -319,15 +346,25 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
                 fatalError("Text field type not understood")
             }
             
-
-
+            // Set up custom keyboards
+            switch(textFieldIds[i].type) {
+            case "time", "date":
+                createDatetimePicker(textField: textFields[i]!)
+            case "number":
+                textFields[i]!.keyboardType = .numberPad
+            default:
+                let _ = 0
+            }
         }
         // Now set the height contraint
-        container.heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
-        
+        print(containerHeight)
+        //container.heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
+        //container.heightAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.heightAnchor).isActive = true
+        scrollView.contentSize = self.view.frame.size//CGSize(width: container.frame.size.width, height: containerHeight)
         // ****** If height > area above keyboard, put it in a scroll view *************
         //  Add a flag property to notify the controller that it will or will not need to handle when the keyboard obscures a text field
         //  Then, in editingDidBegin, set the scroll view position so the field is just above the keyboard
+        
     }
     
     
@@ -351,7 +388,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
         label.textAlignment = .left
         cell.label = label
         //print(textFields[0].placeholder)
-        print("Cell label text at \(indexPath.row): \(cell.label?.text)")
+        //print("Cell label text at \(indexPath.row): \(cell.label?.text)")
         
         cell.textField = textFields[indexPath.row]
         cell.backgroundColor = UIColor.clear
@@ -374,98 +411,41 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
     }
     
     
-    //MARK: Add dropdown text fields
-    //######################################################################################################
-    func addObserverTextField(menuOptions: [String]){
-        
-        //Get the bounds from the storyboard's text field
-        let frame = self.view.frame
-        let font = UIFont.systemFont(ofSize: 17.0)//observerNameTextField.font
-        //let centerX = observerNameTextField.centerXAnchor
-        let centerY = observerNameTextField.centerYAnchor
-        
-        //Configure the text field
-        observerNameTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-        observerNameTextField.translatesAutoresizingMaskIntoConstraints = false
-        
-        //Add Button to the View Controller
-        self.view.addSubview(observerNameTextField)
-        
-        //button Constraints
-        //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
-        
-        observerNameTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
-        observerNameTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
-        observerNameTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
-        //observerNameTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//*/
-        
-        // Configure text
-        observerNameTextField.font = font
-        observerNameTextField.placeholder = "Select or enter observer name"
-        
-        //Set the drop down menu's options
-        observerNameTextField.dropView.dropDownOptions = menuOptions//
-        
-        // Set up dropView constraints. If this is in DropDownTextFieldControl.swift, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
-        observerNameTextField.superview?.addSubview(observerNameTextField.dropView)
-        observerNameTextField.superview?.bringSubview(toFront: observerNameTextField.dropView)
-        observerNameTextField.dropView.topAnchor.constraint(equalTo: observerNameTextField.bottomAnchor).isActive = true
-        observerNameTextField.dropView.centerXAnchor.constraint(equalTo: observerNameTextField.centerXAnchor).isActive = true
-        observerNameTextField.dropView.widthAnchor.constraint(equalTo: observerNameTextField.widthAnchor).isActive = true
-        observerNameTextField.height = observerNameTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
-        
-        // Add listener for notification from DropDownTextField.dropDownPressed()
-        observerNameTextField.dropDownID = "observer"
-        NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:observer"), object: nil)//.addObserver has nothing to do with the "Observation" class
-    }
-    
-    func addDestinationTextField(menuOptions: [String]){
-        
-        //Get the bounds from the storyboard's text field
-        let frame = self.view.frame
-        let font = destinationTextField.font
-        //let centerX = destinationTextField.centerXAnchor
-        let centerY = destinationTextField.centerYAnchor
-        
-        //Configure the text field
-        destinationTextField = DropDownTextField.init(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
-        destinationTextField.translatesAutoresizingMaskIntoConstraints = false
-        
-        //Add Button to the View Controller
-        self.view.addSubview(destinationTextField)
-        
-        //button Constraints
-        //observerTextField.frame = CGRect(x: 0, y: 0, width: textFieldBounds.width, height: textFieldBounds.height)
-        destinationTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
-        destinationTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
-        destinationTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
-        //destinationTextField.heightAnchor.constraint(equalToConstant: templateDestinationField.frame.size.height).isActive = true//*/
-        
-        // Configure text
-        destinationTextField.font = font
-        destinationTextField.placeholder = "Select or enter destination"
-        
-        //Set the drop down menu's options
-        destinationTextField.dropView.dropDownOptions = menuOptions//
-        
-        //destinationTextField.delegate = self
-        
-        // Set up dropView constraints. If this is in DropDownTextFieldControl.swift, it thows the error 'Unable to activate constraint with anchors <ID of constaint"> and <ID of other constaint> because they have no common ancestor.  Does the constraint or its anchors reference items in different view hierarchies?  That's illegal.'
-        destinationTextField.superview?.addSubview(destinationTextField.dropView)
-        destinationTextField.superview?.bringSubview(toFront: destinationTextField.dropView)
-        destinationTextField.dropView.topAnchor.constraint(equalTo: destinationTextField.bottomAnchor).isActive = true
-        destinationTextField.dropView.centerXAnchor.constraint(equalTo: destinationTextField.centerXAnchor).isActive = true
-        destinationTextField.dropView.widthAnchor.constraint(equalTo: destinationTextField.widthAnchor).isActive = true
-        destinationTextField.height = destinationTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
-        
-        destinationTextField.dropDownID = "destination"
-        NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:destination"), object: nil)
-    }
-    
-    
     //MARK: UITextFieldDelegate
+    //######################################################################
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        let fieldType = textFieldIds[textField.tag].type
+        switch(fieldType){
+        case "normal", "number":
+            //print("textField is \(fieldType)")
+            let _ = 0
+        case "dropDown":
+            let field = textField as! DropDownTextField
+            guard let text = textField.text else {
+                print("Guard failed")
+                return
+            }
+            // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+            if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
+                textField.resignFirstResponder()
+            } else {
+            }
+        case "time", "date":
+            setupDatetimePicker(textField)
+        default:
+            print("didn't understand text field type: \(fieldType)")
+        }
+        
+    }
+    
+    // Hide the keyboard when the return button is pressed
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        textField.resignFirstResponder()
+        return true
+    }
+    
+    // When finished editing, check if the observation should be updated
     func textFieldDidEndEditing(_ textField: UITextField) {
-        // Check to see if the save button should be enabled
         updateObservation()
     }
     
@@ -552,88 +532,47 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
         }
         observation?.id = Int(max)
     }
+
     
-    
-    //MARK: UITextFieldDelegate
-    //####################################################################################################################
-    // Indicate what to do when the text field is tapped
-    func textFieldDidBeginEditing(_ textField: UITextField) {
-        if textField is DropDownTextField {
-            let field = textField as! DropDownTextField
-            guard let text = textField.text else {
-                print("Guard failed")
-                return
-            }
-            // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
-            if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
-                textField.resignFirstResponder()
-            } else {
-            }
-        }
-        //Otherwise, do stuff as usual
-    }
-    
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        // Hide the keyboard
-        textField.resignFirstResponder()
-        return true
-    }
-    
-    // MARK: Fill datetime fields
+    // MARK: Add a custom datepicker to each of the datetime fields
     // #####################################################################################################################
-    @IBAction func dateTextFieldEditing(_ sender: UITextField) {
-        let datePickerView: UIDatePicker = UIDatePicker()
-        datePickerView.datePickerMode = UIDatePickerMode.date
-        sender.inputView = datePickerView
-        datePickerView.addTarget(self, action: #selector(handleDatePicker), for: UIControlEvents.valueChanged)
-        // Set the default date to today
-        if (timeTextField.text?.isEmpty)! {
-            let now = Date()
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            formatter.timeStyle = .none
-            dateTextField.text = formatter.string(from: now)
-        }
-    }
-    
-    @objc func handleDatePicker(sender: UIDatePicker) {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateStyle = .short
-        dateFormatter.timeStyle = .none
-        dateTextField.text = dateFormatter.string(from: sender.date)
-        updateObservation()
-    }
-    // Make a tool bar for the date picker with an ok button and a done button
-    func createDatePicker(){//textField: UITextField) {
-        
-        let toolBar = UIToolbar(frame: CGRect(x: 0, y: self.view.frame.size.height/6, width: self.view.frame.size.width, height: 40.0))
-        toolBar.layer.position = CGPoint(x: self.view.frame.size.width/2, y: self.view.frame.size.height-20.0)
-        
-        let doneButton = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.done, target: self, action: #selector(ObservationViewController.dateDonePressed))
-        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
-        toolBar.setItems([flexSpace, doneButton, flexSpace], animated: true)
-        
-        // Make sure this is added to the controller when textFieldEditing is called
-        dateTextField.inputAccessoryView = toolBar
-    }
     
     // Check that the done button on custom DatePicker was pressed
     @objc func dateDonePressed(sender: UIBarButtonItem) {
         dateTextField.resignFirstResponder()
     }
     
-    @IBAction func timeTextFieldEditing(_ sender: UITextField) {
-        let timePickerView: UIDatePicker = UIDatePicker()
-        timePickerView.datePickerMode = UIDatePickerMode.time
-        sender.inputView = timePickerView
-        timePickerView.addTarget(self, action: #selector(handleTimePicker), for: UIControlEvents.valueChanged)
-        // Set the default time to now
-        if (timeTextField.text?.isEmpty)! {
-            let now = Date()
-            let formatter = DateFormatter()
+    // Called when text a text field with type == "date" || "time"
+    func setupDatetimePicker(_ sender: UITextField) {
+        let datetimePickerView: UIDatePicker = UIDatePicker()
+        let fieldType = textFieldIds[sender.tag].type
+        
+        // Use the current time if one has not been set yet
+        let now = Date()
+        let formatter = DateFormatter()
+        
+        // Check if this is a time or date field
+        switch(fieldType){
+        case "time":
+            datetimePickerView.datePickerMode = UIDatePickerMode.time
             formatter.dateStyle = .none
             formatter.timeStyle = .short
-            timeTextField.text = formatter.string(from: now)
+        case "date":
+            datetimePickerView.datePickerMode = UIDatePickerMode.date
+            formatter.dateStyle = .short
+            formatter.timeStyle = .none
+        default:
+            fatalError("textfield \(sender.tag) passed to setupDatetimePicker was of type \(fieldType)")
+        }
+        
+        sender.inputView = datetimePickerView
+        datetimePickerView.addTarget(self, action: #selector(handleTimePicker), for: UIControlEvents.valueChanged)
+        datetimePickerView.tag = sender.tag
+        print("Time text field tag in timeTextFieldEditing: \(sender.tag)")
+        
+        // Set the default time to now
+        if (sender.text?.isEmpty)! {
+            sender.text = formatter.string(from: now)
         }
     }
     
@@ -641,26 +580,41 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
         let timeFormatter = DateFormatter()
         timeFormatter.dateStyle = .none
         timeFormatter.timeStyle = .short
-        timeTextField.text = timeFormatter.string(from: sender.date)
+        let timeString = timeFormatter.string(from: sender.date)
+        let dictionary: [Int: String] = [sender.tag: timeString]
+        NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
         updateObservation()
     }
     
-    func createTimePicker(){//textField: UITextField) {
+    func createDatetimePicker(textField: UITextField) {
         
         let toolBar = UIToolbar(frame: CGRect(x: 0, y: self.view.frame.size.height/6, width: self.view.frame.size.width, height: 40.0))
         toolBar.layer.position = CGPoint(x: self.view.frame.size.width/2, y: self.view.frame.size.height-20.0)
         
-        let doneButton = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.done, target: self, action: #selector(ObservationViewController.timeDonePressed))
+        let doneButton = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.done, target: self, action: #selector(BaseObservationViewController.datetimeDonePressed))
+        doneButton.tag = textField.tag
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
         toolBar.setItems([flexSpace, doneButton, flexSpace], animated: true)
         
-        // Make sure this is added to the controller when openTimeTextFieldEditing is called
-        timeTextField.inputAccessoryView = toolBar
+        // Make sure this is added to the controller when setupDatetimePicker() is called
+        textField.inputAccessoryView = toolBar
+        
+        // Add a notification to retrieve the value from the datepicker
+        NotificationCenter.default.addObserver(self, selector: #selector(updateDatetimeField(notification:)), name: Notification.Name("dateTimePicked:\(textField.tag)"), object: nil)
+    }
+    
+    @objc func updateDatetimeField(notification: Notification){
+        guard let datetimeDictionary = notification.object as? Dictionary<Int, String> else {
+            fatalError("Couldn't downcast dateTimeDict: \(notification.object!)")
+        }
+        let index = datetimeDictionary.keys.first!
+        let datetime = datetimeDictionary.values.first!
+        textFields[index]?.text = datetime
     }
     
     // Check that the done button on custom DatePicker was pressed
-    @objc func timeDonePressed(sender: UIBarButtonItem) {
-        timeTextField.resignFirstResponder()
+    @objc func datetimeDonePressed(sender: UIBarButtonItem) {
+        textFields[sender.tag]?.resignFirstResponder()
     }
     
     
@@ -701,8 +655,6 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate {//},
                                                             destinationColumn <- destination!,
                                                             nPassengersColumn <- nPassengers!,
                                                             commentsColumn <- comments!))
-            let recordComments = observationsTable.select(commentsColumn).filter(idColumn == rowid)
-            print("inserted record: \(recordComments)")
         } catch {
             print("insertion failed: \(error)")
         }
