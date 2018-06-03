@@ -180,7 +180,7 @@ class ObservationTableViewController: UITableViewController {
     // MARK: - Navigation
     
     // Prep observation view with info from session
-    /*override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         super.prepare(for: segue, sender: sender)
         
         switch(segue.identifier ?? ""){
@@ -213,10 +213,10 @@ class ObservationTableViewController: UITableViewController {
             // Let the view controller know to update an existing row in the DB
             observationViewController.isAddingNewObservation = false
         default:
-            fatalError("Unexpeced Segue Identifier: \(segue.identifier!)")
+            fatalError("Unexpeced Segue Identifier: \(segue.identifier ?? "")")
         }
         
-    }*/
+    }
     
     
     //MARK: Private Methods

@@ -467,18 +467,34 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
-        //self.navigationBar.size
+        
         let navItem = UINavigationItem(title: "New Vehicle")
-        self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))//(barButtonSystemItem: self.saveButton, target: nil, action: #selector(save))
-        //self.saveButton = "Save"
+        self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))
         navItem.rightBarButtonItem = self.saveButton
         self.navigationBar.setItems([navItem], animated: false)
+        
         self.view.addSubview(self.navigationBar)
     }
     
     @objc func save() {
-        print("save")
+        // update observation in DB
+        
+        // Navigate back to tableview
+        
     }
+    
+    /*@objc func moveToObservationViewController(button: UIButton){
+        //let session = loadSession()
+        //let labelText = icons[button.tag].key
+        switch (labelText){
+        case "Bus":
+            let viewController = BaseObservationViewController()
+            viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
+            present(viewController, animated: true, completion: nil)
+        default:
+            fatalError("Didn't understand which controller to move to")
+        }
+    }*/
     
     @IBAction func cancel(_ sender: UIBarButtonItem) {
         // Depending on style of presentation (modal or push presentation), this view controller needs to be dismissed in two different ways
