@@ -40,6 +40,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
     var labels = [UILabel]()
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     
+    var navigationBar: CustomNavigationBar!
     var saveButton: UIBarButtonItem!
     
     var db: Connection!// SQLiteDatabase!
@@ -103,8 +104,8 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
         } catch {
             fatalError(error.localizedDescription)
         }
-        self.setupLayout()
         self.setNavigationBar()
+        self.setupLayout()
         self.view.backgroundColor = UIColor.white
         /*let safeArea = self.view.safeAreaInsets
         for i in 0..<textFieldIds.count{
@@ -204,7 +205,7 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
         self.view.addSubview(scrollView)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor).isActive = true
-        scrollView.topAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.topAnchor, constant: CGFloat(self.topSpacing)).isActive = true
+        scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
         scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right).isActive = true
         scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
 
@@ -464,20 +465,15 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
     //#######################################################################
     func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
-        let navBar = UINavigationBar(frame: CGRect(x: 0, y: 0, width: screenSize.width, height: 44))
+        let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
+        //self.navigationBar.size
         let navItem = UINavigationItem(title: "New Vehicle")
         self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))//(barButtonSystemItem: self.saveButton, target: nil, action: #selector(save))
         //self.saveButton = "Save"
         navItem.rightBarButtonItem = self.saveButton
-        navBar.setItems([navItem], animated: false)
-        self.view.addSubview(navBar)
-        // Set the height
-        /*navBar.translatesAutoresizingMaskIntoConstraints = false
-        navBar.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
-        navBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
-        navBar.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
-        navBar.heightAnchor.constraint(equalToConstant: screenSize.height/5.0).isActive = true*/
-        
+        self.navigationBar.setItems([navItem], animated: false)
+        self.view.addSubview(self.navigationBar)
     }
     
     @objc func save() {
@@ -706,4 +702,20 @@ class BaseObservationViewController: UIViewController, UITextFieldDelegate, UISc
     }
 }
 
-
+// Custom Navigation Bar simply to be able to change the height. Apparently in iOS 11, there is no other way to do this.
+class CustomNavigationBar: UINavigationBar {
+    
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        
+        // For each subviews (i.e., components of the nav bar) resize and reposition it
+        for subview in self.subviews {
+            let stringFromClass = NSStringFromClass(subview.classForCoder)
+            if stringFromClass.contains("BarBackground") {
+                let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
+                subview.frame.origin.y -= statusBarHeight
+                subview.frame.size.height += statusBarHeight
+            }
+        }
+    }
+}
