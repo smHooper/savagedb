@@ -27,7 +27,7 @@ extension String {
 
 
 // Add extension to dismiss keyboard for any text field
-extension UIViewController {
+/*extension UIViewController {
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -37,4 +37,4 @@ extension UIViewController {
     @objc func dismissKeyboard() {
         view.endEditing(true)
     }
-}
+}*/

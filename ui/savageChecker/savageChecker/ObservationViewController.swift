@@ -52,7 +52,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.hideKeyboardWhenTappedAround()
+        //self.hideKeyboardWhenTappedAround()
         
         // Open connection to the DB
         do {

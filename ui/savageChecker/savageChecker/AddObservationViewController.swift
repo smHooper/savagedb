@@ -73,6 +73,7 @@ class AddObservationViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         setupMenuLayout()
+        self.view.backgroundColor = UIColor.white
     }
     
     
@@ -144,6 +145,7 @@ class AddObservationViewController: UIViewController {
         switch (labelText){
         case "Bus":
                 let viewController = BaseObservationViewController()
+                viewController.isAddingNewObservation = true
                 viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
                 present(viewController, animated: true, completion: nil)
         default:

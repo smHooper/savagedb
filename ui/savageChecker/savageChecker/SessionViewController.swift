@@ -10,7 +10,7 @@ import UIKit
 import SQLite
 import os.log
 
-class SessionController: BaseViewController {
+class SessionViewController: BaseFormViewController {
     
     var viewVehiclesButton: UIBarButtonItem!
     
@@ -43,10 +43,6 @@ class SessionController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        /*self.viewVehiclesButton = UIBarButtonItem(title: "View vehicles", style: .plain, target: nil, action: #selector(SessionViewController.moveToVehicleList))
-        print(self.viewVehiclesButton)
-        self.navigationItem.rightBarButtonItem = self.viewVehiclesButton*/
         
         // The user is opening the app again after closing it or returning from another scene
         if let session = loadSession() {
@@ -186,6 +182,7 @@ class SessionController: BaseViewController {
 
 }
 
+/*
 class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
@@ -237,12 +234,12 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             fatalError(error.localizedDescription)
         }
         
-        /*// Set up delegates for text fields
+        // Set up delegates for text fields
         addObserverTextField(menuOptions: observerOptions)
         observerTextField.delegate = self
         dateTextField.delegate = self
         openTimeTextField.delegate = self
-        closeTimeTextField.delegate = self*/
+        closeTimeTextField.delegate = self
         
         
         
@@ -317,7 +314,7 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         observerTextField.leadingAnchor.constraint(equalTo: self.view.leadingAnchor, constant: 16).isActive = true
         observerTextField.centerYAnchor.constraint(equalTo: centerY).isActive = true
         observerTextField.widthAnchor.constraint(equalToConstant: frame.size.width - 24).isActive = true
-        observerTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//*/
+        observerTextField.heightAnchor.constraint(equalToConstant: templateObserverField.frame.size.height).isActive = true//
         observerTextField.placeholder = "Select observer name"
         
         //Set the drop down menu's options
@@ -607,9 +604,6 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         print("loaded all session")
         return session
     }
-    /*private func loadSession() -> Session? {
-        return NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
-    }*/
 
-}
+}*/
 

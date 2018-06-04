@@ -103,8 +103,10 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
         let navItem = UINavigationItem(title: "Vehicle List")
-        self.backButton = UIBarButtonItem(barButtonSystemItem: .rewind, target: nil, action: #selector(moveToSessionForm))//UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))
-        navItem.leftBarButtonItem = self.backButton
+        let backButton = UIBarButtonItem(barButtonSystemItem: .rewind, target: nil, action: #selector(moveToSessionForm))//UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))
+        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(moveToNewObseverationMenu))
+        navItem.leftBarButtonItem = backButton
+        navItem.rightBarButtonItem = addButton
         self.navigationBar.setItems([navItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
@@ -112,14 +114,20 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     
     @objc func moveToSessionForm(){
         // Prep the view controller
-        /*let sessionController = SessionViewController()
+        let sessionController = SessionViewController()
         sessionController.session = self.session
         print("moving back to session")
         
-        present(sessionController, animated: true, completion: nil)*/
-        
-        self.navigationController?.popViewController(animated: true)
+        //present(sessionController, animated: true, completion: nil)
+        self.dismiss(animated: true, completion: nil)
+        //self.navigationController?.popViewController(animated: true)
     }
+    
+    @objc func moveToNewObseverationMenu(){
+        let menuController = AddObservationViewController()
+        present(menuController, animated: true, completion: nil)
+    }
+    
     
     //MARK: TableView methods
     // return the number of sections
