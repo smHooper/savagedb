@@ -10,6 +10,182 @@ import UIKit
 import SQLite
 import os.log
 
+class SessionController: BaseViewController {
+    
+    var viewVehiclesButton: UIBarButtonItem!
+    
+    // DB properties
+    let sessionsTable = Table("sessions")
+    let idColumn = Expression<Int64>("id")
+    let observerNameColumn = Expression<String>("observerName")
+    let dateColumn = Expression<String>("date")
+    let openTimeColumn = Expression<String>("openTime")
+    let closeTimeColumn = Expression<String>("closeTime")
+    
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
+                             (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
+                             (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
+                             (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
+                             (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]]
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        /*self.viewVehiclesButton = UIBarButtonItem(title: "View vehicles", style: .plain, target: nil, action: #selector(SessionViewController.moveToVehicleList))
+        print(self.viewVehiclesButton)
+        self.navigationItem.rightBarButtonItem = self.viewVehiclesButton*/
+        
+        // The user is opening the app again after closing it or returning from another scene
+        if let session = loadSession() {
+            self.dropDownTextFields[0]?.text = session.observerName
+            self.textFields[1]?.text = session.date
+            self.textFields[2]?.text = session.openTime
+            self.textFields[3]?.text = session.closeTime
+            self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+        }
+            // The user is returning to the session scene from another scene
+        else if let session = session {
+            self.dropDownTextFields[0]?.text = session.observerName
+            self.textFields[1]?.text = session.date
+            self.textFields[2]?.text = session.openTime
+            self.textFields[3]?.text = session.closeTime
+            self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+        }
+            // The user has opened the app for the first time since data were cleared
+        else {
+            // date defaults to today
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            self.textFields[1]?.text = formatter.string(from: now)
+            
+            // Disable navigation to vehicle list until all fields are filled
+            self.viewVehiclesButton.isEnabled = false
+        }
+    }
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+        // Dispose of any resources that can be recreated.
+    }
+    
+    
+    //MARK: Navigation
+    // Set up the nav bar
+    override func setNavigationBar() {
+        super.setNavigationBar()
+        
+        // Customize the nav bar
+        let navItem = UINavigationItem(title: "Shift Info")
+        self.viewVehiclesButton = UIBarButtonItem(title: "View vehicles", style: .plain, target: nil, action: #selector(SessionViewController.moveToVehicleList))
+        navItem.rightBarButtonItem = self.viewVehiclesButton
+        self.navigationBar.setItems([navItem], animated: false)
+    }
+    
+    @objc func moveToVehicleList(){
+        print("showing vehicle table")
+        let vehicleTableViewContoller = BaseTableViewController()
+        present(vehicleTableViewContoller, animated: true, completion: nil)
+    }
+    
+    
+    //MARK: Data model methods
+    @objc override func updateData(){
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let openTime = self.textFields[2]?.text ?? ""
+        let closeTime = self.textFields[3]?.text ?? ""
+        if !observerName.isEmpty && !openTime.isEmpty && !closeTime.isEmpty && !date.isEmpty {
+            // Update the DB
+            //self.session = Session(id: -1, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+            if let session = loadSession() {
+                // The session already exists in the DB, so update it
+                do {
+                    // Select the record to update
+                    //print("Record id: \((session?.id.datatypeValue)!)")
+                    let record = sessionsTable.filter(idColumn == session.id.datatypeValue)
+                    // Update all fields
+                    if try db.run(record.update(observerNameColumn <- observerName,
+                                                dateColumn <- date,
+                                                openTimeColumn <- openTime,
+                                                closeTimeColumn <- closeTime)) > 0 {
+                        print("updated record")
+                    } else {
+                        print("record not found")
+                    }
+                } catch {
+                    print("Update failed")
+                }
+                // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
+                var max: Int64!
+                do {
+                    max = try db.scalar(sessionsTable.select(idColumn.max))
+                } catch {
+                    print(error.localizedDescription)
+                }
+                let thisId = Int(max)
+                self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+            } else {
+                // This is a new session so create a new recod in the DB
+                do {
+                    let rowid = try db.run(sessionsTable.insert(observerNameColumn <- observerName,
+                                                                dateColumn <- date,
+                                                                openTimeColumn <- openTime,
+                                                                closeTimeColumn <- closeTime))
+                    self.session?.id = Int(rowid)
+                } catch {
+                    print("Session insertion failed: \(error)")
+                }
+            }
+            
+            print("Session updated")
+            
+            // Enable the nav button
+            viewVehiclesButton.isEnabled = true
+            
+        }
+            // Disable the view vehicles button until all fields are filled in
+        else {
+            viewVehiclesButton.isEnabled = false
+        }
+    }
+    
+    //MARK: Private methods
+    private func loadSession() -> Session? {
+        // ************* check that the table exists first **********************
+        var rows = [Row]()
+        do {
+            rows = Array(try db.prepare(sessionsTable))
+        } catch {
+            fatalError(error.localizedDescription)
+        }
+        if rows.count > 1 {
+            fatalError("Multiple sessions found")
+        }
+        for row in rows{
+            session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+            print(row[observerNameColumn])
+        }
+        print("loaded all session")
+        return session
+    }
+
+}
+
 class SessionViewController: UIViewController, UITextFieldDelegate {
     
     //MARK: Properties
@@ -18,9 +194,24 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var dateTextField: UITextField!
     @IBOutlet weak var openTimeTextField: UITextField!
     @IBOutlet weak var closeTimeTextField: UITextField!
-    @IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
+    //@IBOutlet weak var viewVehiclesButton: UIBarButtonItem!
     
-
+    //MARK: TextField properties
+    var textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                        (label: "Date",          placeholder: "Select the observation date", type: "date"),
+                        (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
+                        (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
+    let dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                               "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]
+    ]
+    var textFields = [Int: UITextField]()
+    var dropDownTextFields = [Int: DropDownTextField]()
+    var labels = [UILabel]()
+    
+    
+    var viewVehiclesButton: UIBarButtonItem!
+    
+    //MARK: Data properties
     var session: Session?// This value is either passed by `ObservationTableViewController` in `prepare(for:sender:)` or constructed when a new session begins.
     var observerOptions = ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]
     
@@ -32,7 +223,9 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
     let dateColumn = Expression<String>("date")
     let openTimeColumn = Expression<String>("openTime")
     let closeTimeColumn = Expression<String>("closeTime")
-
+    
+    
+    //MARK: Layout
     override func viewDidLoad() {
         super.viewDidLoad()
         self.hideKeyboardWhenTappedAround()
@@ -44,12 +237,18 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
             fatalError(error.localizedDescription)
         }
         
-        // Set up delegates for text fields
+        /*// Set up delegates for text fields
         addObserverTextField(menuOptions: observerOptions)
         observerTextField.delegate = self
         dateTextField.delegate = self
         openTimeTextField.delegate = self
-        closeTimeTextField.delegate = self
+        closeTimeTextField.delegate = self*/
+        
+        
+        
+        self.viewVehiclesButton = UIBarButtonItem(title: "View vehicles", style: .plain, target: nil, action: #selector(SessionViewController.moveToVehicleList))
+        print(self.viewVehiclesButton)
+        self.navigationItem.rightBarButtonItem = self.viewVehiclesButton
         
         // The user is opening the app again after closing it or returning from another scene
         if let session = loadSession() {
@@ -89,6 +288,13 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    
+    // Set up text fields
+    func setupLayout(){
+        
+    }
+    
     
     //MARK: CustomDropDownTextField
     func addObserverTextField(menuOptions: [String]){
@@ -307,6 +513,11 @@ class SessionViewController: UIViewController, UITextFieldDelegate {
         destinationController.session = self.session
     }
     
+    @objc func moveToVehicleList(){
+        print("showing vehicle table")
+        let vehicleTableViewContoller = BaseTableViewController()
+        present(vehicleTableViewContoller, animated: true, completion: nil)
+    }
     
     //MARK: Private methods
     @objc private func updateSession(){

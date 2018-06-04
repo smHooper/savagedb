@@ -13,6 +13,8 @@ import SQLite
 class BaseTableViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     private var tableView: UITableView!
+    private var navigationBar: CustomNavigationBar!
+    private var backButton: UIBarButtonItem!
     
     //MARK: Properties
     var observations = [Observation]()
@@ -41,9 +43,11 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        self.setNavigationBar()
+        
         // get width and height of View
         let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
-        let navigationBarHeight: CGFloat = self.navigationController!.navigationBar.frame.size.height
+        let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
         let displayWidth: CGFloat = self.view.frame.width
         let displayHeight: CGFloat = self.view.frame.height
         
@@ -92,6 +96,32 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     }
     
     
+    //MARK: Navigation
+    func setNavigationBar() {
+        let screenSize: CGRect = UIScreen.main.bounds
+        let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
+        
+        let navItem = UINavigationItem(title: "Vehicle List")
+        self.backButton = UIBarButtonItem(barButtonSystemItem: .rewind, target: nil, action: #selector(moveToSessionForm))//UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))
+        navItem.leftBarButtonItem = self.backButton
+        self.navigationBar.setItems([navItem], animated: false)
+        
+        self.view.addSubview(self.navigationBar)
+    }
+    
+    @objc func moveToSessionForm(){
+        // Prep the view controller
+        /*let sessionController = SessionViewController()
+        sessionController.session = self.session
+        print("moving back to session")
+        
+        present(sessionController, animated: true, completion: nil)*/
+        
+        self.navigationController?.popViewController(animated: true)
+    }
+    
+    //MARK: TableView methods
     // return the number of sections
     func numberOfSections(in tableView: UITableView) -> Int{
         return 1
