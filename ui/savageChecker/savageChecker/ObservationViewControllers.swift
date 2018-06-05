@@ -27,6 +27,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     private var currentTextField = 0
     
+    
     var navigationBar: CustomNavigationBar!
     //var saveButton: UIBarButtonItem!
     
@@ -91,6 +92,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         let safeArea = self.view.safeAreaInsets
         let scrollView = UIScrollView()
         scrollView.showsHorizontalScrollIndicator = false
+        //scrollView.contentInsetAdjustmentBehavior = .automatic
         //scrollView.bounces = false
         
         self.view.addSubview(scrollView)
@@ -398,7 +400,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
         
         sender.inputView = datetimePickerView
-        datetimePickerView.addTarget(self, action: #selector(handleTimePicker), for: UIControlEvents.valueChanged)
+        datetimePickerView.addTarget(self, action: #selector(handleDatetimePicker), for: UIControlEvents.valueChanged)
         datetimePickerView.tag = sender.tag
         
         // Set the default time to now
@@ -407,7 +409,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
-    @objc func handleTimePicker(sender: UIDatePicker) {
+    @objc func handleDatetimePicker(sender: UIDatePicker) {
         let timeFormatter = DateFormatter()
         timeFormatter.dateStyle = .none
         timeFormatter.timeStyle = .short
@@ -415,7 +417,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         let dictionary: [Int: String] = [sender.tag: timeString]
         NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
         
-        // ********* override this method in observation view controllers: call super.handleTimePicker; updateObservation()
+        // ********* override this method in observation view controllers: call super.handleDatetimePicker; updateObservation()
         //updateObservation()
     }
     
@@ -477,7 +479,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     var observation: Observation?
     var isAddingNewObservation: Bool!
-    var nTextFields = 0
+    var lastTextFieldIndex = 0
     
     // observation DB columns
     let idColumn = Expression<Int64>("id")
@@ -558,7 +560,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
         self.setNavigationBar()
         self.setupLayout()
-        self.nTextFields = self.textFields.count + self.dropDownTextFields.count
+        self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
         self.view.backgroundColor = UIColor.white
 
         /*// Lay out all text fields
@@ -594,7 +596,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             self.textFields[3]?.text = observation.driverName
             self.dropDownTextFields[4]?.text = observation.destination
             self.textFields[5]?.text = observation.nPassengers
-            self.textFields[self.nTextFields]?.text = observation.comments
+            self.textFields[self.lastTextFieldIndex]?.text = observation.comments // Comments will always be the last one
         }
         
     }
@@ -634,8 +636,10 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
         let navItem = UINavigationItem(title: "New Vehicle")
-        self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))
+        self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
+        let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: nil, action: #selector(cancelButtonPressed))
         navItem.rightBarButtonItem = self.saveButton
+        navItem.leftBarButtonItem = cancelButton
         self.navigationBar.setItems([navItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
@@ -661,11 +665,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
     }*/
     
-    @IBAction func cancel(_ sender: UIBarButtonItem) {
+    @objc func cancelButtonPressed() {
         // Depending on style of presentation (modal or push presentation), this view controller needs to be dismissed in two different ways
-        let isAddingObservation = presentingViewController is UINavigationController
+        //let isAddingObservation = presentingViewController is UINavigationController
         
-        if isAddingObservation {
+        /*if isAddingNewObservation {
             dismiss(animated: true, completion: nil)
         }
         else if let owningNavigationController = navigationController {
@@ -674,17 +678,15 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
         else {
             fatalError("The ObservationViewController is not inside a navigation controller")
-        }
+        }*/
+        let vehicleListViewController = BaseTableViewController()
+        vehicleListViewController.modalTransitionStyle = .crossDissolve
+        present(vehicleListViewController, animated: true, completion: nil)
+        
     }
     
     // Configure tableview controller before it's presented
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        super.prepare(for: segue, sender: sender)
-        
-        guard let button = sender as? UIBarButtonItem, button === saveButton else {
-            os_log("The save button was not pressed, cancelling", log: OSLog.default, type: .debug)
-            return
-        }
+    @objc func saveButtonPressed() {
         
         // Force unwrap all text fields because saveButton in inactive until all are filled
         let observerName = self.dropDownTextFields[0]?.text ?? ""
@@ -693,7 +695,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let driverName = self.textFields[3]?.text ?? ""
         let destination = self.dropDownTextFields[4]?.text ?? ""
         let nPassengers = self.textFields[5]?.text ?? ""
-        let comments = self.textFields[self.nTextFields]?.text ?? ""
+        let comments = self.textFields[self.lastTextFieldIndex]?.text ?? ""
         
         // Update the Observation instance
         // Temporarily just say the id = -1. The id column is autoincremented anyway, so it doesn't matter.
@@ -741,6 +743,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             print(error.localizedDescription)
         }
         observation?.id = Int(max)
+        
+        let vehicleList = BaseTableViewController()
+        vehicleList.modalTransitionStyle = .flipHorizontal
+        //vehicleList.modalPresentationStyle =
+        show(vehicleList, sender: self.saveButton)
     }
 
     

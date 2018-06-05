@@ -73,7 +73,7 @@ class AddObservationViewController: UIViewController {
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         setupMenuLayout()
-        self.view.backgroundColor = UIColor.white
+        self.view.backgroundColor = UIColor.clear
     }
     
     

@@ -102,11 +102,17 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
-        let navItem = UINavigationItem(title: "Vehicle List")
-        let backButton = UIBarButtonItem(barButtonSystemItem: .rewind, target: nil, action: #selector(moveToSessionForm))//UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(save))
-        let addButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(moveToNewObseverationMenu))
+        let navItem = UINavigationItem(title: "Vehicles")
+        //let backButton = UIBarButtonItem(title: "\u{2039}", style:.plain, target: nil, action: #selector(moveToSessionForm))
+        let button = UIButton(type: .custom)
+        button.setImage(UIImage (named: "backButton"), for: .normal)
+        button.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
+        button.addTarget(self, action: #selector(moveToSessionForm), for: .touchUpInside)
+        let backButton = UIBarButtonItem(customView: button)
+        
+        let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(moveToNewObseverationMenu))
         navItem.leftBarButtonItem = backButton
-        navItem.rightBarButtonItem = addButton
+        navItem.rightBarButtonItem = addObservationButton
         self.navigationBar.setItems([navItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
@@ -118,13 +124,30 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         sessionController.session = self.session
         print("moving back to session")
         
-        //present(sessionController, animated: true, completion: nil)
-        self.dismiss(animated: true, completion: nil)
+        present(sessionController, animated: true, completion: nil)
+        //dismiss(animated: true, completion: nil)
         //self.navigationController?.popViewController(animated: true)
     }
     
     @objc func moveToNewObseverationMenu(){
+        //only apply the blur if the user hasn't disabled transparency effects
+        if !UIAccessibilityIsReduceTransparencyEnabled() {
+            view.backgroundColor = .clear
+            
+            let blurEffect = UIBlurEffect(style: .regular)
+            let blurEffectView = UIVisualEffectView(effect: blurEffect)
+            
+            //always fill the view
+            blurEffectView.frame = self.view.bounds
+            blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            
+            view.addSubview(blurEffectView) //if you have more UIViews, use an insertSubview API to place it where needed
+        } else {
+            view.backgroundColor = .black
+        }
         let menuController = AddObservationViewController()
+        menuController.modalPresentationStyle = .overCurrentContext
+        menuController.modalTransitionStyle = .coverVertical
         present(menuController, animated: true, completion: nil)
     }
     
