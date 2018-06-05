@@ -10,11 +10,13 @@ import UIKit
 import os.log
 import SQLite
 
-class AddObservationViewController: UIViewController {
+class AddObservationViewController: UIViewController, UIGestureRecognizerDelegate {
     
     let minSpacing = 50.0
     let menuPadding = 50.0
     var buttons = [VehicleButtonControl]()
+    var presentTransition: UIViewControllerAnimatedTransitioning?
+    var dismissTransition: UIViewControllerAnimatedTransitioning?
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "NPS Vehicle": "busIcon",
@@ -61,7 +63,9 @@ class AddObservationViewController: UIViewController {
         
         // Arrange them
         setupMenuLayout()
-
+        
+        // If someone taps outside the buttons, dismiss the menu
+        dismissWhenTappedAround()
     }
     
     override func didReceiveMemoryWarning() {
@@ -144,53 +148,54 @@ class AddObservationViewController: UIViewController {
         let labelText = icons[button.tag].key
         switch (labelText){
         case "Bus":
+                // Prep the view controller to move to
                 let viewController = BaseObservationViewController()
                 viewController.isAddingNewObservation = true
                 viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
-                present(viewController, animated: true, completion: nil)
+                
+                // Remove the blur effect
+                animateRemoveMenu()
+                
+                // Configure the transition
+                viewController.transitioningDelegate = self
+                viewController.modalPresentationStyle = .custom
+                self.presentTransition = RightToLeftTransition()
+                present(viewController, animated: true, completion: {viewController.presentTransition = nil})
         default:
             fatalError("Didn't understand which controller to move to")
             }
         }
     
-    // Prep observation view with info from session
-    /*override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        super.prepare(for: segue, sender: sender)
+    func dismissWhenTappedAround() {
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissMenu))
+        //tap.cancelsTouchesInView = false
+        self.view.addGestureRecognizer(tap)
+    }
+    
+    func animateRemoveMenu(duration: CGFloat = 0.75) {
+        let presentingController = presentingViewController as! BaseTableViewController
+        UIView.animate(withDuration: 0.75,
+                       animations: {presentingController.blurEffectView.alpha = 0.0},
+                       completion: {(value: Bool) in presentingController.blurEffectView.removeFromSuperview()})
+    }
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         
-        switch(segue.identifier ?? ""){
-            
-        case "addObservation":
-            guard let observationViewController = segue.destination.childViewControllers.first! as? ObservationViewController else {
-                fatalError("Unexpected sender: \(segue.destination.childViewControllers)")
+        // Check if the touch was on one of the buttons
+        for button in self.buttons {
+            if touch.view == button {
+                return false
             }
-            let session = loadSession()
-            observationViewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
-            
-            // Let the view controller know to insert a new row in the DB
-            observationViewController.isAddingNewObservation = true
-            os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
-            
-        /*case "showObservationDetail":
-            guard let observationViewController = segue.destination as? ObservationViewController else {
-                fatalError("Unexpected sender: \(segue.destination)")
-            }
-            guard let selectedObservationCell = sender as? ObservationTableViewCell else {
-                fatalError("Unexpected sener: \(sender!)")
-            }
-            guard let indexPath = tableView.indexPath(for: selectedObservationCell) else {
-                fatalError("The selected cell is not being displayed by the table")
-            }
-            
-            let selectedObservation = observations[indexPath.row]
-            observationViewController.observation = selectedObservation
-            // Let the view controller know to update an existing row in the DB
-            observationViewController.isAddingNewObservation = false
-             */
-        default:
-            fatalError("Unexpeced Segue Identifier: \(segue.identifier!)")
         }
-        
-    }*/
+        // If not, the touch should get passed to the gesture recognizer
+        return true
+    }
+    
+    @objc func dismissMenu(){
+        print("tapped around")
+        dismiss(animated: true, completion: nil)
+        animateRemoveMenu(duration: 0.25)
+    }
+    
     
     // MARK: Private methods
     private func loadSession() -> Session? {
