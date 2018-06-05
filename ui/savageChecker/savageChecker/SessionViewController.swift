@@ -95,8 +95,12 @@ class SessionViewController: BaseFormViewController {
     @objc func moveToVehicleList(){
         print("showing vehicle table")
         let vehicleTableViewContoller = BaseTableViewController()
+        vehicleTableViewContoller.modalPresentationStyle = .custom
+        vehicleTableViewContoller.transitioningDelegate = self
+        self.presentTransition = RightToLeftTransition()
+        present(vehicleTableViewContoller, animated: true, completion: {[weak self] in self?.presentTransition = nil})
         //show(vehicleTableViewContoller, sender: self.viewVehiclesButton)
-        present(vehicleTableViewContoller, animated: true, completion: nil)
+        //present(vehicleTableViewContoller, animated: true, completion: nil)
     }
     
     
@@ -150,15 +154,15 @@ class SessionViewController: BaseFormViewController {
                 }
             }
             
-            print("Session updated")
+            //print("Session updated")
             
             // Enable the nav button
-            viewVehiclesButton.isEnabled = true
+            self.viewVehiclesButton.isEnabled = true
             
         }
             // Disable the view vehicles button until all fields are filled in
         else {
-            viewVehiclesButton.isEnabled = false
+            self.viewVehiclesButton.isEnabled = false
         }
     }
     
@@ -178,7 +182,6 @@ class SessionViewController: BaseFormViewController {
             session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
             //print("Session date: \(row[dateColumn])")
         }
-        print("loaded all session")
         return session
     }
 

@@ -15,6 +15,8 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     private var tableView: UITableView!
     private var navigationBar: CustomNavigationBar!
     private var backButton: UIBarButtonItem!
+    var presentTransition: UIViewControllerAnimatedTransitioning?
+    var dismissTransition: UIViewControllerAnimatedTransitioning?
     
     //MARK: Properties
     var observations = [Observation]()
@@ -74,7 +76,6 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         //self.session = loadSession()
         
         do {
-            print("trying to load observations")
             try loadSession()
             if let savedObservations = try loadObservations(){
                 observations += savedObservations
@@ -86,8 +87,8 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             fatalError(error.localizedDescription)
         }
         
-
-        
+        self.presentTransition = RightToLeftTransition()
+        self.dismissTransition = LeftToRightTransition()
 
     }
     
@@ -103,14 +104,14 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
         let navItem = UINavigationItem(title: "Vehicles")
-        //let backButton = UIBarButtonItem(title: "\u{2039}", style:.plain, target: nil, action: #selector(moveToSessionForm))
+        //let backButton = UIBarButtonItem(title: "\u{2039}", style:.plain, target: nil, action: #selector(backButtonPressed))
         let button = UIButton(type: .custom)
         button.setImage(UIImage (named: "backButton"), for: .normal)
         button.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
-        button.addTarget(self, action: #selector(moveToSessionForm), for: .touchUpInside)
+        button.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let backButton = UIBarButtonItem(customView: button)
         
-        let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(moveToNewObseverationMenu))
+        let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
         navItem.leftBarButtonItem = backButton
         navItem.rightBarButtonItem = addObservationButton
         self.navigationBar.setItems([navItem], animated: false)
@@ -118,17 +119,12 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.view.addSubview(self.navigationBar)
     }
     
-    @objc func moveToSessionForm(){
-        // Prep the view controller
-        let sessionController = SessionViewController()
-        sessionController.session = self.session
-
-        present(sessionController, animated: true, completion: nil)
-        //dismiss(animated: true, completion: nil)
-        //self.navigationController?.popViewController(animated: true)
+    @objc func backButtonPressed(){
+        self.dismissTransition = LeftToRightTransition()
+        dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
     }
     
-    @objc func moveToNewObseverationMenu(){
+    @objc func addButtonPressed(){
         //only apply the blur if the user hasn't disabled transparency effects
         if !UIAccessibilityIsReduceTransparencyEnabled() {
             view.backgroundColor = .clear
@@ -169,15 +165,12 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         observationViewController.observation = observations[indexPath.row]
         observationViewController.isAddingNewObservation = false
         
-        let transition = CATransition()
-        transition.duration = 1.0
-        transition.type = kCATransitionPush
-        transition.subtype = kCATransitionFromRight
-        transition.timingFunction = CAMediaTimingFunction(name:kCAMediaTimingFunctionEaseInEaseOut)
-        view.window!.layer.add(transition, forKey: kCATransition)
+        observationViewController.modalPresentationStyle = .custom
+        observationViewController.transitioningDelegate = self
         
-        present(observationViewController, animated: false, completion: nil)
-        
+        // Set the transition. When done transitioning, reset presentTransition to nil
+        self.presentTransition = RightToLeftTransition()
+        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
     }
     
 
@@ -234,7 +227,6 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             loadedObservations.append(observation!)
         }
         
-        print("loaded all observations")
         return loadedObservations
         
     }
@@ -248,7 +240,6 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
-        print("loaded all session")
     }
     
 }

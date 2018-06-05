@@ -57,6 +57,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.setNavigationBar()
         self.setupLayout()
         self.view.backgroundColor = UIColor.white
+        
     }
     
     // On rotation, recalculate positions of fields
@@ -246,9 +247,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             }
         }
         // Now set the height contraint
-        print(containerHeight)
-        //container.heightAnchor.constraint(equalToConstant: containerHeight).isActive = true
-        //container.heightAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.heightAnchor).isActive = true
+
         scrollView.contentSize = self.view.frame.size//CGSize(width: container.frame.size.width, height: containerHeight)
         // ****** If height > area above keyboard, put it in a scroll view *************
         //  Add a flag property to notify the controller that it will or will not need to handle when the keyboard obscures a text field
@@ -473,7 +472,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // MARK: - Navigation
     //#######################################################################
-    // MARK: Override in all classes
+    // MARK: Override in all subclasses
     func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
@@ -659,52 +658,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         self.view.addSubview(self.navigationBar)
     }
     
-    @objc func save() {
-        // update observation in DB
-        
-        // Navigate back to tableview
-        
-    }
-    
-    /*@objc func moveToObservationViewController(button: UIButton){
-        //let session = loadSession()
-        //let labelText = icons[button.tag].key
-        switch (labelText){
-        case "Bus":
-            let viewController = BaseObservationViewController()
-            viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
-            present(viewController, animated: true, completion: nil)
-        default:
-            fatalError("Didn't understand which controller to move to")
-        }
-    }*/
-    
+    // Dismiss with left to right transiton
     @objc func cancelButtonPressed() {
-        // Depending on style of presentation (modal or push presentation), this view controller needs to be dismissed in two different ways
-        //let isAddingObservation = presentingViewController is UINavigationController
-        
-        /*if isAddingNewObservation {
-            dismiss(animated: true, completion: nil)
-        }
-        else if let owningNavigationController = navigationController {
-            owningNavigationController.popViewController(animated: true)
-            
-        }
-        else {
-            fatalError("The ObservationViewController is not inside a navigation controller")
-        }*/
-        let vehicleListViewController = BaseTableViewController()
-        presentTransition = RightToLeftTransition()
-        dismissTransition = LeftToRightTransition()
-        
-        vehicleListViewController.modalPresentationStyle = .custom
-        vehicleListViewController.transitioningDelegate = self
-        
-        present(vehicleListViewController, animated: true, completion: { [weak self] in
-            self?.presentTransition = nil
-        })
-        //vehicleListViewController.modalTransitionStyle = .crossDissolve
-        //present(vehicleListViewController, animated: true, completion: nil)
+        self.dismissTransition = LeftToRightTransition()
+        // Reset dismissTransition to nil when done
+        dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
         
     }
     
@@ -802,7 +760,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let destination = observation?.destination
         let nPassengers = observation?.nPassengers
         let comments = observation?.comments
-        print(comments!)
+        
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
@@ -826,7 +784,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
-        print("loaded all session")
     }
 }
 
