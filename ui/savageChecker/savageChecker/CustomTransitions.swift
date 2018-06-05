@@ -12,7 +12,7 @@ import UIKit
 class CustomHorizontalTransition: NSObject, UIViewControllerAnimatedTransitioning {
     
     let duration: TimeInterval = 0.5
-    var dismiss = false
+    var dismiss: Bool?
     
     func transitionDuration(using transitionContext: UIViewControllerContextTransitioning?) -> TimeInterval {
         return duration
@@ -21,28 +21,28 @@ class CustomHorizontalTransition: NSObject, UIViewControllerAnimatedTransitionin
     func animateTransition(using transitionContext: UIViewControllerContextTransitioning) {
         let container = transitionContext.containerView
         
-        if dismiss {
+        if dismiss! {
             let toView = transitionContext.view(forKey: .to)!
             
             container.addSubview(toView)
             toView.frame.origin = CGPoint(x: toView.frame.width, y: 0)
             
             UIView.animate(withDuration: duration, delay: 0, options: .curveEaseOut, animations: {
-                toView.frame.origin = CGPoint(x: 0, y: 0)
-            }, completion: { _ in
-                transitionContext.completeTransition(true)
+                toView.frame.origin = CGPoint(x: 0, y: 0)},
+                           completion: { _ in transitionContext.completeTransition(true)
             })
         } else {
-            let fromView = transitionContext.view(forKey: .from)!
+            let toView = transitionContext.view(forKey: .to)!
+            //let fromView = transitionContext.containerView.viewWithTag
             
-            container.addSubview(fromView)
-            fromView.frame.origin = .zero
+            container.addSubview(toView)
+            toView.frame.origin = .zero
             
             UIView.animate(withDuration: duration, delay: 0, options: .curveEaseIn, animations: {
-                fromView.frame.origin = CGPoint(x: fromView.frame.width, y: 0)
-            }, completion: { _ in
-                fromView.removeFromSuperview()
-                transitionContext.completeTransition(true)
+                toView.frame.origin = CGPoint(x: toView.frame.width, y: 0)},
+                           completion: { _ in
+                                //fromView.removeFromSuperview()
+                                transitionContext.completeTransition(true)
             })
         }
     }
@@ -97,7 +97,6 @@ class LeftToRightTransition: NSObject, UIViewControllerAnimatedTransitioning {
 
 extension BaseFormViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        print("presenting")
         return presentTransition
     }
     
@@ -108,12 +107,22 @@ extension BaseFormViewController: UIViewControllerTransitioningDelegate {
 
 extension BaseTableViewController: UIViewControllerTransitioningDelegate {
     func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        print("Transition will be present")
+        /*let transition = CustomHorizontalTransition()
+        transition.dismiss = self.dismiss*/
         return presentTransition
     }
     
     func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
-        print("Transition will be dismiss")
+        return dismissTransition
+    }
+}
+
+extension AddObservationViewController: UIViewControllerTransitioningDelegate {
+    func animationController(forPresented presented: UIViewController, presenting: UIViewController, source: UIViewController) -> UIViewControllerAnimatedTransitioning? {
+        return presentTransition
+    }
+    
+    func animationController(forDismissed dismissed: UIViewController) -> UIViewControllerAnimatedTransitioning? {
         return dismissTransition
     }
 }

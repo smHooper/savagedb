@@ -17,6 +17,8 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     private var backButton: UIBarButtonItem!
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
+    var dismiss = false
+    var blurEffectView: UIVisualEffectView!
     
     //MARK: Properties
     var observations = [Observation]()
@@ -120,6 +122,14 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     }
     
     @objc func backButtonPressed(){
+        /*let sessionController = SessionViewController()
+        sessionController.modalPresentationStyle = .custom
+        sessionController.transitioningDelegate = self
+        self.dismiss = false
+        let currentTag = self.view.tag
+        self.view.tag = -1 //Set this so
+        present(sessionController, animated: true, completion: {[weak self] in self?.view.tag = currentTag})*/
+        print("back button pressed")
         self.dismissTransition = LeftToRightTransition()
         dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
     }
@@ -130,14 +140,15 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             view.backgroundColor = .clear
             
             let blurEffect = UIBlurEffect(style: .regular)
-            let blurEffectView = UIVisualEffectView(effect: blurEffect)
+            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
             
             //always fill the view
-            blurEffectView.frame = self.view.bounds
-            blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            self.blurEffectView.frame = self.view.bounds
+            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             
-            view.addSubview(blurEffectView) //if you have more UIViews, use an insertSubview API to place it where needed
+            view.addSubview(self.blurEffectView) //if you have more UIViews, use an insertSubview API to place it where needed
         } else {
+            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
             view.backgroundColor = .black
         }
         let menuController = AddObservationViewController()

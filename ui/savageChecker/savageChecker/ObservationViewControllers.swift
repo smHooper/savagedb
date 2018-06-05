@@ -659,11 +659,20 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     // Dismiss with left to right transiton
+    
     @objc func cancelButtonPressed() {
-        self.dismissTransition = LeftToRightTransition()
-        // Reset dismissTransition to nil when done
-        dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-        
+        if self.isAddingNewObservation {
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+            
+            presentingController.dismissTransition = LeftToRightTransition()
+            // Reset dismissTransition to nil when done
+            presentingController.dismiss(animated: true, completion: {
+                presentingController.dismissTransition = nil
+            })
+        } else {
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+        }
     }
     
     // Configure tableview controller before it's presented
@@ -725,10 +734,23 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
         observation?.id = Int(max)
         
-        let vehicleList = BaseTableViewController()
+        /*let vehicleList = BaseTableViewController()
         vehicleList.modalTransitionStyle = .flipHorizontal
+        dismiss(animated: true)*/
+        
+        if isAddingNewObservation {
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+            //presentingController.modalTransitionStyle = .flipHorizontal
+            //presentingController.dismiss(animated: true, completion: nil)
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+        }
+        
         //vehicleList.modalPresentationStyle =
-        show(vehicleList, sender: self.saveButton)
+        //(vehicleList, sender: self.saveButton)
     }
 
     
