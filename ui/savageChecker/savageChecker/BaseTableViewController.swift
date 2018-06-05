@@ -122,8 +122,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         // Prep the view controller
         let sessionController = SessionViewController()
         sessionController.session = self.session
-        print("moving back to session")
-        
+
         present(sessionController, animated: true, completion: nil)
         //dismiss(animated: true, completion: nil)
         //self.navigationController?.popViewController(animated: true)
@@ -165,7 +164,12 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     
     // called when the cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print("Selected: \(indexPath.row)")
+        
+        let observationViewController = BaseObservationViewController()
+        observationViewController.observation = observations[indexPath.row]
+        observationViewController.isAddingNewObservation = false
+        (observationViewController, sender: self)
+        
     }
     
 
