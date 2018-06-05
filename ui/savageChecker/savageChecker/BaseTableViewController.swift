@@ -168,7 +168,15 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         let observationViewController = BaseObservationViewController()
         observationViewController.observation = observations[indexPath.row]
         observationViewController.isAddingNewObservation = false
-        (observationViewController, sender: self)
+        
+        let transition = CATransition()
+        transition.duration = 1.0
+        transition.type = kCATransitionPush
+        transition.subtype = kCATransitionFromRight
+        transition.timingFunction = CAMediaTimingFunction(name:kCAMediaTimingFunctionEaseInEaseOut)
+        view.window!.layer.add(transition, forKey: kCATransition)
+        
+        present(observationViewController, animated: false, completion: nil)
         
     }
     

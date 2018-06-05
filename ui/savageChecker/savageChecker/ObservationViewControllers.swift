@@ -40,7 +40,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let textFieldSpacing: CGFloat = 30.0
     var deviceOrientation = UIDevice.current.orientation
     
-
+    var presentTransition: UIViewControllerAnimatedTransitioning?
+    var dismissTransition: UIViewControllerAnimatedTransitioning?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -680,8 +681,17 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             fatalError("The ObservationViewController is not inside a navigation controller")
         }*/
         let vehicleListViewController = BaseTableViewController()
-        vehicleListViewController.modalTransitionStyle = .crossDissolve
-        present(vehicleListViewController, animated: true, completion: nil)
+        presentTransition = RightToLeftTransition()
+        dismissTransition = LeftToRightTransition()
+        
+        vehicleListViewController.modalPresentationStyle = .custom
+        vehicleListViewController.transitioningDelegate = self
+        
+        present(vehicleListViewController, animated: true, completion: { [weak self] in
+            self?.presentTransition = nil
+        })
+        //vehicleListViewController.modalTransitionStyle = .crossDissolve
+        //present(vehicleListViewController, animated: true, completion: nil)
         
     }
     

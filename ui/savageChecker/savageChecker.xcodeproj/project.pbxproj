@@ -22,6 +22,7 @@
 		AF67172120A4D0AC0039C490 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67172020A4D0AC0039C490 /* Session.swift */; };
 		AF7B986820B64F7000D315C3 /* SQLite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF7B985A20B64F0C00D315C3 /* SQLite.framework */; };
 		AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */; };
+		AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBC5B3420C6338800551378 /* CustomTransitions.swift */; };
 		AFF2A2F120BDEE0B007201F6 /* VehicleButtonControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */; };
 		AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */; };
 		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
@@ -110,6 +111,7 @@
 		AF67172020A4D0AC0039C490 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQLite.xcodeproj; path = ../SQLite.swift/SQLite.xcodeproj; sourceTree = "<group>"; };
 		AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseTableViewController.swift; sourceTree = "<group>"; };
+		AFBC5B3420C6338800551378 /* CustomTransitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTransitions.swift; sourceTree = "<group>"; };
 		AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleButtonControl.swift; sourceTree = "<group>"; };
 		AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddObservationViewController.swift; sourceTree = "<group>"; };
 		AFF3E15D20C084980079A389 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
@@ -179,6 +181,7 @@
 				AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */,
 				AFF3E16620C0AC7D0079A389 /* TextFieldCell.swift */,
 				AFF3E15D20C084980079A389 /* Extensions.swift */,
+				AFBC5B3420C6338800551378 /* CustomTransitions.swift */,
 				AF67170420A4C58F0039C490 /* Main.storyboard */,
 				AF5E82F920AA4D8400386083 /* ObservationViewController.swift */,
 				AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */,
@@ -430,6 +433,7 @@
 				AF67170120A4C58F0039C490 /* AppDelegate.swift in Sources */,
 				AF2D9A4E20BF6AD90006EF72 /* ObservationViewControllers.swift in Sources */,
 				AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */,
+				AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */,
 				AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */,
 				AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */,
 				AF67172120A4D0AC0039C490 /* Session.swift in Sources */,
