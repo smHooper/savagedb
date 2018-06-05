@@ -29,11 +29,9 @@ func f(str:String){
     print(str)
 }
 
-let dict = [(name: "a", function: f)]
+let l = [1,2,3]
+print("\u{2039}")
 
-var a = [[1, "b"]]
-let t = type(of: a[0][0])
-var d = 2.0
 
 extension String {
     func height(withConstrainedWidth width: CGFloat, font: UIFont) -> CGFloat {
@@ -50,6 +48,9 @@ extension String {
         return ceil(boundingBox.width)
     }
 }
+
+
+
 
 
 
