@@ -46,6 +46,7 @@ class SessionViewController: BaseFormViewController {
         
         // The user is opening the app again after closing it or returning from another scene
         if let session = loadSession() {
+            print("loaded session date: \(session.date)")
             self.dropDownTextFields[0]?.text = session.observerName
             self.textFields[1]?.text = session.date
             self.textFields[2]?.text = session.openTime
@@ -175,7 +176,7 @@ class SessionViewController: BaseFormViewController {
         }
         for row in rows{
             session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
-            print(row[observerNameColumn])
+            //print("Session date: \(row[dateColumn])")
         }
         print("loaded all session")
         return session

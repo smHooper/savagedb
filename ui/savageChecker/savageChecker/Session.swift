@@ -46,7 +46,7 @@ class Session {//}: NSObject, NSCoding {
         }
         
         //If date is not given or is empty
-        if !(givenDate?.isEmpty)! {
+        if (givenDate?.isEmpty)! {
             let now = Date()
             let formatter = DateFormatter()
             formatter.dateStyle = .short

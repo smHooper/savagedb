@@ -411,11 +411,24 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     @objc func handleDatetimePicker(sender: UIDatePicker) {
-        let timeFormatter = DateFormatter()
-        timeFormatter.dateStyle = .none
-        timeFormatter.timeStyle = .short
-        let timeString = timeFormatter.string(from: sender.date)
-        let dictionary: [Int: String] = [sender.tag: timeString]
+        let formatter = DateFormatter()
+        
+        // Set the formatter style for either a date or time
+        let fieldType = textFieldIds[sender.tag].type
+        switch(fieldType){
+        case "time":
+            formatter.dateStyle = .none
+            formatter.timeStyle = .short
+        case "date":
+            formatter.dateStyle = .short
+            formatter.timeStyle = .none
+        default:
+            fatalError("textfield \(sender.tag) passed to setupDatetimePicker was of type \(fieldType)")
+        }
+        
+        // Send the string with a notification. Use the tag of the datepicker as the key to a dictionary so the receiver knows which text field this value belongs to
+        let datetimeString = formatter.string(from: sender.date)
+        let dictionary: [Int: String] = [sender.tag: datetimeString]
         NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
         
         // ********* override this method in observation view controllers: call super.handleDatetimePicker; updateObservation()
