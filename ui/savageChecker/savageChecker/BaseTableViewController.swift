@@ -20,6 +20,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var dismiss = false
     var blurEffectView: UIVisualEffectView!
+    var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     
     //MARK: Properties
     var observations = [Observation]()
@@ -110,18 +111,22 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         //let backButton = UIBarButtonItem(title: "\u{2039}", style:.plain, target: nil, action: #selector(backButtonPressed))
         let backButton = UIButton(type: .custom)
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
+        //backButton.setTitle("Shift info", for: .normal)
         backButton.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let backBarButton = UIBarButtonItem(customView: backButton)
         
         let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
+        editButton.setImage(UIImage(named: "blueCheck"), for: .selected)
         editButton.imageView?.contentMode = .scaleAspectFit
+        editButton.imageEdgeInsets = UIEdgeInsets(top: 12.5, left: 0, bottom: 12.5, right: 0)
         editButton.imageView?.frame = (backBarButton.customView?.frame)!
         editButton.translatesAutoresizingMaskIntoConstraints = false
         editButton.frame = CGRect(x: 0.0, y: 0.0, width: 20.0, height: 20.0)//(backBarButton.customView?.frame)!
         editButton.addTarget(self, action: #selector(handleEditing), for: .touchUpInside)
         self.editBarButton = UIBarButtonItem(customView: editButton)
+        print("Edit button frame: \((self.editBarButton.customView?.frame)!)")
         
         let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
         navItem.leftBarButtonItem = backBarButton
@@ -133,23 +138,33 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     
     @objc func handleEditing() {
         
-        super.setEditing(self.isEditing, animated: true)
+        //super.setEditing(self.isEditing, animated: true)
         self.tableView.setEditing(self.isEditing, animated: true)
-        print("Editing state from handleEditing(): \(self.isEditing)")
-        if self.isEditing {
-            let buttonView = UIImageView(image: UIImage(named: "blueCheck"))
+        print("isEditing: \(self.tableView.isEditing)")
+        
+        print("Edit button frame: \((self.editBarButton.customView?.frame)!)")
+        if !self.isEditingTable {
+            self.tableView.isEditing = true
+            self.isEditingTable = true
+            /*let buttonView = UIImageView(image: UIImage(named: "blueCheck"))
             buttonView.frame = (self.editBarButton.customView?.frame)!
+            buttonView.translatesAutoresizingMaskIntoConstraints = false
             buttonView.contentMode = .scaleAspectFit
+            buttonView.backgroundColor = UIColor.red
+            buttonView.frame.size.width = 10.0
             self.editBarButton.customView = buttonView
+            self.editBarButton.customView?.frame = CGRect(x: 0.0, y: 0.0, width: 20.0, height: 20.0)
+            print("Edit button frame: \((self.editBarButton.customView?.frame)!)")*/
             
         } else {
-            let buttonView = UIImageView(image: UIImage(named: "deleteIcon"))
+            self.tableView.isEditing = false
+            self.isEditingTable = false
+            /*let buttonView = UIImageView(image: UIImage(named: "deleteIcon"))
             buttonView.frame = (self.editBarButton.customView?.frame)!
             buttonView.contentMode = .scaleAspectFit
-            self.editBarButton.customView = buttonView
+            self.editBarButton.customView = buttonView*/
         }
     }
-    
     
     
     @objc func backButtonPressed(){
