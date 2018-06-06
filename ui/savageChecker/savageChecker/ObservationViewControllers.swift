@@ -740,8 +740,8 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
         if isAddingNewObservation {
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            //presentingController.modalTransitionStyle = .flipHorizontal
-            //presentingController.dismiss(animated: true, completion: nil)
+            presentingController.modalTransitionStyle = .flipHorizontal
+            presentingController.dismiss(animated: true, completion: nil)
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {

@@ -15,6 +15,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     private var tableView: UITableView!
     private var navigationBar: CustomNavigationBar!
     private var backButton: UIBarButtonItem!
+    private var editBarButton: UIBarButtonItem!
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var dismiss = false
@@ -107,19 +108,49 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         
         let navItem = UINavigationItem(title: "Vehicles")
         //let backButton = UIBarButtonItem(title: "\u{2039}", style:.plain, target: nil, action: #selector(backButtonPressed))
-        let button = UIButton(type: .custom)
-        button.setImage(UIImage (named: "backButton"), for: .normal)
-        button.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
-        button.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
-        let backButton = UIBarButtonItem(customView: button)
+        let backButton = UIButton(type: .custom)
+        backButton.setImage(UIImage (named: "backButton"), for: .normal)
+        backButton.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
+        backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
+        let backBarButton = UIBarButtonItem(customView: backButton)
+        
+        let editButton = UIButton(type: .custom)
+        editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
+        editButton.imageView?.contentMode = .scaleAspectFit
+        editButton.imageView?.frame = (backBarButton.customView?.frame)!
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 20.0, height: 20.0)//(backBarButton.customView?.frame)!
+        editButton.addTarget(self, action: #selector(handleEditing), for: .touchUpInside)
+        self.editBarButton = UIBarButtonItem(customView: editButton)
         
         let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
-        navItem.leftBarButtonItem = backButton
-        navItem.rightBarButtonItem = addObservationButton
+        navItem.leftBarButtonItem = backBarButton
+        navItem.rightBarButtonItems = [addObservationButton, self.editBarButton]
         self.navigationBar.setItems([navItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
     }
+    
+    @objc func handleEditing() {
+        
+        super.setEditing(self.isEditing, animated: true)
+        self.tableView.setEditing(self.isEditing, animated: true)
+        print("Editing state from handleEditing(): \(self.isEditing)")
+        if self.isEditing {
+            let buttonView = UIImageView(image: UIImage(named: "blueCheck"))
+            buttonView.frame = (self.editBarButton.customView?.frame)!
+            buttonView.contentMode = .scaleAspectFit
+            self.editBarButton.customView = buttonView
+            
+        } else {
+            let buttonView = UIImageView(image: UIImage(named: "deleteIcon"))
+            buttonView.frame = (self.editBarButton.customView?.frame)!
+            buttonView.contentMode = .scaleAspectFit
+            self.editBarButton.customView = buttonView
+        }
+    }
+    
+    
     
     @objc func backButtonPressed(){
         /*let sessionController = SessionViewController()
