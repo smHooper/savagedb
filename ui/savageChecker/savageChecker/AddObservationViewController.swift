@@ -115,7 +115,17 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             let stack = UIStackView()
             let startIndex = rowIndex * Int(nPerRow)
             let endIndex = min(startIndex + Int(nPerRow), self.buttons.count)
-            let theseButtons = self.buttons[startIndex ..< endIndex]
+            var theseButtons = self.buttons[startIndex ..< endIndex]
+            
+            // Check if the row is full. If not, add clear, dummy buttons
+            for _ in 0..<(Int(nPerRow) - theseButtons.count){
+                let button = UIButton()
+                button.backgroundColor = UIColor.clear
+                button.frame = self.buttons.first!.frame
+                let vehicleButton = VehicleButtonControl()
+                vehicleButton.button = button
+                theseButtons.append(vehicleButton)
+            }
             for button in theseButtons {
                 stack.addArrangedSubview(button)
             }
