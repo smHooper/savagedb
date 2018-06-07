@@ -2,6 +2,8 @@
 //  Observation.swift
 //  savageChecker
 //
+//  Definition of all vehicle observation classes
+//
 //  Created by Sam Hooper on 5/14/18.
 //  Copyright © 2018 Sam Hooper. All rights reserved.
 //
@@ -63,24 +65,154 @@ class Observation {
 
 class BusObservation: Observation {
     
-    var busNumber: String?
     var busType: String?
+    var busNumber: String?
     var isTraining: Bool?
-    var nOvernightPassengers = 0
+    var nOvernightPassengers = "0"
     
     // Not stored in DB
     private var isLodgeBus = false
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, nOvernightPassengers: Int = 0){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, nOvernightPassengers: String = "0"){
+        
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
         
         self.busType = busType
         self.busNumber = busNumber
         self.isTraining = isTraining
         self.nOvernightPassengers = nOvernightPassengers
-        
     }
-
 }
 
+class NPSVehicleObservation: Observation {
+    
+    var tripPurpose: String?
+    var workDivision: String?
+    var workGroup: String?
+    var nExpectedDays = "1"
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, workDivision: String, workGroup: String, nExpectedDays: String = "1"){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.tripPurpose = tripPurpose
+        self.workDivision = workDivision
+        self.workGroup = workGroup
+        self.nExpectedDays = nExpectedDays
+    }
+}
+
+class NPSApprovedObservation: Observation {
+    
+    var vehicleType: String?
+    var tripPurpose: String?
+    var nExpectedNights = "1"
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, vehicleType: String, tripPurpose: String, nExpectedNights: String = "1"){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.vehicleType = vehicleType
+        self.tripPurpose = tripPurpose
+        self.nExpectedNights = nExpectedNights
+        
+    }
+}
+
+class NPSContractorObservation: Observation {
+    
+    var tripPurpose: String?
+    var nExpectedNights = "1"
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, nExpectedNights: String = "1"){
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.tripPurpose = tripPurpose
+        self.nExpectedNights = nExpectedNights
+    }
+}
+
+
+class EmployeeObservation: Observation {
+    
+    var permitHolderName: String?
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitHolderName: String){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.permitHolderName = permitHolderName
+    }
+}
+
+
+class RightOfWayObservation: Observation {
+    
+    var tripPurpose: String?
+    var permitHolderName: String?
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String = "Kantishna", nPassengers: String, permitHolderName: String, tripPurpose: String = "N/A"){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.permitHolderName = permitHolderName
+        self.tripPurpose = tripPurpose
+    }
+}
+
+
+class TeklanikaCamperObservation: Observation {
+    
+    var hasTekPass: Bool?
+    
+    init?(id: Int, observerName: String, date: String, time: String, destination: String, nPassengers: String, hasTekPass: Bool, driverName: String = "N/A"){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.hasTekPass = hasTekPass
+    }
+}
+
+
+// Not needed because this class doesn't have any other properties than Observation base class
+// class CyclistObservation: Observation {
+
+//}
+
+
+class PhotographerObservation: Observation {
+    
+    var permitNumber: String?
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitNumber: String){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.permitNumber = permitNumber
+    }
+}
+
+
+class AccessibilityObservation: Observation {
+    
+    var tripPurpose: String?
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        
+        self.tripPurpose = tripPurpose
+    }
+    
+}
+
+// Not needed because this class doesn't have any other properties than Observation base class
+// class HuntingObservation: Observation {
+
+//}
+
+// Not needed because this class doesn't have any other properties than Observation base class
+// class RoadLotteryObservation: Observation {
+
+//}
 
