@@ -673,7 +673,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
      }*/
     
     // MARK: - Navigation
-    //#######################################################################
     override func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
@@ -756,12 +755,15 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             presentingController.modalTransitionStyle = .flipHorizontal
             presentingController.dismiss(animated: true, completion: nil)
-            //presentingController.observations = presentingController.loadObservations()!
+            presentingController.observations.append(self.observation!)
+            presentingController.tableView.reloadData()
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {
+            let presentingController = self.presentingViewController as! BaseTableViewController
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
         }
         
     }

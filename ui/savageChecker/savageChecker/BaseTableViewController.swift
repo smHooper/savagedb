@@ -14,7 +14,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     
     //MARK: - Properties
     //MARK: General
-    private var tableView: UITableView!
+    var tableView: UITableView!
     private var navigationBar: CustomNavigationBar!
     private var backButton: UIBarButtonItem!
     private var editBarButton: UIBarButtonItem!
