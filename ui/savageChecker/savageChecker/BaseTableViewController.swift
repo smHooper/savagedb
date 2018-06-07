@@ -268,9 +268,14 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     }
     
     //MARK: Private Methods
-    private func loadObservations() throws -> [Observation]?{
+    func loadObservations() -> [Observation]?{
         // ************* check that the table exists first **********************
-        let rows = Array(try db.prepare(observationsTable))
+        let rows: [Row]
+        do {
+            rows = try Array(try db.prepare(observationsTable))
+        } catch {
+            fatalError("Could not load observations: \(error.localizedDescription)")
+        }
         var loadedObservations = [Observation]()
         for row in rows{
             //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
