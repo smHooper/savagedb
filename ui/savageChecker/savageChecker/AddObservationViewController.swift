@@ -188,6 +188,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                        animations: {presentingController.blurEffectView.alpha = 0.0},
                        completion: {(value: Bool) in presentingController.blurEffectView.removeFromSuperview()})
     }
+    
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         
         // Check if the touch was on one of the buttons

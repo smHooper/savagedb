@@ -28,6 +28,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     var labels = [UILabel]()
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     private var currentTextField = 0
+    private var previousTextField = -1
     
     
     var navigationBar: CustomNavigationBar!
@@ -49,7 +50,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.hideKeyboardWhenTappedAround()
+        hideKeyboardWhenTappedAround()
         
         // Open connection to the DB
         do {
@@ -313,6 +314,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     //MARK: - UITextFieldDelegate
     //######################################################################
     func textFieldDidBeginEditing(_ textField: UITextField) {
+        
         let fieldType = textFieldIds[textField.tag].type
         switch(fieldType){
         case "normal", "number":
@@ -354,7 +356,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         updateData()
     }
     
-    // Dismiss keyboard when
+    
+    // Dismiss keyboard when tapped outside of a text field
     func hideKeyboardWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
         tap.cancelsTouchesInView = false
@@ -377,8 +380,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         updateData()
     }
     
+    
     // MARK: Add a custom datepicker to each of the datetime fields
-    // #####################################################################################################################
     
     // Called when text a text field with type == "date" || "time"
     func setupDatetimePicker(_ sender: UITextField) {
