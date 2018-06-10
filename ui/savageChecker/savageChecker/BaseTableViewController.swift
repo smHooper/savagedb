@@ -121,9 +121,16 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         let backBarButton = UIBarButtonItem(customView: backButton)
         
         let editButton = UIButton(type: .custom)
-        //self.editBarButton = UIBarButtonItem(image: UIImage(named: "deleteIcon"), style: .plain, target: self, action: #selector(handleEditing(sender:)))
+        editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+        editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        editButton.imageView?.contentMode = .scaleAspectFit
+        editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+        self.editBarButton = UIBarButtonItem(customView: editButton)
+        /*self.editBarButton = UIBarButtonItem(image: UIImage(named: "deleteIcon"), style: .plain, target: self, action: #selector(handleEditing(sender:)))
         self.editBarButton = self.editButtonItem
-        self.editButtonItem.action = #selector(handleEditing(sender:))
+        self.editButtonItem.action = #selector(handleEditing(sender:))*/
         //print("Edit button frame: \((self.editBarButton.customView?.frame)!)")
         
         
@@ -141,16 +148,32 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         if !self.isEditingTable {
             self.tableView.isEditing = true
             self.isEditingTable = true
-            sender.title = "Done"
-            sender.style = .done
+            let editButton = UIButton(type: .custom)
+            editButton.setImage(UIImage(named: "blueCheck"), for: .normal)
+            editButton.translatesAutoresizingMaskIntoConstraints = false
+            editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+            editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+            editButton.imageView?.contentMode = .scaleAspectFit
+            editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+            self.editBarButton.customView = editButton
+            //sender.title = "Done"
+            //sender.style = .done
             // **** Add alert that deletes are permanent *******
             //self.editBarButton.image = UIImage(named: "blueCheck")
             
         } else {
             self.tableView.isEditing = false
             self.isEditingTable = false
-            sender.title = "Edit"
-            sender.style = .plain
+            let editButton = UIButton(type: .custom)
+            editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
+            editButton.translatesAutoresizingMaskIntoConstraints = false
+            editButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
+            editButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+            editButton.imageView?.contentMode = .scaleAspectFit
+            editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+            self.editBarButton.customView = editButton
+            //sender.title = "Edit"
+            //sender.style = .plain
             //self.editBarButton.image = UIImage(named: "deleteIcon")
             
             /*let buttonView = UIImageView(image: UIImage(named: "deleteIcon"))
@@ -169,7 +192,6 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         let currentTag = self.view.tag
         self.view.tag = -1 //Set this so
         present(sessionController, animated: true, completion: {[weak self] in self?.view.tag = currentTag})*/
-        print("back button pressed")
         
         // Cancel editing
         if self.isEditingTable {
@@ -216,7 +238,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     }
     
     
-    //MARK: TableView methods
+    //MARK: - TableView methods
     // return the number of sections
     func numberOfSections(in tableView: UITableView) -> Int{
         return 1
@@ -285,7 +307,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         }
     }
     
-    //MARK: Private Methods
+    //MARK: - Private Methods
     func loadObservations() -> [Observation]?{
         // ************* check that the table exists first **********************
         let rows: [Row]
