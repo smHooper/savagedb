@@ -170,11 +170,29 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.view.tag = -1 //Set this so
         present(sessionController, animated: true, completion: {[weak self] in self?.view.tag = currentTag})*/
         print("back button pressed")
+        
+        // Cancel editing
+        if self.isEditingTable {
+            self.tableView.isEditing = false
+            self.isEditingTable = false
+            self.editBarButton.title = "Edit"
+            self.editBarButton.style = .plain
+        }
+        
         self.dismissTransition = LeftToRightTransition()
         dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
     }
     
     @objc func addButtonPressed(){
+        
+        // Cancel editing
+        if self.isEditingTable {
+            self.tableView.isEditing = false
+            self.isEditingTable = false
+            self.editBarButton.title = "Edit"
+            self.editBarButton.style = .plain
+        }
+        
         //only apply the blur if the user hasn't disabled transparency effects
         if !UIAccessibilityIsReduceTransparencyEnabled() {
             view.backgroundColor = .clear
