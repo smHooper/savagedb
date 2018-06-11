@@ -43,7 +43,7 @@ class BaseObservationTableViewCell: UITableViewCell {
     
     let spacing: CGFloat = 8
     let largeTextSize: CGFloat = 24
-    let smallTextSize: CGFloat = 17
+    let smallTextSize: CGFloat = 20
     let mainIconImageSize: CGFloat = 90
     let smallIconImageSize: CGFloat = 30
     
@@ -67,16 +67,24 @@ class BaseObservationTableViewCell: UITableViewCell {
         
         nPassengersIcon.image = UIImage(named: "passengerIcon", in: bundle, compatibleWith: self.traitCollection)
         nPassengersIcon.contentMode = .scaleAspectFit
-
-        contentView.addSubview(mainIcon)
-        contentView.addSubview(driverLabel)
-        contentView.addSubview(driverIcon)
-        contentView.addSubview(destinationLabel)
-        contentView.addSubview(destinationIcon)
-        contentView.addSubview(datetimeLabel)
-        contentView.addSubview(datetimeIcon)
-        contentView.addSubview(nPassengersLabel)
-        contentView.addSubview(nPassengersIcon)
+        
+        let contentSafeArea = UIView()
+        contentView.addSubview(contentSafeArea)
+        contentSafeArea.translatesAutoresizingMaskIntoConstraints = false
+        contentSafeArea.leftAnchor.constraint(equalTo: contentView.leftAnchor, constant: spacing).isActive = true
+        contentSafeArea.topAnchor.constraint(equalTo: contentView.topAnchor, constant: spacing).isActive = true
+        contentSafeArea.rightAnchor.constraint(equalTo: contentView.rightAnchor, constant: spacing * -1).isActive = true
+        contentSafeArea.bottomAnchor.constraint(equalTo: contentView.bottomAnchor, constant: spacing * -1).isActive = true
+        
+        contentSafeArea.addSubview(mainIcon)
+        contentSafeArea.addSubview(driverLabel)
+        contentSafeArea.addSubview(driverIcon)
+        contentSafeArea.addSubview(destinationLabel)
+        contentSafeArea.addSubview(destinationIcon)
+        contentSafeArea.addSubview(datetimeLabel)
+        contentSafeArea.addSubview(datetimeIcon)
+        contentSafeArea.addSubview(nPassengersLabel)
+        contentSafeArea.addSubview(nPassengersIcon)
         
         // Set up constraints
         mainIcon.translatesAutoresizingMaskIntoConstraints = false
@@ -89,17 +97,17 @@ class BaseObservationTableViewCell: UITableViewCell {
         nPassengersLabel.translatesAutoresizingMaskIntoConstraints = false
         nPassengersIcon.translatesAutoresizingMaskIntoConstraints = false
         
-        mainIcon.leftAnchor.constraint(equalTo: contentView.leftAnchor).isActive = true
-        mainIcon.topAnchor.constraint(equalTo: contentView.topAnchor).isActive = true
-        mainIcon.heightAnchor.constraint(equalTo: contentView.heightAnchor).isActive = true
-        mainIcon.widthAnchor.constraint(equalToConstant: 90)
+        mainIcon.leftAnchor.constraint(equalTo: contentSafeArea.leftAnchor).isActive = true
+        mainIcon.topAnchor.constraint(equalTo: contentSafeArea.topAnchor).isActive = true
+        mainIcon.heightAnchor.constraint(equalTo: contentSafeArea.heightAnchor).isActive = true
+        mainIcon.widthAnchor.constraint(equalToConstant: mainIconImageSize).isActive = true
         
         driverIcon.heightAnchor.constraint(equalToConstant: smallIconImageSize).isActive = true
         driverIcon.widthAnchor.constraint(equalToConstant: smallIconImageSize).isActive = true
-        driverIcon.leftAnchor.constraint(equalTo: mainIcon.rightAnchor).isActive = true
+        driverIcon.leftAnchor.constraint(equalTo: mainIcon.rightAnchor, constant: spacing * 2).isActive = true
         driverIcon.topAnchor.constraint(equalTo: mainIcon.topAnchor, constant: spacing).isActive = true
         driverLabel.centerYAnchor.constraint(equalTo: driverIcon.centerYAnchor).isActive = true
-        driverLabel.leftAnchor.constraint(equalTo: driverIcon.rightAnchor, constant: spacing * 0.75).isActive = true
+        driverLabel.leftAnchor.constraint(equalTo: driverIcon.rightAnchor, constant: spacing).isActive = true
         driverLabel.textAlignment = .left
         driverLabel.font = UIFont.systemFont(ofSize: smallTextSize)
         
@@ -117,7 +125,7 @@ class BaseObservationTableViewCell: UITableViewCell {
         datetimeIcon.widthAnchor.constraint(equalToConstant: smallIconImageSize).isActive = true
         datetimeIcon.leftAnchor.constraint(equalTo: driverLabel.leftAnchor, constant: contentView.frame.width/2).isActive = true
         datetimeIcon.centerYAnchor.constraint(equalTo: driverIcon.centerYAnchor).isActive = true
-        datetimeLabel.leftAnchor.constraint(equalTo: datetimeIcon.rightAnchor, constant: spacing * 0.75).isActive = true
+        datetimeLabel.leftAnchor.constraint(equalTo: datetimeIcon.rightAnchor, constant: spacing).isActive = true
         datetimeLabel.centerYAnchor.constraint(equalTo: driverIcon.centerYAnchor).isActive = true
         datetimeLabel.textAlignment = .left
         datetimeLabel.font = UIFont.systemFont(ofSize: smallTextSize)

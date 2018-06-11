@@ -118,14 +118,6 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let backBarButton = UIBarButtonItem(customView: backButton)
         
-        /*let editButton = UIButton(type: .custom)
-        editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
-        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
-        editButton.translatesAutoresizingMaskIntoConstraints = false
-        editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
-        editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
-        editButton.imageView?.contentMode = .scaleAspectFit
-        editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)*/
         let editButton = makeEditButton(imageName: "deleteIcon")
         self.editBarButton = UIBarButtonItem(customView: editButton)
         /*self.editBarButton = UIBarButtonItem(image: UIImage(named: "deleteIcon"), style: .plain, target: self, action: #selector(handleEditing(sender:)))
@@ -142,13 +134,14 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.view.addSubview(self.navigationBar)
     }
     
+    // Helper function to create edit button
     func makeEditButton(imageName: String) -> UIButton {
         let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: imageName), for: .normal)
-        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 20, height: 20)
         editButton.translatesAutoresizingMaskIntoConstraints = false
-        editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
-        editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        editButton.widthAnchor.constraint(equalToConstant: 20).isActive = true
+        editButton.heightAnchor.constraint(equalToConstant: 20).isActive = true
         editButton.imageView?.contentMode = .scaleAspectFit
         editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
         
@@ -176,24 +169,11 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             self.editBarButton.customView = editButton
             //sender.title = "Edit"
             //sender.style = .plain
-            //self.editBarButton.image = UIImage(named: "deleteIcon")
-            
-            /*let buttonView = UIImageView(image: UIImage(named: "deleteIcon"))
-             buttonView.frame = (self.editBarButton.customView?.frame)!
-             buttonView.contentMode = .scaleAspectFit
-             self.editBarButton.customView = buttonView*/
         }
     }
     
     
     @objc func backButtonPressed(){
-        /*let sessionController = SessionViewController()
-         sessionController.modalPresentationStyle = .custom
-         sessionController.transitioningDelegate = self
-         self.dismiss = false
-         let currentTag = self.view.tag
-         self.view.tag = -1 //Set this so
-         present(sessionController, animated: true, completion: {[weak self] in self?.view.tag = currentTag})*/
         
         // Cancel editing
         if self.isEditingTable {
@@ -206,6 +186,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.dismissTransition = LeftToRightTransition()
         dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
     }
+    
     
     @objc func addButtonPressed(){
         
@@ -285,6 +266,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         cell.driverLabel.text = observation.driverName
         cell.destinationLabel.text = observation.destination
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
+        cell.nPassengersLabel.text = observation.nPassengers
         
         return cell
     }
