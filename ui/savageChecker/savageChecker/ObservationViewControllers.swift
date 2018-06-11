@@ -566,7 +566,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                      Expression<String>("destination"),
                      Expression<String>("nPassengers"),
                      Expression<String>("comments")]
-    let observationsTable = Table("observations")
+    private let observationsTable = Table("observations")
     
     // MARK: session DB properties
     let sessionsTable = Table("sessions")
@@ -781,13 +781,17 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         /*let vehicleList = BaseTableViewController()
         vehicleList.modalTransitionStyle = .flipHorizontal
         dismiss(animated: true)*/
+        dismissController()
         
+    }
+    
+    private func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             /*presentingController.modalPresentationStyle = .custom
-            presentingController.transitioningDelegate = self
-            presentingController.modalTransitionStyle = .flipHorizontal*/
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
             presentingController.dismiss(animated: true, completion: nil)
             presentingController.observations.append(self.observation!)
             presentingController.tableView.reloadData()
@@ -800,7 +804,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.tableView.reloadData()
         }
-        
     }
 
     
@@ -882,6 +885,7 @@ class BusObservationViewController: BaseObservationViewController {
     let busNumberColumn = Expression<String>("busNumber")
     let isTrainingColumn = Expression<Bool>("isTraining")
     let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
+    private let observationsTable = Table("buses")
     
     let lodgeBusTypes = ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]
     
@@ -932,7 +936,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         super.viewDidLoad()
         autoFillTextFields()
-        
+        updateNOvernightFieldStatus()
     }
 
     override func autoFillTextFields() {
@@ -1007,8 +1011,29 @@ class BusObservationViewController: BaseObservationViewController {
                 print("Update failed")
             }
         }
+        dismissController()
     }
     
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            //presentingController.observations.append(self.observation!)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
     
     //MARK: - Private methods
     @objc override func updateData(){
@@ -1016,7 +1041,7 @@ class BusObservationViewController: BaseObservationViewController {
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
-        let busType = self.textFields[3]?.text ?? ""
+        let busType = self.dropDownTextFields[3]?.text ?? ""
         let busNumber = self.textFields[4]?.text ?? ""
         let driverName = self.textFields[5]?.text ?? ""
         let destination = self.dropDownTextFields[6]?.text ?? ""
@@ -1033,9 +1058,8 @@ class BusObservationViewController: BaseObservationViewController {
             !busNumber.isEmpty &&
             !driverName.isEmpty &&
             !destination.isEmpty &&
-            !isTraining.isEmpty &&
             !nPassengers.isEmpty
-        
+
         if fieldsFull {
             
             // Update the observation instance
@@ -1056,28 +1080,20 @@ class BusObservationViewController: BaseObservationViewController {
             self.busObservation?.comments = comments
             
             // Check if this field should be filled in
-            if lodgeBusTypes.contains(busType) &&
-            !nOvernightPassengers.isEmpty {
+            if lodgeBusTypes.contains(busType) {
+                if !nOvernightPassengers.isEmpty {
+                    self.saveButton.isEnabled = true
+                }
+            } else {
                 self.saveButton.isEnabled = true
             }
         }
+        // Check if the overnight passengers field should be enabled
+        updateNOvernightFieldStatus()
     }
     
     // Add record to DB
     private func insertObservation() {
-        // Can just get text values from the observation because it has to be updated before saveButton is enabled
-        /*let observerName = self.busObservation?.observerName
-        let date = self.busObservation?.date
-        let time = self.busObservation?.time
-        let busType = self.busObservation?.busType
-        let busNumber = self.busObservation?.busNumber
-        let driverName = self.busObservation?.driverName
-        let destination = self.busObservation?.destination
-        let isTraining = self.busObservation?.isTraining
-        let nPassengers = self.busObservation?.nPassengers
-        let nOvernight = self.busObservation?.nOvernightPassengers
-        let comments = self.busObservation?.comments*/
-        
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.busObservation?.observerName)!,
@@ -1093,6 +1109,23 @@ class BusObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.busObservation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
+        }
+    }
+    
+    // Either disable or enable the nOvernightPassengers field, depending on whether the bustype is a lodge bus
+    private func updateNOvernightFieldStatus() {
+        let busType = self.dropDownTextFields[3]?.text ?? ""
+        print("Bus tyope: \(busType)")
+        if self.lodgeBusTypes.contains(busType) {
+            self.labels[9].textColor = UIColor.black
+            self.labels[9].text = self.textFieldIds[9].label
+            self.textFields[9]?.placeholder = self.textFieldIds[9].placeholder
+            self.textFields[9]?.isEnabled = true
+        } else {
+            self.labels[9].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+            self.labels[9].text = "\(self.textFieldIds[9].label) (must be a lodge bus to enable this field)"
+            self.textFields[9]?.placeholder = ""
+            self.textFields[9]?.isEnabled = false
         }
     }
     
