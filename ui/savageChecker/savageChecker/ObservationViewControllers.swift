@@ -702,6 +702,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                 presentingController.dismissTransition = nil
             })
         } else {
+            
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
         }
@@ -755,14 +756,18 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         dismiss(animated: true)*/
         
         if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            presentingController.modalTransitionStyle = .flipHorizontal
+            /*presentingController.modalPresentationStyle = .custom
+            presentingController.transitioningDelegate = self
+            presentingController.modalTransitionStyle = .flipHorizontal*/
             presentingController.dismiss(animated: true, completion: nil)
             presentingController.observations.append(self.observation!)
             presentingController.tableView.reloadData()
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {
+            // Just dismiss this controller to get back to the tableView
             let presentingController = self.presentingViewController as! BaseTableViewController
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})

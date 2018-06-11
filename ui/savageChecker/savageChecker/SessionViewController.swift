@@ -12,9 +12,10 @@ import os.log
 
 class SessionViewController: BaseFormViewController {
     
+    //MARK: - Properties
     var viewVehiclesButton: UIBarButtonItem!
     
-    // DB properties
+    //MARK: DB properties
     let sessionsTable = Table("sessions")
     let idColumn = Expression<Int64>("id")
     let observerNameColumn = Expression<String>("observerName")
@@ -22,7 +23,7 @@ class SessionViewController: BaseFormViewController {
     let openTimeColumn = Expression<String>("openTime")
     let closeTimeColumn = Expression<String>("closeTime")
     
-    
+    //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
@@ -41,6 +42,7 @@ class SessionViewController: BaseFormViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"]]
     }
     
+    //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -80,7 +82,7 @@ class SessionViewController: BaseFormViewController {
     }
     
     
-    //MARK: Navigation
+    //MARK: - Navigation
     // Set up the nav bar
     override func setNavigationBar() {
         super.setNavigationBar()
@@ -93,14 +95,12 @@ class SessionViewController: BaseFormViewController {
     }
     
     @objc func moveToVehicleList(){
-        print("showing vehicle table")
+        
         let vehicleTableViewContoller = BaseTableViewController()
         vehicleTableViewContoller.modalPresentationStyle = .custom
         vehicleTableViewContoller.transitioningDelegate = self
         self.presentTransition = RightToLeftTransition()
         present(vehicleTableViewContoller, animated: true, completion: {[weak self] in self?.presentTransition = nil})
-        //show(vehicleTableViewContoller, sender: self.viewVehiclesButton)
-        //present(vehicleTableViewContoller, animated: true, completion: nil)
     }
     
     
