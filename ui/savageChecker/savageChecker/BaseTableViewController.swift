@@ -118,14 +118,15 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let backBarButton = UIBarButtonItem(customView: backButton)
         
-        let editButton = UIButton(type: .custom)
+        /*let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
         editButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
         editButton.translatesAutoresizingMaskIntoConstraints = false
         editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         editButton.imageView?.contentMode = .scaleAspectFit
-        editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+        editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)*/
+        let editButton = makeEditButton(imageName: "deleteIcon")
         self.editBarButton = UIBarButtonItem(customView: editButton)
         /*self.editBarButton = UIBarButtonItem(image: UIImage(named: "deleteIcon"), style: .plain, target: self, action: #selector(handleEditing(sender:)))
          self.editBarButton = self.editButtonItem
@@ -141,19 +142,27 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         self.view.addSubview(self.navigationBar)
     }
     
+    func makeEditButton(imageName: String) -> UIButton {
+        let editButton = UIButton(type: .custom)
+        editButton.setImage(UIImage(named: imageName), for: .normal)
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
+        editButton.translatesAutoresizingMaskIntoConstraints = false
+        editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        editButton.imageView?.contentMode = .scaleAspectFit
+        editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+        
+        return editButton
+    }
+    
+    
     @objc func handleEditing(sender: UIBarButtonItem) {
         
         self.tableView.setEditing(self.isEditing, animated: true)
         if !self.isEditingTable {
             self.tableView.isEditing = true
             self.isEditingTable = true
-            let editButton = UIButton(type: .custom)
-            editButton.setImage(UIImage(named: "blueCheck"), for: .normal)
-            editButton.translatesAutoresizingMaskIntoConstraints = false
-            editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
-            editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
-            editButton.imageView?.contentMode = .scaleAspectFit
-            editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+            let editButton = makeEditButton(imageName: "blueCheck")
             self.editBarButton.customView = editButton
             //sender.title = "Done"
             //sender.style = .done
@@ -163,13 +172,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         } else {
             self.tableView.isEditing = false
             self.isEditingTable = false
-            let editButton = UIButton(type: .custom)
-            editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
-            editButton.translatesAutoresizingMaskIntoConstraints = false
-            editButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
-            editButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
-            editButton.imageView?.contentMode = .scaleAspectFit
-            editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
+            let editButton = makeEditButton(imageName: "deleteIcon")
             self.editBarButton.customView = editButton
             //sender.title = "Edit"
             //sender.style = .plain
