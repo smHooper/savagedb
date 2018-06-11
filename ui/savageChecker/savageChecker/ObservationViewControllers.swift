@@ -147,8 +147,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 labels[i].topAnchor.constraint(equalTo: lastBottomAnchor, constant: self.textFieldSpacing).isActive = true
             }
             
-            
-            
             let textField = UITextField()
             textField.placeholder = textFieldIds[i].placeholder
             textField.borderStyle = .roundedRect
@@ -184,9 +182,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.rightAnchor.constraint(equalTo: container.rightAnchor).isActive = true
                 textFields[i]?.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
-                //stack.addArrangedSubview(label)
-                //stack.addArrangedSubview(textFields[i]!)
-            //container.addArrangedSubview(stack)
+            
             case "dropDown":
                 //Get the bounds from the storyboard's text field
                 //let frame = self.view.frame
@@ -215,11 +211,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
                 lastBottomAnchor = dropDownTextFields[i]!.bottomAnchor
                 
-                //stack.addArrangedSubview(label)
-                //stack.addArrangedSubview(dropDownTextFields[i]!)
-                //container.addArrangedSubview(stack)
-                //textField.translatesAutoresizingMaskIntoConstraints = false
-                
                 //Set the drop down menu's options
                 guard let dropDownOptions = dropDownMenuOptions[textFieldIds[i].label] else {
                     fatalError("Either self.dropDownMenuOptions not set or \(textFieldIds[i].label) is not a key: \(self.dropDownMenuOptions)")
@@ -237,6 +228,34 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 // Add listener for notification from DropDownTextField.dropDownPressed()
                 dropDownTextFields[i]?.dropDownID = textFieldIds[i].label
                 NotificationCenter.default.addObserver(self, selector: #selector(updateData), name: Notification.Name("dropDownPressed:\(textFieldIds[i].label)"), object: nil)//.addObserver has nothing to do with the "Observation" class
+            
+            case "boolSwitch":
+                textFields[i] = textField
+                textFields[i]?.isEnabled = false
+                textFields[i]?.layer.borderColor = UIColor.clear.cgColor
+                textFields[i]?.borderStyle = .none
+                textFields[i]?.contentVerticalAlignment = .center
+                let switchButton = UISwitch()
+                switchButton.tag = i
+                switchButton.isOn = false
+                
+                // Arrange the switch and the text field in the stack view
+                container.addSubview(switchButton)
+                container.addSubview(textFields[i]!)
+                switchButton.translatesAutoresizingMaskIntoConstraints = false
+                switchButton.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
+                switchButton.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
+                switchButton.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
+                switchButton.addTarget(self, action: #selector(handleTextFieldSwitch(sender:)), for: .touchUpInside)
+                
+                textFields[i]?.translatesAutoresizingMaskIntoConstraints = false
+                textFields[i]?.leftAnchor.constraint(equalTo: switchButton.rightAnchor, constant: self.sideSpacing * 2).isActive = true
+                textFields[i]?.topAnchor.constraint(equalTo: switchButton.topAnchor).isActive = true
+                textFields[i]?.widthAnchor.constraint(equalToConstant: 60).isActive = true
+                textFields[i]?.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
+                
+                lastBottomAnchor = (textFields[i]?.bottomAnchor)!
+            
             default:
                 fatalError("Text field type not understood")
             }
@@ -380,6 +399,14 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         updateData()
     }
     
+    @objc func handleTextFieldSwitch(sender: UISwitch){
+        let index = sender.tag
+        if sender.isOn {
+            textFields[index]?.text = "Yes"
+        } else {
+            textFields[index]?.text = "No"
+        }
+    }
     
     // MARK: Add a custom datepicker to each of the datetime fields
     
@@ -870,14 +897,14 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "normal"),//"boolSlider"),
+                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
-                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "normal"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]]
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -890,14 +917,14 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "normal"),//"boolSlider"),
+                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "normal"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]]
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
     }
     
     //MARK: - Layout
@@ -921,7 +948,8 @@ class BusObservationViewController: BaseObservationViewController {
             formatter.timeStyle = .short
             formatter.dateStyle = .none
             self.textFields[2]?.text = formatter.string(from: now)
-            saveButton.isEnabled = false
+            self.textFields[7]?.text = "No"
+            self.saveButton.isEnabled = false
         } else {
             self.dropDownTextFields[0]?.text = self.busObservation?.observerName
             self.textFields[1]?.text = self.busObservation?.date
@@ -938,6 +966,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.textFields[8]?.text = self.busObservation?.nPassengers
             self.textFields[9]?.text  = self.busObservation?.nOvernightPassengers
             self.textFields[10]?.text = self.busObservation?.comments
+            self.saveButton.isEnabled = true
         }
     }
     
@@ -1020,7 +1049,7 @@ class BusObservationViewController: BaseObservationViewController {
             if isTraining == "Yes" {
                 self.busObservation?.isTraining = true
             } else {
-                self.busObservation?.isTraining = true
+                self.busObservation?.isTraining = false
             }
             self.busObservation?.nPassengers = nPassengers
             self.busObservation?.nOvernightPassengers = nOvernightPassengers

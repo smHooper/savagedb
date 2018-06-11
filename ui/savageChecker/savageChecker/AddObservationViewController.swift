@@ -159,9 +159,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         switch (labelText){
         case "Bus":
                 // Prep the view controller to move to
-                let viewController = BaseObservationViewController()
+                let viewController = BusObservationViewController()//BaseObservationViewController()
                 viewController.isAddingNewObservation = true
-                viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
+                viewController.busObservation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
+                //viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
                 
                 // Remove the blur effect
                 animateRemoveMenu()
