@@ -5,7 +5,6 @@
 //  Created by Sam Hooper on 6/3/18.
 //  Copyright © 2018 Sam Hooper. All rights reserved.
 //
-
 import UIKit
 import SQLite
 
@@ -63,9 +62,8 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         
         tableView = UITableView(frame: CGRect(x: 0, y: barHeight + navigationBarHeight, width: displayWidth, height: displayHeight - (barHeight+navigationBarHeight)))
         tableView.register(BaseObservationTableViewCell.self, forCellReuseIdentifier: "cell")         // register cell name
-        //Auto-set the UITableViewCells height (requires iOS8+)
-        tableView.rowHeight = 90//UITableViewAutomaticDimension
-        //tableView.estimatedRowHeight = 90
+        //Auto-set the UITableViewCell's height (requires iOS8+)
+        tableView.rowHeight = 110//UITableViewAutomaticDimension
         tableView.dataSource = self
         tableView.delegate = self
         self.view.addSubview(tableView)
@@ -97,7 +95,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         
         self.presentTransition = RightToLeftTransition()
         self.dismissTransition = LeftToRightTransition()
-
+        
     }
     
     override func didReceiveMemoryWarning() {
@@ -122,6 +120,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         
         let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
         editButton.translatesAutoresizingMaskIntoConstraints = false
         editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
@@ -129,8 +128,8 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         editButton.addTarget(self, action: #selector(handleEditing(sender:)), for: .touchUpInside)
         self.editBarButton = UIBarButtonItem(customView: editButton)
         /*self.editBarButton = UIBarButtonItem(image: UIImage(named: "deleteIcon"), style: .plain, target: self, action: #selector(handleEditing(sender:)))
-        self.editBarButton = self.editButtonItem
-        self.editButtonItem.action = #selector(handleEditing(sender:))*/
+         self.editBarButton = self.editButtonItem
+         self.editButtonItem.action = #selector(handleEditing(sender:))*/
         //print("Edit button frame: \((self.editBarButton.customView?.frame)!)")
         
         
@@ -177,21 +176,21 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             //self.editBarButton.image = UIImage(named: "deleteIcon")
             
             /*let buttonView = UIImageView(image: UIImage(named: "deleteIcon"))
-            buttonView.frame = (self.editBarButton.customView?.frame)!
-            buttonView.contentMode = .scaleAspectFit
-            self.editBarButton.customView = buttonView*/
+             buttonView.frame = (self.editBarButton.customView?.frame)!
+             buttonView.contentMode = .scaleAspectFit
+             self.editBarButton.customView = buttonView*/
         }
     }
     
     
     @objc func backButtonPressed(){
         /*let sessionController = SessionViewController()
-        sessionController.modalPresentationStyle = .custom
-        sessionController.transitioningDelegate = self
-        self.dismiss = false
-        let currentTag = self.view.tag
-        self.view.tag = -1 //Set this so
-        present(sessionController, animated: true, completion: {[weak self] in self?.view.tag = currentTag})*/
+         sessionController.modalPresentationStyle = .custom
+         sessionController.transitioningDelegate = self
+         self.dismiss = false
+         let currentTag = self.view.tag
+         self.view.tag = -1 //Set this so
+         present(sessionController, animated: true, completion: {[weak self] in self?.view.tag = currentTag})*/
         
         // Cancel editing
         if self.isEditingTable {
@@ -264,7 +263,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
     }
     
-
+    
     // Compose each cell
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
@@ -273,8 +272,8 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         //let cellIdentifier = "cell"
         
         /*guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ObservationTableViewCell else {
-            fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
-        }*/
+         fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
+         }*/
         
         // Fetches the appropriate meal for the data source layout.
         let observation = observations[indexPath.row]
@@ -283,7 +282,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         cell.driverLabel.text = observation.driverName
         cell.destinationLabel.text = observation.destination
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
-
+        
         return cell
     }
     
