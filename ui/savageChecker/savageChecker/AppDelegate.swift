@@ -108,13 +108,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             fatalError(error.localizedDescription)
         }
         
-        /*// MARK: - NPS vehicle table
+        // MARK: - NPS vehicle table
         let tripPurposeColumn = Expression<String>("tripPurpose")
         let workDivisionColumn = Expression<String>("workDivision")
         let workGroupColumn = Expression<String>("workGroup")
-        let nExpectedDaysColumn = Expression<String>("nExpectedDays")
+        let nExpectedNightsColumn = Expression<String>("nExpectedDays")
         
-        let NPSVehicleTable = Table("buses")
+        let NPSVehicleTable = Table("npsVehicles")
         do {
             try db.run(NPSVehicleTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -128,11 +128,209 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(tripPurposeColumn)
                 t.column(workDivisionColumn)
                 t.column(workGroupColumn)
-                t.column(nExpectedDaysColumn)
+                t.column(nExpectedNightsColumn)
             })
         } catch let error {
             fatalError(error.localizedDescription)
-        }*/
+        }
+        
+        // MARK: - NPS approved table
+        let vehicleTypeColumn = Expression<String>("vehicleType")
+        
+        let NPSApprovedTable = Table("npsApproved")
+        do {
+            try db.run(NPSApprovedTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(tripPurposeColumn)
+                t.column(vehicleTypeColumn)
+                t.column(nExpectedNightsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - NPS conctractor table
+        let NPSContractorTable = Table("npsContractors")
+        do {
+            try db.run(NPSContractorTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(tripPurposeColumn)
+                t.column(nExpectedNightsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - employee table
+        let permitHolderColumn = Expression<String>("permitHolder")
+        let EmployeeTable = Table("employees")
+        do {
+            try db.run(EmployeeTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(permitHolderColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Right of way table
+        let rightOfWayTable = Table("rightOfWay")
+        do {
+            try db.run(rightOfWayTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(permitHolderColumn)
+                t.column(tripPurposeColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Tek camper table
+        let hasTekPassColumn = Expression<Bool>("hasTekPass")
+        let teklanikaCamperTable = Table("tekCampers")
+        do {
+            try db.run(teklanikaCamperTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(hasTekPassColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Propho table
+        let permitNumberColumn = Expression<String>("permitNumber")
+        let photographerTable = Table("photographers")
+        do {
+            try db.run(photographerTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(permitNumberColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Accessibility table
+        let accessibilityTable = Table("accessibility")
+        do {
+            try db.run(accessibilityTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(tripPurposeColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Cyclist table
+        let cyclistTable = Table("cyclists")
+        do {
+            try db.run(cyclistTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Hunter table
+        let hunterTable = Table("hunters")
+        do {
+            try db.run(hunterTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Road lottery table
+        let roadLotteryTable = Table("roadLottery")
+        do {
+            try db.run(roadLotteryTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        let otherVehicleTable = Table("other")
+        do {
+            try db.run(otherVehicleTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+    
     }
     
     func applicationWillResignActive(_ application: UIApplication) {
