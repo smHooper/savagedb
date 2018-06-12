@@ -237,8 +237,10 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         let observationViewController = BaseObservationViewController()
-        observationViewController.observation = observations[indexPath.row]
+        observationViewController.modelObject = observations[indexPath.row]
         observationViewController.isAddingNewObservation = false
+        // post notification to pass observation to the view controller
+        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
         
         observationViewController.modalPresentationStyle = .custom
         observationViewController.transitioningDelegate = self
