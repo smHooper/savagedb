@@ -1132,7 +1132,262 @@ class BusObservationViewController: BaseObservationViewController {
 }
 
 
-
+//MARK: -
+//MARK: -
+class NPSVehicleObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var npsObservation: NPSVehicleObservation?
+    let busTypeColumn = Expression<String>("busType")
+    let busNumberColumn = Expression<String>("busNumber")
+    let isTrainingColumn = Expression<Bool>("isTraining")
+    let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
+    private let observationsTable = Table("buses")
+    
+    let lodgeBusTypes = ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]
+    
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
+                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
+                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "normal"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+        updateNOvernightFieldStatus()
+    }
+    
+    override func autoFillTextFields() {
+        guard let busObservation = self.busObservation else {
+            fatalError("No valid observation passed from TableViewController")
+        }
+        // The observation already exists and is open for viewing/editing
+        if self.isAddingNewObservation {
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            self.textFields[2]?.text = formatter.string(from: now)
+            self.textFields[7]?.text = "No"
+            self.saveButton.isEnabled = false
+        } else {
+            self.dropDownTextFields[0]?.text = self.busObservation?.observerName
+            self.textFields[1]?.text = self.busObservation?.date
+            self.textFields[2]?.text = self.busObservation?.time
+            self.textFields[3]?.text = self.busObservation?.busType
+            self.textFields[4]?.text = self.busObservation?.busNumber
+            self.textFields[5]?.text = self.busObservation?.driverName
+            self.dropDownTextFields[6]?.text = self.busObservation?.destination
+            if (self.busObservation?.isTraining)! {
+                self.textFields[7]?.text = "Yes"
+            } else {
+                self.textFields[7]?.text = "No"
+            }
+            self.textFields[8]?.text = self.busObservation?.nPassengers
+            self.textFields[9]?.text  = self.busObservation?.nOvernightPassengers
+            self.textFields[10]?.text = self.busObservation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertObservation()
+            
+            // Update an existing record
+        } else {
+            
+            do {
+                // Select the record to update
+                print("Record id: \((observation?.id.datatypeValue)!)")
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- (self.busObservation?.observerName)!,
+                                            dateColumn <- (self.busObservation?.date)!,
+                                            timeColumn <- (self.busObservation?.time)!,
+                                            driverNameColumn <- (self.busObservation?.driverName)!,
+                                            destinationColumn <- (self.busObservation?.destination)!,
+                                            nPassengersColumn <- (self.busObservation?.nPassengers)!,
+                                            busTypeColumn <- (self.busObservation?.busType)!,
+                                            busNumberColumn <- (self.busObservation?.busNumber)!,
+                                            isTrainingColumn <- (self.busObservation?.isTraining)!,
+                                            nOvernightPassengersColumn <- (self.busObservation?.nOvernightPassengers)!)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
+            }
+        }
+        dismissController()
+    }
+    
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            //presentingController.observations.append(self.observation!)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
+    
+    //MARK: - Private methods
+    @objc override func updateData(){
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let busType = self.dropDownTextFields[3]?.text ?? ""
+        let busNumber = self.textFields[4]?.text ?? ""
+        let driverName = self.textFields[5]?.text ?? ""
+        let destination = self.dropDownTextFields[6]?.text ?? ""
+        let isTraining = self.textFields[7]?.text ?? ""
+        let nPassengers = self.textFields[8]?.text ?? ""
+        let nOvernightPassengers = self.textFields[9]?.text ?? ""
+        let comments = self.textFields[10]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !busType.isEmpty &&
+                !busNumber.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !nPassengers.isEmpty
+        
+        if fieldsFull {
+            
+            // Update the observation instance
+            self.busObservation?.observerName = observerName
+            self.busObservation?.date = date
+            self.busObservation?.time = time
+            self.busObservation?.busType = busType
+            self.busObservation?.busNumber = busNumber
+            self.busObservation?.driverName = driverName
+            self.busObservation?.destination = destination
+            if isTraining == "Yes" {
+                self.busObservation?.isTraining = true
+            } else {
+                self.busObservation?.isTraining = false
+            }
+            self.busObservation?.nPassengers = nPassengers
+            self.busObservation?.nOvernightPassengers = nOvernightPassengers
+            self.busObservation?.comments = comments
+            
+            // Check if this field should be filled in
+            if lodgeBusTypes.contains(busType) {
+                if !nOvernightPassengers.isEmpty {
+                    self.saveButton.isEnabled = true
+                }
+            } else {
+                self.saveButton.isEnabled = true
+            }
+        }
+        // Check if the overnight passengers field should be enabled
+        updateNOvernightFieldStatus()
+    }
+    
+    // Add record to DB
+    private func insertObservation() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.busObservation?.observerName)!,
+                                                            dateColumn <- (self.busObservation?.date)!,
+                                                            timeColumn <- (self.busObservation?.time)!,
+                                                            busTypeColumn <- (self.busObservation?.busType)!,
+                                                            busNumberColumn <- (self.busObservation?.busNumber)!,
+                                                            driverNameColumn <- (self.busObservation?.driverName)!,
+                                                            destinationColumn <- (self.busObservation?.destination)!,
+                                                            isTrainingColumn <- (self.busObservation?.isTraining)!,
+                                                            nPassengersColumn <- (self.busObservation?.nPassengers)!,
+                                                            nOvernightPassengersColumn <- (self.busObservation?.nOvernightPassengers)!,
+                                                            commentsColumn <- (self.busObservation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+    
+    // Either disable or enable the nOvernightPassengers field, depending on whether the bustype is a lodge bus
+    private func updateNOvernightFieldStatus() {
+        let busType = self.dropDownTextFields[3]?.text ?? ""
+        print("Bus tyope: \(busType)")
+        if self.lodgeBusTypes.contains(busType) {
+            self.labels[9].textColor = UIColor.black
+            self.labels[9].text = self.textFieldIds[9].label
+            self.textFields[9]?.placeholder = self.textFieldIds[9].placeholder
+            self.textFields[9]?.isEnabled = true
+        } else {
+            self.labels[9].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+            self.labels[9].text = "\(self.textFieldIds[9].label) (must be a lodge bus to enable this field)"
+            self.textFields[9]?.placeholder = ""
+            self.textFields[9]?.isEnabled = false
+        }
+    }
+    
+}
 
 
 

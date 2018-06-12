@@ -182,9 +182,10 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             self.editBarButton.title = "Edit"
             self.editBarButton.style = .plain
         }
-        
+
         self.dismissTransition = LeftToRightTransition()
         dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+        
     }
     
     
