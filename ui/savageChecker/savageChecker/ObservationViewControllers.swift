@@ -16,23 +16,25 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     //MARK: - Properties
     //MARK: Textfield layout properties
     var textFieldIds: [(label: String, placeholder: String, type: String)] = []
-        /*[(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                        (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                        (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                        (label: "Driver's name", placeholder: "Enter the driver's last name", type: "normal"),
-                        (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                        (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number")]*///,
     var dropDownMenuOptions = Dictionary<String, [String]>()
     var textFields = [Int: UITextField]()
     var dropDownTextFields = [Int: DropDownTextField]()
     var labels = [UILabel]()
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
-    private var currentTextField = 0
-    private var previousTextField = -1
+    
+    // track when the text field in focus changes with a property observer
+    private var currentTextField = 0 {
+        willSet {
+            // Check to make sure the current text field is not a dropDown. When a dropDownTextField is first pressed, it resigns as first responder (and didEndEditing is called) because the dropDownView takes over (and shouldBeginEditing is called again). This means  currentTextField is changed each time the dropDownTextField is pressed. If we don't exclude dropdowns from the dismissInputView() call, it immediately dismisses the dropdown.
+            let currentType = self.textFieldIds[self.currentTextField].type
+            if currentType != "dropDown" {
+                dismissInputView()
+            }
+        }
+    }
     
     
     var navigationBar: CustomNavigationBar!
-    //var saveButton: UIBarButtonItem!
     
     var db: Connection!// SQLiteDatabase!
     var session: Session?
@@ -334,6 +336,13 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     //######################################################################
     func textFieldDidBeginEditing(_ textField: UITextField) {
         
+        // Dismiss all dropdowns except this one if it is a dropDown
+        for dropDownID in dropDownTextFields.keys {
+            if dropDownID != textField.tag {
+                dropDownTextFields[dropDownID]?.dismissDropDown()
+            }
+        }
+        
         let fieldType = textFieldIds[textField.tag].type
         switch(fieldType){
         case "normal", "number":
@@ -373,7 +382,14 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // When finished editing, check if the data model instance should be updated
     func textFieldDidEndEditing(_ textField: UITextField) {
         updateData()
+        //self.currentTextField = textField.tag
+        print("Current text field type in didEndEditing: \(self.textFieldIds[self.currentTextField].type)")
+        if self.textFieldIds[self.currentTextField].type != "dropDown" {
+            print("dismissing keyboard in didEndEditing")
+            dismissInputView()
+        }
     }
+    
     
     // When dropdown is pressed
     @objc func dropDownDidChange(notification: NSNotification) {
@@ -389,12 +405,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // Dismiss keyboard when tapped outside of a text field
     func hideKeyboardWhenTappedAround() {
-        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissInputView))
         tap.cancelsTouchesInView = false
         self.view.addGestureRecognizer(tap)
     }
     
-    @objc func dismissKeyboard() {
+    @objc func dismissInputView() {
         
         // Check what kind of textField is currently being edited
         switch(self.textFieldIds[self.currentTextField].type){
@@ -410,6 +426,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         updateData()
     }
     
+    // Sets text for UISwitch (text field type is "boolSwitch")
     @objc func handleTextFieldSwitch(sender: UISwitch){
         let index = sender.tag
         if sender.isOn {
