@@ -187,6 +187,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
                 t.column(permitHolderColumn)
             })
         } catch let error {
@@ -204,6 +205,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
                 t.column(permitHolderColumn)
                 t.column(tripPurposeColumn)
             })
@@ -223,6 +225,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
                 t.column(hasTekPassColumn)
             })
         } catch let error {
@@ -241,6 +244,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
                 t.column(permitNumberColumn)
             })
         } catch let error {
@@ -258,6 +262,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
                 t.column(tripPurposeColumn)
             })
         } catch let error {
@@ -292,6 +297,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(commentsColumn)
                 t.column(commentsColumn)
             })
         } catch let error {

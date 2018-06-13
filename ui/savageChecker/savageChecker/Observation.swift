@@ -73,9 +73,9 @@ class BusObservation: Observation {
     // Not stored in DB
     private var isLodgeBus = false
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, nOvernightPassengers: String = "0"){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, nOvernightPassengers: String = "0", comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.busType = busType
         self.busNumber = busNumber
@@ -91,9 +91,9 @@ class NPSVehicleObservation: Observation {
     var workGroup: String?
     var nExpectedNights = "0"
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, workDivision: String, workGroup: String, nExpectedNights: String = "0"){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, workDivision: String, workGroup: String, nExpectedNights: String = "0", comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.tripPurpose = tripPurpose
         self.workDivision = workDivision
@@ -108,9 +108,9 @@ class NPSApprovedObservation: Observation {
     var tripPurpose: String?
     var nExpectedNights = "0"
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, vehicleType: String, tripPurpose: String, nExpectedNights: String = "0"){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, vehicleType: String, tripPurpose: String, nExpectedNights: String = "0", comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.vehicleType = vehicleType
         self.tripPurpose = tripPurpose
@@ -124,8 +124,9 @@ class NPSContractorObservation: Observation {
     var tripPurpose: String?
     var nExpectedNights = "0"
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, nExpectedNights: String = "0"){
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, nExpectedNights: String = "0", comments: String = ""){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.tripPurpose = tripPurpose
         self.nExpectedNights = nExpectedNights
@@ -137,9 +138,9 @@ class EmployeeObservation: Observation {
     
     var permitHolder: String?
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitHolder: String){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitHolder: String, comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.permitHolder = permitHolder
     }
@@ -151,9 +152,9 @@ class RightOfWayObservation: Observation {
     var tripPurpose: String?
     var permitHolder: String?
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String = "Kantishna", nPassengers: String, permitHolder: String, tripPurpose: String = "N/A"){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String = "Kantishna", nPassengers: String, permitHolder: String, tripPurpose: String = "N/A", comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.permitHolder = permitHolder
         self.tripPurpose = tripPurpose
@@ -165,9 +166,9 @@ class TeklanikaCamperObservation: Observation {
     
     var hasTekPass: Bool?
     
-    init?(id: Int, observerName: String, date: String, time: String, destination: String, nPassengers: String, hasTekPass: Bool, driverName: String = "N/A"){
+    init?(id: Int, observerName: String, date: String, time: String, destination: String, nPassengers: String, hasTekPass: Bool, driverName: String = "N/A", comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.hasTekPass = hasTekPass
     }
@@ -184,9 +185,9 @@ class PhotographerObservation: Observation {
     
     var permitNumber: String?
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitNumber: String){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitNumber: String, comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.permitNumber = permitNumber
     }
@@ -197,9 +198,9 @@ class AccessibilityObservation: Observation {
     
     var tripPurpose: String?
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, comments: String = ""){
         
-        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers)
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.tripPurpose = tripPurpose
     }

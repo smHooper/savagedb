@@ -24,6 +24,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     
     //MARK: db properties
+    //var modelObjects = [Any]()
     var observations = [Observation]()
     var session: Session?
     var db: Connection!
@@ -45,9 +46,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
     let openTimeColumn = Expression<String>("openTime")
     let closeTimeColumn = Expression<String>("closeTime")
     
-    
-    
-    
+
     //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -75,28 +74,22 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             fatalError(error.localizedDescription)
         }
         
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        //self.navigationItem.leftBarButtonItem = self.editButtonItem
-        
-        // Load the session. This is stored as a file using NSCoding.
-        //self.session = loadSession()
-        
-        do {
-            try loadSession()
-            if let savedObservations = try loadObservations(){
-                observations += savedObservations
-            } else {
-                // Change this method here so sample obs are only loaded the first time
-                //loadSampleObservations()
-            }
-        } catch let error{
-            fatalError(error.localizedDescription)
-        }
+        loadData()
         
         self.presentTransition = RightToLeftTransition()
         self.dismissTransition = LeftToRightTransition()
         
     }
+    
+    func loadData() {
+        do {
+            try loadSession()
+            self.observations = loadObservations()!
+        } catch let error{
+            fatalError(error.localizedDescription)
+        }
+    }
+    
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -299,7 +292,7 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
         // ************* check that the table exists first **********************
         let rows: [Row]
         do {
-            rows = try Array(try db.prepare(observationsTable))
+            rows = Array(try db.prepare(observationsTable))
         } catch {
             fatalError("Could not load observations: \(error.localizedDescription)")
         }
@@ -324,5 +317,133 @@ class BaseTableViewController: UIViewController, UITableViewDelegate, UITableVie
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
     }
+    
+}
+
+
+//MARK : -
+//MARK : -
+class BusTableViewController: BaseTableViewController {
+    
+    var busObservations = [BusObservation]()
+    
+    let busTypeColumn = Expression<String>("busType")
+    let busNumberColumn = Expression<String>("busNumber")
+    let isTrainingColumn = Expression<Bool>("isTraining")
+    let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
+    
+    let busesTable = Table("buses")
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        self.busObservations = loadBusObservations()!
+    }
+    
+    //MARK: - TableView methods
+    // return the number of sections
+    override func numberOfSections(in tableView: UITableView) -> Int{
+        return 1
+    }
+    
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return busObservations.count
+    }
+    
+    
+    // called when the cell is selected.
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let observationViewController = BusObservationViewController()
+        observationViewController.observation = busObservations[indexPath.row]
+        observationViewController.isAddingNewObservation = false
+        // post notification to pass observation to the view controller
+        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
+        
+        observationViewController.modalPresentationStyle = .custom
+        observationViewController.transitioningDelegate = self
+        
+        // Set the transition. When done transitioning, reset presentTransition to nil
+        self.presentTransition = RightToLeftTransition()
+        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
+    }
+    
+    
+    // Compose each cell
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        // Table view cells are reused and should be dequeued using a cell identifier.
+        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! BaseObservationTableViewCell
+        //let cellIdentifier = "cell"
+        
+        /*guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ObservationTableViewCell else {
+         fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
+         }*/
+        
+        // Fetches the appropriate meal for the data source layout.
+        let observation = busObservations[indexPath.row]
+        
+        
+        cell.driverLabel.text = observation.driverName
+        cell.destinationLabel.text = observation.destination
+        cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
+        cell.nPassengersLabel.text = observation.nPassengers
+        
+        return cell
+    }
+    
+    // Editing
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            // Delete the row from the data source
+            let id = busObservations[indexPath.row].id
+            print("Deleting \(id)")
+            busObservations.remove(at: indexPath.row)
+            let recordToRemove = busesTable.where(idColumn == id.datatypeValue)
+            do {
+                try db.run(recordToRemove.delete())
+            } catch let error{
+                print(error.localizedDescription)
+            }
+            
+            tableView.deleteRows(at: [indexPath], with: .fade)
+        } else if editingStyle == .insert {
+            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
+        }
+    }
+    
+    //MARK: - Private Methods
+    func loadBusObservations() -> [BusObservation]?{
+        // ************* check that the table exists first **********************
+        let rows: [Row]
+        do {
+            rows = Array(try db.prepare(busesTable))
+        } catch {
+            fatalError("Could not load observations: \(error.localizedDescription)")
+        }
+        var loadedObservations = [BusObservation]()
+        for row in rows{
+            //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+            let observation = BusObservation(id: Int(row[idColumn]),
+                                             observerName: row[observerNameColumn],
+                                             date: row[dateColumn],
+                                             time: row[timeColumn],
+                                             driverName: row[driverNameColumn],
+                                             destination: row[destinationColumn],
+                                             nPassengers: row[nPassengersColumn],
+                                             busType: row[busTypeColumn],
+                                             busNumber: row[busNumberColumn],
+                                             isTraining: row[isTrainingColumn],
+                                             nOvernightPassengers: row[nOvernightPassengersColumn],
+                                             comments: row[commentsColumn])
+
+            loadedObservations.append(observation!)
+        }
+        
+        return loadedObservations
+        
+    }
+    
+    
+    
     
 }

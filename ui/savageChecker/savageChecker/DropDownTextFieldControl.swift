@@ -149,7 +149,7 @@ protocol dropDownProtocol {
     }
 }
 
-class DropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
+class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
     
     //MARK: Properties
     var dropDownOptions = [String]()
@@ -198,7 +198,7 @@ class DropDownView: UIView, UITableViewDelegate, UITableViewDataSource  {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell()
-        
+        print("Index: \(indexPath.row)")
         cell.textLabel?.text = dropDownOptions[indexPath.row]
         cell.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
         cell.layer.borderWidth = 0.25

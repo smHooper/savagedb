@@ -29,8 +29,9 @@ import UIKit
     
     
     //MARK: Private methods
-    func setupButtonLayout(imageName: String, labelText: String) {
+    func setupButtonLayout(imageName: String, labelText: String, tag: Int = 0) {
         let button = UIButton()
+        button.tag = tag
         
         // Add the button with constraints
         button.translatesAutoresizingMaskIntoConstraints = false

@@ -96,7 +96,7 @@ class SessionViewController: BaseFormViewController {
     
     @objc func moveToVehicleList(){
         
-        let vehicleTableViewContoller = BaseTableViewController()
+        let vehicleTableViewContoller = BusTableViewController()
         vehicleTableViewContoller.modalPresentationStyle = .custom
         vehicleTableViewContoller.transitioningDelegate = self
         self.presentTransition = RightToLeftTransition()
