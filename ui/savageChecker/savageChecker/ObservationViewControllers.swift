@@ -226,8 +226,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.height = dropDownTextFields[i]!.dropView.heightAnchor.constraint(equalToConstant: 0)
                 
                 // Add listener for notification from DropDownTextField.dropDownPressed()
-                dropDownTextFields[i]?.dropDownID = textFieldIds[i].label
-                NotificationCenter.default.addObserver(self, selector: #selector(updateData), name: Notification.Name("dropDownPressed:\(textFieldIds[i].label)"), object: nil)//.addObserver has nothing to do with the "Observation" class
+                dropDownTextFields[i]?.dropDownID = i//textFieldIds[i].label
+                NotificationCenter.default.addObserver(self, selector: #selector(dropDownDidChange(notification:)), name: Notification.Name("dropDownPressed:\(i)"), object: nil)//textFieldIds[i].label)"), object: nil)//.addObserver has nothing to do with the "Observation" class
             
             case "boolSwitch":
                 textFields[i] = textField
@@ -375,6 +375,17 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         updateData()
     }
     
+    // When dropdown is pressed
+    @objc func dropDownDidChange(notification: NSNotification) {
+        guard let textDictionary = notification.object as? Dictionary<Int, String> else {
+            fatalError("Couldn't downcast textDictionary: \(notification.object!)")
+        }
+        let index = textDictionary.keys.first!
+        let text = textDictionary.values.first!
+        textFields[index]?.text = text
+        
+        updateData()
+    }
     
     // Dismiss keyboard when tapped outside of a text field
     func hideKeyboardWhenTappedAround() {
@@ -1210,11 +1221,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         super.viewDidLoad()
         autoFillTextFields()
         
-        // Add target to division text field so when it changes, so do the work group options
-        dropDownTextFields[4]?.dropView.addTarget(self, action: #selector(setWorkGroupOptions), for: .allTouchEvents)
+        // Add notification
         dropDownTextFields[5]?.isEnabled = false
         labels[5].text = "\(textFieldIds[5].label) (select a division first)"
         labels[5].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+        NotificationCenter.default.addObserver(self, selector: #selector(setWorkGroupOptions), name: Notification.Name("dropDownPressed:4"), object: nil)
     }
     
     override func autoFillTextFields() {
@@ -1254,15 +1265,16 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                           "External Affairs": ["Concessions", "Planning", "Superintendent's Office"],
                           "Resources": ["Cultural Resources", "Water, Air, Geology, Soil", "Wildlife", "Other"],
                           "Visitor and Resource Protection": ["Backcountry", "Law Enforcement", "Other"],
-                          "Other": ["Other"]]
+                          "Other": []]
         let division = (dropDownTextFields[4]?.text)!
         if workGroups.keys.contains(division) && division != "Other" {
             dropDownTextFields[5]?.dropView.dropDownOptions = workGroups[division]!
         } else { //"Other" was selected and the field was filled manually with keyboard
-            dropDownTextFields[5]?.dropView.dropDownOptions = ["Other"]
+            dropDownTextFields[5]?.dropView.dropDownOptions = []
+            dropDownTextFields[5]?.text = ""
         }
-        print(dropDownTextFields[5]?.dropView.dropDownOptions)
         
+        dropDownTextFields[5]?.dropView.tableView.reloadData()
         dropDownTextFields[5]?.isEnabled = true
         labels[5].text = textFieldIds[5].label
         labels[5].textColor = UIColor.black

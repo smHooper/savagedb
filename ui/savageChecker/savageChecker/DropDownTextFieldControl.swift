@@ -16,7 +16,7 @@ protocol dropDownProtocol {
     
     // Keep track of whether the dropDownMenu was pressed. This helps suppress the keyboard the first time the text field is pressed
     var dropDownWasPressed = false
-    var dropDownID: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
+    var dropDownID: Int? = 0//: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
     //var height: NSLayoutConstraint!
     
     func dropDownPressed(string: String) {
@@ -24,12 +24,14 @@ protocol dropDownProtocol {
             self.resignFirstResponder()
             self.text = string// for: .normal)
             self.dismissDropDown()
-            NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: nil)
+            let dictionary: [Int: String] = [self.dropDownID!: string]
+            NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: dictionary)
         }
         // If other was selected, show the keyboard
         else {
             self.text?.removeAll()
-            NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: nil)
+            let dictionary: [Int: String] = [self.dropDownID!: string]
+            NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: dictionary)
             self.becomeFirstResponder()
             self.dismissDropDown()
         }
@@ -198,7 +200,6 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell()
-        print("Index: \(indexPath.row)")
         cell.textLabel?.text = dropDownOptions[indexPath.row]
         cell.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
         cell.layer.borderWidth = 0.25
