@@ -30,24 +30,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                                     "Accessibility": "busIcon",
                                     "Hunting": "busIcon",
                                     "Road lottery": "busIcon",
-                                    "Other": "busIcon"]//*/
-    
-    /*let icons = [
-        (labelText: "JV Bus", iconName: "busIcon", function: "a"),
-        (labelText: "Lodge Bus", iconName: "busIcon", function: "a"),
-        (labelText: "NPS Vehicle", iconName: "busIcon", function: "a"),
-        (labelText: "NPS Approved", iconName: "busIcon", function: "a"),
-        (labelText: "NPS Contractor", iconName: "busIcon", function: "a"),
-        (labelText: "Employee", iconName: "busIcon", function: "a"),
-        (labelText: "Right of Way", iconName: "busIcon", function: "a"),
-        (labelText: "Tek Camper", iconName: "busIcon", function: "a"),
-        (labelText: "Bicycle", iconName: "busIcon", function: "a"),
-        (labelText: "Propho", iconName: "busIcon", function: "a"),
-        (labelText: "Accessibility", iconName: "busIcon", function: "a"),
-        (labelText: "Hunting", iconName: "busIcon", function: "a"),
-        (labelText: "Road lottery", iconName: "busIcon", function: "a"),
-        (labelText: "Other", iconName: "busIcon", function: "a")
-    ]*/
+                                    "Other": "busIcon"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -157,17 +140,37 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     @objc func moveToObservationViewController(button: UIButton){
         let session = loadSession()
         let labelText = icons[button.tag].key
-
+        let types = ["Bus": BusObservationViewController.self,
+                     "NPS Vehicle": NPSVehicleObservationViewController.self,
+                     "NPS Approved": NPSApprovedObservationViewController.self,
+                     "NPS Contractor": NPSContractorObservationViewController.self,
+                     "Employee": EmployeeObservationViewController.self,
+                     "Right of Way": RightOfWayObservationViewController.self,
+                     "Tek Camper": TeklanikaCamperObservationViewController.self,
+                     "Bycicle": CyclistObservationViewController.self]
+        
         // Remove the blur effect
         animateRemoveMenu()
         
-        switch labelText{
+        let viewController = types[labelText]!.init()
+        viewController.isAddingNewObservation = true
+        viewController.session = session
+        viewController.transitioningDelegate = self
+        viewController.modalPresentationStyle = .custom
+        self.presentTransition = RightToLeftTransition()
+        present(viewController, animated: true, completion: {viewController.presentTransition = nil})
+        
+        //viewController.observation
+        //viewController.session = session!
+        
+        /*switch labelText{
         case "Bus":
             // Prep the view controller to move to
-            let viewController = BusObservationViewController()//BaseObservationViewController()
+            
+            let viewController = BusObservationViewController()//BaseObservationViewController()//
             viewController.isAddingNewObservation = true
             viewController.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
-            //viewController.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
+            //viewController.modelObject = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
             
             // Configure the transition
             viewController.transitioningDelegate = self
@@ -216,7 +219,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             present(viewController, animated: true, completion: {viewController.presentTransition = nil})
         default:
             fatalError("Didn't understand button label \(labelText)")
-        }
+        }*/
         
     }
     
