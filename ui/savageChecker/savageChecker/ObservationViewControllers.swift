@@ -577,6 +577,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     //Used to pass observation from tableViewController when updating an observation. It should be type Any so that all subclasses can inherit it and modelObject can be downcast to the appropriate data model subclass of Observation. This way, self.observation can remain private so that all subclasses of the BaseObservationViewController can have self.observation be of the appropriate class.
     var modelObject: Any?
     
+    // Must be private so that subclasses can "override" the value with their appropriate data model type. This way, fewer functions need to be overwritten because they can still reference the property "observation"
     private var observation: Observation?
     var isAddingNewObservation: Bool!
     var lastTextFieldIndex = 0
@@ -800,7 +801,8 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                                             timeColumn <- (self.observation?.time)!,
                                             driverNameColumn <- (self.observation?.driverName)!,
                                             destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!)) > 0 {
+                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
                     print("updated record")
                 } else {
                     print("record not found")
@@ -1181,10 +1183,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     let workDivisionColumn = Expression<String>("workDivision")
     let workGroupColumn = Expression<String>("workGroup")
     let nExpectedNightsColumn = Expression<String>("nExpectedDays")
-    private let observationsTable = Table("buses")
-    
-    let lodgeBusTypes = ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]
-    
+    private let observationsTable = Table("npsVehicles")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1325,7 +1324,8 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                             tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                             workDivisionColumn <- (self.observation?.workDivision)!,
                                             workGroupColumn <- (self.observation?.workGroup)!,
-                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!)) > 0 {
+                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
                     print("updated record")
                 } else {
                     print("record not found")
@@ -1417,11 +1417,1002 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             print("insertion failed: \(error)")
         }
     }
-    
-    
 }
 
 
+//MARK: -
+//MARK: -
+class NPSApprovedObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var observation: NPSApprovedObservation?
+    let tripPurposeColumn = Expression<String>("tripPurpose")
+    let nExpectedNightsColumn = Expression<String>("nExpectedDays")
+    let vehicleTypeColumn = Expression<String>("vehicleType")
+    private let observationsTable = Table("npsApproved")
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Vehicle type",  placeholder: "Select the type of vehicle",          type: "dropDown"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Vehicle type": ["Education", "Researcher", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Vehicle type",  placeholder: "Select the type of vehicle",          type: "dropDown"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Vehicle type": ["Education", "Researcher", "Other"]]
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func autoFillTextFields() {
+        
+        // This is a completely new observation
+        if self.isAddingNewObservation {
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            self.textFields[2]?.text = formatter.string(from: now)
+            self.textFields[7]?.text = "0"
+            self.saveButton.isEnabled = false
+            
+        // The observation already exists and is open for viewing/editing
+        } else {
+            self.dropDownTextFields[0]?.text = self.observation?.observerName
+            self.textFields[1]?.text = self.observation?.date
+            self.textFields[2]?.text = self.observation?.time
+            self.dropDownTextFields[3]?.text = self.observation?.vehicleType
+            self.textFields[4]?.text = self.observation?.driverName
+            self.dropDownTextFields[5]?.text = self.observation?.destination
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text  = self.observation?.nExpectedNights
+            self.textFields[8]?.text = self.observation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertObservation()
+            
+            // Update an existing record
+        } else {
+            
+            do {
+                // Select the record to update
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                            dateColumn <- (self.observation?.date)!,
+                                            timeColumn <- (self.observation?.time)!,
+                                            driverNameColumn <- (self.observation?.driverName)!,
+                                            destinationColumn <- (self.observation?.destination)!,
+                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                            vehicleTypeColumn <- (self.observation?.vehicleType)!,
+                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
+            }
+        }
+        dismissController()
+    }
+    
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
+    
+    //MARK: - Private methods
+    @objc override func updateData(){
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let vehicleType = self.dropDownTextFields[3]?.text ?? ""
+        let driverName = self.textFields[4]?.text ?? ""
+        let destination = self.dropDownTextFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let nExpectedNights = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !vehicleType.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !nPassengers.isEmpty &&
+                !nExpectedNights.isEmpty
+        
+        if fieldsFull {
+            
+            // Update the observation instance
+            self.observation?.observerName = observerName
+            self.observation?.date = date
+            self.observation?.time = time
+            self.observation?.vehicleType = vehicleType
+            self.observation?.driverName = driverName
+            self.observation?.destination = destination
+            self.observation?.nPassengers = nPassengers
+            self.observation?.nExpectedNights = nExpectedNights
+            self.observation?.comments = comments
+            
+            self.saveButton.isEnabled = true
+        }
+
+    }
+    
+    // Add record to DB
+    private func insertObservation() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            vehicleTypeColumn <- (self.observation?.vehicleType)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+}
+
+
+//MARK: -
+//MARK: -
+class NPSContractorObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var observation: NPSContractorObservation?
+    let tripPurposeColumn = Expression<String>("tripPurpose")
+    let nExpectedNightsColumn = Expression<String>("nExpectedDays")
+    private let observationsTable = Table("npsContractors")
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func autoFillTextFields() {
+        
+        // This is a completely new observation
+        if self.isAddingNewObservation {
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            self.textFields[2]?.text = formatter.string(from: now)
+            self.textFields[7]?.text = "0"
+            self.saveButton.isEnabled = false
+            
+            // The observation already exists and is open for viewing/editing
+        } else {
+            self.dropDownTextFields[0]?.text = self.observation?.observerName
+            self.textFields[1]?.text = self.observation?.date
+            self.textFields[2]?.text = self.observation?.time
+            self.textFields[3]?.text = self.observation?.driverName
+            self.dropDownTextFields[4]?.text = self.observation?.destination
+            self.dropDownTextFields[5]?.text = self.observation?.tripPurpose
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text  = self.observation?.nExpectedNights
+            self.textFields[8]?.text = self.observation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertObservation()
+            
+            // Update an existing record
+        } else {
+            
+            do {
+                // Select the record to update
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                            dateColumn <- (self.observation?.date)!,
+                                            timeColumn <- (self.observation?.time)!,
+                                            driverNameColumn <- (self.observation?.driverName)!,
+                                            destinationColumn <- (self.observation?.destination)!,
+                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
+            }
+        }
+        dismissController()
+    }
+    
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
+    
+    //MARK: - Private methods
+    @objc override func updateData(){
+
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let driverName = self.textFields[3]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let nExpectedNights = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !tripPurpose.isEmpty &&
+                !nPassengers.isEmpty &&
+                !nExpectedNights.isEmpty
+        
+        if fieldsFull {
+            
+            // Update the observation instance
+            self.observation?.observerName = observerName
+            self.observation?.date = date
+            self.observation?.time = time
+            self.observation?.driverName = driverName
+            self.observation?.destination = destination
+            self.observation?.tripPurpose = tripPurpose
+            self.observation?.nPassengers = nPassengers
+            self.observation?.nExpectedNights = nExpectedNights
+            self.observation?.comments = comments
+            
+            self.saveButton.isEnabled = true
+        }
+        
+    }
+    
+    // Add record to DB
+    private func insertObservation() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+}
+
+
+//MARK: -
+//MARK: -
+class EmployeeObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var observation: EmployeeObservation?
+    let permitHolderColumn = Expression<String>("permitHolder")
+    private let observationsTable = Table("employees")
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func autoFillTextFields() {
+        
+        // This is a completely new observation
+        if self.isAddingNewObservation {
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            self.textFields[2]?.text = formatter.string(from: now)
+            
+            self.saveButton.isEnabled = false
+            
+            // The observation already exists and is open for viewing/editing
+        } else {
+            self.dropDownTextFields[0]?.text = self.observation?.observerName
+            self.textFields[1]?.text = self.observation?.date
+            self.textFields[2]?.text = self.observation?.time
+            self.textFields[3]?.text = self.observation?.driverName
+            self.dropDownTextFields[4]?.text = self.observation?.destination
+            self.textFields[5]?.text = self.observation?.permitHolder
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text = self.observation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertObservation()
+            
+            // Update an existing record
+        } else {
+            
+            do {
+                // Select the record to update
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                            dateColumn <- (self.observation?.date)!,
+                                            timeColumn <- (self.observation?.time)!,
+                                            driverNameColumn <- (self.observation?.driverName)!,
+                                            destinationColumn <- (self.observation?.destination)!,
+                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
+            }
+        }
+        dismissController()
+    }
+    
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let driverName = self.textFields[3]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let permitHolder = self.textFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let comments = self.textFields[7]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !permitHolder.isEmpty &&
+                !nPassengers.isEmpty
+        
+        if fieldsFull {
+            // Update the observation instance
+            self.observation?.observerName = observerName
+            self.observation?.date = date
+            self.observation?.time = time
+            self.observation?.driverName = driverName
+            self.observation?.destination = destination
+            self.observation?.permitHolder = permitHolder
+            self.observation?.nPassengers = nPassengers
+            self.observation?.comments = comments
+            
+            self.saveButton.isEnabled = true
+        }
+        
+    }
+    
+    // Add record to DB
+    private func insertObservation() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+}
+
+//MARK: -
+//MARK: -
+class RightOfWayObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var observation: RightOfWayObservation?
+    let permitHolderColumn = Expression<String>("permitHolder")
+    private let observationsTable = Table("rightOfWay")
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func autoFillTextFields() {
+        
+        // This is a completely new observation
+        if self.isAddingNewObservation {
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            self.textFields[2]?.text = formatter.string(from: now)
+            
+            self.saveButton.isEnabled = false
+            
+            // The observation already exists and is open for viewing/editing
+        } else {
+            self.dropDownTextFields[0]?.text = self.observation?.observerName
+            self.textFields[1]?.text = self.observation?.date
+            self.textFields[2]?.text = self.observation?.time
+            self.textFields[3]?.text = self.observation?.driverName
+            self.dropDownTextFields[4]?.text = self.observation?.destination
+            self.textFields[5]?.text = self.observation?.permitHolder
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text = self.observation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertObservation()
+            
+            // Update an existing record
+        } else {
+            
+            do {
+                // Select the record to update
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                            dateColumn <- (self.observation?.date)!,
+                                            timeColumn <- (self.observation?.time)!,
+                                            driverNameColumn <- (self.observation?.driverName)!,
+                                            destinationColumn <- (self.observation?.destination)!,
+                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
+            }
+        }
+        dismissController()
+    }
+    
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let driverName = self.textFields[3]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let permitHolder = self.textFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let comments = self.textFields[7]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !permitHolder.isEmpty &&
+                !nPassengers.isEmpty
+        
+        if fieldsFull {
+            // Update the observation instance
+            self.observation?.observerName = observerName
+            self.observation?.date = date
+            self.observation?.time = time
+            self.observation?.driverName = driverName
+            self.observation?.destination = destination
+            self.observation?.permitHolder = permitHolder
+            self.observation?.nPassengers = nPassengers
+            self.observation?.comments = comments
+            
+            self.saveButton.isEnabled = true
+        }
+        
+    }
+    
+    // Add record to DB
+    private func insertObservation() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+}
+
+
+//MARK: -
+//MARK: -
+class TeklanikaCamperObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var observation: RightOfWayObservation?
+    let permitHolderColumn = Expression<String>("permitHolder")
+    private let observationsTable = Table("rightOfWay")
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func autoFillTextFields() {
+        
+        // This is a completely new observation
+        if self.isAddingNewObservation {
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            self.textFields[2]?.text = formatter.string(from: now)
+            
+            self.saveButton.isEnabled = false
+            
+            // The observation already exists and is open for viewing/editing
+        } else {
+            self.dropDownTextFields[0]?.text = self.observation?.observerName
+            self.textFields[1]?.text = self.observation?.date
+            self.textFields[2]?.text = self.observation?.time
+            self.textFields[3]?.text = self.observation?.driverName
+            self.dropDownTextFields[4]?.text = self.observation?.destination
+            self.textFields[5]?.text = self.observation?.permitHolder
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text = self.observation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertObservation()
+            
+            // Update an existing record
+        } else {
+            
+            do {
+                // Select the record to update
+                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+                print(record)
+                // Update all fields
+                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                            dateColumn <- (self.observation?.date)!,
+                                            timeColumn <- (self.observation?.time)!,
+                                            driverNameColumn <- (self.observation?.driverName)!,
+                                            destinationColumn <- (self.observation?.destination)!,
+                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
+                    print("updated record")
+                } else {
+                    print("record not found")
+                }
+            } catch {
+                print("Update failed")
+            }
+        }
+        dismissController()
+    }
+    
+    private func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            /*presentingController.modalPresentationStyle = .custom
+             presentingController.transitioningDelegate = self
+             presentingController.modalTransitionStyle = .flipHorizontal*/
+            presentingController.dismiss(animated: true, completion: nil)
+            presentingController.tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.tableView.reloadData()
+        }
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let driverName = self.textFields[3]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let permitHolder = self.textFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let comments = self.textFields[7]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !permitHolder.isEmpty &&
+                !nPassengers.isEmpty
+        
+        if fieldsFull {
+            // Update the observation instance
+            self.observation?.observerName = observerName
+            self.observation?.date = date
+            self.observation?.time = time
+            self.observation?.driverName = driverName
+            self.observation?.destination = destination
+            self.observation?.permitHolder = permitHolder
+            self.observation?.nPassengers = nPassengers
+            self.observation?.comments = comments
+            
+            self.saveButton.isEnabled = true
+        }
+        
+    }
+    
+    // Add record to DB
+    private func insertObservation() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+}
+
+
+
+//MARK: -
+//MARK: -
+class CyclistObservationViewController: BaseObservationViewController {
+    let observationTable = Table("cyclists")
+    var observation: Observation?
+}
 
 
 

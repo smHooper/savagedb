@@ -154,7 +154,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         observerNameTextField.height = observerNameTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
         
         // Add listener for notification from DropDownTextField.dropDownPressed()
-        observerNameTextField.dropDownID = "observer"
+        observerNameTextField.dropDownID = 1
         NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:observer"), object: nil)
     }
 
@@ -197,7 +197,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         destinationTextField.dropView.widthAnchor.constraint(equalTo: destinationTextField.widthAnchor).isActive = true
         destinationTextField.height = destinationTextField.dropView.heightAnchor.constraint(equalToConstant: 0)
         
-        destinationTextField.dropDownID = "destination"
+        destinationTextField.dropDownID = 2
         NotificationCenter.default.addObserver(self, selector: #selector(updateObservation), name: Notification.Name("dropDownPressed:destination"), object: nil)
     }
     
