@@ -382,10 +382,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // When finished editing, check if the data model instance should be updated
     func textFieldDidEndEditing(_ textField: UITextField) {
         updateData()
-        //self.currentTextField = textField.tag
-        print("Current text field type in didEndEditing: \(self.textFieldIds[self.currentTextField].type)")
         if self.textFieldIds[self.currentTextField].type != "dropDown" {
-            print("dismissing keyboard in didEndEditing")
             dismissInputView()
         }
     }
@@ -598,7 +595,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                      Expression<String>("destination"),
                      Expression<String>("nPassengers"),
                      Expression<String>("comments")]
-    private let observationsTable = Table("observations")
+    var observationsTable = Table("observations")
     
     // MARK: session DB properties
     let sessionsTable = Table("sessions")
@@ -689,6 +686,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
         // This is a completely new observation
         if self.isAddingNewObservation {
+            self.observation = observation
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             let now = Date()
@@ -785,34 +783,14 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
-        
+            insertRecord()
         // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                print("Record id: \((observation?.id.datatypeValue)!)")
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
         
         // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
+        print("Observation ID before: \(observation?.id)")
         var max: Int64!
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
@@ -820,15 +798,13 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             print(error.localizedDescription)
         }
         observation?.id = Int(max)
+        print("Observation ID after: \(observation?.id)")
         
-        /*let vehicleList = BaseTableViewController()
-        vehicleList.modalTransitionStyle = .flipHorizontal
-        dismiss(animated: true)*/
         dismissController()
         
     }
     
-    private func dismissController() {
+    func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
@@ -836,8 +812,8 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
             presentingController.dismiss(animated: true, completion: nil)
-            presentingController.observations.append(self.observation!)
-            presentingController.tableView.reloadData()
+            presentingController.loadData()//observations.append(self.observation!)
+            //presentingController.tableView.reloadData()
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {
@@ -863,6 +839,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let destination = self.dropDownTextFields[4]?.text ?? ""
         let nPassengers = self.textFields[5]?.text ?? ""
         let comments = self.textFields[self.lastTextFieldIndex]?.text ?? ""
+        print(observerName)
         
         if !observerName.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty && !destination.isEmpty && !nPassengers.isEmpty {
             //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
@@ -878,10 +855,12 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
         }
+        
+        print(observation?.observerName)
     }
     
     // Add record to DB
-    private func insertObservation() {
+    func insertRecord() {
         // Can just get text values from the observation because it has to be updated before saveButton is enabled
         let observerName = observation?.observerName
         let date = observation?.date
@@ -902,6 +881,29 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                                                             commentsColumn <- comments!))
         } catch {
             print("insertion failed: \(error)")
+        }
+    }
+    
+    func updateRecord() {
+        do {
+            // Select the record to update
+            print("Record id: \((observation?.id.datatypeValue)!)")
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
         }
     }
     
@@ -928,7 +930,7 @@ class BusObservationViewController: BaseObservationViewController {
     let busNumberColumn = Expression<String>("busNumber")
     let isTrainingColumn = Expression<Bool>("isTraining")
     let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
-    private let observationsTable = Table("buses")
+    //let observationsTable = Table("buses")
     
     let lodgeBusTypes = ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]
     
@@ -952,6 +954,7 @@ class BusObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
                                     "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+        self.observationsTable = Table("buses")
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -972,6 +975,7 @@ class BusObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
                                     "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+        self.observationsTable = Table("buses")
     }
     
     //MARK: - Layout
@@ -1000,7 +1004,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.busType
+            self.dropDownTextFields[3]?.text = self.observation?.busType
             self.textFields[4]?.text = self.observation?.busNumber
             self.textFields[5]?.text = self.observation?.driverName
             self.dropDownTextFields[6]?.text = self.observation?.destination
@@ -1024,38 +1028,26 @@ class BusObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
+            insertRecord()
             
             // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            busTypeColumn <- (self.observation?.busType)!,
-                                            busNumberColumn <- (self.observation?.busNumber)!,
-                                            isTrainingColumn <- (self.observation?.isTraining)!,
-                                            nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
+        print("dismissing controller")
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
@@ -1063,12 +1055,13 @@ class BusObservationViewController: BaseObservationViewController {
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
             presentingController.dismiss(animated: true, completion: nil)
+            presentingController.observations.append(self.observation!)
             presentingController.tableView.reloadData()
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {
             // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
+            let presentingController = self.presentingViewController as! BusTableViewController
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.tableView.reloadData()
@@ -1133,7 +1126,7 @@ class BusObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -1152,10 +1145,35 @@ class BusObservationViewController: BaseObservationViewController {
         }
     }
     
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print("Updating record with id \(observation?.id)")
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        busTypeColumn <- (self.observation?.busType)!,
+                                        busNumberColumn <- (self.observation?.busNumber)!,
+                                        isTrainingColumn <- (self.observation?.isTraining)!,
+                                        nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
+    
     // Either disable or enable the nOvernightPassengers field, depending on whether the bustype is a lodge bus
     private func updateNOvernightFieldStatus() {
         let busType = self.dropDownTextFields[3]?.text ?? ""
-        print("Bus tyope: \(busType)")
         if self.lodgeBusTypes.contains(busType) {
             self.labels[9].textColor = UIColor.black
             self.labels[9].text = self.textFieldIds[9].label
@@ -1183,7 +1201,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     let workDivisionColumn = Expression<String>("workDivision")
     let workGroupColumn = Expression<String>("workGroup")
     let nExpectedNightsColumn = Expression<String>("nExpectedDays")
-    private let observationsTable = Table("npsVehicles")
+    //private let observationsTable = Table("npsVehicles")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1206,6 +1224,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                     "Work division": ["Administration", "Buildings and Utilities", "External Affairs", "Resources", "Visitor and Resource Protection", "Other"],
                                     "Work group": ["Maintenance", "Roads", "Trails", "Other"],
                                     "Trip purpose": ["Other"]]
+        self.observationsTable = Table("npsVehicles")
 
     }
     
@@ -1229,6 +1248,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                     "Work division": ["Administration", "Buildings and Utilities", "External Affairs", "Resources", "Visitor and Resource Protection", "Other"],
                                     "Work group": ["Maintenance", "Roads", "Trails", "Other"],
                                     "Trip purpose": ["Other"]]
+        self.observationsTable = Table("npsVehicles")
     }
     
     //MARK: - Layout
@@ -1304,46 +1324,33 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
+            insertRecord()
             
             // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                print("Record id: \((observation?.id.datatypeValue)!)")
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
-                                            workDivisionColumn <- (self.observation?.workDivision)!,
-                                            workGroupColumn <- (self.observation?.workGroup)!,
-                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
+        
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             presentingController.dismiss(animated: true, completion: nil)
             //presentingController.observations.append(self.observation!)
-            presentingController.tableView.reloadData()
+            presentingController.loadData()//tableView.reloadData()
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {
@@ -1399,7 +1406,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -1417,6 +1424,33 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             print("insertion failed: \(error)")
         }
     }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            print("Record id: \((observation?.id.datatypeValue)!)")
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                        workDivisionColumn <- (self.observation?.workDivision)!,
+                                        workGroupColumn <- (self.observation?.workGroup)!,
+                                        nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
 }
 
 
@@ -1430,7 +1464,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     let tripPurposeColumn = Expression<String>("tripPurpose")
     let nExpectedNightsColumn = Expression<String>("nExpectedDays")
     let vehicleTypeColumn = Expression<String>("vehicleType")
-    private let observationsTable = Table("npsApproved")
+    //private let observationsTable = Table("npsApproved")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1449,6 +1483,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
                                     "Vehicle type": ["Education", "Researcher", "Other"]]
+        
+        self.observationsTable = Table("npsApproved")
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -1467,6 +1503,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
                                     "Vehicle type": ["Education", "Researcher", "Other"]]
+        
+        self.observationsTable = Table("npsApproved")
     }
     
     //MARK: - Layout
@@ -1513,37 +1551,25 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
-            
-            // Update an existing record
+            insertRecord()
+        
         } else {
-            
-            do {
-                // Select the record to update
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            vehicleTypeColumn <- (self.observation?.vehicleType)!,
-                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
@@ -1605,7 +1631,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -1621,6 +1647,30 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             print("insertion failed: \(error)")
         }
     }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        vehicleTypeColumn <- (self.observation?.vehicleType)!,
+                                        nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
 }
 
 
@@ -1633,7 +1683,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     var observation: NPSContractorObservation?
     let tripPurposeColumn = Expression<String>("tripPurpose")
     let nExpectedNightsColumn = Expression<String>("nExpectedDays")
-    private let observationsTable = Table("npsContractors")
+    //private let observationsTable = Table("npsContractors")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1652,6 +1702,8 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
                                     "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
+        
+        self.observationsTable = Table("npsContractors")
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -1670,6 +1722,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
                                     "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
+        self.observationsTable = Table("npsContractors")
     }
     
     //MARK: - Layout
@@ -1716,37 +1769,26 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
+            insertRecord()
             
             // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
-                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
@@ -1809,7 +1851,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -1825,6 +1867,30 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             print("insertion failed: \(error)")
         }
     }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                        nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
 }
 
 
@@ -1836,7 +1902,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
     //MARK: DB properties
     var observation: EmployeeObservation?
     let permitHolderColumn = Expression<String>("permitHolder")
-    private let observationsTable = Table("employees")
+    //private let observationsTable = Table("employees")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1853,6 +1919,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+        
+        self.observationsTable = Table("employees")
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -1869,6 +1937,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+        
+        self.observationsTable = Table("employees")
     }
     
     //MARK: - Layout
@@ -1915,36 +1985,26 @@ class EmployeeObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
+            insertRecord()
             
             // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            permitHolderColumn <- (self.observation?.permitHolder)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
@@ -2003,7 +2063,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2016,6 +2076,29 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
+        }
+    }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        permitHolderColumn <- (self.observation?.permitHolder)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
         }
     }
 }
@@ -2028,7 +2111,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     //MARK: DB properties
     var observation: RightOfWayObservation?
     let permitHolderColumn = Expression<String>("permitHolder")
-    private let observationsTable = Table("rightOfWay")
+    //private let observationsTable = Table("rightOfWay")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -2045,6 +2128,8 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+        
+        self.observationsTable = Table("rightOfWay")
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -2061,6 +2146,8 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+        
+        self.observationsTable = Table("rightOfWay")
     }
     
     //MARK: - Layout
@@ -2107,36 +2194,26 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
+            insertRecord()
             
             // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            permitHolderColumn <- (self.observation?.permitHolder)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
@@ -2195,7 +2272,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2208,6 +2285,29 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
+        }
+    }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        permitHolderColumn <- (self.observation?.permitHolder)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
         }
     }
 }
@@ -2221,7 +2321,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     //MARK: DB properties
     var observation: RightOfWayObservation?
     let permitHolderColumn = Expression<String>("permitHolder")
-    private let observationsTable = Table("rightOfWay")
+    //private let observationsTable = Table("tekCampers")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -2238,6 +2338,8 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+        
+        self.observationsTable = Table("tekCampers")
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -2254,6 +2356,8 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"]]
+        
+        self.observationsTable = Table("tekCampers")
     }
     
     //MARK: - Layout
@@ -2300,36 +2404,26 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertObservation()
+            insertRecord()
             
             // Update an existing record
         } else {
-            
-            do {
-                // Select the record to update
-                let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
-                print(record)
-                // Update all fields
-                if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
-                                            dateColumn <- (self.observation?.date)!,
-                                            timeColumn <- (self.observation?.time)!,
-                                            driverNameColumn <- (self.observation?.driverName)!,
-                                            destinationColumn <- (self.observation?.destination)!,
-                                            nPassengersColumn <- (self.observation?.nPassengers)!,
-                                            permitHolderColumn <- (self.observation?.permitHolder)!,
-                                            commentsColumn <- (self.observation?.comments)!)) > 0 {
-                    print("updated record")
-                } else {
-                    print("record not found")
-                }
-            } catch {
-                print("Update failed")
-            }
+            updateRecord()
         }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
         dismissController()
     }
     
-    private func dismissController() {
+    override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
@@ -2388,7 +2482,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    private func insertObservation() {
+    override func insertRecord() {
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2403,6 +2497,29 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             print("insertion failed: \(error)")
         }
     }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        permitHolderColumn <- (self.observation?.permitHolder)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
 }
 
 
@@ -2410,8 +2527,18 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
 //MARK: -
 //MARK: -
 class CyclistObservationViewController: BaseObservationViewController {
-    let observationTable = Table("cyclists")
+    //let observationTable = Table("cyclists")
     var observation: Observation?
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        self.observationsTable = Table("cyclists")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        self.observationsTable = Table("cyclists")
+    }
 }
 
 
