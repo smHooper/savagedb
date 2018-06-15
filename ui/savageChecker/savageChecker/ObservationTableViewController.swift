@@ -14,7 +14,7 @@ import os.log
 class ObservationTableViewController: UITableViewController {
     
     //MARK: Properties
-    var observations = [Observation]()
+    private var observations = [Observation]()
     var session: Session?
     @IBOutlet weak var addNewObservation: UIBarButtonItem!
     

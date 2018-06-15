@@ -74,13 +74,39 @@ class SessionViewController: BaseFormViewController {
             // Disable navigation to vehicle list until all fields are filled
             self.viewVehiclesButton.isEnabled = false
         }
+        
+        // Set tab bar delegate as self
+        //self.delegate = self
     }
+    
+    
+    /*override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        //Create tab view controllers
+        let busTab = BusTableViewController()
+        //busTab.loadObservations()
+        let busTabBarItem = UITabBarItem(title: "Buses", image: UIImage(named: "busIcon"), selectedImage: UIImage(named: "busIcon"))
+        busTab.tabBarItem = busTabBarItem
+        
+        let npsVehicleTab = NPSVehicleTableViewController()
+        //npsVehicleTab.loadObservations()
+        let npsVehicleTabBarItem = UITabBarItem(title: "NPS Vehicle", image: UIImage(named: "busIcon"), selectedImage: UIImage(named: "busIcon"))
+        npsVehicleTab.tabBarItem = npsVehicleTabBarItem
+        
+        self.viewControllers = [busTab, npsVehicleTab]
+        
+    }*/
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
     
+    //MARK: - TabBarControllerDelegate methods
+    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
+        print("Selected \(type(of: viewController))")
+    }
     
     //MARK: - Navigation
     // Set up the nav bar
@@ -96,7 +122,7 @@ class SessionViewController: BaseFormViewController {
     
     @objc func moveToVehicleList(){
         
-        let vehicleTableViewContoller = BusTableViewController()
+        let vehicleTableViewContoller = BusTableViewController()//BaseTableViewController()//
         vehicleTableViewContoller.modalPresentationStyle = .custom
         vehicleTableViewContoller.transitioningDelegate = self
         self.presentTransition = RightToLeftTransition()
