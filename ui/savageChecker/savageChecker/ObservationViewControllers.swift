@@ -990,13 +990,19 @@ class BusObservationViewController: BaseObservationViewController {
 
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
+            
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
-            self.textFields[2]?.text = formatter.string(from: now)
+            let currentTime = formatter.string(from: now)
+            
+            self.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
+            
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            self.textFields[2]?.text = currentTime
             self.textFields[7]?.text = "No"
             self.saveButton.isEnabled = false
         // The observation already exists and is open for viewing/editing
@@ -1120,6 +1126,7 @@ class BusObservationViewController: BaseObservationViewController {
             } else {
                 self.saveButton.isEnabled = true
             }
+            
         }
         // Check if the overnight passengers field should be enabled
         updateNOvernightFieldStatus()
@@ -1128,6 +1135,7 @@ class BusObservationViewController: BaseObservationViewController {
     // Add record to DB
     override func insertRecord() {
         // Insert into DB
+        
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
                                                             dateColumn <- (self.observation?.date)!,
@@ -1270,15 +1278,23 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         }*/
         // The observation already exists and is open for viewing/editing
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
-            self.textFields[2]?.text = formatter.string(from: now)
+            let currentTime = formatter.string(from: now)
+            
+            // Initialize the observation
+            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "", workDivision: "", workGroup: "")
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            
+            // Fill text fields with defaults
+            self.textFields[2]?.text = currentTime
             self.textFields[7]?.text = "0"
             self.saveButton.isEnabled = false
+            
         } else {
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
@@ -1518,13 +1534,21 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
+            
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
-            self.textFields[2]?.text = formatter.string(from: now)
+            let currentTime = formatter.string(from: now)
+            
+            // Initialize the observation
+            self.observation = NPSApprovedObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", vehicleType: "", tripPurpose: "", nExpectedNights: "")
+            
+            // Fill in text fields with defaults
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            self.textFields[2]?.text = currentTime
             self.textFields[7]?.text = "0"
             self.saveButton.isEnabled = false
             
@@ -1736,12 +1760,18 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
+            
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
+            
+            // Initialize the observation
+            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", tripPurpose: "", nExpectedNights: "")
+            
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
             self.textFields[7]?.text = "0"
             self.saveButton.isEnabled = false
@@ -1952,13 +1982,17 @@ class EmployeeObservationViewController: BaseObservationViewController {
         
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
-            
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
+            
+            // Initialize the observation
+            self.observation = EmployeeObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", permitHolder: "")
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            
             self.textFields[2]?.text = formatter.string(from: now)
             
             self.saveButton.isEnabled = false
@@ -2161,15 +2195,20 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
-            
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
-            self.textFields[2]?.text = formatter.string(from: now)
+            let currentTime = formatter.string(from: now)
             
+            // Create the observation instance
+            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", permitHolder: "", tripPurpose: "N/A")
+            
+            //Fill in text fields
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            self.textFields[2]?.text = currentTime
             self.saveButton.isEnabled = false
             
             // The observation already exists and is open for viewing/editing
@@ -2319,7 +2358,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     
     //MARK: - Properties
     //MARK: DB properties
-    var observation: RightOfWayObservation?
+    var observation: TeklanikaCamperObservation?
     let permitHolderColumn = Expression<String>("permitHolder")
     //private let observationsTable = Table("tekCampers")
     
@@ -2371,13 +2410,20 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.dropDownTextFields[0]?.text = session?.observerName
-            self.textFields[1]?.text = session?.date
             
+            // Get the current time as a string
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
+            let currentTime = formatter.string(from: now)
+            
+            // Initialize the observation
+            self.observation = TeklanikaCamperObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, destination: "", nPassengers: "", hasTekPass: false)
+            
+            //
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
             
             self.saveButton.isEnabled = false
