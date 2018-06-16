@@ -19,7 +19,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
-                                    "NPS Vehicle": "busIcon",
+                                    "NPS Vehicle": "npsVehicleIcon",
                                     "NPS Approved": "busIcon",
                                     "NPS Contractor": "busIcon",
                                     "Employee": "busIcon",
