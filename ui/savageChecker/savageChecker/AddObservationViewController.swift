@@ -20,12 +20,12 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "NPS Vehicle": "npsVehicleIcon",
-                                    "NPS Approved": "busIcon",
-                                    "NPS Contractor": "busIcon",
-                                    "Employee": "busIcon",
-                                    "Right of Way": "busIcon",
-                                    "Tek Camper": "busIcon",
-                                    "Bicycle": "busIcon",
+                                    "NPS Approved": "npsApprovedIcon",
+                                    "NPS Contractor": "npsContractorIcon",
+                                    "Employee": "employeeIcon",
+                                    "Right of Way": "rightOfWayIcon",
+                                    "Tek Camper": "tekCamperIcon",
+                                    "Bicycle": "cyclistIcon",
                                     "Propho": "busIcon",
                                     "Accessibility": "busIcon",
                                     "Hunting": "busIcon",
@@ -145,9 +145,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "NPS Approved": NPSApprovedObservationViewController.self,
                      "NPS Contractor": NPSContractorObservationViewController.self,
                      "Employee": EmployeeObservationViewController.self,
-                     "Right of Way": RightOfWayObservationViewController.self,
-                     "Tek Camper": TeklanikaCamperObservationViewController.self,
-                     "Bycicle": CyclistObservationViewController.self]
+                     "Right of Way": RightOfWayObservationViewController.self]//,
+                     //"Tek Camper": TeklanikaCamperObservationViewController.self,
+                     //"Bycicle": CyclistObservationViewController.self]
         
         // Remove the blur effect
         animateRemoveMenu()

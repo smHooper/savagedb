@@ -1498,7 +1498,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Vehicle type": ["Education", "Researcher", "Other"]]
+                                    "Vehicle type": ["Education", "Researcher", "V.I.P.", "Other"]]
         
         self.observationsTable = Table("npsApproved")
     }
@@ -2354,7 +2354,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
 
 //MARK: -
 //MARK: -
-class TeklanikaCamperObservationViewController: BaseObservationViewController {
+/*class TeklanikaCamperObservationViewController: BaseObservationViewController {
     
     //MARK: - Properties
     //MARK: DB properties
@@ -2585,7 +2585,7 @@ class CyclistObservationViewController: BaseObservationViewController {
         super.init(coder: aDecoder)
         self.observationsTable = Table("cyclists")
     }
-}
+}*/
 
 
 
