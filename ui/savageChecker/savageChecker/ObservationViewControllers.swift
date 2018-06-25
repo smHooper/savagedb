@@ -19,6 +19,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     var dropDownMenuOptions = Dictionary<String, [String]>()
     var textFields = [Int: UITextField]()
     var dropDownTextFields = [Int: DropDownTextField]()
+    var boolSwitches = [Int: UISwitch]()
     var labels = [UILabel]()
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     
@@ -60,7 +61,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         } catch let error {
             fatalError(error.localizedDescription)
         }
-
+        
         self.setNavigationBar()
         self.setupLayout()
         self.view.backgroundColor = UIColor.white
@@ -237,22 +238,23 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.layer.borderColor = UIColor.clear.cgColor
                 textFields[i]?.borderStyle = .none
                 textFields[i]?.contentVerticalAlignment = .center
-                let switchButton = UISwitch()
-                switchButton.tag = i
-                switchButton.isOn = false
+                
+                boolSwitches[i] = UISwitch()
+                boolSwitches[i]?.tag = i
+                boolSwitches[i]?.isOn = false
                 
                 // Arrange the switch and the text field in the stack view
-                container.addSubview(switchButton)
+                container.addSubview(boolSwitches[i]!)
                 container.addSubview(textFields[i]!)
-                switchButton.translatesAutoresizingMaskIntoConstraints = false
-                switchButton.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
-                switchButton.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
-                switchButton.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
-                switchButton.addTarget(self, action: #selector(handleTextFieldSwitch(sender:)), for: .touchUpInside)
+                boolSwitches[i]?.translatesAutoresizingMaskIntoConstraints = false
+                boolSwitches[i]?.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
+                boolSwitches[i]?.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
+                boolSwitches[i]?.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
+                boolSwitches[i]?.addTarget(self, action: #selector(handleTextFieldSwitch(sender:)), for: .touchUpInside)
                 
                 textFields[i]?.translatesAutoresizingMaskIntoConstraints = false
-                textFields[i]?.leftAnchor.constraint(equalTo: switchButton.rightAnchor, constant: self.sideSpacing * 2).isActive = true
-                textFields[i]?.topAnchor.constraint(equalTo: switchButton.topAnchor).isActive = true
+                textFields[i]?.leftAnchor.constraint(equalTo: (boolSwitches[i]?.rightAnchor)!, constant: self.sideSpacing * 2).isActive = true
+                textFields[i]?.topAnchor.constraint(equalTo: (boolSwitches[i]?.topAnchor)!).isActive = true
                 textFields[i]?.widthAnchor.constraint(equalToConstant: 60).isActive = true
                 textFields[i]?.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
                 
@@ -661,7 +663,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         self.setupLayout()
         self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
         
-
         /*// Lay out all text fields
         self.view.addSubview(tableView)
         tableView.dataSource = self
@@ -676,6 +677,15 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
         autoFillTextFields()
         
+        for (i, _) in boolSwitches {
+            if textFields[i]?.text == "Yes" {
+                print("Bool switch is on")
+                boolSwitches[i]?.isOn = true
+            } else {
+                print("Bool switch is off")
+                boolSwitches[i]?.isOn = false
+            }
+        }
     }
     
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
