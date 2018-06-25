@@ -32,20 +32,31 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                                           "Right of Way": RightOfWayObservationViewController.self,
                                           "Tek Camper": TeklanikaCamperObservationViewController.self,
                                           "Bicycle": CyclistObservationViewController.self]*/
-    let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "NPS Vehicle": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "NPS Approved": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "NPS Contractor": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Employee": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Right of Way": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Tek Camper": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Bicycle": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Propho": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Accessibility": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Hunting": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Road lottery": (normal: "busIcon", selected: "shuttleBusImg"),
-                 "Other": (normal: "busIcon", selected: "shuttleBusImg")]
+    let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses"),
+                 "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles"),
+                 "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved"),
+                 "NPS Contractor": (normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors"),
+                 "Employee": (normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employees"),
+                 "Right of Way": (normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay"),
+                 "Tek Camper": (normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers"),
+                 "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists"),
+                 "Propho": (normal: "busIcon", selected: "shuttleBusImg", tableName: "photographers"),
+                 "Accessibility": (normal: "busIcon", selected: "shuttleBusImg", tableName: "accessibility"),
+                 "Hunting": (normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters"),
+                 "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery"),
+                 "Other": (normal: "busIcon", selected: "shuttleBusImg", tableName: "other")]
+
+    var selectedObservationType = "all"
+    //var observationIcons = [String: String]() // For storing icon IDs asociated with each
     
+    //MARK: properties for ordering cells
+    struct ObservationCell {
+        let observationType: String
+        let iconName: String
+        let observation: Observation
+    }
+    var observationCells = [Date: ObservationCell]()
+    var cellOrder = [Int: String]()
     
     //MARK: db properties
     //var modelObjects = [Any]()
@@ -304,7 +315,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.observations.count
+        //return self.observations.count
+        return self.observationCells.count
     }
     
     
@@ -337,14 +349,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
          fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
          }*/
         
-        // Fetches the appropriate meal for the data source layout.
-        let observation = observations[indexPath.row]
-        
+        // Fetch the right observation for the data source layout
+        //let observation = observations[indexPath.row]
+
+        let stamp = observationCells.keys.sorted()[indexPath.row]
+        let observationCell = observationCells[stamp]!
+        let observation = observationCell.observation
+        let imageName = (icons[observationCell.observationType]?.normal)!
         
         cell.driverLabel.text = observation.driverName
         cell.destinationLabel.text = observation.destination
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
         cell.nPassengersLabel.text = observation.nPassengers
+        cell.mainIcon.image = UIImage(named: imageName)
+        
         
         return cell
     }
@@ -377,20 +395,73 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     //MARK: - Private Methods
     func loadObservations(){// -> [Observation]?{
         // ************* check that the table exists first **********************
-        let rows: [Row]
-        do {
-            rows = Array(try db.prepare(observationsTable))
-        } catch {
-            fatalError("Could not load observations: \(error.localizedDescription)")
-        }
         var loadedObservations = [Observation]()
-        for row in rows{
-            //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-            let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
-            loadedObservations.append(observation!)
+        switch self.selectedObservationType {
+        case "all":
+            //**** Change title of nav bar *********
+            
+            //var rows: [Row]
+            /*do {
+                rows = Array(try db.prepare(observationsTable))
+            } catch {
+                fatalError("Could not load observations: \(error.localizedDescription)")
+            }
+            
+            for row in rows{
+                //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+                let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
+                loadedObservations.append(observation!)
+            }*/
+            
+            var tableNames = [String]()
+            //var observationDictionary = [String: Observation]()
+            
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .short
+            do {
+                // Get all observation table names
+                let tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions');")
+                for row in tableQuery {
+                    tableNames.append("\(row[0]!)")
+                }
+                
+                // For each table query all
+                for (label, info) in self.icons {
+                    let table = Table(info.tableName)
+                    var rows: [Row]
+                    do {
+                        rows = Array(try db.prepare(table))
+                    } catch {
+                        fatalError("Could not load observations: \(error.localizedDescription)")
+                    }
+                    print("Table name: \(info.tableName), row count: \(rows.count)")
+                    for row in rows{
+                        //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+                        let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
+                        let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
+                        
+                        let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
+                        guard let datetime = formatter.date(from: datetimeString) else {
+                            fatalError("Could not interpret datetimeString: \(datetimeString)")
+                        }
+                        observationCells[datetime] = observationCell
+                        loadedObservations.append(observation!)
+                    }
+                    
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+            
+        default:
+            print("observationType \(selectedObservationType) not understood")
         }
         
-        //return loadedObservations
+        /*for (index, stamp) in observationCells.keys.sorted().enumerated() {
+            cellOrder[index] = stamp
+        }*/
+        
         self.observations = loadedObservations
         
     }

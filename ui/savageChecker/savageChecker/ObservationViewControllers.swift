@@ -1053,7 +1053,10 @@ class BusObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
+                        max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
@@ -1361,6 +1364,9 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         var max: Int64!
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
@@ -1594,7 +1600,10 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
+                        max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
@@ -1606,7 +1615,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             /*presentingController.modalPresentationStyle = .custom
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
@@ -1657,6 +1666,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             self.observation?.destination = destination
             self.observation?.nPassengers = nPassengers
             self.observation?.nExpectedNights = nExpectedNights
+            self.observation?.tripPurpose = ""
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
@@ -1676,6 +1686,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
+                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
@@ -1819,7 +1830,10 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
+                        max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
@@ -2039,7 +2053,10 @@ class EmployeeObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
+                        max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
@@ -2253,7 +2270,10 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
+                        max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
@@ -2470,7 +2490,10 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
+                        max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
         } catch {
             print(error.localizedDescription)
         }
