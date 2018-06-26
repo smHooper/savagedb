@@ -298,7 +298,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
-                t.column(commentsColumn)
             })
         } catch let error {
             fatalError(error.localizedDescription)

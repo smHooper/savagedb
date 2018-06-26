@@ -1068,19 +1068,27 @@ class BusObservationViewController: BaseObservationViewController {
     override func dismissController() {
         print("dismissing controller")
         if self.isAddingNewObservation {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .short
+            guard let timeStamp = formatter.date(from: "\((self.observation?.date)!), \((self.observation?.time)!)") else {
+                fatalError("Couldn't format timestamp from \((self.observation?.date)!), \((self.observation?.time)!)")
+            }
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             /*presentingController.modalPresentationStyle = .custom
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
             presentingController.dismiss(animated: true, completion: nil)
-            presentingController.observations.append(self.observation!)
+            //presentingController.observations.append(self.observation!)
+            
+            //presentingController.observationCells[timeStamp] = 
             presentingController.tableView.reloadData()
             //presentingController.dismissTransition = LeftToRightTransition()
             //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
         } else {
             // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BusTableViewController
+            let presentingController = self.presentingViewController as! BaseTableViewController
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.tableView.reloadData()
@@ -2172,6 +2180,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     //MARK: DB properties
     var observation: RightOfWayObservation?
     let permitHolderColumn = Expression<String>("permitHolder")
+    let tripPurposeColumn = Expression<String>("tripPurpose")
     //private let observationsTable = Table("rightOfWay")
     
     //MARK: - Initialization
@@ -2270,7 +2279,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-                        max = try db.scalar(observationsTable.select(idColumn.max))
+            max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
@@ -2282,10 +2291,10 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    override func dismissController() {
+    /*override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             /*presentingController.modalPresentationStyle = .custom
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
@@ -2300,7 +2309,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.tableView.reloadData()
         }
-    }
+    }*/
     
     //MARK: - DB methods
     @objc override func updateData(){
@@ -2333,6 +2342,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.observation?.destination = destination
             self.observation?.permitHolder = permitHolder
             self.observation?.nPassengers = nPassengers
+            self.observation?.tripPurpose = ""
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
@@ -2351,6 +2361,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             permitHolderColumn <- (self.observation?.permitHolder)!,
+                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")

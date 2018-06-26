@@ -371,10 +371,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             // Delete the row from the data source
-            let id = observations[indexPath.row].id
-            print("Deleting \(id)")
-            observations.remove(at: indexPath.row)
-            let recordToRemove = observationsTable.where(idColumn == id.datatypeValue)
+            //let id = observations[indexPath.row].id
+            let stamp = observationCells.keys.sorted()[indexPath.row]
+            let thisCell = observationCells[stamp]!
+            let id = thisCell.observation.id
+            let observationType = thisCell.observationType
+            let tableName = (icons[observationType]?.tableName)!
+            let table = Table(tableName)
+            print("Deleting \(id) from \(tableName)")
+            
+            //observations.remove(at: indexPath.row)
+            //let recordToRemove = observationsTable.where(idColumn == id.datatypeValue)
+            let recordToRemove = table.where(idColumn == id.datatypeValue)
+            observationCells.removeValue(forKey: stamp)
+            
             do {
                 try db.run(recordToRemove.delete())
             } catch let error{
@@ -420,11 +430,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             formatter.timeStyle = .short
             formatter.dateStyle = .short
             do {
-                // Get all observation table names
-                let tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions');")
-                for row in tableQuery {
-                    tableNames.append("\(row[0]!)")
-                }
                 
                 // For each table query all
                 for (label, info) in self.icons {
@@ -441,6 +446,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                         let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
                         let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
                         
+                        // Get the time stamp as an NSDate object so all timestamps can be properly sorted
                         let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
                         guard let datetime = formatter.date(from: datetimeString) else {
                             fatalError("Could not interpret datetimeString: \(datetimeString)")
