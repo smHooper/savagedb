@@ -19,18 +19,6 @@ var icons: DictionaryLiteral = ["JV Bus": "busIcon",
                                 "Road lottery": "busIcon",
                                 "Other": "busIcon"]
 
-var views = [UIView]()
-let container = UIScrollView()
-for (i, label) in [1,2,3].enumerated() {
-    print("\(i), \(label)")
-}
-
-func f(str:String){
-    print(str)
-}
-
-let l = [1,2,3]
-print("\u{2039}")
 
 
 extension String {
@@ -50,7 +38,18 @@ extension String {
 }
 
 
+let stamp = "4/4/18, 8:26 AM"
+let formatter = DateFormatter()
+formatter.dateStyle = .short
+formatter.timeStyle = .short
+//formatter.dateFormat = "MM/dd/yy HH:mm a"
+let date = formatter.date(from: stamp)
+let date2 = formatter.date(from: "5/4/18 8:01 AM")
+let now = Date()
 
+let nowstring = formatter.string(from: now)
+print(date)
+print(formatter.date(from: nowstring))
 
 
 
