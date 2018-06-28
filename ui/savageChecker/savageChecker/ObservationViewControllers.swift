@@ -996,6 +996,13 @@ class BusObservationViewController: BaseObservationViewController {
         
         super.viewDidLoad()
         autoFillTextFields()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        // This needs to go in viewDidAppear() because viewDidLoad() only gets called the first time you push to each type of view controller
+        autoFillTextFields()
         updateNOvernightFieldStatus()
     }
 
@@ -1300,7 +1307,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     override func viewDidLoad() {
         
         super.viewDidLoad()
-        autoFillTextFields()
+        //autoFillTextFields()
         
         // Add notification
         dropDownTextFields[5]?.isEnabled = false
@@ -1308,6 +1315,13 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         labels[5].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
         NotificationCenter.default.addObserver(self, selector: #selector(setWorkGroupOptions), name: Notification.Name("dropDownPressed:4"), object: nil)
     }
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     
     override func autoFillTextFields() {
         /*guard let observation = self.observation else {
@@ -1345,7 +1359,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
             self.observation = NPSVehicleObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], workDivision: record[workDivisionColumn], workGroup: record[workGroupColumn], comments: record[commentsColumn])
-            
+            print("queried ID: \(record[idColumn])")
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -1358,6 +1372,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.textFields[9]?.text = self.observation?.nPassengers
             self.textFields[10]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
+            setWorkGroupOptions()
         }
     }
     
@@ -1391,23 +1406,21 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         // Add a new record
         if self.isAddingNewObservation {
             insertRecord()
-            
-            // Update an existing record
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+            observation?.id = Int(max)
+        // Update an existing record
         } else {
             updateRecord()
         }
-        
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
-            }
-        } catch {
-            print(error.localizedDescription)
-        }
-        observation?.id = Int(max)
         
         dismissController()
     }
@@ -1468,6 +1481,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.observation?.tripPurpose = tripPurpose
             self.observation?.nExpectedNights = nExpectedNights
             self.observation?.destination = destination
+            self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
         
             self.saveButton.isEnabled = true
@@ -1580,8 +1594,15 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     override func viewDidLoad() {
         
         super.viewDidLoad()
+        //autoFillTextFields()
+    }
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         autoFillTextFields()
     }
+    
     
     override func autoFillTextFields() {
         
@@ -1821,11 +1842,18 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     }
     
     //MARK: - Layout
-    override func viewDidLoad() {
+    /*override func viewDidLoad() {
         
         super.viewDidLoad()
         autoFillTextFields()
+    }*/
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
     }
+    
     
     override func autoFillTextFields() {
         
@@ -2059,12 +2087,19 @@ class EmployeeObservationViewController: BaseObservationViewController {
     }
     
     //MARK: - Layout
-    override func viewDidLoad() {
+    /*override func viewDidLoad() {
         
         super.viewDidLoad()
         autoFillTextFields()
+    }*/
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
     }
     
+
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -2289,11 +2324,18 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     }
     
     //MARK: - Layout
-    override func viewDidLoad() {
+    /*override func viewDidLoad() {
         
         super.viewDidLoad()
         autoFillTextFields()
+    }*/
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
     }
+    
     
     override func autoFillTextFields() {
         

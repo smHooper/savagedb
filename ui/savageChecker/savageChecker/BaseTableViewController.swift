@@ -456,9 +456,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 loadedObservations.append(observation!)
             }*/
             
-            var tableNames = [String]()
-            //var observationDictionary = [String: Observation]()
-            
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .short
@@ -472,7 +469,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 } catch {
                     fatalError("Could not load observations: \(error.localizedDescription)")
                 }
-                print("Table name: \(info.tableName), row count: \(rows.count)")
+                
                 for row in rows{
                     //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
                     let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
