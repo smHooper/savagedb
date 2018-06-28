@@ -580,6 +580,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     private var observation: Observation?
     var isAddingNewObservation: Bool!
     var lastTextFieldIndex = 0
+    var observationId: Int?
     
     // MARK: observation DB columns
     let idColumn = Expression<Int64>("id")
@@ -691,29 +692,31 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
     func autoFillTextFields(){
 
-        guard let observation = self.modelObject as? Observation else {
+        /*guard let observation = self.modelObject as? Observation else {
             fatalError("No valid observation passed from TableViewController")
-        }
+        }*/
         // This is a completely new observation
         if self.isAddingNewObservation {
-            self.observation = observation
+            /*self.observation = observation
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             let now = Date()
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .none
-            self.textFields[2]?.text = formatter.string(from: now)
+            self.textFields[2]?.text = formatter.string(from: now)*/
             saveButton.isEnabled = false
         // The observation already exists and is open for viewing/editing
         } else {
-            self.dropDownTextFields[0]?.text = observation.observerName
+
+            
+            /*self.dropDownTextFields[0]?.text = observation.observerName
             self.textFields[1]?.text = observation.date
             self.textFields[2]?.text = observation.time
             self.textFields[3]?.text = observation.driverName
             self.dropDownTextFields[4]?.text = observation.destination
             self.textFields[5]?.text = observation.nPassengers
-            self.textFields[self.lastTextFieldIndex]?.text = observation.comments // Comments will always be the last one
+            self.textFields[self.lastTextFieldIndex]?.text = observation.comments // Comments will always be the last one*/
         }
     }
     
@@ -1017,6 +1020,19 @@ class BusObservationViewController: BaseObservationViewController {
             self.saveButton.isEnabled = false
         // The observation already exists and is open for viewing/editing
         } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: record[nOvernightPassengersColumn], comments: record[commentsColumn])
+
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -1317,6 +1333,19 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.saveButton.isEnabled = false
             
         } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            self.observation = NPSVehicleObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], workDivision: record[workDivisionColumn], workGroup: record[workGroupColumn], comments: record[commentsColumn])
+            
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -1578,6 +1607,19 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             
         // The observation already exists and is open for viewing/editing
         } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            self.observation = NPSApprovedObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], vehicleType: record[vehicleTypeColumn], tripPurpose: record[tripPurposeColumn], nExpectedNights: record[nExpectedNightsColumn], comments: record[commentsColumn])
+            
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -1807,6 +1849,19 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             
             // The observation already exists and is open for viewing/editing
         } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], nExpectedNights: record[nExpectedNightsColumn], comments: record[commentsColumn])
+            
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -2031,6 +2086,19 @@ class EmployeeObservationViewController: BaseObservationViewController {
             
             // The observation already exists and is open for viewing/editing
         } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            self.observation = EmployeeObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitHolder: record[permitHolderColumn], comments: record[commentsColumn])
+            
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -2249,6 +2317,19 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             
             // The observation already exists and is open for viewing/editing
         } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitHolder: record[permitHolderColumn], tripPurpose: record[tripPurposeColumn], comments: record[commentsColumn])
+            
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time

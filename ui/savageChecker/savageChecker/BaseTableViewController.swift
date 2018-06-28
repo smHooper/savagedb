@@ -24,27 +24,35 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var blurEffectView: UIVisualEffectView!
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     
-    let controllers: DictionaryLiteral = ["Bus": BusTableViewController.self,
+    /*let controllers: DictionaryLiteral = ["Bus": BusTableViewController.self,
                                           "NPS Vehicle": NPSVehicleTableViewController.self]//,
-                                          /*"NPS Approved": NPSApprovedObservationViewController.self,
+                                          "NPS Approved": NPSApprovedObservationViewController.self,
                                           "NPS Contractor": NPSContractorObservationViewController.self,
                                           "Employee": EmployeeObservationViewController.self,
                                           "Right of Way": RightOfWayObservationViewController.self,
                                           "Tek Camper": TeklanikaCamperObservationViewController.self,
                                           "Bicycle": CyclistObservationViewController.self]*/
-    let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses"),
-                 "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles"),
-                 "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved"),
-                 "NPS Contractor": (normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors"),
-                 "Employee": (normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employees"),
-                 "Right of Way": (normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay"),
-                 "Tek Camper": (normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers"),
-                 "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists"),
-                 "Propho": (normal: "busIcon", selected: "shuttleBusImg", tableName: "photographers"),
-                 "Accessibility": (normal: "busIcon", selected: "shuttleBusImg", tableName: "accessibility"),
-                 "Hunting": (normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters"),
-                 "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery"),
-                 "Other": (normal: "busIcon", selected: "shuttleBusImg", tableName: "other")]
+    let observationViewControllers = ["Bus": BusObservationViewController(),//.self,
+                        "NPS Vehicle": NPSVehicleObservationViewController(),//.self,
+                        "NPS Approved": NPSApprovedObservationViewController(),//.self,
+                        "NPS Contractor": NPSContractorObservationViewController(),//.self,
+                        "Employee": EmployeeObservationViewController(),//.self,
+                        "Right of Way": RightOfWayObservationViewController()]//.self]//,
+                                          //"Tek Camper": TeklanikaCamperObservationViewController.self,
+                                          //"Bicycle": CyclistObservationViewController.self]
+    let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
+                 "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
+                 "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
+                 "NPS Contractor": (normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors", dataClassName: "NPSContractorObservation"),
+                 "Employee": (normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employees", dataClassName: "EmployeeObservation"),
+                 "Right of Way": (normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay", dataClassName: "RightOfWayObservation"),
+                 "Tek Camper": (normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers", dataClassName: "TeklanikaCamperObservation"),
+                 "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
+                 "Propho": (normal: "busIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
+                 "Accessibility": (normal: "busIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
+                 "Hunting": (normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
+                 "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
+                 "Other": (normal: "busIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
 
     var selectedObservationType = "all"
     //var observationIcons = [String: String]() // For storing icon IDs asociated with each
@@ -141,7 +149,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     //MARK: Tab bar methods
-    func setupTabViewControllers(){
+    /*func setupTabViewControllers(){
         
         var tableViewControllers = [BaseTableViewController]()
         for i in 0..<self.controllers.count {
@@ -164,7 +172,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         print("Selected \(viewController.title!)")
     }
-    /*func setTabBar() {
+    func setTabBar() {
         
         let screenSize: CGRect = UIScreen.main.bounds
         self.tabBar = UITabBar(frame: CGRect(x:0, y: screenSize.height - 100, width: screenSize.width, height: 100))
@@ -319,25 +327,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         return self.observationCells.count
     }
     
-    
-    // called when the cell is selected.
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        let observationViewController = BaseObservationViewController()
-        observationViewController.modelObject = observations[indexPath.row]
-        observationViewController.isAddingNewObservation = false
-        // post notification to pass observation to the view controller
-        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
-        
-        observationViewController.modalPresentationStyle = .custom
-        observationViewController.transitioningDelegate = self
-        
-        // Set the transition. When done transitioning, reset presentTransition to nil
-        self.presentTransition = RightToLeftTransition()
-        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
-    }
-    
-    
+
     // Compose each cell
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
@@ -366,6 +356,49 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         return cell
     }
+    
+    
+    // called when the cell is selected.
+    /*func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let observationViewController = BaseObservationViewController()
+        observationViewController.modelObject = observations[indexPath.row]
+        observationViewController.isAddingNewObservation = false
+        // post notification to pass observation to the view controller
+        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
+        
+        observationViewController.modalPresentationStyle = .custom
+        observationViewController.transitioningDelegate = self
+        
+        // Set the transition. When done transitioning, reset presentTransition to nil
+        self.presentTransition = RightToLeftTransition()
+        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
+    }*/
+    
+    // called when the cell is selected.
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let stamp = self.observationCells.keys.sorted()[indexPath.row]
+        let thisObservation = (self.observationCells[stamp]?.observation)!
+        let observationType = (self.observationCells[stamp]?.observationType)!
+        /*let tableName = (self.icons[observationType]?.tableName)!
+        let observationClassName = (self.icons[observationType]?.dataClassName)!*/
+        
+        let observationViewController = self.observationViewControllers[observationType]!
+        observationViewController.observationId = thisObservation.id
+        
+        observationViewController.isAddingNewObservation = false
+        // post notification to pass observation to the view controller
+        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
+        
+        observationViewController.modalPresentationStyle = .custom
+        observationViewController.transitioningDelegate = self
+        
+        // Set the transition. When done transitioning, reset presentTransition to nil
+        self.presentTransition = RightToLeftTransition()
+        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
+    }
+    
     
     // Editing
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
@@ -429,37 +462,33 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let formatter = DateFormatter()
             formatter.timeStyle = .short
             formatter.dateStyle = .short
-            do {
                 
-                // For each table query all
-                for (label, info) in self.icons {
-                    let table = Table(info.tableName)
-                    var rows: [Row]
-                    do {
-                        rows = Array(try db.prepare(table))
-                    } catch {
-                        fatalError("Could not load observations: \(error.localizedDescription)")
-                    }
-                    print("Table name: \(info.tableName), row count: \(rows.count)")
-                    for row in rows{
-                        //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-                        let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
-                        let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
-                        
-                        // Get the time stamp as an NSDate object so all timestamps can be properly sorted
-                        let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
-                        guard let datetime = formatter.date(from: datetimeString) else {
-                            fatalError("Could not interpret datetimeString: \(datetimeString)")
-                        }
-                        observationCells[datetime] = observationCell
-                        loadedObservations.append(observation!)
-                    }
-                    
+            // For each table query all
+            for (label, info) in self.icons {
+                let table = Table(info.tableName)
+                var rows: [Row]
+                do {
+                    rows = Array(try db.prepare(table))
+                } catch {
+                    fatalError("Could not load observations: \(error.localizedDescription)")
                 }
-            } catch {
-                print(error.localizedDescription)
+                print("Table name: \(info.tableName), row count: \(rows.count)")
+                for row in rows{
+                    //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+                    let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
+                    let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
+                    
+                    // Get the time stamp as an NSDate object so all timestamps can be properly sorted
+                    let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
+                    guard let datetime = formatter.date(from: datetimeString) else {
+                        fatalError("Could not interpret datetimeString: \(datetimeString)")
+                    }
+                    observationCells[datetime] = observationCell
+                    loadedObservations.append(observation!)
+                }
+                
             }
-            
+        
         default:
             print("observationType \(selectedObservationType) not understood")
         }
@@ -527,6 +556,8 @@ class BusTableViewController: BaseTableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.observations.count
     }
+    
+    
     // called when the cell is selected.
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
