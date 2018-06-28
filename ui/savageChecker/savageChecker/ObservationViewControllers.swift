@@ -470,11 +470,11 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
-    @objc func handleDatetimePicker(sender: UIDatePicker) {
+    func formatDatetime(textFieldId: Int, date: Date) -> String {
         let formatter = DateFormatter()
         
         // Set the formatter style for either a date or time
-        let fieldType = textFieldIds[sender.tag].type
+        let fieldType = textFieldIds[textFieldId].type
         switch(fieldType){
         case "time":
             formatter.dateStyle = .none
@@ -483,11 +483,19 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             formatter.dateStyle = .short
             formatter.timeStyle = .none
         default:
-            fatalError("textfield \(sender.tag) passed to setupDatetimePicker was of type \(fieldType)")
+            fatalError("textfield \(textFieldId) passed to setupDatetimePicker was of type \(fieldType)")
         }
         
+        let datetimeString = formatter.string(from: date)
+        
+        return datetimeString
+    }
+    
+    @objc func handleDatetimePicker(sender: UIDatePicker) {
+        
+        let datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
+        
         // Send the string with a notification. Use the tag of the datepicker as the key to a dictionary so the receiver knows which text field this value belongs to
-        let datetimeString = formatter.string(from: sender.date)
         let dictionary: [Int: String] = [sender.tag: datetimeString]
         NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
         
@@ -523,6 +531,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // Check that the done button on custom DatePicker was pressed
     @objc func datetimeDonePressed(sender: UIBarButtonItem) {
+        let datetimePickerView = textFields[sender.tag]?.inputView as! UIDatePicker
+        let datetimeString = formatDatetime(textFieldId: sender.tag, date: datetimePickerView.date)
+        
+        textFields[sender.tag]?.text = datetimeString
         textFields[sender.tag]?.resignFirstResponder()
     }
     
@@ -1936,7 +1948,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             /*presentingController.modalPresentationStyle = .custom
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
@@ -2179,7 +2191,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
     override func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BusTableViewController
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
             /*presentingController.modalPresentationStyle = .custom
              presentingController.transitioningDelegate = self
              presentingController.modalTransitionStyle = .flipHorizontal*/
