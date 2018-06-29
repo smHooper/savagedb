@@ -829,7 +829,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
     }
     
-    func dismissController() {
+    /*func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
             let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
@@ -847,6 +847,23 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.tableView.reloadData()
+        }
+    }*/
+    func dismissController() {
+        if self.isAddingNewObservation {
+            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+            presentingController.dismiss(animated: true, completion: nil)
+            //presentingController.observations.append(self.observation!)
+            presentingController.loadData()//tableView.reloadData()
+            //presentingController.dismissTransition = LeftToRightTransition()
+            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+        } else {
+            // Just dismiss this controller to get back to the tableView
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            self.dismissTransition = LeftToRightTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            presentingController.loadData()//tableView.reloadData()
         }
     }
 
@@ -1100,7 +1117,7 @@ class BusObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    override func dismissController() {
+    /*override func dismissController() {
         print("dismissing controller")
         if self.isAddingNewObservation {
             let formatter = DateFormatter()
@@ -1128,7 +1145,7 @@ class BusObservationViewController: BaseObservationViewController {
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.tableView.reloadData()
         }
-    }
+    }*/
     
     //MARK: - Private methods
     @objc override func updateData(){
@@ -1437,25 +1454,6 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    override func dismissController() {
-        
-        if self.isAddingNewObservation {
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            presentingController.dismiss(animated: true, completion: nil)
-            //presentingController.observations.append(self.observation!)
-            presentingController.loadData()//tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }
-    
     //MARK: - Private methods
     
     @objc override func updateData(){
@@ -1695,26 +1693,6 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    override func dismissController() {
-        if self.isAddingNewObservation {
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            /*presentingController.modalPresentationStyle = .custom
-             presentingController.transitioningDelegate = self
-             presentingController.modalTransitionStyle = .flipHorizontal*/
-            presentingController.dismiss(animated: true, completion: nil)
-            presentingController.tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }
-    
     //MARK: - Private methods
     @objc override func updateData(){
         // Check that all text fields are filled in
@@ -1945,25 +1923,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    override func dismissController() {
-        if self.isAddingNewObservation {
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            /*presentingController.modalPresentationStyle = .custom
-             presentingController.transitioningDelegate = self
-             presentingController.modalTransitionStyle = .flipHorizontal*/
-            presentingController.dismiss(animated: true, completion: nil)
-            presentingController.tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }
     
     //MARK: - Private methods
     @objc override func updateData(){
@@ -2425,26 +2384,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         dismissController()
     }
-    
-    /*override func dismissController() {
-        if self.isAddingNewObservation {
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            /*presentingController.modalPresentationStyle = .custom
-             presentingController.transitioningDelegate = self
-             presentingController.modalTransitionStyle = .flipHorizontal*/
-            presentingController.dismiss(animated: true, completion: nil)
-            presentingController.tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }*/
+
     
     //MARK: - DB methods
     @objc override func updateData(){
