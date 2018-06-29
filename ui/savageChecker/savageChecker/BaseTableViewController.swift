@@ -53,8 +53,32 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                  "Hunting": (normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
                  "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                  "Other": (normal: "busIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
-
-    var selectedObservationType = "all"
+    
+    //MARK: ToolBar properties
+    let toolBar = UIToolbar()
+    let barButtonIcons = [(label: "All", normal: "shuttleBusImg", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
+                          (label: "Bus", normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
+                          (label: "NPS Vehicle", normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
+                          (label: "NPS Approved", normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
+                          (label: "NPS Contractor", normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors", dataClassName: "NPSContractorObservation"),
+                          (label: "Employee", normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employees", dataClassName: "EmployeeObservation"),
+                          (label: "Right of Way", normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay", dataClassName: "RightOfWayObservation"),
+                          (label: "Tek Camper", normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers", dataClassName: "TeklanikaCamperObservation"),
+                          (label: "Bicycle", normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
+                          (label: "Propho", normal: "busIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
+                          (label: "Accessibility", normal: "busIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
+                          (label: "Hunting", normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
+                          (label: "Road lottery", normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
+                          (label: "Other", normal: "busIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
+    let barButtonSize: CGFloat = 80
+    let barButtonWidth: CGFloat = 150
+    let barHeight: CGFloat = 120
+    var nBarGroups = 1
+    var currentGroup = 0
+    var barButtons = [UIBarButtonItem]()
+    var selectedToolBarButton = 1
+    var leftToolBarButton = UIBarButtonItem()
+    var rightToolBarButton = UIBarButtonItem()
     //var observationIcons = [String: String]() // For storing icon IDs asociated with each
     
     //MARK: properties for ordering cells
@@ -104,6 +128,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.tabBar.selectedItem = tabBar.items?.first!
         self.view.addSubview(self.tabBar)*/
         
+        // Set up the toolbar for defining what the tableView shows
+        // First, make the buttons
+        for i in 0..<barButtonIcons.count {
+            let button = makeBarButton(buttonTag: i)
+            self.barButtons.append(UIBarButtonItem(customView: button))
+        }
+        // Add buttons for the currently selected group
+        setupToolBarLayout()
+        
         // get width and height of View
         let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
         let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
@@ -117,6 +150,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         tableView.dataSource = self
         tableView.delegate = self
         self.view.addSubview(tableView)
+        
+        // ********######### Figure out how to get the translucent tableView image underneath##############**************
+        self.view.bringSubview(toFront: self.toolBar)
         
         // Open connection to the DB
         do {
@@ -132,6 +168,18 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.dismissTransition = LeftToRightTransition()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        loadData()
+    }
+    
+    
+    override func didReceiveMemoryWarning() {
+        super.didReceiveMemoryWarning()
+    }
+    
+    
+    // Convenience function to load all tableView data
     func loadData() {
         do {
             try loadSession()
@@ -144,8 +192,134 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
+    //MARK: ToolBar setup
+    // Arrange the tool bar for selecting the table display mode
+    func setupToolBarLayout(){
+        
+        //let screenSize: CGRect = UIScreen.main.bounds
+        let screenSize = self.view.frame
+        self.toolBar.frame = CGRect(x: 0, y: screenSize.height - self.barHeight, width: screenSize.width, height: self.barHeight)
+        //self.toolBar.layer.position = CGPoint(x: screenSize.width/2, y: self.barHeight)
+        
+        //figure out how many buttons per group
+        let tableViewButtonWidth = screenSize.width - (self.barButtonSize * 2) // Make room for back/forward buttons plus space on either side
+        let nButtonsPerGroup = floor(tableViewButtonWidth / self.barButtonWidth)
+        self.nBarGroups = Int(ceil(CGFloat(barButtonIcons.count) / nButtonsPerGroup))
+        
+        // Make the left and right buttons
+        let leftButton = makeNextBarButton(tag: 0)
+        let rightButton = makeNextBarButton(tag: 1)
+        self.leftToolBarButton = UIBarButtonItem(customView: leftButton)
+        self.rightToolBarButton = UIBarButtonItem(customView: rightButton)
+        
+        // Add buttons to toolbar
+        setToolBarButtons()
+        
+        self.view.addSubview(self.toolBar)
+    }
+    
+    func setToolBarButtons() {
+        
+        let nButtonsPerGroup = self.barButtonIcons.count / self.nBarGroups
+        let leftButtonId = nButtonsPerGroup * self.currentGroup
+        let rightButtonId = min(leftButtonId + nButtonsPerGroup + 1, self.barButtonIcons.count)
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
+        let barItems = [self.leftToolBarButton, flexSpace] + self.barButtons[leftButtonId..<rightButtonId] + [flexSpace, self.rightToolBarButton]
+        self.toolBar.setItems(barItems, animated: true)
+    }
+    
+    func makeBarButton(buttonTag: Int) -> UIButton {
+        
+        let thisIcon = barButtonIcons[buttonTag]
+    
+        let button = UIButton(type: .custom)
+        button.setImage(UIImage(named: thisIcon.normal), for: .normal)
+        
+        // If the button tag matches the currently selected button, make it's background image the selected one
+        /*if buttonTag == self.selectedToolBarButton {
+            button.setBackgroundImage(image: normalBackGroundImage, for: .normal)
+        } else {
+            button.setBackgroundImage(image: selectedBackGroundImage, for: .normal)
+        }*/
+        
+        button.frame = CGRect(x: 0.0, y: 0.0, width: self.barButtonWidth, height: self.barButtonSize)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: self.barButtonWidth).isActive = true
+        button.heightAnchor.constraint(equalToConstant: self.barButtonSize).isActive = true
+        button.imageView?.contentMode = .scaleAspectFit
+        button.tag = buttonTag
+        button.addTarget(self, action: #selector(handleToolBarButton(sender:)), for: .touchUpInside)
+        
+        return button
+    }
+    
+    
+    @objc func handleToolBarButton(sender: UIBarButtonItem) {
+        
+        // Get the tag of the previously selected button so that we can change it's background image
+        let previousButtonTag = self.selectedToolBarButton
+        
+        // Set the background image of the selected button to the selected image
+        self.selectedToolBarButton = sender.tag
+        let currentButton = makeBarButton(buttonTag: sender.tag)
+        self.barButtons[sender.tag] = UIBarButtonItem(customView: currentButton)
+        
+        // Set background image of the previously selected button to the unselected image
+        let previousButton = makeBarButton(buttonTag: previousButtonTag)
+        self.barButtons[previousButtonTag] = UIBarButtonItem(customView: previousButton)
+        
+        // Reload the table for the newly selected button
+        loadData()
+    }
+    
+    
+    func makeNextBarButton(tag: Int) -> UIButton {
+        let button = UIButton(type: .custom)
+        button.frame = CGRect(x: 0.0, y: 0.0, width: self.barButtonSize, height: self.barButtonSize)
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.widthAnchor.constraint(equalToConstant: self.barButtonSize).isActive = true
+        button.heightAnchor.constraint(equalToConstant: self.barButtonSize).isActive = true
+        button.imageView?.contentMode = .scaleAspectFit
+        button.addTarget(self, action: #selector(handleNextButton(sender:)), for: .touchUpInside)
+        button.tag = tag
+        
+        let nextImage = UIImage(named: "backButton")
+        if tag == 0 {
+            button.setImage(nextImage, for: .normal)
+        } else {
+            button.setImage(UIImage(cgImage: (nextImage?.cgImage)!, scale: (nextImage?.scale)!, orientation: .upMirrored), for: .normal)
+        }
+        
+        return button
+    }
+    
+    @objc func handleNextButton(sender: UIBarButtonItem) {
+        // Sender is the left button
+        if sender.tag == 0 {
+            self.currentGroup -= 1
+            if self.currentGroup == 0 {
+                self.leftToolBarButton.isEnabled = false
+            }
+            // Make sure the other button is enabled
+            self.rightToolBarButton.isEnabled = true
+            print ("State of right button: \(self.rightToolBarButton.isEnabled)")
+            // **** ANIMATE THIS left to right ******
+            setToolBarButtons()
+        
+        // Sender is the right button
+        } else {
+            self.currentGroup += 1
+            if self.currentGroup == self.nBarGroups {
+                self.rightToolBarButton.isEnabled = false
+            }
+            // Make sure the other button is enabled
+            self.leftToolBarButton.isEnabled = true
+            print ("State of left button: \(self.leftToolBarButton.isEnabled)")
+            // **** ANIMATE THIS right to left ******
+            setToolBarButtons()
+        }
+        
+
     }
     
     //MARK: Tab bar methods
@@ -208,27 +382,21 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
-        let navItem = UINavigationItem(title: "Vehicles")
-        //let backButton = UIBarButtonItem(title: "\u{2039}", style:.plain, target: nil, action: #selector(backButtonPressed))
+        let navigationItem = UINavigationItem(title: "Vehicles")
         let backButton = UIButton(type: .custom)
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
-        //backButton.setTitle("Shift info", for: .normal)
         backButton.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let backBarButton = UIBarButtonItem(customView: backButton)
         
         let editButton = makeEditButton(imageName: "deleteIcon")
         self.editBarButton = UIBarButtonItem(customView: editButton)
-        /*self.editBarButton = UIBarButtonItem(image: UIImage(named: "deleteIcon"), style: .plain, target: self, action: #selector(handleEditing(sender:)))
-         self.editBarButton = self.editButtonItem
-         self.editButtonItem.action = #selector(handleEditing(sender:))*/
-        //print("Edit button frame: \((self.editBarButton.customView?.frame)!)")
         
         
         let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
-        navItem.leftBarButtonItem = backBarButton
-        navItem.rightBarButtonItems = [addObservationButton, self.editBarButton]
-        self.navigationBar.setItems([navItem], animated: false)
+        navigationItem.leftBarButtonItem = backBarButton
+        navigationItem.rightBarButtonItems = [addObservationButton, self.editBarButton]
+        self.navigationBar.setItems([navigationItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
     }
@@ -438,14 +606,35 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     //MARK: - Private Methods
     func loadObservations(){// -> [Observation]?{
         // ************* check that the table exists first **********************
+        
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .short
+        
+        var observationTypes = [String]()
         var loadedObservations = [Observation]()
-        switch self.selectedObservationType {
-        case "all":
+        let selectedObservationType = self.barButtonIcons[self.selectedToolBarButton].label
+        switch selectedObservationType {
+        case "All":
             //**** Change title of nav bar *********
-            
-            //var rows: [Row]
-            /*do {
-                rows = Array(try db.prepare(observationsTable))
+            for observationType in self.icons.keys {
+                observationTypes.append(observationType)
+            }
+        default:
+            observationTypes = [selectedObservationType]
+            //print("observationType \(selectedObservationType) not understood")
+        }
+        
+        // Clear the data to put in the table
+        self.observationCells.removeAll()
+        
+        // For each table query all records
+        for label in observationTypes {
+            let info = self.icons[label]!
+            let table = Table(info.tableName)
+            var rows: [Row]
+            do {
+                rows = Array(try db.prepare(table))
             } catch {
                 fatalError("Could not load observations: \(error.localizedDescription)")
             }
@@ -453,42 +642,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             for row in rows{
                 //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
                 let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
+                let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
+                
+                // Get the time stamp as an NSDate object so all timestamps can be properly sorted
+                let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
+                guard let datetime = formatter.date(from: datetimeString) else {
+                    fatalError("Could not interpret datetimeString: \(datetimeString)")
+                }
+                self.observationCells[datetime] = observationCell
                 loadedObservations.append(observation!)
-            }*/
-            
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            formatter.dateStyle = .short
-                
-            // For each table query all
-            for (label, info) in self.icons {
-                let table = Table(info.tableName)
-                var rows: [Row]
-                do {
-                    rows = Array(try db.prepare(table))
-                } catch {
-                    fatalError("Could not load observations: \(error.localizedDescription)")
-                }
-                
-                for row in rows{
-                    //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-                    let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
-                    let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
-                    
-                    // Get the time stamp as an NSDate object so all timestamps can be properly sorted
-                    let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
-                    guard let datetime = formatter.date(from: datetimeString) else {
-                        fatalError("Could not interpret datetimeString: \(datetimeString)")
-                    }
-                    observationCells[datetime] = observationCell
-                    loadedObservations.append(observation!)
-                }
-                
             }
-        
-        default:
-            print("observationType \(selectedObservationType) not understood")
+            
         }
+        
         
         /*for (index, stamp) in observationCells.keys.sorted().enumerated() {
             cellOrder[index] = stamp
