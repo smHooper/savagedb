@@ -26,11 +26,11 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                                     "Right of Way": "rightOfWayIcon",
                                     "Tek Camper": "tekCamperIcon",
                                     "Bicycle": "cyclistIcon",
-                                    "Propho": "busIcon",
-                                    "Accessibility": "busIcon",
+                                    "Propho": "photographerIcon",
+                                    "Accessibility": "accessibilityIcon",
                                     "Hunting": "busIcon",
                                     "Road lottery": "busIcon",
-                                    "Other": "busIcon"]
+                                    "Other": "otherIcon"]
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -41,7 +41,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             thisButton.setupButtonLayout(imageName: iconName, labelText: labelText, tag: index)
             thisButton.tag = -1//index
             thisButton.button.addTarget(self, action: #selector(AddObservationViewController.moveToObservationViewController(button:)), for: .touchUpInside)
-            buttons.append(thisButton)
+            self.buttons.append(thisButton)
         }
         
         // Arrange them

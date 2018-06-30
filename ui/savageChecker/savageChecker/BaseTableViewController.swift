@@ -48,14 +48,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                  "Right of Way": (normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay", dataClassName: "RightOfWayObservation"),
                  "Tek Camper": (normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers", dataClassName: "TeklanikaCamperObservation"),
                  "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
-                 "Propho": (normal: "busIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
-                 "Accessibility": (normal: "busIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
+                 "Propho": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
+                 "Accessibility": (normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
                  "Hunting": (normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
                  "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
-                 "Other": (normal: "busIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
+                 "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
     //MARK: ToolBar properties
     let toolBar = UIToolbar()
+    
     let barButtonIcons = [(label: "All", normal: "shuttleBusImg", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "Bus", normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "NPS Vehicle", normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
@@ -65,18 +66,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                           (label: "Right of Way", normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay", dataClassName: "RightOfWayObservation"),
                           (label: "Tek Camper", normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers", dataClassName: "TeklanikaCamperObservation"),
                           (label: "Bicycle", normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
-                          (label: "Propho", normal: "busIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
-                          (label: "Accessibility", normal: "busIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
+                          (label: "Propho", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
+                          (label: "Accessibility", normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
                           (label: "Hunting", normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
                           (label: "Road lottery", normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
-                          (label: "Other", normal: "busIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
-    let barButtonSize: CGFloat = 80
+                          (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
+    
+    let barButtonSize: CGFloat = 65
     let barButtonWidth: CGFloat = 150
     let barHeight: CGFloat = 120
     var nBarGroups = 1
     var currentGroup = 0
     var barButtons = [UIBarButtonItem]()
-    var selectedToolBarButton = 1
+    var selectedToolBarButton = 0
     var leftToolBarButton = UIBarButtonItem()
     var rightToolBarButton = UIBarButtonItem()
     //var observationIcons = [String: String]() // For storing icon IDs asociated with each
@@ -211,6 +213,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let rightButton = makeNextBarButton(tag: 1)
         self.leftToolBarButton = UIBarButtonItem(customView: leftButton)
         self.rightToolBarButton = UIBarButtonItem(customView: rightButton)
+        self.leftToolBarButton.isEnabled = false //Shouldn't be able go right before first going left
         
         // Add buttons to toolbar
         setToolBarButtons()
@@ -221,7 +224,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func setToolBarButtons() {
         
         let nButtonsPerGroup = self.barButtonIcons.count / self.nBarGroups
-        let leftButtonId = nButtonsPerGroup * self.currentGroup
+        let leftButtonId = (nButtonsPerGroup + 1) * self.currentGroup
         let rightButtonId = min(leftButtonId + nButtonsPerGroup + 1, self.barButtonIcons.count)
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
         let barItems = [self.leftToolBarButton, flexSpace] + self.barButtons[leftButtonId..<rightButtonId] + [flexSpace, self.rightToolBarButton]
@@ -598,10 +601,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         }
     }
     
-    /*func reloadObservations(){
-        loadObservations()
-        self.tableView.reloadData()
-    }*/
     
     //MARK: - Private Methods
     func loadObservations(){// -> [Observation]?{
@@ -673,282 +672,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
-    }
-    
-}
-
-
-
-// MARK: -
-// MARK: -
-class BusTableViewController: BaseTableViewController {
-    
-    var observations = [BusObservation]()
-    
-    let busTypeColumn = Expression<String>("busType")
-    let busNumberColumn = Expression<String>("busNumber")
-    let isTrainingColumn = Expression<Bool>("isTraining")
-    let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
-    
-    let busesTable = Table("buses")
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        //self.observations = loadBusObservations()!
-        //loadObservations()
-        //self.tableView.reloadData()
-    }
-    
-    override func loadData() {
-        do {
-            try loadSession()
-            //self.observations = loadObservations()!
-            loadObservations()
-            self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
-        } catch let error{
-            fatalError(error.localizedDescription)
-        }
-    }
-    
-    //MARK: - TableView methods
-    
-    override func numberOfSections(in tableView: UITableView) -> Int{
-        return 1
-    }
-    
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.observations.count
-    }
-    
-    
-    // called when the cell is selected.
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        let observationViewController = BusObservationViewController()
-        observationViewController.observation = observations[indexPath.row]
-        observationViewController.isAddingNewObservation = false
-        observationViewController.modalPresentationStyle = .custom
-        observationViewController.transitioningDelegate = self
-        
-        // Set the transition. When done transitioning, reset presentTransition to nil
-        self.presentTransition = RightToLeftTransition()
-        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
-    }
-    
-    
-    // Compose each cell
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        // Table view cells are reused and should be dequeued using a cell identifier.
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! BaseObservationTableViewCell
-        //let cellIdentifier = "cell"
-        
-        /*guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ObservationTableViewCell else {
-         fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
-         }*/
-        
-        // Fetches the appropriate meal for the data source layout.
-        let observation = self.observations[indexPath.row]
-        print("Observation driverName: \(observation.driverName)")
-        
-        cell.driverLabel.text = observation.driverName
-        cell.destinationLabel.text = observation.destination
-        cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
-        cell.nPassengersLabel.text = observation.nPassengers
-        
-        return cell
-    }
-    
-    // Editing
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // Delete the row from the data source
-            let id = observations[indexPath.row].id
-            print("Deleting \(id)")
-            observations.remove(at: indexPath.row)
-            let recordToRemove = busesTable.where(idColumn == id.datatypeValue)
-            do {
-                try db.run(recordToRemove.delete())
-            } catch let error{
-                print(error.localizedDescription)
-            }
-            
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }
-    }
-    
-    //MARK: - Private Methods
-    override func loadObservations(){
-        // ************* check that the table exists first **********************
-        let rows: [Row]
-        do {
-            rows = Array(try db.prepare(busesTable))
-        } catch {
-            fatalError("Could not load observations: \(error.localizedDescription)")
-        }
-        var loadedObservations = [BusObservation]()
-        for row in rows{
-            //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-            let observation = BusObservation(id: Int(row[idColumn]),
-                                             observerName: row[observerNameColumn],
-                                             date: row[dateColumn],
-                                             time: row[timeColumn],
-                                             driverName: row[driverNameColumn],
-                                             destination: row[destinationColumn],
-                                             nPassengers: row[nPassengersColumn],
-                                             busType: row[busTypeColumn],
-                                             busNumber: row[busNumberColumn],
-                                             isTraining: row[isTrainingColumn],
-                                             nOvernightPassengers: row[nOvernightPassengersColumn],
-                                             comments: row[commentsColumn])
-            
-            loadedObservations.append(observation!)
-        }
-        self.observations = loadedObservations
-        print("Loaded \(self.observations.count) observations in BusTableView.loadObservations()")
-    }
-    
-    func loadBusObservations() -> [BusObservation]?{
-        // ************* check that the table exists first **********************
-        let rows: [Row]
-        do {
-            rows = Array(try db.prepare(busesTable))
-        } catch {
-            fatalError("Could not load observations: \(error.localizedDescription)")
-        }
-        var loadedObservations = [BusObservation]()
-        for row in rows{
-            //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-            let observation = BusObservation(id: Int(row[idColumn]),
-                                             observerName: row[observerNameColumn],
-                                             date: row[dateColumn],
-                                             time: row[timeColumn],
-                                             driverName: row[driverNameColumn],
-                                             destination: row[destinationColumn],
-                                             nPassengers: row[nPassengersColumn],
-                                             busType: row[busTypeColumn],
-                                             busNumber: row[busNumberColumn],
-                                             isTraining: row[isTrainingColumn],
-                                             nOvernightPassengers: row[nOvernightPassengersColumn],
-                                             comments: row[commentsColumn])
-
-            loadedObservations.append(observation!)
-        }
-        
-        return loadedObservations
-    }
-    
-}
-
-
-// MARK: -
-// MARK: -
-class NPSVehicleTableViewController: BaseTableViewController {
-    
-    var observations = [NPSVehicleObservation]()
-    
-    let tripPurposeColumn = Expression<String>("tripPurpose")
-    let workDivisionColumn = Expression<String>("workDivision")
-    let workGroupColumn = Expression<String>("workGroup")
-    let nExpectedNightsColumn = Expression<String>("nExpectedDays")
-    
-    let npsVehiclesTable = Table("npsVehicles")
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        loadObservations()
-    }
-    
-    //MARK: - TableView methods
-    
-    // called when the cell is selected.
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        let observationViewController = NPSVehicleObservationViewController()
-        observationViewController.observation = observations[indexPath.row]
-        observationViewController.isAddingNewObservation = false
-        observationViewController.modalPresentationStyle = .custom
-        observationViewController.transitioningDelegate = self
-        
-        // Set the transition. When done transitioning, reset presentTransition to nil
-        self.presentTransition = RightToLeftTransition()
-        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
-    }
-    
-    
-    // Compose each cell
-    /*override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        
-        // Table view cells are reused and should be dequeued using a cell identifier.
-        let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! BaseObservationTableViewCell
-        //let cellIdentifier = "cell"
-        
-        /*guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ObservationTableViewCell else {
-         fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
-         }*/
-        
-        // Fetches the appropriate meal for the data source layout.
-        let observation = observations[indexPath.row]
-        
-        
-        cell.driverLabel.text = observation.driverName
-        cell.destinationLabel.text = observation.destination
-        cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
-        cell.nPassengersLabel.text = observation.nPassengers
-        
-        return cell
-    }*/
-    
-    // Editing
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete {
-            // Delete the row from the data source
-            let id = observations[indexPath.row].id
-            print("Deleting \(id)")
-            self.observations.remove(at: indexPath.row)
-            let recordToRemove = self.npsVehiclesTable.where(idColumn == id.datatypeValue)
-            do {
-                try db.run(recordToRemove.delete())
-            } catch let error{
-                print(error.localizedDescription)
-            }
-            
-            tableView.deleteRows(at: [indexPath], with: .fade)
-        } else if editingStyle == .insert {
-            // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
-        }
-    }
-    
-    //MARK: - Private Methods
-    override func loadObservations(){
-        // ************* check that the table exists first **********************
-        let rows: [Row]
-        do {
-            rows = Array(try db.prepare(npsVehiclesTable))
-        } catch {
-            fatalError("Could not load observations: \(error.localizedDescription)")
-        }
-        var loadedObservations = [NPSVehicleObservation]()
-        for row in rows{
-            //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
-            let observation = NPSVehicleObservation(id: Int(row[idColumn]),
-                                                    observerName: row[observerNameColumn],
-                                                    date: row[dateColumn],
-                                                    time: row[timeColumn],
-                                                    driverName: row[driverNameColumn],
-                                                    destination: row[destinationColumn],
-                                                    nPassengers: row[nPassengersColumn],
-                                                    tripPurpose: row[tripPurposeColumn],
-                                                    workDivision: row[workDivisionColumn],
-                                                    workGroup: row[workGroupColumn],
-                                                    nExpectedNights: row[nExpectedNightsColumn],
-                                                    comments: row[commentsColumn])
-            
-            loadedObservations.append(observation!)
-        }
-        self.observations = loadedObservations
     }
     
 }

@@ -46,6 +46,18 @@ class SessionViewController: BaseFormViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackground"))
+        backgroundImageView.frame = self.view.frame
+        backgroundImageView.contentMode = .scaleAspectFill
+        let translucentView = UIView(frame: self.view.frame)
+        translucentView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        let backgroundView = UIView(frame: self.view.frame)
+        backgroundView.addSubview(translucentView)
+        backgroundView.addSubview(backgroundImageView)
+        backgroundView.sendSubview(toBack: backgroundImageView)
+        self.view.addSubview(backgroundView)
+        self.view.sendSubview(toBack: backgroundView)
+        
         // The user is opening the app again after closing it or returning from another scene
         if let session = loadSession() {
             print("loaded session date: \(session.date)")
