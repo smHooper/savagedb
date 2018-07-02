@@ -145,9 +145,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "NPS Approved": NPSApprovedObservationViewController.self,
                      "NPS Contractor": NPSContractorObservationViewController.self,
                      "Employee": EmployeeObservationViewController.self,
-                     "Right of Way": RightOfWayObservationViewController.self]//,
-                     //"Tek Camper": TeklanikaCamperObservationViewController.self,
-                     //"Bycicle": CyclistObservationViewController.self]
+                     "Right of Way": RightOfWayObservationViewController.self,
+                     "Tek Camper": TeklanikaCamperObservationViewController.self,
+                     "Bicycle": CyclistObservationViewController.self]
         
         // Remove the blur effect
         animateRemoveMenu()

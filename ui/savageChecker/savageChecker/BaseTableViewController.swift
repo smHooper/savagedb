@@ -37,9 +37,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                         "NPS Approved": NPSApprovedObservationViewController(),//.self,
                         "NPS Contractor": NPSContractorObservationViewController(),//.self,
                         "Employee": EmployeeObservationViewController(),//.self,
-                        "Right of Way": RightOfWayObservationViewController()]//.self]//,
-                                          //"Tek Camper": TeklanikaCamperObservationViewController.self,
-                                          //"Bicycle": CyclistObservationViewController.self]
+                        "Right of Way": RightOfWayObservationViewController(),
+                        "Tek Camper": TeklanikaCamperObservationViewController(),
+                        "Bicycle": CyclistObservationViewController()]
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
                  "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
