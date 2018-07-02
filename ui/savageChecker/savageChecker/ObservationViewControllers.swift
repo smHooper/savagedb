@@ -347,9 +347,11 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         let fieldType = textFieldIds[textField.tag].type
         switch(fieldType){
-        case "normal", "number":
+        case "normal":
             //print("textField is \(fieldType)")
             let _ = 0
+        case "number":
+            textField.text = "" //Not sure if this is the best approach, since someone might accidentally tap this field and delete it without remembering what was there before
         case "dropDown":
             let field = textField as! DropDownTextField
             guard let text = textField.text else {
@@ -2829,6 +2831,9 @@ class CyclistObservationViewController: BaseObservationViewController {
     }
     
 }
+
+
+
 
 
 
