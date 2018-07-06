@@ -147,7 +147,8 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "Employee": EmployeeObservationViewController.self,
                      "Right of Way": RightOfWayObservationViewController.self,
                      "Tek Camper": TeklanikaCamperObservationViewController.self,
-                     "Bicycle": CyclistObservationViewController.self]
+                     "Bicycle": CyclistObservationViewController.self,
+                     "Propho": PhotographerObservationViewController.self]
         
         // Remove the blur effect
         animateRemoveMenu()
