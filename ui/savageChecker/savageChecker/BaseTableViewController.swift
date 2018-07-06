@@ -24,22 +24,16 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var blurEffectView: UIVisualEffectView!
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     
-    /*let controllers: DictionaryLiteral = ["Bus": BusTableViewController.self,
-                                          "NPS Vehicle": NPSVehicleTableViewController.self]//,
-                                          "NPS Approved": NPSApprovedObservationViewController.self,
-                                          "NPS Contractor": NPSContractorObservationViewController.self,
-                                          "Employee": EmployeeObservationViewController.self,
-                                          "Right of Way": RightOfWayObservationViewController.self,
-                                          "Tek Camper": TeklanikaCamperObservationViewController.self,
-                                          "Bicycle": CyclistObservationViewController.self]*/
-    let observationViewControllers = ["Bus": BusObservationViewController(),//.self,
-                        "NPS Vehicle": NPSVehicleObservationViewController(),//.self,
-                        "NPS Approved": NPSApprovedObservationViewController(),//.self,
-                        "NPS Contractor": NPSContractorObservationViewController(),//.self,
-                        "Employee": EmployeeObservationViewController(),//.self,
+    let observationViewControllers = ["Bus": BusObservationViewController(),
+                        "NPS Vehicle": NPSVehicleObservationViewController(),
+                        "NPS Approved": NPSApprovedObservationViewController(),
+                        "NPS Contractor": NPSContractorObservationViewController(),
+                        "Employee": EmployeeObservationViewController(),
                         "Right of Way": RightOfWayObservationViewController(),
                         "Tek Camper": TeklanikaCamperObservationViewController(),
-                        "Bicycle": CyclistObservationViewController()]
+                        "Bicycle": CyclistObservationViewController(),
+                        "Propho": PhotographerObservationViewController()]
+    
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
                  "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
@@ -81,6 +75,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var selectedToolBarButton = 0
     var leftToolBarButton = UIBarButtonItem()
     var rightToolBarButton = UIBarButtonItem()
+    var barGroupIndicators = [UIImageView]()
     //var observationIcons = [String: String]() // For storing icon IDs asociated with each
     
     //MARK: properties for ordering cells
@@ -123,12 +118,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Set up nav bar and tab bar
         setNavigationBar()
         
-        self.delegate = self //assigns self as UITabBarContollerDelegate
+        // get width and height of View
+        let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
+        let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
+        let displayWidth: CGFloat = self.view.frame.width
+        let displayHeight: CGFloat = self.view.frame.height
         
-        /*setTabBar()
-        self.tabBar.delegate = self
-        self.tabBar.selectedItem = tabBar.items?.first!
-        self.view.addSubview(self.tabBar)*/
+        self.tableView = UITableView(frame: CGRect(x: 0, y: barHeight + navigationBarHeight, width: displayWidth, height: displayHeight - (barHeight+navigationBarHeight)))
+        self.tableView.register(BaseObservationTableViewCell.self, forCellReuseIdentifier: "cell")         // register cell name
+        //Auto-set the UITableViewCell's height (requires iOS8+)
+        self.tableView.rowHeight = 110//UITableViewAutomaticDimension
+        self.tableView.dataSource = self
+        self.tableView.delegate = self
+        self.view.addSubview(tableView)
         
         // Set up the toolbar for defining what the tableView shows
         // First, make the buttons
@@ -139,22 +141,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Add buttons for the currently selected group
         setupToolBarLayout()
         
-        // get width and height of View
-        let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
-        let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
-        let displayWidth: CGFloat = self.view.frame.width
-        let displayHeight: CGFloat = self.view.frame.height
+
         
-        tableView = UITableView(frame: CGRect(x: 0, y: barHeight + navigationBarHeight, width: displayWidth, height: displayHeight - (barHeight+navigationBarHeight)))
-        tableView.register(BaseObservationTableViewCell.self, forCellReuseIdentifier: "cell")         // register cell name
-        //Auto-set the UITableViewCell's height (requires iOS8+)
-        tableView.rowHeight = 110//UITableViewAutomaticDimension
-        tableView.dataSource = self
-        tableView.delegate = self
-        self.view.addSubview(tableView)
+
         
         // ********######### Figure out how to get the translucent tableView image underneath##############**************
-        self.view.bringSubview(toFront: self.toolBar)
+        //self.view.bringSubview(toFront: self.toolBar)
         
         // Open connection to the DB
         do {
@@ -164,7 +156,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         }
         
         // Load observations
-        loadData()
+        //loadData()
         
         self.presentTransition = RightToLeftTransition()
         self.dismissTransition = LeftToRightTransition()
@@ -187,10 +179,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             try loadSession()
             //self.observations = loadObservations()!
             loadObservations()
-            self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
         } catch let error{
             fatalError(error.localizedDescription)
         }
+        
+        self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
+
+        let range = NSMakeRange(0, self.tableView.numberOfSections)
+        let sections = NSIndexSet(indexesIn: range)
+        //self.tableView.reloadSections(sections as IndexSet, with: .automatic)
+        
+        // Set scrollable area so you can scroll past toolBar*/
+        print("Scrollable area before: \(self.tableView.contentSize)")
+        self.tableView.contentSize.height += self.toolBar.frame.height
+        print("Scrollable area after: \(self.tableView.contentSize)")
     }
     
     
@@ -219,6 +221,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         setToolBarButtons()
         
         self.view.addSubview(self.toolBar)
+        
+        // Draw group indicators
+        addBarGroupIndicators()
     }
     
     func setToolBarButtons() {
@@ -229,7 +234,45 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
         let barItems = [self.leftToolBarButton, flexSpace] + self.barButtons[leftButtonId..<rightButtonId] + [flexSpace, self.rightToolBarButton]
         self.toolBar.setItems(barItems, animated: true)
+        
     }
+    
+    func addBarGroupIndicators() {
+        // Clear all indicators so the transparent one isn't covered by an opaque one
+        for i in 0..<self.barGroupIndicators.count {
+            self.barGroupIndicators[i].removeFromSuperview()
+        }
+        self.barGroupIndicators.removeAll()
+        
+        let indicatorYSpacing: CGFloat = self.barHeight / 10
+        let indicatorXSpacing = indicatorYSpacing * 2
+        let indicatorTop = self.toolBar.frame.minY + indicatorYSpacing
+        let indicatorSize: CGFloat = 7
+        let indicatorWidth = CGFloat(indicatorSize * CGFloat(self.nBarGroups)) + (indicatorXSpacing * CGFloat(self.nBarGroups - 1))
+        let indicatorMinX = self.view.frame.width / 2 - indicatorWidth / 2
+        for i in 0..<self.nBarGroups {
+            var indicator = UIImageView()
+            if i == self.currentGroup {
+                indicator = UIImageView(image: UIImage(named: "selectedCircle"))
+                //indicator.image = UIImage(named: "selectedCircle")
+            } else {
+                indicator = UIImageView(image: UIImage(named: "unselectedCircle"))
+                //indicator.image = UIImage(named: "unselectedCircle")
+            }
+            let thisMinX = indicatorMinX + (indicatorXSpacing + CGFloat(indicatorSize)) * CGFloat(i)
+            indicator.frame = CGRect(x: thisMinX, y: indicatorTop, width: indicatorSize, height: indicatorSize)
+            indicator.contentMode = .scaleAspectFit
+
+            self.barGroupIndicators.append(indicator)
+            self.view.addSubview(self.barGroupIndicators[i])
+        }
+    }
+    
+    func setBarGroupIndicator() {
+        
+        print(self.currentGroup)
+    }
+    
     
     func makeBarButton(buttonTag: Int) -> UIButton {
         
@@ -256,7 +299,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         return button
     }
     
-    
+    // Switch the tableView data when a toolbar button is clicked
     @objc func handleToolBarButton(sender: UIBarButtonItem) {
         
         // Get the tag of the previously selected button so that we can change it's background image
@@ -270,6 +313,11 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Set background image of the previously selected button to the unselected image
         let previousButton = makeBarButton(buttonTag: previousButtonTag)
         self.barButtons[previousButtonTag] = UIBarButtonItem(customView: previousButton)
+        
+        // If the previous query was empty, no need to scroll to the top (throws an error). Otherwise, reset the scroll position to the first row.
+        if self.tableView.numberOfRows(inSection: 0) > 0 {
+            self.tableView.scrollToRow(at: IndexPath(row: 0, section: 0), at: .top, animated: true)//(indexPath, atScrollPosition: .top, animated: true)
+        }
         
         // Reload the table for the newly selected button
         loadData()
@@ -297,6 +345,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     @objc func handleNextButton(sender: UIBarButtonItem) {
+        
+        self.barGroupIndicators[self.currentGroup].image = UIImage(named: "unselectedCircle")
+        
         // Sender is the left button
         if sender.tag == 0 {
             self.currentGroup -= 1
@@ -305,79 +356,25 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             }
             // Make sure the other button is enabled
             self.rightToolBarButton.isEnabled = true
-            print ("State of right button: \(self.rightToolBarButton.isEnabled)")
             // **** ANIMATE THIS left to right ******
             setToolBarButtons()
         
         // Sender is the right button
         } else {
             self.currentGroup += 1
-            if self.currentGroup == self.nBarGroups {
+            if self.currentGroup == self.nBarGroups - 1 {
                 self.rightToolBarButton.isEnabled = false
             }
             // Make sure the other button is enabled
             self.leftToolBarButton.isEnabled = true
-            print ("State of left button: \(self.leftToolBarButton.isEnabled)")
             // **** ANIMATE THIS right to left ******
             setToolBarButtons()
         }
         
-
-    }
-    
-    //MARK: Tab bar methods
-    /*func setupTabViewControllers(){
-        
-        var tableViewControllers = [BaseTableViewController]()
-        for i in 0..<self.controllers.count {
-            let labelText = self.controllers[i].key
-            let viewController = self.controllers[i].value.init()
-            viewController.title = labelText
-            viewController.loadData()
-            let normalName = (icons[labelText]?.normal)!
-            let selectedName = (icons[labelText]?.selected)!
-            let barItem = UITabBarItem(title: labelText, image: UIImage(named: normalName), selectedImage: UIImage(named: selectedName))
-            barItem.tag = i
-            viewController.tabBarItem = barItem
-            tableViewControllers.append(viewController)
-            //self.viewControllers?.append(viewController)
-        }
-        self.viewControllers = tableViewControllers
+        // Draw group indicators
+        self.barGroupIndicators[self.currentGroup].image = UIImage(named: "selectedCircle")
         
     }
-    
-    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        print("Selected \(viewController.title!)")
-    }
-    func setTabBar() {
-        
-        let screenSize: CGRect = UIScreen.main.bounds
-        self.tabBar = UITabBar(frame: CGRect(x:0, y: screenSize.height - 100, width: screenSize.width, height: 100))
-        
-        var tabBarItems = [UITabBarItem]()
-        //for (offset: index, (key: labelText, value: controllerType)) in self.controllers.enumerated() {
-        for i in 0..<self.controllers.count {
-            let labelText = self.controllers[i].key
-            let viewController = self.controllers[i].value.init()
-            viewController.title = labelText
-            viewController.loadData()
-            let normalName = (icons[labelText]?.normal)!
-            let selectedName = (icons[labelText]?.selected)!
-            let barItem = UITabBarItem(title: labelText, image: UIImage(named: normalName), selectedImage: UIImage(named: selectedName))
-            barItem.tag = i
-            viewController.tabBarItem = barItem
-            tabBarItems.append(barItem)
-        }
-        self.tabBar.items = tabBarItems
-        
-    }
-    
-    func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
-        //item
-        /*let viewController = self.controllers[item.tag].value.init()
-        viewController.session = self.session
-        present(viewController, animated: false, completion: nil)*/
-    }*/
     
     //MARK: - Navigation
     func setNavigationBar() {
@@ -418,7 +415,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         return editButton
     }
     
-    
+    // Set the editing button to the custom trashcan or check icon
     @objc func handleEditing() {
         
         self.tableView.setEditing(self.isEditing, animated: true)
@@ -434,6 +431,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let editButton = makeEditButton(imageName: "deleteIcon")
             self.editBarButton.customView = editButton
         }
+        
+        // Re-adjust scrollable area to be able to scroll past toolBar
+        self.tableView.contentSize.height += self.toolBar.frame.height
     }
     
     
@@ -571,7 +571,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     
-    // Editing
+    // Enable editing
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             // Delete the row from the data source
@@ -600,7 +600,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }
     }
-    
     
     //MARK: - Private Methods
     func loadObservations(){// -> [Observation]?{
