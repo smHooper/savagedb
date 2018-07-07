@@ -54,6 +54,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         hideKeyboardWhenTappedAround()
@@ -69,52 +70,38 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         setupLayout()
         self.view.backgroundColor = UIColor.white
         
+        if self.deviceOrientation != UIDevice.current.orientation {
+            self.deviceOrientation = UIDevice.current.orientation
+            print("Device orientations didn't match")
+            resetLayout()
+        }
+        
     }
     
     // Update constraints when rotated
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        
         super.viewWillTransition(to: size, with: coordinator)
-        print("updating constraints")
-        
-        // Break constraints
-        //self.scrollView.addLayoutGuide()
-        //self.scrollView.removeConstraint(self.scrollView.widthAnchor)
+        resetLayout()
+    }
+    
+    func resetLayout() {
         
         // Add for new layout
         let safeArea = self.view.safeAreaInsets
         // assumes rotation to the left, but I don't think it matters because safeAreaInsets are symmetrical
-        let newSafeLeft = safeArea.top
-        let newSafeRight = safeArea.bottom
-        let newSafeTop = safeArea.left
-        let newSafeBottom = safeArea.right
+        let newScreenSize = UIScreen.main.bounds//Gives size after rotation
         
+        self.formWidthConstraint.constant = newScreenSize.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right
+        self.formHeightConstraint.constant = newScreenSize.height - CGFloat(self.topSpacing) - self.navigationBarHeight
+        print("formHeightConstraint: \(formHeightConstraint.constant)")
+        print("formWidthConstraint: \(formWidthConstraint.constant)")
         
-        self.formWidthConstraint.constant = self.view.frame.height - CGFloat(self.sideSpacing * 2) - newSafeLeft - newSafeRight
-        self.formHeightConstraint.constant = self.view.frame.width - CGFloat(self.topSpacing) - self.navigationBarHeight
-        //self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.height - CGFloat(self.sideSpacing * 2) - newSafeLeft - newSafeRight).isActive = true
-        //self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.topSpacing) - self.navigationBarHeight).isActive = true
-        
+        self.scrollView.contentSize = CGSize(width: newScreenSize.width - CGFloat(self.sideSpacing * 2), height: newScreenSize.height)
         self.scrollView.setNeedsUpdateConstraints()
+        self.scrollView.layoutIfNeeded()
         self.view.layoutIfNeeded()
-        //self.scrollView.layoutIfNeeded()
-        //self.container.setNeedsUpdateConstraints()
-        //self.container.layoutIfNeeded()
-        /*for i in 0..<self.textFieldIds.count{
-            labels[i].setNeedsUpdateConstraints()
-            switch self.textFieldIds[i].type{
-            case "normal", "number", "time", "date":
-                self.textFields[i]!.setNeedsUpdateConstraints()
-            case "dropDown":
-                self.dropDownTextFields[i]!.setNeedsUpdateConstraints()
-            case "boolSwitch":
-                self.textFields[i]!.setNeedsUpdateConstraints()
-                self.boolSwitches[i]!.setNeedsUpdateConstraints()
-            default:
-                print("Didn't understnad text field")
-            }
-            
-        }*/
+        
+        self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: newScreenSize.width, height: self.navigationBarHeight)
         
     }
     
@@ -151,28 +138,25 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // Set up the text fields in place
     func setupLayout(){
         // Set up the container
-        //let container = UIStackView()
         let safeArea = self.view.safeAreaInsets
-        //let scrollView = UIScrollView()
-        scrollView.showsHorizontalScrollIndicator = false
+        self.scrollView.showsHorizontalScrollIndicator = false
         //scrollView.contentInsetAdjustmentBehavior = .automatic
         //scrollView.bounces = false
         
-        self.view.addSubview(scrollView)
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        self.view.addSubview(self.scrollView)
+        self.scrollView.translatesAutoresizingMaskIntoConstraints = false
+        
+        // **** Might not want to center the Y anchor like this ***********
         self.scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor).isActive = true
         self.scrollView.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor, constant: self.navigationBarHeight + CGFloat(self.topSpacing)).isActive = true
         //self.scrollView.leftAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leftAnchor, constant: self.sideSpacing)
         //self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
         self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right)
-        self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.heightAnchor)
+        self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.height)
         self.formWidthConstraint.isActive = true
         self.formHeightConstraint.isActive = true
         //self.scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
         
-        //scrollView.addSubview(container)
-        
-        //let container = UIView()
         self.scrollView.addSubview(container)
         
         // Set up constrations. Don't set the height constaint until all text fields have been added. This way, the container stackview will always be the extact height of the text fields with spacing.
@@ -185,8 +169,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
          container.spacing = CGFloat(self.textFieldSpacing)
          container.alignment = .fill
          container.distribution = .equalCentering*/
-        
-        
         
         var containerHeight = CGFloat(0.0)
         var lastBottomAnchor = container.topAnchor
@@ -335,8 +317,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             }
         }
         // Now set the height contraint
-
-        scrollView.contentSize = self.view.frame.size//CGSize(width: container.frame.size.width, height: containerHeight)
+        
+        let contentWidth = self.view.frame.width - (self.sideSpacing * 2)
+        let contentHeight = self.view.frame.height// - UIApplication.shared.statusBarFrame.height - self.navigationBarHeight - CGFloat(self.topSpacing)
+        self.scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)//CGSize(width: container.frame.size.width, height: containerHeight)
         // ****** If height > area above keyboard, put it in a scroll view *************
         //  Add a flag property to notify the controller that it will or will not need to handle when the keyboard obscures a text field
         //  Then, in editingDidBegin, set the scroll view position so the field is just above the keyboard

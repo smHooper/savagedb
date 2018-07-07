@@ -173,6 +173,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        
+        let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
+        let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
+        let newScreenSize = UIScreen.main.bounds
+        
+        self.tableView.frame = CGRect(x: 0, y: barHeight + navigationBarHeight, width: newScreenSize.width, height: newScreenSize.height - (barHeight + navigationBarHeight))
+        
+        setupToolBarLayout()
+        setNavigationBar()
+    }
+    
     // Convenience function to load all tableView data
     func loadData() {
         do {
@@ -201,7 +214,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func setupToolBarLayout(){
         
         //let screenSize: CGRect = UIScreen.main.bounds
-        let screenSize = self.view.frame
+        let screenSize = UIScreen.main.bounds
         self.toolBar.frame = CGRect(x: 0, y: screenSize.height - self.barHeight, width: screenSize.width, height: self.barHeight)
         //self.toolBar.layer.position = CGPoint(x: screenSize.width/2, y: self.barHeight)
         
@@ -249,7 +262,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let indicatorTop = self.toolBar.frame.minY + indicatorYSpacing
         let indicatorSize: CGFloat = 7
         let indicatorWidth = CGFloat(indicatorSize * CGFloat(self.nBarGroups)) + (indicatorXSpacing * CGFloat(self.nBarGroups - 1))
-        let indicatorMinX = self.view.frame.width / 2 - indicatorWidth / 2
+        let indicatorMinX = UIScreen.main.bounds.width / 2 - indicatorWidth / 2
         for i in 0..<self.nBarGroups {
             var indicator = UIImageView()
             if i == self.currentGroup {
