@@ -138,6 +138,8 @@ class BaseObservationTableViewCell: UITableViewCell {
         nPassengersLabel.leftAnchor.constraint(equalTo: datetimeLabel.leftAnchor).isActive = true
         nPassengersLabel.textAlignment = .left
         nPassengersLabel.font = UIFont.systemFont(ofSize: smallTextSize)
+        
+        self.backgroundColor = UIColor.clear
     }
     
     required init?(coder aDecoder: NSCoder) {

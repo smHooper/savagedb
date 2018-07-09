@@ -44,7 +44,11 @@ class SessionViewController: BaseFormViewController {
     
     //MARK: - Layout
     override func viewDidLoad() {
-        super.viewDidLoad()
+        
+        /*let startingBackGroundView = UIImageView(image: UIImage(named: "viewControllerBackground"))
+        startingBackGroundView.frame = self.view.frame
+        startingBackGroundView.contentMode = .scaleAspectFill
+        self.view.addSubview(startingBackGroundView)
         
         let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))
         backgroundImageView.frame = self.view.frame
@@ -55,8 +59,16 @@ class SessionViewController: BaseFormViewController {
         backgroundView.addSubview(translucentView)
         backgroundView.addSubview(backgroundImageView)
         backgroundView.sendSubview(toBack: backgroundImageView)
-        self.view.addSubview(backgroundView)
-        self.view.sendSubview(toBack: backgroundView)
+        backgroundView.tag = -1
+        
+        UIView.animate(withDuration: 2, animations: {self.view.addSubview(backgroundView)}, completion: {(finished: Bool) in self.view.sendSubview(toBack: backgroundView)})
+        //self.view.addSubview(backgroundView)
+        //self.view.sendSubview(toBack: backgroundView)
+        startingBackGroundView.removeFromSuperview()*/
+        
+        
+        
+        super.viewDidLoad()
         
         // The user is opening the app again after closing it or returning from another scene
         if let session = loadSession() {
@@ -91,11 +103,16 @@ class SessionViewController: BaseFormViewController {
     }
     
     
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+    /*override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         
-        //self.view.subviews[self.view.subviews.count].frame = 
-    }
+        for (i, view) in self.view.subviews.enumerated() {
+            if view.tag == -1 {
+                self.view.subviews[i].subviews[0].frame = UIScreen.main.bounds
+                self.view.subviews[i].subviews[1].frame = UIScreen.main.bounds
+            }
+        }
+    }*/
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()

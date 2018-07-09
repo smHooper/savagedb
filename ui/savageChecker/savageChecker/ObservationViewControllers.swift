@@ -68,9 +68,11 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             fatalError(error.localizedDescription)
         }
         
+        addBackground()
+        
         setNavigationBar()
         setupLayout()
-        self.view.backgroundColor = UIColor.white
+        
         
         // If the view was still in memory, it will try to load the view in its previous orientation.
         //  Check that the orientation is correct, and if it doesn't match the old orientation, reset the layout
@@ -105,6 +107,13 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.view.layoutIfNeeded()
         
         self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: newScreenSize.width, height: self.navigationBarHeight)
+        
+        for (i, view) in self.view.subviews.enumerated() {
+            if view.tag == -1 {
+                self.view.subviews[i].subviews[0].frame = UIScreen.main.bounds
+                self.view.subviews[i].subviews[1].frame = UIScreen.main.bounds
+            }
+        }
         
     }
     
@@ -167,9 +176,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             textField.placeholder = textFieldIds[i].placeholder
             textField.autocorrectionType = .no
             textField.borderStyle = .roundedRect
-            textField.layer.borderColor = UIColor.lightGray.cgColor
-            textField.layer.borderWidth = 0.25
-            textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.8)
+            textField.layer.borderColor = UIColor.clear.cgColor//.lightGray.cgColor
+            textField.layer.borderWidth = 0.01//0.25
+            textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
             textField.font = UIFont.systemFont(ofSize: 14.0)
             textField.layer.cornerRadius = 5
             textField.frame.size.height = 28.5
@@ -211,12 +220,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.placeholder = textFieldIds[i].placeholder
                 textField.autocorrectionType = .no
                 dropDownTextFields[i]!.borderStyle = .roundedRect
-                dropDownTextFields[i]!.layer.borderColor = UIColor.lightGray.cgColor
-                dropDownTextFields[i]!.layer.borderWidth = 0.25
-                dropDownTextFields[i]!.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.8)
-                dropDownTextFields[i]!.font = UIFont.systemFont(ofSize: 14.0)
-                dropDownTextFields[i]!.layer.cornerRadius = 5
-                dropDownTextFields[i]!.frame.size.height = 28.5
+                dropDownTextFields[i]!.layer.borderColor = textField.layer.borderColor//UIColor.clear.cgColor//lightGray.cgColor
+                dropDownTextFields[i]!.layer.borderWidth = textField.layer.borderWidth
+                dropDownTextFields[i]!.backgroundColor = textField.backgroundColor//UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
+                dropDownTextFields[i]!.font = textField.font//UIFont.systemFont(ofSize: 14.0)
+                dropDownTextFields[i]!.layer.cornerRadius = textField.layer.cornerRadius//5
+                dropDownTextFields[i]!.frame.size.height = textField.frame.size.height//28.5
                 dropDownTextFields[i]!.tag = i
                 dropDownTextFields[i]!.delegate = self
                 
@@ -249,9 +258,11 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             case "boolSwitch":
                 textFields[i] = textField
                 textFields[i]?.isEnabled = false
-                textFields[i]?.layer.borderColor = UIColor.clear.cgColor
-                textFields[i]?.borderStyle = .none
+                //textFields[i]?.layer.borderColor = UIColor.clear.cgColor
+                //textFields[i]?.borderStyle = .roundedRect
                 textFields[i]?.contentVerticalAlignment = .center
+                //textFields[i]?.contentHorizontalAlignment = .center
+                textFields[i]?.textAlignment = .center
                 
                 boolSwitches[i] = UISwitch()
                 boolSwitches[i]?.tag = i
@@ -269,7 +280,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.translatesAutoresizingMaskIntoConstraints = false
                 textFields[i]?.leftAnchor.constraint(equalTo: (boolSwitches[i]?.rightAnchor)!, constant: self.sideSpacing * 2).isActive = true
                 textFields[i]?.topAnchor.constraint(equalTo: (boolSwitches[i]?.topAnchor)!).isActive = true
-                textFields[i]?.widthAnchor.constraint(equalToConstant: 60).isActive = true
+                textFields[i]?.widthAnchor.constraint(equalToConstant: 40).isActive = true
                 textFields[i]?.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
                 
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
@@ -363,7 +374,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         case "normal":
             textField.selectAll(nil)
         case "number":
-            //textField.text = "" //Not sure if this is the best approach, since someone might accidentally tap this field and delete it without remembering what was there before
             textField.selectAll(nil)
         case "dropDown":
             let field = textField as! DropDownTextField

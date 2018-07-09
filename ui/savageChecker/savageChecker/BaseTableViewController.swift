@@ -114,6 +114,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
+        addBackground()
         
         // Set up nav bar and tab bar
         setNavigationBar()
@@ -131,6 +132,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.tableView.dataSource = self
         self.tableView.delegate = self
         self.view.addSubview(tableView)
+        self.tableView.backgroundColor = UIColor.clear
         
         // Set up the toolbar for defining what the tableView shows
         // First, make the buttons
@@ -184,6 +186,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         setupToolBarLayout()
         setNavigationBar()
+        
+        // Handle the background image
+        for (i, view) in self.view.subviews.enumerated() {
+            if view.tag == -1 {
+                self.view.subviews[i].subviews[0].frame = UIScreen.main.bounds
+                self.view.subviews[i].subviews[1].frame = UIScreen.main.bounds
+            }
+        }
+        
     }
     
     // Convenience function to load all tableView data
@@ -478,7 +489,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Only apply the blur if the user hasn't disabled transparency effects
         if !UIAccessibilityIsReduceTransparencyEnabled() {
-            view.backgroundColor = .clear
+            self.view.backgroundColor = .clear
             
             let blurEffect = UIBlurEffect(style: .regular)
             self.blurEffectView = UIVisualEffectView(effect: blurEffect)
@@ -487,11 +498,11 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             self.blurEffectView.frame = self.view.bounds
             self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             
-            view.addSubview(self.blurEffectView)
+            self.view.addSubview(self.blurEffectView)
             
         } else {
             // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
-            view.backgroundColor = .black
+            self.view.backgroundColor = .black
         }
         let menuController = AddObservationViewController()
         menuController.modalPresentationStyle = .overCurrentContext
