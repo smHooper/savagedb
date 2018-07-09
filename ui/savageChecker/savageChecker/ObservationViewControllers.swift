@@ -70,12 +70,16 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         setupLayout()
         self.view.backgroundColor = UIColor.white
         
+        // If the view was still in memory, it will try to load the view in its previous orientation.
+        //  Check that the orientation is correct, and if it doesn't match the old orientation, reset the layout
         if self.deviceOrientation != UIDevice.current.orientation {
             self.deviceOrientation = UIDevice.current.orientation
             print("Device orientations didn't match")
             resetLayout()
         }
         
+        // Set up notifications so view will scroll when keyboard obscures a text field
+        registerForKeyboardNotifications()
     }
     
     // Update constraints when rotated
@@ -93,8 +97,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         self.formWidthConstraint.constant = newScreenSize.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right
         self.formHeightConstraint.constant = newScreenSize.height - CGFloat(self.topSpacing) - self.navigationBarHeight
-        print("formHeightConstraint: \(formHeightConstraint.constant)")
-        print("formWidthConstraint: \(formWidthConstraint.constant)")
         
         self.scrollView.contentSize = CGSize(width: newScreenSize.width - CGFloat(self.sideSpacing * 2), height: newScreenSize.height)
         self.scrollView.setNeedsUpdateConstraints()
@@ -105,39 +107,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
     }
     
-    /*// On rotation, recalculate positions of fields
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        // If rotated, clear the views and redo the layout. If I don't check for the orientation change,
-        //  this will dismiss the keyboard every time a key is pressed. self.deviceOrientation starts
-        //  out with .rawValue == 0 (after loading it changes), so check that this isn't the first load
-        if UIDevice.current.orientation != deviceOrientation && self.deviceOrientation.rawValue != 0 {
-            // Clear views
-
-            /*for subview in self.view.subviews {
-                subview.removeFromSuperview()
-            }*/
-            
-            // Break constraints and redo them
-            let safeArea = self.view.safeAreaInsets
-            scrollView.translatesAutoresizingMaskIntoConstraints = false
-            scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor).isActive =
-            scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
-            scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right).isActive = true
-            scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
-
-            // Redo layout
-            setupLayout()
-        }
-        
-         // Reset the orientation
-         self.deviceOrientation = UIDevice.current.orientation
-    }*/
-    
     // Set up the text fields in place
     func setupLayout(){
-        print("setting up layout")
         // Set up the container
         let safeArea = self.view.safeAreaInsets
         self.scrollView.showsHorizontalScrollIndicator = false
@@ -438,6 +409,69 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
+    // Get notifications from keyboard so view can moved up if text field is obscured by it
+    func registerForKeyboardNotifications(){
+        //Adding notifies on keyboard appearing
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWasShown(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillBeHidden(notification:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+    
+    // De-register notifications
+    func deregisterFromKeyboardNotifications(){
+        //Removing notifies on keyboard appearing
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+    
+    // If text field would be obscured by keyboard, moving form view up
+    @objc func keyboardWasShown(notification: NSNotification){
+        // Calculate keyboard exact size
+        var info = notification.userInfo!
+        var keyboardHeight = (info[UIKeyboardFrameBeginUserInfoKey] as? NSValue)!.cgRectValue.size.height
+        
+        // If this is a date or time field, add the height of the Done button bar
+        let datetimeTypes = ["date", "time"]
+        if datetimeTypes.contains(textFieldIds[self.currentTextField].type) {
+            keyboardHeight += CGFloat(40) // add done toolbar height
+            print("Keyboard height after add: \(keyboardHeight)")
+        }
+        // Set the scrollable area to the rectangle not obscured by the keyboard
+        let scrollViewTop = self.scrollView.frame.minY + CGFloat(self.topSpacing) // Since the scrollView top is offset, make sure this is accounted for
+        let contentInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardHeight + scrollViewTop, right: 0.0)
+        self.scrollView.contentInset = contentInsets
+        self.scrollView.scrollIndicatorInsets = contentInsets
+        
+        // Check if the currently active text field is obscured. If so, scroll
+        var viewControllerFrame : CGRect = self.scrollView.frame
+        viewControllerFrame.size.height -= keyboardHeight
+        let currentFieldFrame: CGRect
+        switch textFieldIds[self.currentTextField].type {
+        case "dropDown":
+            currentFieldFrame = dropDownTextFields[self.currentTextField]!.frame
+        default:
+            currentFieldFrame = textFields[self.currentTextField]!.frame
+        }
+        if (!viewControllerFrame.contains(currentFieldFrame)){
+            self.scrollView.scrollRectToVisible(currentFieldFrame, animated: true)
+        }
+    }
+    
+    // When keyboard disappears, restore original position
+    @objc func keyboardWillBeHidden(notification: NSNotification){
+
+        var info = notification.userInfo!
+        var keyboardHeight = (info[UIKeyboardFrameBeginUserInfoKey] as? NSValue)!.cgRectValue.size.height
+        let scrollViewTop = self.scrollView.frame.minY + CGFloat(self.topSpacing)
+        let datetimeTypes = ["date", "time"]
+        if datetimeTypes.contains(textFieldIds[self.currentTextField].type) {
+            keyboardHeight += CGFloat(40) // add done toolbar height
+        }
+        let contentInsets: UIEdgeInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: -keyboardHeight - scrollViewTop, right: 0.0)
+        self.scrollView.contentInset = contentInsets
+        self.scrollView.scrollIndicatorInsets = contentInsets
+        self.view.endEditing(true)
+    }
+    
     
     // When dropdown is pressed
     @objc func dropDownDidChange(notification: NSNotification) {
@@ -458,6 +492,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.view.addGestureRecognizer(tap)
     }
     
+    // Dismiss the keyboard, pickerView, or dropDown menu
     @objc func dismissInputView() {
         
         // Check what kind of textField is currently being edited
@@ -470,7 +505,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             self.view.endEditing(true)
         }
         
-        //self.view.endEditing(true)
         updateData()
     }
     
@@ -600,7 +634,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: self.navigationBarHeight))
         self.view.addSubview(self.navigationBar)
-        
         // Customize buttons and title in all subclasses
     }
     
@@ -909,6 +942,9 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             presentingController.loadData()//tableView.reloadData()
         }
+        
+        // Deregister notifications from keyboard
+        deregisterFromKeyboardNotifications()
     }
 
     
@@ -942,7 +978,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             self.observation?.comments = comments
         }
         
-        print(observation?.observerName)
     }
     
     // Add record to DB
