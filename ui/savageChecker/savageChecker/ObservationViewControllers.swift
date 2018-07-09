@@ -137,6 +137,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // Set up the text fields in place
     func setupLayout(){
+        print("setting up layout")
         // Set up the container
         let safeArea = self.view.safeAreaInsets
         self.scrollView.showsHorizontalScrollIndicator = false
@@ -194,6 +195,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             
             let textField = UITextField()
             textField.placeholder = textFieldIds[i].placeholder
+            textField.autocorrectionType = .no
             textField.borderStyle = .roundedRect
             textField.layer.borderColor = UIColor.lightGray.cgColor
             textField.layer.borderWidth = 0.25
@@ -238,6 +240,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 //textFields.append(DropDownTextField.init(frame: textField.frame))
                 dropDownTextFields[i] = DropDownTextField.init(frame: textField.frame)
                 dropDownTextFields[i]!.placeholder = textFieldIds[i].placeholder
+                textField.autocorrectionType = .no
                 dropDownTextFields[i]!.borderStyle = .roundedRect
                 dropDownTextFields[i]!.layer.borderColor = UIColor.lightGray.cgColor
                 dropDownTextFields[i]!.layer.borderWidth = 0.25
@@ -696,8 +699,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
 
     
-
-    
     //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -711,15 +712,12 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
         
         //Load the session
-        // This shouldn't fail because the session should have been saved at the Session scene.
-        //self.session = NSKeyedUnarchiver.unarchiveObject(withFile: Session.ArchiveURL.path) as? Session
         do {
             try loadSession()
         } catch {
             fatalError(error.localizedDescription)
         }
-        self.setNavigationBar()
-        self.setupLayout()
+        setNavigationBar()
         self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
         
         /*// Lay out all text fields
