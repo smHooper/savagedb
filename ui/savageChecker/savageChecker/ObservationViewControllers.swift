@@ -38,7 +38,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     var session: Session?
     
     
-    //MARK: - Layout
+    //MARK: Layout properties
     // layout properties
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     let container = UIView()
@@ -50,11 +50,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let textFieldSpacing: CGFloat = 30.0
     let navigationBarHeight: CGFloat = 44
     var deviceOrientation = UIDevice.current.orientation
+    var currentScrollViewOffset: CGFloat = 0
     
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     
-    
+    //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
         hideKeyboardWhenTappedAround()
@@ -74,12 +75,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         //  Check that the orientation is correct, and if it doesn't match the old orientation, reset the layout
         if self.deviceOrientation != UIDevice.current.orientation {
             self.deviceOrientation = UIDevice.current.orientation
-            print("Device orientations didn't match")
             resetLayout()
         }
         
         // Set up notifications so view will scroll when keyboard obscures a text field
         registerForKeyboardNotifications()
+        self.currentScrollViewOffset = self.scrollView.contentOffset.y
     }
     
     // Update constraints when rotated
@@ -152,8 +153,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             let labelWidth = thisLabelText.width(withConstrainedHeight: 28.5, font: font)
             label.text = thisLabelText
             label.font = font
-            //label.frame = CGRect(x: safeArea.left, y: 0, width: labelWidth, height: 28.5)
-            //container.addSubview(label)
             labels.append(label)
             container.addSubview(labels[i])
             labels[i].translatesAutoresizingMaskIntoConstraints = false
@@ -186,7 +185,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             stack.spacing = CGFloat(self.sideSpacing)
             stack.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: stackHeight)
             
-            //stackViews.append(stack)
             containerHeight += stackHeight + CGFloat(self.textFieldSpacing)
             
             switch(textFieldIds[i].type) {
@@ -293,13 +291,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         // Now set the height contraint
         
         let contentWidth = self.view.frame.width - (self.sideSpacing * 2)
-        let contentHeight = self.view.frame.height// - UIApplication.shared.statusBarFrame.height - self.navigationBarHeight - CGFloat(self.topSpacing)
+        let contentHeight = containerHeight + UIApplication.shared.statusBarFrame.height + self.navigationBarHeight + CGFloat(self.topSpacing)
         self.scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)//CGSize(width: container.frame.size.width, height: containerHeight)
-        // ****** If height > area above keyboard, put it in a scroll view *************
-        //  Add a flag property to notify the controller that it will or will not need to handle when the keyboard obscures a text field
-        //  Then, in editingDidBegin, set the scroll view position so the field is just above the keyboard
-        
     }
+    
     
     // MARK:  - Scrollview Delegate
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -409,6 +404,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
+    
     // Get notifications from keyboard so view can moved up if text field is obscured by it
     func registerForKeyboardNotifications(){
         //Adding notifies on keyboard appearing
@@ -416,12 +412,14 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillBeHidden(notification:)), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
     }
     
+    
     // De-register notifications
     func deregisterFromKeyboardNotifications(){
         //Removing notifies on keyboard appearing
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillShow, object: nil)
         NotificationCenter.default.removeObserver(self, name: NSNotification.Name.UIKeyboardWillHide, object: nil)
     }
+    
     
     // If text field would be obscured by keyboard, moving form view up
     @objc func keyboardWasShown(notification: NSNotification){
@@ -433,17 +431,13 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         let datetimeTypes = ["date", "time"]
         if datetimeTypes.contains(textFieldIds[self.currentTextField].type) {
             keyboardHeight += CGFloat(40) // add done toolbar height
-            print("Keyboard height after add: \(keyboardHeight)")
         }
-        // Set the scrollable area to the rectangle not obscured by the keyboard
-        let scrollViewTop = self.scrollView.frame.minY + CGFloat(self.topSpacing) // Since the scrollView top is offset, make sure this is accounted for
-        let contentInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardHeight + scrollViewTop, right: 0.0)
-        self.scrollView.contentInset = contentInsets
-        self.scrollView.scrollIndicatorInsets = contentInsets
         
         // Check if the currently active text field is obscured. If so, scroll
-        var viewControllerFrame : CGRect = self.scrollView.frame
+        var viewControllerFrame = self.scrollView.frame
         viewControllerFrame.size.height -= keyboardHeight
+        print("viewControllerFrame: \(viewControllerFrame)")
+        
         let currentFieldFrame: CGRect
         switch textFieldIds[self.currentTextField].type {
         case "dropDown":
@@ -451,24 +445,20 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         default:
             currentFieldFrame = textFields[self.currentTextField]!.frame
         }
-        if (!viewControllerFrame.contains(currentFieldFrame)){
-            self.scrollView.scrollRectToVisible(currentFieldFrame, animated: true)
+        
+        self.currentScrollViewOffset = self.scrollView.contentOffset.y // Record current offset so keyboardWillBeHidden() can get back to this location
+        let offsetFromKeyboard = currentFieldFrame.maxY - (self.view.frame.height - (self.scrollView.frame.minY + CGFloat(self.topSpacing)) - keyboardHeight)
+        // Set the contentOffset to
+        if offsetFromKeyboard - self.currentScrollViewOffset > 0 {
+            self.scrollView.contentOffset = CGPoint(x: 0, y: offsetFromKeyboard)
         }
+        
     }
+    
     
     // When keyboard disappears, restore original position
     @objc func keyboardWillBeHidden(notification: NSNotification){
-
-        var info = notification.userInfo!
-        var keyboardHeight = (info[UIKeyboardFrameBeginUserInfoKey] as? NSValue)!.cgRectValue.size.height
-        let scrollViewTop = self.scrollView.frame.minY + CGFloat(self.topSpacing)
-        let datetimeTypes = ["date", "time"]
-        if datetimeTypes.contains(textFieldIds[self.currentTextField].type) {
-            keyboardHeight += CGFloat(40) // add done toolbar height
-        }
-        let contentInsets: UIEdgeInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: -keyboardHeight - scrollViewTop, right: 0.0)
-        self.scrollView.contentInset = contentInsets
-        self.scrollView.scrollIndicatorInsets = contentInsets
+        self.scrollView.contentOffset = CGPoint(x: 0, y: self.currentScrollViewOffset)
         self.view.endEditing(true)
     }
     
