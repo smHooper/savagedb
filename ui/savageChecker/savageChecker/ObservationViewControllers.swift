@@ -55,6 +55,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     
+    
     //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -80,7 +81,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         // Set up notifications so view will scroll when keyboard obscures a text field
         registerForKeyboardNotifications()
-        self.currentScrollViewOffset = self.scrollView.contentOffset.y
     }
     
     // Update constraints when rotated
@@ -361,10 +361,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         let fieldType = textFieldIds[textField.tag].type
         switch(fieldType){
         case "normal":
-            //print("textField is \(fieldType)")
-            let _ = 0
+            textField.selectAll(nil)
         case "number":
-            textField.text = "" //Not sure if this is the best approach, since someone might accidentally tap this field and delete it without remembering what was there before
+            //textField.text = "" //Not sure if this is the best approach, since someone might accidentally tap this field and delete it without remembering what was there before
+            textField.selectAll(nil)
         case "dropDown":
             let field = textField as! DropDownTextField
             guard let text = textField.text else {
@@ -433,11 +433,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             keyboardHeight += CGFloat(40) // add done toolbar height
         }
         
-        // Check if the currently active text field is obscured. If so, scroll
-        var viewControllerFrame = self.scrollView.frame
-        viewControllerFrame.size.height -= keyboardHeight
-        print("viewControllerFrame: \(viewControllerFrame)")
-        
         let currentFieldFrame: CGRect
         switch textFieldIds[self.currentTextField].type {
         case "dropDown":
@@ -446,13 +441,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             currentFieldFrame = textFields[self.currentTextField]!.frame
         }
         
+        // Check if the currently active text field is obscured. If so, scroll
         self.currentScrollViewOffset = self.scrollView.contentOffset.y // Record current offset so keyboardWillBeHidden() can get back to this location
         let offsetFromKeyboard = currentFieldFrame.maxY - (self.view.frame.height - (self.scrollView.frame.minY + CGFloat(self.topSpacing)) - keyboardHeight)
-        // Set the contentOffset to
-        if offsetFromKeyboard - self.currentScrollViewOffset > 0 {
+        if offsetFromKeyboard - self.currentScrollViewOffset > 0 { //If offsetFromKeyboard - currentOffset is positive, the view isn't obscured
             self.scrollView.contentOffset = CGPoint(x: 0, y: offsetFromKeyboard)
         }
-        
     }
     
     
