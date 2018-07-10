@@ -11,6 +11,8 @@ import SQLite
 import os.log
 
 
+var sendDateEntryAlert = true
+
 class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollViewDelegate {//}, UITableViewDelegate, UITableViewDataSource {
     
     //MARK: - Properties
@@ -551,7 +553,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         let formatter = DateFormatter()
         
         // Set the formatter style for either a date or time
-        let fieldType = textFieldIds[textFieldId].type
+        let fieldType = self.textFieldIds[textFieldId].type
         switch(fieldType){
         case "time":
             formatter.dateStyle = .none
@@ -568,18 +570,48 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         return datetimeString
     }
     
+    
+    
+    // Send a notification with the value from pickerView
     @objc func handleDatetimePicker(sender: UIDatePicker) {
         
-        let datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
+        guard let currentValue = self.textFields[sender.tag]!.text else {
+            fatalError("No text field matching datetimPicker id \(sender.tag) found")
+        }
+        var datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
+
+        // If this is a date field, check if the date is today. If not, send an alert to make sure this is intentional
+        if self.textFieldIds[sender.tag].type == "date" {
+            let today = Date()
+            let formatter = DateFormatter()
+            formatter.dateStyle = .short
+            formatter.timeStyle = .none
+            let todayString = formatter.string(from: today)
+            if datetimeString != todayString && sendDateEntryAlert {
+                let alertTitle = "Date Entry Alert"
+                let alertMessage = "You selected a date other than today. Was this intentional? If no, press Cancel."
+                let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.textFields[sender.tag]!.text = datetimeString}))
+                alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
+                alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.textFields[sender.tag]!.text = datetimeString;
+                    sendDateEntryAlert = false}))
+                present(alertController, animated: true, completion: nil)
+            } else {
+                self.textFields[sender.tag]!.text = datetimeString
+            }
+        } else {
+            self.textFields[sender.tag]!.text = datetimeString
+        }
         
         // Send the string with a notification. Use the tag of the datepicker as the key to a dictionary so the receiver knows which text field this value belongs to
-        let dictionary: [Int: String] = [sender.tag: datetimeString]
-        NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
+        //let dictionary: [Int: String] = [sender.tag: datetimeString]
+        //NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
         
         // ********* override this method in observation view controllers: call super.handleDatetimePicker; updateObservation()
         //updateObservation()
     }
     
+    // Create the datetime picker input view
     func createDatetimePicker(textField: UITextField) {
         
         let toolBar = UIToolbar(frame: CGRect(x: 0, y: self.view.frame.size.height/6, width: self.view.frame.size.width, height: 40.0))
@@ -594,17 +626,19 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         textField.inputAccessoryView = toolBar
         
         // Add a notification to retrieve the value from the datepicker
-        NotificationCenter.default.addObserver(self, selector: #selector(updateDatetimeField(notification:)), name: Notification.Name("dateTimePicked:\(textField.tag)"), object: nil)
+        //NotificationCenter.default.addObserver(self, selector: #selector(updateDatetimeField(notification:)), name: Notification.Name("dateTimePicked:\(textField.tag)"), object: nil)
     }
     
-    @objc func updateDatetimeField(notification: Notification){
+    
+    // Retreive string from notification that was sent by the pickerView
+    /*@objc func updateDatetimeField(notification: Notification){
         guard let datetimeDictionary = notification.object as? Dictionary<Int, String> else {
             fatalError("Couldn't downcast dateTimeDict: \(notification.object!)")
         }
         let index = datetimeDictionary.keys.first!
         let datetime = datetimeDictionary.values.first!
         textFields[index]?.text = datetime
-    }
+    }*/
     
     // Check that the done button on custom DatePicker was pressed
     @objc func datetimeDonePressed(sender: UIBarButtonItem) {
