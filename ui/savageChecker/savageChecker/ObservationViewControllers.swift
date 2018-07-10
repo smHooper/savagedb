@@ -43,15 +43,15 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     //MARK: Layout properties
     // layout properties
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
-    let container = UIView()
     let scrollView = UIScrollView()
+    let container = UIView()
     var formWidthConstraint = NSLayoutConstraint()
     var formHeightConstraint = NSLayoutConstraint()
     let topSpacing = 40.0
     let sideSpacing: CGFloat = 8.0
     let textFieldSpacing: CGFloat = 30.0
     let navigationBarHeight: CGFloat = 44
-    var deviceOrientation = UIDevice.current.orientation
+    var deviceOrientation = 0
     var currentScrollViewOffset: CGFloat = 0
     
     var presentTransition: UIViewControllerAnimatedTransitioning?
@@ -70,6 +70,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             fatalError(error.localizedDescription)
         }
         
+        self.deviceOrientation = UIDevice.current.orientation.rawValue
+        
         addBackground()
         
         setNavigationBar()
@@ -78,14 +80,18 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         // If the view was still in memory, it will try to load the view in its previous orientation.
         //  Check that the orientation is correct, and if it doesn't match the old orientation, reset the layout
-        if self.deviceOrientation != UIDevice.current.orientation {
-            self.deviceOrientation = UIDevice.current.orientation
+        print("self.deviceOrientation: \(self.deviceOrientation)")
+        print("current.orientation: \(UIDevice.current.orientation.rawValue)")
+        if self.deviceOrientation != UIDevice.current.orientation.rawValue {
+            self.deviceOrientation = UIDevice.current.orientation.rawValue
+            print("Device orientation didn't match. Resetting layout...")
             resetLayout()
         }
         
         // Set up notifications so view will scroll when keyboard obscures a text field
-        registerForKeyboardNotifications()
+        //registerForKeyboardNotifications()
     }
+    
     
     // Update constraints when rotated
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -93,31 +99,63 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         resetLayout()
     }
     
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // If the view was still in memory, it will try to load the view in its previous orientation.
+        //  Check that the orientation is correct, and if it doesn't match the old orientation, reset the layout
+        print("UIScreen.main.bounds: \(UIScreen.main.bounds)")
+        print("self.deviceOrientation: \(self.deviceOrientation)")
+        print("current.orientation: \(UIDevice.current.orientation.rawValue)")
+        if self.deviceOrientation != UIDevice.current.orientation.rawValue {
+            self.deviceOrientation = UIDevice.current.orientation.rawValue
+            print("Device orientation didn't match. Resetting layout...")
+            resetLayout()
+        }
+        // Set up notifications so view will scroll when keyboard obscures a text field.
+        //  Call this here because if the view is already loaded in memory, it won't get called in viewDidLoad()
+        registerForKeyboardNotifications()
+    }
+    
+    
     func resetLayout() {
         
-        // Add for new layout
         let safeArea = self.view.safeAreaInsets
-        // assumes rotation to the left, but I don't think it matters because safeAreaInsets are symmetrical
         let newScreenSize = UIScreen.main.bounds//Gives size after rotation
-        
+        // In theory, the scrollView should always be anchored to the center of the screen regardless of it's orientation, so I should just need to reset the width and height
         self.formWidthConstraint.constant = newScreenSize.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right
         self.formHeightConstraint.constant = newScreenSize.height - CGFloat(self.topSpacing) - self.navigationBarHeight
         
-        self.scrollView.contentSize = CGSize(width: newScreenSize.width - CGFloat(self.sideSpacing * 2), height: newScreenSize.height)
+        /*// Remove X and Y constraints, then reset them with the new orientation's layout guide
+        for constraint in self.scrollView.constraints {
+            if let identifier = constraint.identifier {
+                print(identifier)
+            }
+            /*if (constraint.identifier?.contains("X"))! || (constraint.identifier?.contains("Y"))! {
+                self.scrollView.removeConstraint(constraint)
+            }*/
+        }
+        self.formXConstraint = self.scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor)
+        self.formYConstraint = self.scrollView.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor, constant: self.navigationBarHeight + CGFloat(self.topSpacing))
+        self.formXConstraint.isActive = true
+        self.formYConstraint.isActive = true*/
+        
+        self.scrollView.contentSize = CGSize(width: newScreenSize.width - CGFloat(self.sideSpacing * 2), height: self.scrollView.contentSize.height)
         self.scrollView.setNeedsUpdateConstraints()
         self.scrollView.layoutIfNeeded()
         self.view.layoutIfNeeded()
-        
         self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: newScreenSize.width, height: self.navigationBarHeight)
         
+        // Update background image
         for (i, view) in self.view.subviews.enumerated() {
             if view.tag == -1 {
                 self.view.subviews[i].subviews[0].frame = UIScreen.main.bounds
                 self.view.subviews[i].subviews[1].frame = UIScreen.main.bounds
             }
         }
-        
     }
+    
     
     // Set up the text fields in place
     func setupLayout(){
@@ -131,28 +169,32 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
         
         // **** Might not want to center the Y anchor like this ***********
-        self.scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor).isActive = true
-        self.scrollView.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor, constant: self.navigationBarHeight + CGFloat(self.topSpacing)).isActive = true
-        //self.scrollView.leftAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leftAnchor, constant: self.sideSpacing)
-        //self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
+        //self.formXConstraint = self.scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor)
+        //self.formYConstraint = self.scrollView.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor, constant: self.navigationBarHeight + CGFloat(self.topSpacing))
+        self.scrollView.leftAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leftAnchor, constant: self.sideSpacing).isActive = true
+        self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
         self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right)
         self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.height)
+        
+        //self.formXConstraint.identifier = "formX"
+        //self.formYConstraint.identifier = "formY"
+        self.formWidthConstraint.identifier = "formWidth"
+        self.formHeightConstraint.identifier = "formHeight"
         self.formWidthConstraint.isActive = true
         self.formHeightConstraint.isActive = true
+        //self.formXConstraint.isActive = true
+        //self.formYConstraint.isActive = true
         //self.scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
+        
         
         self.scrollView.addSubview(container)
         
-        // Set up constrations. Don't set the height constaint until all text fields have been added. This way, the container stackview will always be the extact height of the text fields with spacing.
+        // Set up constraints.
         container.translatesAutoresizingMaskIntoConstraints = false
         container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
         container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
         container.widthAnchor.constraint(equalTo: scrollView.widthAnchor).isActive = true
         container.heightAnchor.constraint(equalTo: scrollView.heightAnchor).isActive = true
-        /*container.axis = .vertical
-         container.spacing = CGFloat(self.textFieldSpacing)
-         container.alignment = .fill
-         container.distribution = .equalCentering*/
         
         var containerHeight = CGFloat(0.0)
         var lastBottomAnchor = container.topAnchor
@@ -201,7 +243,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             switch(textFieldIds[i].type) {
             case "normal", "date", "time", "number":
                 // Don't do anything special
-                //textFields.append(textField)
                 textFields[i] = textField
                 container.addSubview(textFields[i]!)
                 textFields[i]?.translatesAutoresizingMaskIntoConstraints = false
@@ -211,13 +252,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
             
             case "dropDown":
-                //Get the bounds from the storyboard's text field
-                //let frame = self.view.frame
-                //let centerX = observerNameTextField.centerXAnchor
-                //let centerY = observerNameTextField.centerYAnchor
-                
                 // re-configure the text field
-                //textFields.append(DropDownTextField.init(frame: textField.frame))
                 dropDownTextFields[i] = DropDownTextField.init(frame: textField.frame)
                 dropDownTextFields[i]!.placeholder = textFieldIds[i].placeholder
                 textField.autocorrectionType = .no
@@ -464,6 +499,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // When keyboard disappears, restore original position
     @objc func keyboardWillBeHidden(notification: NSNotification){
+        print("self.currentScrollViewOffset in keyboardWillBeHidden: \(self.currentScrollViewOffset)")
         self.scrollView.contentOffset = CGPoint(x: 0, y: self.currentScrollViewOffset)
         self.view.endEditing(true)
     }
@@ -844,33 +880,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         self.observation = observation
         print("observation id: \(observation.id)")
     }
-    
-    // On rotation, recalculate positions of fields
-    /*override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        
-        // If rotated, clear the views and redo the layout. If I don't check for the orientation change,
-        //  this will dismiss the keyboard every time a key is pressed. self.deviceOrientation starts
-        //  out with .rawValue == 0 (after loading it changes), so check that this isn't the first load
-        if UIDevice.current.orientation != deviceOrientation && self.deviceOrientation.rawValue != 0 {
-            // Clear views
-            // Get textfield values
-            /*var fieldValues = [String]()
-            for index in 0..<self.textFieldIds.count {
-                if self.textFields.keys.contains(index){
-                    fieldValues
-                }
-            }*/
-            
-            for subview in self.view.subviews {
-                subview.removeFromSuperview()
-            }
-            // Redo layout
-            setupLayout()
-        }
-        // Reset the orientation
-        self.deviceOrientation = UIDevice.current.orientation
-     }*/
     
     // MARK: - Navigation
     override func setNavigationBar() {
