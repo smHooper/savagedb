@@ -161,67 +161,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.presentTransition = RightToLeftTransition()
         present(viewController, animated: true, completion: {viewController.presentTransition = nil})
         
-        //viewController.observation
-        //viewController.session = session!
-        
-        /*switch labelText{
-        case "Bus":
-            // Prep the view controller to move to
-            
-            let viewController = BusObservationViewController()//BaseObservationViewController()//
-            viewController.isAddingNewObservation = true
-            viewController.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
-            //viewController.modelObject = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "")
-            
-            // Configure the transition
-            viewController.transitioningDelegate = self
-            viewController.modalPresentationStyle = .custom
-            self.presentTransition = RightToLeftTransition()
-            present(viewController, animated: true, completion: {viewController.presentTransition = nil})
-        case "NPS Vehicle":
-            let viewController = NPSVehicleObservationViewController()
-            viewController.isAddingNewObservation = true
-            viewController.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", tripPurpose: "", workDivision: "", workGroup: "")
-            
-            // Configure the transition
-            viewController.transitioningDelegate = self
-            viewController.modalPresentationStyle = .custom
-            self.presentTransition = RightToLeftTransition()
-            present(viewController, animated: true, completion: {viewController.presentTransition = nil})
-        case "NPS Approved":
-            let viewController = NPSApprovedObservationViewController()
-            viewController.isAddingNewObservation = true
-            viewController.observation = NPSApprovedObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", vehicleType: "", tripPurpose: "", nExpectedNights: "")
-            
-            // Configure the transition
-            viewController.transitioningDelegate = self
-            viewController.modalPresentationStyle = .custom
-            self.presentTransition = RightToLeftTransition()
-            present(viewController, animated: true, completion: {viewController.presentTransition = nil})
-        case "NPS Contractor":
-            let viewController = NPSContractorObservationViewController()
-            viewController.isAddingNewObservation = true
-            viewController.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", tripPurpose: "", nExpectedNights: "")
-            
-            // Configure the transition
-            viewController.transitioningDelegate = self
-            viewController.modalPresentationStyle = .custom
-            self.presentTransition = RightToLeftTransition()
-            present(viewController, animated: true, completion: {viewController.presentTransition = nil})
-        case "Employee":
-            let viewController = EmployeeObservationViewController()
-            viewController.isAddingNewObservation = true
-            viewController.observation = EmployeeObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: "", driverName: "", destination: "", nPassengers: "", permitHolder: "")
-            
-            // Configure the transition
-            viewController.transitioningDelegate = self
-            viewController.modalPresentationStyle = .custom
-            self.presentTransition = RightToLeftTransition()
-            present(viewController, animated: true, completion: {viewController.presentTransition = nil})
-        default:
-            fatalError("Didn't understand button label \(labelText)")
-        }*/
-        
     }
     
     func dismissWhenTappedAround() {

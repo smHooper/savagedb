@@ -51,7 +51,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     //MARK: ToolBar properties
     let toolBar = UIToolbar()
     
-    let barButtonIcons = [(label: "All", normal: "shuttleBusImg", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
+    let barButtonIcons = [(label: "All", normal: "allTableIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "Bus", normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "NPS Vehicle", normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
                           (label: "NPS Approved", normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
@@ -142,13 +142,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         }
         // Add buttons for the currently selected group
         setupToolBarLayout()
-        
-
-        
-
-        
-        // ********######### Figure out how to get the translucent tableView image underneath##############**************
-        //self.view.bringSubview(toFront: self.toolBar)
         
         // Open connection to the DB
         do {
@@ -548,6 +541,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         cell.nPassengersLabel.text = observation.nPassengers
         cell.mainIcon.image = UIImage(named: imageName)
         
+        // Show the selected cell with a translucent white
+        let backgroundView = UIView()
+        backgroundView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        cell.selectedBackgroundView = backgroundView
         
         return cell
     }
