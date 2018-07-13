@@ -833,10 +833,8 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
         for (i, _) in boolSwitches {
             if textFields[i]?.text == "Yes" {
-                print("Bool switch is on")
                 boolSwitches[i]?.isOn = true
             } else {
-                print("Bool switch is off")
                 boolSwitches[i]?.isOn = false
             }
         }
@@ -2436,12 +2434,13 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Create the observation instance
-            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", permitHolder: "", tripPurpose: "N/A")
+            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", permitHolder: "", tripPurpose: "N/A")
             
             //Fill in text fields
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
+            self.dropDownTextFields[5]?.text = "Kantishna"
             self.saveButton.isEnabled = false
             
             // The observation already exists and is open for viewing/editing
@@ -2979,11 +2978,12 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
-                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Permit number", placeholder: "Enter the permit number",             type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.observationsTable = Table("tekCampers")
+        self.observationsTable = Table("photographers")
     }
     
     //MARK: - Layout
@@ -3159,8 +3159,550 @@ class PhotographerObservationViewController: BaseObservationViewController {
 }
 
 
+//MARK: -
+//MARK: -
+class AccessibilityObservationViewController: BaseObservationViewController {
+    
+    //MARK: - Properties
+    //MARK: DB properties
+    var observation: AccessibilityObservation?
+    let tripPurposeColumn = Expression<String>("tripPurpose")
+    
+    //MARK: - Initialization
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Trip purpose",  placeholder: "Select or enter the trip purpose",    type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Trip purpose": ["Other"]]
+        
+        self.observationsTable = Table("accessibility")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Trip purpose",  placeholder: "Select or enter the trip purpose",    type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": ["Sam Hooper", "Jen Johnston", "Alex", "Sara", "Jack", "Rachel", "Judy", "Other"],
+                                    "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
+                                    "Trip purpose": ["Other"]]
+        
+        self.observationsTable = Table("accessibility")
+    }
+    
+    //MARK: - Layout
+    override func viewDidLoad() {
+        
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func autoFillTextFields() {
+        
+        // This is a completely new observation
+        if self.isAddingNewObservation {
+            
+            // Get the current time as a string
+            let now = Date()
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            formatter.dateStyle = .none
+            let currentTime = formatter.string(from: now)
+            
+            // Initialize the observation
+            self.observation = AccessibilityObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "N/A")
+            
+            // Fill text fields with defaults
+            self.dropDownTextFields[0]?.text = session?.observerName
+            self.textFields[1]?.text = session?.date
+            self.textFields[2]?.text = formatter.string(from: now)
+            self.dropDownTextFields[5]?.text = "N/A"
+            
+            self.saveButton.isEnabled = false
+            
+        // The observation already exists and is open for viewing/editing
+        } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            
+            self.observation = AccessibilityObservation(id: id,
+                                                       observerName: record[observerNameColumn],
+                                                       date: record[dateColumn],
+                                                       time: record[timeColumn],
+                                                       driverName: record[driverNameColumn],
+                                                       destination: record[destinationColumn],
+                                                       nPassengers: record[nPassengersColumn],
+                                                       tripPurpose: record[tripPurposeColumn],
+                                                       comments: record[commentsColumn])
+            self.dropDownTextFields[0]?.text = self.observation?.observerName
+            self.textFields[1]?.text = self.observation?.date
+            self.textFields[2]?.text = self.observation?.time
+            self.textFields[3]?.text = self.observation?.driverName
+            self.dropDownTextFields[4]?.text = self.observation?.destination
+            self.textFields[5]?.text = self.observation?.tripPurpose
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text = self.observation?.comments
+            self.saveButton.isEnabled = true
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertRecord()
+            
+            // Update an existing record
+        } else {
+            updateRecord()
+        }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
+        dismissController()
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        
+        // Check that all text fields are filled in
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let driverName = self.textFields[3]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let tripPurpose = self.textFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let comments = self.textFields[7]?.text ?? ""
+        
+        let fieldsFull =
+            !observerName.isEmpty &&
+                !date.isEmpty &&
+                !time.isEmpty &&
+                !driverName.isEmpty &&
+                !destination.isEmpty &&
+                !nPassengers.isEmpty
+        
+        if fieldsFull {
+            // Update the observation instance
+            self.observation?.observerName = observerName
+            self.observation?.date = date
+            self.observation?.time = time
+            self.observation?.driverName = driverName
+            self.observation?.destination = destination
+            self.observation?.tripPurpose = tripPurpose
+            self.observation?.nPassengers = nPassengers
+            self.observation?.comments = comments
+            
+            self.saveButton.isEnabled = true
+        }
+        
+    }
+    
+    // Add record to DB
+    override func insertRecord() {
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
+}
 
 
+//MARK:-
+//MARK:-
+class HunterObservationViewController: BaseObservationViewController {
+    
+    var observation: Observation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.observationsTable = Table("hunters")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.observationsTable = Table("hunters")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
+    override func autoFillTextFields(){
+        super.autoFillTextFields()
+        
+        // Initialize the observation. Also, fill destination field with default.
+        if self.isAddingNewObservation {
+            self.observation = Observation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "Kantishna", nPassengers: "")
+            self.dropDownTextFields[4]?.text = "Kantishna"
+        } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            
+            self.observation = Observation(id: id,
+                                        observerName: record[observerNameColumn],
+                                        date: record[dateColumn],
+                                        time: record[timeColumn],
+                                        driverName: record[driverNameColumn],
+                                        destination: record[destinationColumn],
+                                        nPassengers: record[nPassengersColumn],
+                                        comments: record[commentsColumn])
+            self.dropDownTextFields[0]?.text = observation?.observerName
+            self.textFields[1]?.text = observation?.date
+            self.textFields[2]?.text = observation?.time
+            self.textFields[3]?.text = observation?.driverName
+            self.dropDownTextFields[4]?.text = observation?.destination
+            self.textFields[5]?.text = observation?.nPassengers
+            self.textFields[6]?.text = observation?.comments
+        }
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        super.updateData()
+        
+        // Would be enabled in super.updateData if all fields are full
+        if self.saveButton.isEnabled {
+            // Update the observation instance
+            self.observation?.observerName = self.dropDownTextFields[0]!.text!
+            self.observation?.date = self.textFields[1]!.text!
+            self.observation?.time = self.textFields[2]!.text!
+            self.observation?.driverName = self.textFields[3]!.text!
+            self.observation?.destination = self.dropDownTextFields[4]!.text!
+            self.observation?.nPassengers = self.textFields[5]!.text!
+            self.observation?.comments = self.textFields[6]!.text!
+            
+            //self.saveButton.isEnabled = true
+        }
+    }
+    
+    // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
+    override func insertRecord() {
+        // Can just get text values from the observation because it has to be updated before saveButton is enabled
+        let observerName = observation?.observerName
+        let date = observation?.date
+        let time = observation?.time
+        let driverName = observation?.driverName
+        let destination = observation?.destination
+        let nPassengers = observation?.nPassengers
+        let comments = observation?.comments
+        
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
+                                                            dateColumn <- date!,
+                                                            timeColumn <- time!,
+                                                            driverNameColumn <- driverName!,
+                                                            destinationColumn <- destination!,
+                                                            nPassengersColumn <- nPassengers!,
+                                                            commentsColumn <- comments!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+    
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            print("Record id: \((observation?.id.datatypeValue)!)")
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertRecord()
+            
+            // Update an existing record
+        } else {
+            updateRecord()
+        }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
+        dismissController()
+    }
+}
+
+
+//MARK:-
+//MARK:-
+class OtherObservationViewController: BaseObservationViewController {
+    
+    var observation: Observation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.observationsTable = Table("other")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.observationsTable = Table("other")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
+    override func autoFillTextFields(){
+        super.autoFillTextFields()
+        
+        // Initialize the observation. Also, fill destination field with default.
+        if self.isAddingNewObservation {
+            self.observation = Observation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "N/A", nPassengers: "")
+            self.dropDownTextFields[4]?.text = "N/A"
+        } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            
+            self.observation = Observation(id: id,
+                                           observerName: record[observerNameColumn],
+                                           date: record[dateColumn],
+                                           time: record[timeColumn],
+                                           driverName: record[driverNameColumn],
+                                           destination: record[destinationColumn],
+                                           nPassengers: record[nPassengersColumn],
+                                           comments: record[commentsColumn])
+            self.dropDownTextFields[0]?.text = observation?.observerName
+            self.textFields[1]?.text = observation?.date
+            self.textFields[2]?.text = observation?.time
+            self.textFields[3]?.text = observation?.driverName
+            self.dropDownTextFields[4]?.text = observation?.destination
+            self.textFields[5]?.text = observation?.nPassengers
+            self.textFields[6]?.text = observation?.comments
+        }
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        super.updateData()
+        
+        // Would be enabled in super.updateData if all fields are full
+        if self.saveButton.isEnabled {
+            // Update the observation instance
+            self.observation?.observerName = self.dropDownTextFields[0]!.text!
+            self.observation?.date = self.textFields[1]!.text!
+            self.observation?.time = self.textFields[2]!.text!
+            self.observation?.driverName = self.textFields[3]!.text!
+            self.observation?.destination = self.dropDownTextFields[4]!.text!
+            self.observation?.nPassengers = self.textFields[5]!.text!
+            self.observation?.comments = self.textFields[6]!.text!
+            
+            //self.saveButton.isEnabled = true
+        }
+    }
+    
+    // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
+    override func insertRecord() {
+        // Can just get text values from the observation because it has to be updated before saveButton is enabled
+        let observerName = observation?.observerName
+        let date = observation?.date
+        let time = observation?.time
+        let driverName = observation?.driverName
+        let destination = observation?.destination
+        let nPassengers = observation?.nPassengers
+        let comments = observation?.comments
+        
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
+                                                            dateColumn <- date!,
+                                                            timeColumn <- time!,
+                                                            driverNameColumn <- driverName!,
+                                                            destinationColumn <- destination!,
+                                                            nPassengersColumn <- nPassengers!,
+                                                            commentsColumn <- comments!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+    
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            print("Record id: \((observation?.id.datatypeValue)!)")
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertRecord()
+            
+            // Update an existing record
+        } else {
+            updateRecord()
+        }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
+        dismissController()
+    }
+}
 
 
 

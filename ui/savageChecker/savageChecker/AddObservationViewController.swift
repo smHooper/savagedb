@@ -28,7 +28,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                                     "Bicycle": "cyclistIcon",
                                     "Propho": "photographerIcon",
                                     "Accessibility": "accessibilityIcon",
-                                    "Hunting": "busIcon",
+                                    "Hunter": "hunterIcon",
                                     "Road lottery": "busIcon",
                                     "Other": "otherIcon"]
     
@@ -148,7 +148,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "Right of Way": RightOfWayObservationViewController.self,
                      "Tek Camper": TeklanikaCamperObservationViewController.self,
                      "Bicycle": CyclistObservationViewController.self,
-                     "Propho": PhotographerObservationViewController.self]
+                     "Propho": PhotographerObservationViewController.self,
+                     "Accessibility": AccessibilityObservationViewController.self,
+                     "Hunter": HunterObservationViewController.self,
+                     "Other": OtherObservationViewController.self]
         
         // Remove the blur effect
         animateRemoveMenu()

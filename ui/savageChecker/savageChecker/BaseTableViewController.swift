@@ -32,7 +32,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                         "Right of Way": RightOfWayObservationViewController(),
                         "Tek Camper": TeklanikaCamperObservationViewController(),
                         "Bicycle": CyclistObservationViewController(),
-                        "Propho": PhotographerObservationViewController()]
+                        "Propho": PhotographerObservationViewController(),
+                        "Hunting": HunterObservationViewController(),
+                        "Other": OtherObservationViewController()]
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
@@ -44,7 +46,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                  "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
                  "Propho": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                  "Accessibility": (normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
-                 "Hunting": (normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
+                 "Hunter": (normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
                  "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                  "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
@@ -62,7 +64,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                           (label: "Bicycle", normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
                           (label: "Propho", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                           (label: "Accessibility", normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
-                          (label: "Hunting", normal: "busIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
+                          (label: "Hunter", normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
                           (label: "Road lottery", normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                           (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
@@ -204,12 +206,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
 
         let range = NSMakeRange(0, self.tableView.numberOfSections)
         let sections = NSIndexSet(indexesIn: range)
-        //self.tableView.reloadSections(sections as IndexSet, with: .automatic)
+        self.tableView.reloadSections(sections as IndexSet, with: .automatic)
         
         // Set scrollable area so you can scroll past toolBar*/
-        print("Scrollable area before: \(self.tableView.contentSize)")
         self.tableView.contentSize.height += self.toolBar.frame.height
-        print("Scrollable area after: \(self.tableView.contentSize)")
     }
     
     

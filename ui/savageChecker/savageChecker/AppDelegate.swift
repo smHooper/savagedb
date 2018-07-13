@@ -320,6 +320,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             fatalError(error.localizedDescription)
         }
         
+        // MARK: - Other table
         let otherVehicleTable = Table("other")
         do {
             try db.run(otherVehicleTable.create(ifNotExists: true) { t in
