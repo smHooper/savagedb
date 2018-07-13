@@ -122,12 +122,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         setNavigationBar()
         
         // get width and height of View
-        let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
+        let statusBarHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
         let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
         let displayWidth: CGFloat = self.view.frame.width
         let displayHeight: CGFloat = self.view.frame.height
         
-        self.tableView = UITableView(frame: CGRect(x: 0, y: barHeight + navigationBarHeight, width: displayWidth, height: displayHeight - (barHeight+navigationBarHeight)))
+        self.tableView = UITableView(frame: CGRect(x: 0, y: statusBarHeight + navigationBarHeight, width: displayWidth, height: displayHeight - (statusBarHeight + navigationBarHeight + self.barHeight)))
         self.tableView.register(BaseObservationTableViewCell.self, forCellReuseIdentifier: "cell")         // register cell name
         //Auto-set the UITableViewCell's height (requires iOS8+)
         self.tableView.rowHeight = 110//UITableViewAutomaticDimension
@@ -173,14 +173,21 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         
-        let barHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
+        let statusBarHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
         let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
         let newScreenSize = UIScreen.main.bounds
         
-        self.tableView.frame = CGRect(x: 0, y: barHeight + navigationBarHeight, width: newScreenSize.width, height: newScreenSize.height - (barHeight + navigationBarHeight))
+        self.tableView.frame = CGRect(x: 0, y: statusBarHeight + navigationBarHeight, width: newScreenSize.width, height: newScreenSize.height - (statusBarHeight + navigationBarHeight + self.barHeight))
         
+        // Set up tool bar and nav bar
         setupToolBarLayout()
         setNavigationBar()
+        
+        // Since nav bar was reset, set the appropriate icon
+        if self.isEditingTable {
+            let editButton = makeEditButton(imageName: "blueCheck")
+            self.editBarButton.customView = editButton
+        }
         
         // Handle the background image
         for (i, view) in self.view.subviews.enumerated() {
