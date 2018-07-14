@@ -625,7 +625,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             let todayString = formatter.string(from: today)
             if datetimeString != todayString && sendDateEntryAlert {
                 let alertTitle = "Date Entry Alert"
-                let alertMessage = "You selected a date other than today. Was this intentional? If no, press Cancel."
+                let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
                 let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
                 alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.textFields[sender.tag]!.text = datetimeString}))
                 alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))

@@ -33,6 +33,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                         "Tek Camper": TeklanikaCamperObservationViewController(),
                         "Bicycle": CyclistObservationViewController(),
                         "Propho": PhotographerObservationViewController(),
+                        "Accessibility": AccessibilityObservationViewController(),
                         "Hunting": HunterObservationViewController(),
                         "Other": OtherObservationViewController()]
     
@@ -418,7 +419,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         
         let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
-        navigationItem.leftBarButtonItem = backBarButton
+        let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
+        navigationItem.leftBarButtonItems = [backBarButton, saveButton]
         navigationItem.rightBarButtonItems = [addObservationButton, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
@@ -473,6 +475,21 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
 
         self.dismissTransition = LeftToRightTransition()
         dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+        
+    }
+    
+    @objc func archiveButtonPressed(button: UIBarButtonItem){
+        
+        let popoverController = ArchivePopoverViewController()
+        popoverController.modalPresentationStyle = .popover
+        popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 300.0), height: min(self.view.frame.height, 300.0))//CGSize.init(width: 600, height: 600)
+        
+        let popoverPresentationViewController = popoverController.popoverPresentationController
+        popoverPresentationViewController?.permittedArrowDirections = .up
+        popoverPresentationViewController?.barButtonItem = button
+        popoverPresentationViewController?.sourceRect = CGRect(x: self.view.frame.width/2 - 1, y: self.view.frame.height/2 - 1, width: 2, height: 2)
+        
+        present(popoverController, animated: true, completion: nil)
         
     }
     
