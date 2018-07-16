@@ -184,12 +184,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         setupToolBarLayout()
         setNavigationBar()
         
-        // Since nav bar was reset, set the appropriate icon
-        if self.isEditingTable {
-            let editButton = makeEditButton(imageName: "blueCheck")
-            self.editBarButton.customView = editButton
-        }
-        
         // Handle the background image
         for (i, view) in self.view.subviews.enumerated() {
             if view.tag == -1 {
@@ -414,9 +408,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let backBarButton = UIBarButtonItem(customView: backButton)
         
-        let editButton = makeEditButton(imageName: "deleteIcon")
+        // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
+        let editButton: UIButton
+        if self.isEditingTable {
+            editButton = makeEditButton(imageName: "blueCheck")
+            //self.editBarButton.customView = editButton
+        } else {
+            editButton = makeEditButton(imageName: "deleteIcon")
+        }
         self.editBarButton = UIBarButtonItem(customView: editButton)
-        
         
         let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
         let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
