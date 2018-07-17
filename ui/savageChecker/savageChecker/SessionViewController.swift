@@ -79,7 +79,7 @@ class SessionViewController: BaseFormViewController {
             self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
         }
             // The user is returning to the session scene from another scene
-        else if let session = session {
+        else if let session = self.session {
             self.dropDownTextFields[0]?.text = session.observerName
             self.textFields[1]?.text = session.date
             self.textFields[2]?.text = session.openTime
@@ -218,10 +218,10 @@ class SessionViewController: BaseFormViewController {
             fatalError("Multiple sessions found")
         }
         for row in rows{
-            session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+            self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
             //print("Session date: \(row[dateColumn])")
         }
-        return session
+        return self.session
     }
 
 }

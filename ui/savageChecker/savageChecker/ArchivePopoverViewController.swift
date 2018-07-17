@@ -21,7 +21,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     let closeTimeColumn = Expression<String>("closeTime")
     
     var session: Session!
-    
+    var fileName: String!
     let borderSpacing: CGFloat = 12.0
     
     //MARK: - Layout
@@ -89,6 +89,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         label.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: self.borderSpacing).isActive = true
         label.topAnchor.constraint(equalTo: messageView.bottomAnchor, constant: self.borderSpacing * CGFloat(2)).isActive = true
         
+        // Add a text field for the file name
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
@@ -96,7 +97,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         let currentTimeString = formatter.string(from: now).replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: ":", with: "-")
         let dateString = "\(session.date.replacingOccurrences(of: "/", with: "-"))"
         let fileNameTag = "\(session.observerName.replacingOccurrences(of: " ", with: "_"))_\(dateString)_\(currentTimeString)"
-        let fileName = "savageChecker_\(fileNameTag).db"
+        self.fileName = "savageChecker_\(fileNameTag).db"
         let fileNameTextField = UITextField()
         fileNameTextField.text = fileName
         self.view.addSubview(fileNameTextField)
@@ -112,14 +113,14 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         fileNameTextField.delegate = self
         
         // Add buttons
-        let saveButton = UIButton(type: .system)
-        saveButton.setTitle("Archive", for: .normal)
-        saveButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
-        saveButton.addTarget(self, action: #selector(dismissController), for: .touchUpInside)
-        self.view.addSubview(saveButton)
-        saveButton.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.centerXAnchor.constraint(equalTo: messageView.centerXAnchor, constant: -controllerFrame.width/4).isActive = true
-        saveButton.bottomAnchor.constraint(equalTo: messageView.topAnchor, constant: controllerFrame.height - self.borderSpacing * 3).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
+        let archiveButton = UIButton(type: .system)
+        archiveButton.setTitle("Archive", for: .normal)
+        archiveButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+        archiveButton.addTarget(self, action: #selector(archiveButtonPressed), for: .touchUpInside)
+        self.view.addSubview(archiveButton)
+        archiveButton.translatesAutoresizingMaskIntoConstraints = false
+        archiveButton.centerXAnchor.constraint(equalTo: messageView.centerXAnchor, constant: -controllerFrame.width/4).isActive = true
+        archiveButton.bottomAnchor.constraint(equalTo: messageView.topAnchor, constant: controllerFrame.height - self.borderSpacing * 3).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
         
         let cancelButton = UIButton(type: .system)
         cancelButton.setTitle("Cancel", for: .normal)
@@ -141,6 +142,69 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         dismiss(animated: true, completion: nil)
     }
     
+    @objc func archiveButtonPressed() {
+        // Shouldn't need to check if the file alread exists because time stamp in filename would prevent that
+        let fileManager = FileManager.default
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
+        let dbURL = URL(fileURLWithPath: dbPath).absoluteURL
+        
+        if fileManager.fileExists(atPath: outputURL.absoluteString) {
+            print("File already exists")
+        } else {
+            do {
+                try fileManager.copyItem(at: dbURL, to: outputURL)//(atPath: (dbURL.absoluteString)!, toPath: outputURL!)
+            } catch {
+                print(error)
+            }
+        }
+        
+        // Delete all records from the db
+        let tableQuery: Statement
+        do {
+            tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%');")
+        } catch {
+            fatalError("Could not fetch all tables because \(error.localizedDescription)")
+        }
+        for row in tableQuery {
+            let tableName = "\(row[0]!)"
+            let table = Table(tableName)
+            
+            do {
+                try db.run(table.delete())
+            } catch {
+                print("Could not delete records from \(tableName) because \(error.localizedDescription)")
+            }
+        }
+        
+        // Prepare the session controller by clearing all fields and disabling the navigation button
+        let presentingController = self.presentingViewController?.presentingViewController as! SessionViewController
+        presentingController.dropDownTextFields[0]!.text = ""
+        for (_, textField) in presentingController.textFields {
+            textField.text = ""
+        }
+        presentingController.viewVehiclesButton.isEnabled = false
+        
+        // Add an activity indicator and show it for a couple seconds. Otherwise, the transition is too abrupt
+        let activityIndicator = UIActivityIndicatorView()
+        activityIndicator.activityIndicatorViewStyle = .whiteLarge
+        activityIndicator.color = UIColor.gray
+        activityIndicator.center = self.view.center
+        let translucentWhiteView = UIView(frame: self.view.frame)
+        translucentWhiteView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        self.view.addSubview(translucentWhiteView)
+        self.view.addSubview(activityIndicator)
+        
+        let delay = 2.0
+        activityIndicator.startAnimating()
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+            translucentWhiteView.removeFromSuperview()
+            presentingController.dismiss(animated: true, completion: nil)
+        }
+        
+    }
     
     //MARK: - UITextFieldDelgate methods
     // Make sure the file ends with the extension .db
@@ -156,6 +220,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         if !(fileExtension == "db") {
             textField.text = "\(text).db"
         }
+        self.fileName = textField.text!
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
