@@ -64,17 +64,35 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
 
         let controllerFrame = getVisibleFrame()
         
-        // Set up the message
-        let message = "Are you sure you want to archive your data? If you press Archive, your data will be saved but you won't be able to view or edit your observations from this device."
+        // Add title message
+        let titleMessage = "Are you sure you want to archive your data?"
+        let messageViewWidth = controllerFrame.width - self.borderSpacing * CGFloat(2)
+        let titleFrame = CGRect(x: controllerFrame.minX + self.borderSpacing, y: controllerFrame.minY + self.borderSpacing, width: controllerFrame.width - self.borderSpacing * CGFloat(2), height: CGFloat(40))
+        let titleView = UITextView(frame: titleFrame)
+        titleView.font = UIFont.boldSystemFont(ofSize: 20)
+        self.view.addSubview(titleView)
+        let titleViewHeight = titleMessage.height(withConstrainedWidth: messageViewWidth, font: titleView.font!) + titleView.textContainerInset.top + titleView.textContainerInset.bottom
+        titleView.translatesAutoresizingMaskIntoConstraints = false
+        titleView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        titleView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: self.borderSpacing).isActive = true
+        titleView.widthAnchor.constraint(equalToConstant: messageViewWidth).isActive = true
+        titleView.heightAnchor.constraint(equalToConstant: CGFloat(titleViewHeight)).isActive = true
+        titleView.text = titleMessage
+        titleView.isEditable = false
+        titleView.backgroundColor = UIColor.clear
+        titleView.textAlignment = .center
+        
+        // Add detailed message
+        let message = "If you press Archive, your data will be saved but you won't be able to view or edit your observations from this device."
         let messageFrame = CGRect(x: controllerFrame.minX + self.borderSpacing, y: controllerFrame.minY + self.borderSpacing, width: controllerFrame.width - self.borderSpacing * CGFloat(2), height: CGFloat(40))
         let messageView = UITextView(frame: messageFrame)
-        messageView.font = UIFont.systemFont(ofSize: 18)
+        messageView.font = UIFont.systemFont(ofSize: 16)
         self.view.addSubview(messageView)
-        let messageViewWidth = controllerFrame.width - self.borderSpacing * CGFloat(2)
-        let messageViewHeight = message.height(withConstrainedWidth: messageViewWidth, font: messageView.font!) + messageView.textContainerInset.top + messageView.textContainerInset.bottom
+        let messageViewHeight = message.height(withConstrainedWidth: messageViewWidth - 20, font: messageView.font!) + (messageView.textContainerInset.top + messageView.textContainerInset.bottom)
+        print("messageView.textContainerInset.top: \(messageView.textContainerInset.top) \nmessageView.textContainerInset.bottom: \(messageView.textContainerInset.bottom)")
         messageView.translatesAutoresizingMaskIntoConstraints = false
         messageView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        messageView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: self.borderSpacing).isActive = true
+        messageView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: self.borderSpacing).isActive = true
         messageView.widthAnchor.constraint(equalToConstant: messageViewWidth).isActive = true
         messageView.heightAnchor.constraint(equalToConstant: CGFloat(messageViewHeight)).isActive = true
         messageView.text = message
@@ -120,7 +138,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         self.view.addSubview(archiveButton)
         archiveButton.translatesAutoresizingMaskIntoConstraints = false
         archiveButton.centerXAnchor.constraint(equalTo: messageView.centerXAnchor, constant: -controllerFrame.width/4).isActive = true
-        archiveButton.bottomAnchor.constraint(equalTo: messageView.topAnchor, constant: controllerFrame.height - self.borderSpacing * 3).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
+        archiveButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.borderSpacing).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
         
         let cancelButton = UIButton(type: .system)
         cancelButton.setTitle("Cancel", for: .normal)
@@ -129,7 +147,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         self.view.addSubview(cancelButton)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
         cancelButton.centerXAnchor.constraint(equalTo: messageView.centerXAnchor, constant: controllerFrame.width/4).isActive = true
-        cancelButton.bottomAnchor.constraint(equalTo: messageView.topAnchor, constant: controllerFrame.height - self.borderSpacing * 3).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
+        cancelButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.borderSpacing).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
     }
     
     override func didReceiveMemoryWarning() {
