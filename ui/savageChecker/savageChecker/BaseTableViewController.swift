@@ -495,28 +495,17 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
     }
     
+    
     @objc func archiveButtonPressed(button: UIBarButtonItem){
         
         let popoverController = ArchivePopoverViewController()
         popoverController.modalPresentationStyle = .formSheet
         popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 450.0), height: min(self.view.frame.height, 300.0))//CGSize.init(width: 600, height: 600)
         
-        /*let popoverPresentationViewController = popoverController.popoverPresentationController
-        popoverPresentationViewController?.permittedArrowDirections = .up
-        popoverPresentationViewController?.barButtonItem = button
-        popoverPresentationViewController?.sourceRect = CGRect(x: self.view.frame.width/2 - 1, y: self.view.frame.height/2 - 1, width: 2, height: 2)*/
-        
         present(popoverController, animated: true, completion: nil)//*/
         
-        /*//let alertTitle = "Date Entry Alert"
-        let alertMessage = "Are you sure you want to archive the data? If you click Save, you won't be able to view or edit them."
-        let alertController = UIAlertController(title: nil, message: alertMessage, preferredStyle: .actionSheet)
-        //let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-        alertController.addAction(UIAlertAction(title: "Save", style: .destructive, handler: nil))
-        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        present(alertController, animated: true, completion: nil)*/
-        
     }
+    
     
     func addBlur() {
         // Only apply the blur if the user hasn't disabled transparency effects
@@ -549,6 +538,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             self.editBarButton.customView = editButton
         }
         
+        // Add blurEffectView here because if it's added in AddObservationViewController,
+        //  it will be presented modally with the menu. Adding it to this controller makes
+        //  it appear visually between the two controllers, rather than sliding up from the
+        //  bottom of the screen with the menu
         addBlur()
         
         let menuController = AddObservationViewController()
