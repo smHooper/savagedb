@@ -54,7 +54,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // If someone taps outside the buttons, dismiss the menu
         dismissWhenTappedAround()
         
-        self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
+        // Because scrollView and container are centered in setupMenuLayout(),
+        //  scroll position is in the middle of the view when first loaded
+        setScrollViewPositionToTop()
+        //self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
     }
     
     override func didReceiveMemoryWarning() {
@@ -81,6 +84,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Redo the menu
         setupMenuLayout()
         self.view.backgroundColor = UIColor.clear
+        
+        // Reset the scrollView position to 0 if necessary
+        //self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
+        setScrollViewPositionToTop()
     }
     
     
@@ -185,6 +192,18 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         if scrollView.contentOffset.x != 0 {
             scrollView.contentOffset.x = 0
         }
+    }
+    
+    func setScrollViewPositionToTop() {
+        var offset = CGPoint(x: -self.scrollView.contentInset.left,
+                             y: -scrollView.contentInset.top)
+        
+        if #available(iOS 11.0, *) {
+            offset = CGPoint(x: -self.scrollView.adjustedContentInset.left,
+                             y: -scrollView.adjustedContentInset.top)
+        }
+        
+        self.scrollView.setContentOffset(offset, animated: true)
     }
     
     // MARK: - Navigation
