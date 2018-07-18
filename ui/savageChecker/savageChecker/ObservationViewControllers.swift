@@ -121,10 +121,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     func resetLayout() {
         
-        let safeArea = self.view.safeAreaInsets
+        //let safeArea = self.view.safeAreaInsets
         let newScreenSize = UIScreen.main.bounds//Gives size after rotation
         // In theory, the scrollView should always be anchored to the center of the screen regardless of it's orientation, so I should just need to reset the width and height
-        self.formWidthConstraint.constant = newScreenSize.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right
+        self.formWidthConstraint.constant = newScreenSize.width - CGFloat(self.sideSpacing * 2)// - safeArea.left - safeArea.right
         self.formHeightConstraint.constant = newScreenSize.height - CGFloat(self.topSpacing) - self.navigationBarHeight
         
         /*// Remove X and Y constraints, then reset them with the new orientation's layout guide
@@ -160,20 +160,16 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // Set up the text fields in place
     func setupLayout(){
         // Set up the container
-        let safeArea = self.view.safeAreaInsets
+        //let safeArea = self.view.safeAreaInsets
         self.scrollView.showsHorizontalScrollIndicator = false
         //scrollView.contentInsetAdjustmentBehavior = .automatic
         //scrollView.bounces = false
         
         self.view.addSubview(self.scrollView)
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
-        
-        // **** Might not want to center the Y anchor like this ***********
-        //self.formXConstraint = self.scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor)
-        //self.formYConstraint = self.scrollView.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor, constant: self.navigationBarHeight + CGFloat(self.topSpacing))
-        self.scrollView.leftAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leftAnchor, constant: self.sideSpacing).isActive = true
+        self.scrollView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: self.sideSpacing).isActive = true
         self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
-        self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2) - safeArea.left - safeArea.right)
+        self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2))// - safeArea.left - safeArea.right)
         self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.height)
         
         //self.formXConstraint.identifier = "formX"
@@ -194,7 +190,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
         container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
         container.widthAnchor.constraint(equalTo: scrollView.widthAnchor).isActive = true
-        container.heightAnchor.constraint(equalTo: scrollView.heightAnchor).isActive = true
+        //container.heightAnchor.constraint(equalTo: scrollView.heightAnchor).isActive = true
         
         var containerHeight = CGFloat(0.0)
         var lastBottomAnchor = container.topAnchor
@@ -226,7 +222,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             textField.font = UIFont.systemFont(ofSize: 14.0)
             textField.layer.cornerRadius = 5
             textField.frame.size.height = 28.5
-            textField.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
+            textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: 28.5)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
             textField.tag = i
             textField.delegate = self
             //textFields.append(textField)
@@ -236,7 +232,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             let stackHeight = (label.text?.height(withConstrainedWidth: labelWidth, font: label.font))! + CGFloat(self.sideSpacing) + textField.frame.height
             stack.axis = .vertical
             stack.spacing = CGFloat(self.sideSpacing)
-            stack.frame = CGRect(x: safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: stackHeight)
+            stack.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: stackHeight)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: stackHeight)
             
             containerHeight += stackHeight + CGFloat(self.textFieldSpacing)
             
@@ -340,6 +336,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         let contentWidth = self.view.frame.width - (self.sideSpacing * 2)
         let contentHeight = containerHeight + UIApplication.shared.statusBarFrame.height + self.navigationBarHeight + CGFloat(self.topSpacing)
+        container.heightAnchor.constraint(equalToConstant: contentHeight).isActive = true
         self.scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)//CGSize(width: container.frame.size.width, height: containerHeight)
     }
     
@@ -499,7 +496,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // When keyboard disappears, restore original position
     @objc func keyboardWillBeHidden(notification: NSNotification){
-        print("self.currentScrollViewOffset in keyboardWillBeHidden: \(self.currentScrollViewOffset)")
+        //print("self.currentScrollViewOffset in keyboardWillBeHidden: \(self.currentScrollViewOffset)")
         self.scrollView.contentOffset = CGPoint(x: 0, y: self.currentScrollViewOffset)
         self.view.endEditing(true)
     }

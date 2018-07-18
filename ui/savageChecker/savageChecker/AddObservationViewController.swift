@@ -18,6 +18,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var scrollView: UIScrollView!
+    var blurEffectView: UIVisualEffectView!
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "NPS Vehicle": "npsVehicleIcon",
@@ -35,6 +36,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Add blur effect
+        //addBlur()
         
         // Add make buttons to arrange
         for (offset: index, (key: labelText, value: iconName)) in self.icons.enumerated() {
@@ -68,7 +72,12 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Add the blur effect for the rotated view
         let presentingController = self.presentingViewController as! BaseTableViewController
         presentingController.blurEffectView.removeFromSuperview()
-        presentingController.addBlur()
+        presentingController.addBlur()//*/
+        /*for button in self.buttons {
+            button.removeFromSuperview()
+        }
+        
+        addBlur()*/
         
         // Redo the menu
         setupMenuLayout()
@@ -179,7 +188,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         }
     }
     
-    
     // MARK: - Navigation
     
     @objc func moveToObservationViewController(button: UIButton){
@@ -216,11 +224,37 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.view.addGestureRecognizer(tap)
     }
     
+    func addBlur() {
+        
+        //Remove the blur if it exists
+        if let blurView = self.blurEffectView {
+            self.blurEffectView.removeFromSuperview()
+        }
+        
+        // Only apply the blur if the user hasn't disabled transparency effects
+        if !UIAccessibilityIsReduceTransparencyEnabled() {
+            self.view.backgroundColor = .clear
+            
+            let blurEffect = UIBlurEffect(style: .regular)
+            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
+            
+            //always fill the view
+            self.blurEffectView.frame = self.view.frame//bounds
+            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            
+            self.view.addSubview(self.blurEffectView)
+            
+        } else {
+            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
+            self.view.backgroundColor = .black
+        }
+    }
+    
     func animateRemoveMenu(duration: CGFloat = 0.75) {
         let presentingController = presentingViewController as! BaseTableViewController
         UIView.animate(withDuration: 0.75,
-                       animations: {presentingController.blurEffectView.alpha = 0.0},
-                       completion: {(value: Bool) in presentingController.blurEffectView.removeFromSuperview()})
+                       animations: {presentingController.blurEffectView.alpha = 0.0},//{self.blurEffectView.alpha = 0.0},//
+                       completion: {(value: Bool) in presentingController.blurEffectView.removeFromSuperview()})//self.blurEffectView.removeFromSuperview()})//
     }
     
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {

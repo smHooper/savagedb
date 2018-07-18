@@ -231,7 +231,7 @@ class ObservationViewController: UIViewController, UITextFieldDelegate {
         super.prepare(for: segue, sender: sender)
         
         guard let button = sender as? UIBarButtonItem, button === saveButton else {
-            os_log("The save button was not pressed, cancelling", log: OSLog.default, type: .debug)
+            //os_log("The save button was not pressed, cancelling", log: OSLog.default, type: .debug)
             return
         }
         

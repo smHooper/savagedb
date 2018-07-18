@@ -180,9 +180,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         self.tableView.frame = CGRect(x: 0, y: statusBarHeight + navigationBarHeight, width: newScreenSize.width, height: newScreenSize.height - (statusBarHeight + navigationBarHeight + self.barHeight))
         
-        // Set up tool bar and nav bar
-        setupToolBarLayout()
-        setNavigationBar()
+        // Set up tool bar and nav bar. If the rotation happens while AddObs menu is open,
+        //  the tool and nav bars will be placed overtop of the blurEffectView, so check to see if this is true first
+        
+        if self.viewIfLoaded?.window != nil {
+            setupToolBarLayout()
+            setNavigationBar()
+        }
         
         // Handle the background image
         for (i, view) in self.view.subviews.enumerated() {

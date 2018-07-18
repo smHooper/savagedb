@@ -195,7 +195,7 @@ class ObservationTableViewController: UITableViewController {
             
             // Let the view controller know to insert a new row in the DB
             observationViewController.isAddingNewObservation = true
-            os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
+            //os_log("Adding new vehicle obs", log: OSLog.default, type: .debug)
         
         case "showObservationDetail":
             guard let observationViewController = segue.destination as? ObservationViewController else {
