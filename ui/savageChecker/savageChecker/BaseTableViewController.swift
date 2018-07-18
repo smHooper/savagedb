@@ -182,8 +182,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Set up tool bar and nav bar. If the rotation happens while AddObs menu is open,
         //  the tool and nav bars will be placed overtop of the blurEffectView, so check to see if this is true first
-        
-        if self.viewIfLoaded?.window != nil {
+        if self.getTopMostController() == self {
             setupToolBarLayout()
             setNavigationBar()
         }

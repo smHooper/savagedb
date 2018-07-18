@@ -47,6 +47,22 @@ extension UIViewController {
         backgroundView.tag = -1
         self.view.addSubview(backgroundView)
     }
+/*    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
+ 
+ while (topController.presentedViewController) {
+ topController = topController.presentedViewController;
+ }
+ 
+ return topController;
+ }*/
+    func getTopMostController() -> UIViewController {
+        var topController = UIApplication.shared.keyWindow?.rootViewController
+        while topController?.presentedViewController != nil {
+            topController = topController?.presentedViewController
+        }
+        
+        return topController!
+    }
 }
 
 // Add extension to dismiss keyboard for any text field
