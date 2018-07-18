@@ -406,7 +406,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
         backButton.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
+        //backButton.setTitle("Shift Info", for: .normal)
         let backBarButton = UIBarButtonItem(customView: backButton)
+        //backBarButton.setTitleTextAttributes([], for: <#T##UIControlState#>)
         
         // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
         let editButton: UIButton
@@ -419,9 +421,21 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.editBarButton = UIBarButtonItem(customView: editButton)
         
         let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
-        let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
-        navigationItem.leftBarButtonItems = [backBarButton, saveButton]
-        navigationItem.rightBarButtonItems = [addObservationButton, self.editBarButton]
+        
+        //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
+        let saveButton = UIButton(type: .custom)
+        saveButton.setImage(UIImage(named: "archiveIcon"), for: .normal)
+        saveButton.frame = CGRect(x: 0.0, y: 0.0, width: 30, height: 30)
+        saveButton.translatesAutoresizingMaskIntoConstraints = false
+        saveButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        saveButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        saveButton.imageView?.contentMode = .scaleAspectFit
+        saveButton.addTarget(self, action: #selector(archiveButtonPressed(button:)), for: .touchUpInside)
+        let saveBarButton = UIBarButtonItem(customView: saveButton)
+        
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
+        navigationItem.leftBarButtonItems = [backBarButton, flexSpace, saveBarButton]
+        navigationItem.rightBarButtonItems = [addObservationButton, flexSpace, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
@@ -431,10 +445,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func makeEditButton(imageName: String) -> UIButton {
         let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: imageName), for: .normal)
-        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 20, height: 20)
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 30, height: 30)
         editButton.translatesAutoresizingMaskIntoConstraints = false
-        editButton.widthAnchor.constraint(equalToConstant: 20).isActive = true
-        editButton.heightAnchor.constraint(equalToConstant: 20).isActive = true
+        editButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        editButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
         editButton.imageView?.contentMode = .scaleAspectFit
         editButton.addTarget(self, action: #selector(handleEditing), for: .touchUpInside)
         
@@ -501,6 +515,26 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
     }
     
+    func addBlur() {
+        // Only apply the blur if the user hasn't disabled transparency effects
+        if !UIAccessibilityIsReduceTransparencyEnabled() {
+            self.view.backgroundColor = .clear
+            
+            let blurEffect = UIBlurEffect(style: .regular)
+            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
+            
+            //always fill the view
+            self.blurEffectView.frame = self.view.frame//bounds
+            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            
+            self.view.addSubview(self.blurEffectView)
+            
+        } else {
+            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
+            self.view.backgroundColor = .black
+        }
+    }
+    
     
     @objc func addButtonPressed(){
         
@@ -512,23 +546,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             self.editBarButton.customView = editButton
         }
         
-        // Only apply the blur if the user hasn't disabled transparency effects
-        if !UIAccessibilityIsReduceTransparencyEnabled() {
-            self.view.backgroundColor = .clear
-            
-            let blurEffect = UIBlurEffect(style: .regular)
-            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
-            
-            //always fill the view
-            self.blurEffectView.frame = self.view.bounds
-            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            
-            self.view.addSubview(self.blurEffectView)
-            
-        } else {
-            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
-            self.view.backgroundColor = .black
-        }
+        addBlur()
+        
         let menuController = AddObservationViewController()
         menuController.modalPresentationStyle = .overCurrentContext
         menuController.modalTransitionStyle = .coverVertical
