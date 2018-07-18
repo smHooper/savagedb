@@ -10,13 +10,14 @@ import UIKit
 import os.log
 import SQLite
 
-class AddObservationViewController: UIViewController, UIGestureRecognizerDelegate {
+class AddObservationViewController: UIViewController, UIGestureRecognizerDelegate, UIScrollViewDelegate {
     
     let minSpacing = 50.0
     let menuPadding = 50.0
     var buttons = [VehicleButtonControl]()
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
+    var scrollView: UIScrollView!
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "NPS Vehicle": "npsVehicleIcon",
@@ -49,6 +50,8 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
         // If someone taps outside the buttons, dismiss the menu
         dismissWhenTappedAround()
+        
+        self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
     }
     
     override func didReceiveMemoryWarning() {
@@ -57,8 +60,17 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     // Redo the layout when rotated
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
+    //override func viewDidLayoutSubviews() {
+    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
+        super.viewWillTransition(to: size, with: coordinator)
+        //super.viewDidLayoutSubviews()
+        
+        // Add the blur effect for the rotated view
+        let presentingController = self.presentingViewController as! BaseTableViewController
+        presentingController.blurEffectView.removeFromSuperview()
+        presentingController.addBlur()
+        
+        // Redo the menu
         setupMenuLayout()
         self.view.backgroundColor = UIColor.clear
     }
@@ -69,7 +81,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
         // Figure out how many buttons fit in one row
         let viewWidth = self.view.frame.width
-        let menuWidth = Double(viewWidth) - menuPadding * 2
+        let menuWidth = Double(viewWidth) - self.menuPadding * 2
         let nPerRow = floor((menuWidth + self.minSpacing) / (VehicleButtonControl.width + self.minSpacing))
         let nRows = Int(ceil(Double(buttons.count) / nPerRow))
         //let menuWidth = nRows * VehicleButtonControl.width + ((nRows - 1) * self.minSpacing)
@@ -77,23 +89,44 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Figure out if there are too many rows to fit in the window. If so, put all of the buttons in a scrollview
         let viewHeight = self.view.frame.height
         let menuHeight = Double(viewHeight) - menuPadding * 2//nRows * (VehicleButtonControl.height + self.minSpacing) + self.minSpacing
-        if Double(viewHeight) < menuHeight {
+        /*if Double(viewHeight) < menuHeight {
             // Put it in a scrollview
-        }
+            
+        }*/
+        self.scrollView = UIScrollView()
+        self.scrollView.showsVerticalScrollIndicator = false
+        self.view.addSubview(self.scrollView)
+        self.scrollView.translatesAutoresizingMaskIntoConstraints = false
+        /*self.scrollView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        self.scrollView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
+        self.scrollView.widthAnchor.constraint(equalToConstant: CGFloat(menuWidth)).isActive = true
+        self.scrollView.heightAnchor.constraint(equalToConstant:CGFloat(menuHeight)).isActive = true*/
+        self.scrollView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: CGFloat(self.menuPadding)).isActive = true
+        self.scrollView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: CGFloat(-self.menuPadding)).isActive = true
+        self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: CGFloat(self.menuPadding)).isActive = true
+        self.scrollView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: CGFloat(-self.menuPadding)).isActive = true
         
         // Set up the container
         let container = UIView()
-        self.view.addSubview(container)
+        //container.backgroundColor = UIColor.blue
+        /*self.view.addSubview(container)
         container.translatesAutoresizingMaskIntoConstraints = false
         container.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
         container.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
         container.widthAnchor.constraint(equalToConstant: CGFloat(menuWidth)).isActive = true
-        container.heightAnchor.constraint(equalToConstant:CGFloat(menuHeight)).isActive = true
+        container.heightAnchor.constraint(equalToConstant:CGFloat(menuHeight)).isActive = true*/
+        self.scrollView.addSubview(container)
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.centerXAnchor.constraint(equalTo: self.scrollView.centerXAnchor).isActive = true
+        container.topAnchor.constraint(equalTo: self.scrollView.topAnchor).isActive = true
+        container.widthAnchor.constraint(equalTo: self.scrollView.widthAnchor).isActive = true
+        // Don't set the height until all buttons have been added
         
         // Loop through each row, making a horizontal stack view for each
         var lastBottomAnchor = container.topAnchor
         let menuLeftAnchor = container.leftAnchor
         let menuRightAnchor = container.rightAnchor
+        var contentHeight: Double = 0
         for rowIndex in 0..<nRows {
             let stack = UIStackView()
             let startIndex = rowIndex * Int(nPerRow)
@@ -132,8 +165,20 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             stack.rightAnchor.constraint(equalTo: menuRightAnchor).isActive = true
             lastBottomAnchor = stack.bottomAnchor
         }
+        
+        container.bottomAnchor.constraint(equalTo: lastBottomAnchor).isActive = true
+        contentHeight = (self.buttons[0].height + self.minSpacing) * Double(nRows) - self.minSpacing
+        self.scrollView.contentSize = CGSize(width: menuWidth, height: contentHeight)
     }
 
+    
+    // MARK:  - Scrollview Delegate
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView.contentOffset.x != 0 {
+            scrollView.contentOffset.x = 0
+        }
+    }
+    
     
     // MARK: - Navigation
     
