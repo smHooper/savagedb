@@ -3542,6 +3542,168 @@ class HunterObservationViewController: BaseObservationViewController {
 
 //MARK:-
 //MARK:-
+class RoadLotteryObservationViewController: BaseObservationViewController {
+    
+    var observation: Observation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class
+    
+    override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
+        super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.observationsTable = Table("roadLottery")
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+        
+        self.observationsTable = Table("roadLottery")
+    }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
+    override func autoFillTextFields(){
+        super.autoFillTextFields()
+        
+        // Initialize the observation. Also, fill destination field with default.
+        if self.isAddingNewObservation {
+            self.observation = Observation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "N/A", nPassengers: "")
+            self.dropDownTextFields[4]?.text = "N/A"
+        } else {
+            // Query the db to get the observation
+            guard let id = self.observationId else {
+                fatalError("No ID passed from the tableViewController")
+            }
+            
+            let record: Row
+            do {
+                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+            } catch {
+                fatalError("Query was unsuccessful because \(error.localizedDescription)")
+            }
+            
+            self.observation = Observation(id: id,
+                                           observerName: record[observerNameColumn],
+                                           date: record[dateColumn],
+                                           time: record[timeColumn],
+                                           driverName: record[driverNameColumn],
+                                           destination: record[destinationColumn],
+                                           nPassengers: record[nPassengersColumn],
+                                           comments: record[commentsColumn])
+            self.dropDownTextFields[0]?.text = observation?.observerName
+            self.textFields[1]?.text = observation?.date
+            self.textFields[2]?.text = observation?.time
+            self.textFields[3]?.text = observation?.driverName
+            self.dropDownTextFields[4]?.text = observation?.destination
+            self.textFields[5]?.text = observation?.nPassengers
+            self.textFields[6]?.text = observation?.comments
+        }
+    }
+    
+    //MARK: - DB methods
+    @objc override func updateData(){
+        super.updateData()
+        
+        // Would be enabled in super.updateData if all fields are full
+        if self.saveButton.isEnabled {
+            // Update the observation instance
+            self.observation?.observerName = self.dropDownTextFields[0]!.text!
+            self.observation?.date = self.textFields[1]!.text!
+            self.observation?.time = self.textFields[2]!.text!
+            self.observation?.driverName = self.textFields[3]!.text!
+            self.observation?.destination = self.dropDownTextFields[4]!.text!
+            self.observation?.nPassengers = self.textFields[5]!.text!
+            self.observation?.comments = self.textFields[6]!.text!
+            
+            //self.saveButton.isEnabled = true
+        }
+    }
+    
+    // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
+    override func insertRecord() {
+        // Can just get text values from the observation because it has to be updated before saveButton is enabled
+        let observerName = observation?.observerName
+        let date = observation?.date
+        let time = observation?.time
+        let driverName = observation?.driverName
+        let destination = observation?.destination
+        let nPassengers = observation?.nPassengers
+        let comments = observation?.comments
+        
+        // Insert into DB
+        do {
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
+                                                            dateColumn <- date!,
+                                                            timeColumn <- time!,
+                                                            driverNameColumn <- driverName!,
+                                                            destinationColumn <- destination!,
+                                                            nPassengersColumn <- nPassengers!,
+                                                            commentsColumn <- comments!))
+        } catch {
+            print("insertion failed: \(error)")
+        }
+    }
+    
+    
+    override func updateRecord() {
+        do {
+            // Select the record to update
+            print("Record id: \((observation?.id.datatypeValue)!)")
+            let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
+            print(record)
+            // Update all fields
+            if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
+                                        dateColumn <- (self.observation?.date)!,
+                                        timeColumn <- (self.observation?.time)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
+                                        nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        commentsColumn <- (self.observation?.comments)!)) > 0 {
+                print("updated record")
+            } else {
+                print("record not found")
+            }
+        } catch {
+            print("Update failed")
+        }
+    }
+    
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertRecord()
+            
+            // Update an existing record
+        } else {
+            updateRecord()
+        }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+        observation?.id = Int(max)
+        
+        dismissController()
+    }
+}
+
+
+//MARK:-
+//MARK:-
 class OtherObservationViewController: BaseObservationViewController {
     
     var observation: Observation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class

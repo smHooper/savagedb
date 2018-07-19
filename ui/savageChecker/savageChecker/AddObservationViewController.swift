@@ -30,7 +30,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                                     "Propho": "photographerIcon",
                                     "Accessibility": "accessibilityIcon",
                                     "Hunter": "hunterIcon",
-                                    "Road lottery": "busIcon",
+                                    "Road Lottery": "roadLotteryIcon",
                                     "Other": "otherIcon"]
     
     override func viewDidLoad() {
@@ -222,6 +222,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "Propho": PhotographerObservationViewController.self,
                      "Accessibility": AccessibilityObservationViewController.self,
                      "Hunter": HunterObservationViewController.self,
+                     "Road Lottery": RoadLotteryObservationViewController.self,
                      "Other": OtherObservationViewController.self]
         
         // Remove the blur effect

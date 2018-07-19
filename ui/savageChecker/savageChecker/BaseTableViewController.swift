@@ -35,6 +35,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                         "Propho": PhotographerObservationViewController(),
                         "Accessibility": AccessibilityObservationViewController(),
                         "Hunter": HunterObservationViewController(),
+                        "Road Lottery": RoadLotteryObservationViewController(),
                         "Other": OtherObservationViewController()]
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
@@ -48,7 +49,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                  "Propho": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                  "Accessibility": (normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
                  "Hunter": (normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
-                 "Road lottery": (normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
+                 "Road lottery": (normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                  "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
     //MARK: ToolBar properties
@@ -66,7 +67,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                           (label: "Propho", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                           (label: "Accessibility", normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
                           (label: "Hunter", normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
-                          (label: "Road lottery", normal: "busIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
+                          (label: "Road lottery", normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                           (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
     let barButtonSize: CGFloat = 65
@@ -407,37 +408,50 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let navigationItem = UINavigationItem(title: "Vehicles")
         let backButton = UIButton(type: .custom)
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
-        backButton.frame = CGRect(x: 0.0, y: 0.0, width: 35.0, height: 35.0)
+        backButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
-        //backButton.setTitle("Shift Info", for: .normal)
+        backButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         let backBarButton = UIBarButtonItem(customView: backButton)
         //backBarButton.setTitleTextAttributes([], for: <#T##UIControlState#>)
         
         // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
         let editButton: UIButton
         if self.isEditingTable {
-            editButton = makeEditButton(imageName: "blueCheck")
+            editButton = makeEditButton(imageName: "checkIcon")
             //self.editBarButton.customView = editButton
         } else {
             editButton = makeEditButton(imageName: "deleteIcon")
         }
         self.editBarButton = UIBarButtonItem(customView: editButton)
         
-        let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
+        //let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
+        // Add button for adding a new observation
+        let addButton = UIButton(type: .custom)
+        addButton.setImage(UIImage(named: "addIcon"), for: .normal)
+        addButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
+        addButton.translatesAutoresizingMaskIntoConstraints = false
+        addButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        addButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        addButton.imageView?.contentMode = .scaleAspectFit
+        addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
+        let addObservationButton = UIBarButtonItem(customView: addButton)
         
         //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
-        let saveButton = UIButton(type: .custom)
-        saveButton.setImage(UIImage(named: "archiveIcon"), for: .normal)
-        saveButton.frame = CGRect(x: 0.0, y: 0.0, width: 30, height: 30)
-        saveButton.translatesAutoresizingMaskIntoConstraints = false
-        saveButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        saveButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
-        saveButton.imageView?.contentMode = .scaleAspectFit
-        saveButton.addTarget(self, action: #selector(archiveButtonPressed(button:)), for: .touchUpInside)
-        let saveBarButton = UIBarButtonItem(customView: saveButton)
+        // Add the archive button
+        let archiveButton = UIButton(type: .custom)
+        archiveButton.setImage(UIImage(named: "archiveIcon"), for: .normal)
+        archiveButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
+        archiveButton.translatesAutoresizingMaskIntoConstraints = false
+        archiveButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        archiveButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        archiveButton.imageView?.contentMode = .scaleAspectFit
+        archiveButton.addTarget(self, action: #selector(archiveButtonPressed(button:)), for: .touchUpInside)
+        archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
+        let archiveBarButton = UIBarButtonItem(customView: archiveButton)
         
-        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
-        navigationItem.leftBarButtonItems = [backBarButton, flexSpace, saveBarButton]
+        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
+        navigationItem.leftBarButtonItems = [backBarButton, flexSpace, archiveBarButton]
         navigationItem.rightBarButtonItems = [addObservationButton, flexSpace, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
@@ -448,11 +462,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func makeEditButton(imageName: String) -> UIButton {
         let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: imageName), for: .normal)
-        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 30, height: 30)
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
         editButton.translatesAutoresizingMaskIntoConstraints = false
-        editButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
-        editButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         editButton.imageView?.contentMode = .scaleAspectFit
+        editButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 100)
         editButton.addTarget(self, action: #selector(handleEditing), for: .touchUpInside)
         
         return editButton
@@ -465,7 +480,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         if !self.isEditingTable {
             self.tableView.isEditing = true
             self.isEditingTable = true
-            let editButton = makeEditButton(imageName: "blueCheck")
+            let editButton = makeEditButton(imageName: "checkIcon")
             self.editBarButton.customView = editButton
             
         } else {
