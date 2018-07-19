@@ -28,6 +28,7 @@
 		AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */; };
 		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
 		AFF3E16720C0AC7D0079A389 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E16620C0AC7D0079A389 /* TextFieldCell.swift */; };
+		AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -118,6 +119,7 @@
 		AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddObservationViewController.swift; sourceTree = "<group>"; };
 		AFF3E15D20C084980079A389 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		AFF3E16620C0AC7D0079A389 /* TextFieldCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextFieldCell.swift; sourceTree = "<group>"; };
+		AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivePopoverViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,10 +177,11 @@
 				AF3A23F520E1463800200038 /* Constants.swift */,
 				AF67170020A4C58F0039C490 /* AppDelegate.swift */,
 				AF67170220A4C58F0039C490 /* SessionViewController.swift */,
+				AF67172020A4D0AC0039C490 /* Session.swift */,
 				AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */,
 				AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */,
+				AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */,
 				AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */,
-				AF67172020A4D0AC0039C490 /* Session.swift */,
 				AF5E82F720AA2A9300386083 /* Observation.swift */,
 				AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */,
 				AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */,
@@ -438,6 +441,7 @@
 				AF2D9A4E20BF6AD90006EF72 /* ObservationViewControllers.swift in Sources */,
 				AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */,
 				AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */,
+				AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */,
 				AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */,
 				AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */,
 				AF67172120A4D0AC0039C490 /* Session.swift in Sources */,
@@ -604,7 +608,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = C4T43F6ZLM;
 				INFOPLIST_FILE = savageChecker/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -622,7 +628,9 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = C4T43F6ZLM;
 				INFOPLIST_FILE = savageChecker/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

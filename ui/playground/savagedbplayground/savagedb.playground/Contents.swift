@@ -47,10 +47,7 @@ let date = formatter.date(from: stamp)
 let date2 = formatter.date(from: "5/4/18 8:01 AM")
 let now = Date()
 
-let nowstring = formatter.string(from: now)
-print(date)
-print(formatter.date(from: nowstring))
-
+now + 2
 
 
 
