@@ -23,6 +23,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         configureDatabase()
         
+        let sessionController = SessionViewController()
+        
+        self.window = UIWindow(frame: UIScreen.main.bounds)
+        self.window?.rootViewController = sessionController
+        self.window?.makeKeyAndVisible()
+        
         return true
     }
     
