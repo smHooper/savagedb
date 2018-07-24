@@ -248,7 +248,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Draw group indicators
         addBarGroupIndicators()
+        
+        // Add swipe gesture recognizers
+        let swipeLeftGesture = UISwipeGestureRecognizer(target: self, action: #selector(swipeLeftOnToolBar))
+        swipeLeftGesture.direction = .left
+        swipeLeftGesture.cancelsTouchesInView = false
+        self.toolBar.addGestureRecognizer(swipeLeftGesture)
+        
+        let swipeRightGesture = UISwipeGestureRecognizer(target: self, action: #selector(swipeRightOnToolBar))
+        swipeRightGesture.direction = .right
+        swipeRightGesture.cancelsTouchesInView = false
+        self.toolBar.addGestureRecognizer(swipeRightGesture)
     }
+    
     
     func setToolBarButtons() {
         
@@ -260,6 +272,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.toolBar.setItems(barItems, animated: true)
         
     }
+    
     
     func addBarGroupIndicators() {
         // Clear all indicators so the transparent one isn't covered by an opaque one
@@ -323,6 +336,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         return button
     }
     
+    
     // Switch the tableView data when a toolbar button is clicked
     @objc func handleToolBarButton(sender: UIBarButtonItem) {
         
@@ -375,9 +389,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     @objc func handleNextButton(sender: UIBarButtonItem) {
         
         self.barGroupIndicators[self.currentGroup].image = UIImage(named: "unselectedCircle")
-        
+        print("Sender tag: \(sender.tag)")
         // Sender is the left button
-        if sender.tag == 0 {
+        if sender == self.leftToolBarButton {
             self.currentGroup -= 1
             if self.currentGroup == 0 {
                 self.leftToolBarButton.isEnabled = false
@@ -403,6 +417,26 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.barGroupIndicators[self.currentGroup].image = UIImage(named: "selectedCircle")
         
     }
+    
+    
+    // When user swipes left on toolbar, call the function associated with the right "next" button
+    @objc func swipeLeftOnToolBar() {
+        print("Trying to swipe left")
+        print("self.rightToolBarButton.tag: \(self.rightToolBarButton.tag)")
+        if self.rightToolBarButton.isEnabled {
+            handleNextButton(sender: self.rightToolBarButton)
+        }
+    }
+    
+    
+    // When user swipes right on toolbar, call the function associated with the left "next" button
+    @objc func swipeRightOnToolBar() {
+        print("Trying to swipe right")
+        if self.leftToolBarButton.isEnabled {
+            handleNextButton(sender: self.leftToolBarButton)
+        }
+    }
+    
     
     //MARK: - Navigation
     func setNavigationBar() {
