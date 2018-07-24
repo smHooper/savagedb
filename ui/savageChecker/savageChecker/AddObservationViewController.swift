@@ -231,6 +231,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let viewController = types[labelText]!.init()
         viewController.isAddingNewObservation = true
         viewController.session = session
+        viewController.title = "New \(labelText) Observation"
         viewController.transitioningDelegate = self
         viewController.modalPresentationStyle = .custom
         self.presentTransition = RightToLeftTransition()

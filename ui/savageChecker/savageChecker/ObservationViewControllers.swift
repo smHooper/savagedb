@@ -882,7 +882,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
-        let navItem = UINavigationItem(title: "New Vehicle")
+        let navItem = UINavigationItem(title: self.title!)
         self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
         let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: nil, action: #selector(cancelButtonPressed))
         navItem.rightBarButtonItem = self.saveButton

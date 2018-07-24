@@ -49,7 +49,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                  "Propho": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                  "Accessibility": (normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
                  "Hunter": (normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
-                 "Road lottery": (normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
+                 "Road Lottery": (normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                  "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
     //MARK: ToolBar properties
@@ -67,7 +67,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                           (label: "Propho", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                           (label: "Accessibility", normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
                           (label: "Hunter", normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
-                          (label: "Road lottery", normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
+                          (label: "Road Lottery", normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                           (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
     let barButtonSize: CGFloat = 65
@@ -121,6 +121,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addBackground()
         
         // Set up nav bar and tab bar
+        self.title = "\(self.barButtonIcons[self.selectedToolBarButton].label) Observations"
         setNavigationBar()
         
         // get width and height of View
@@ -299,7 +300,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     func makeBarButton(buttonTag: Int) -> UIButton {
         
-        let thisIcon = barButtonIcons[buttonTag]
+        let thisIcon = self.barButtonIcons[buttonTag]
     
         let button = UIButton(type: .custom)
         button.setImage(UIImage(named: thisIcon.normal), for: .normal)
@@ -344,6 +345,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Reload the table for the newly selected button
         loadData()
+        
+        // Reset the title of the nav bar. To do this, recreate the whole NavigationBar
+        self.title = "\(self.barButtonIcons[sender.tag].label) Observations"
+        setNavigationBar()
     }
     
     
@@ -405,7 +410,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
         
-        let navigationItem = UINavigationItem(title: "Vehicles")
+        let navigationItem = UINavigationItem(title: self.title!)
         let backButton = UIButton(type: .custom)
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
         backButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
@@ -613,23 +618,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     
     // called when the cell is selected.
-    /*func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        
-        let observationViewController = BaseObservationViewController()
-        observationViewController.modelObject = observations[indexPath.row]
-        observationViewController.isAddingNewObservation = false
-        // post notification to pass observation to the view controller
-        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
-        
-        observationViewController.modalPresentationStyle = .custom
-        observationViewController.transitioningDelegate = self
-        
-        // Set the transition. When done transitioning, reset presentTransition to nil
-        self.presentTransition = RightToLeftTransition()
-        present(observationViewController, animated: true, completion: {[weak self] in self?.presentTransition = nil})
-    }*/
-    
-    // called when the cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         let stamp = self.observationCells.keys.sorted()[indexPath.row]
@@ -640,6 +628,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         let observationViewController = self.observationViewControllers[observationType]!
         observationViewController.observationId = thisObservation.id
+        observationViewController.title = observationType
         
         observationViewController.isAddingNewObservation = false
         // post notification to pass observation to the view controller
