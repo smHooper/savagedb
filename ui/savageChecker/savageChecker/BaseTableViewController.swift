@@ -72,7 +72,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     let barButtonSize: CGFloat = 65
     let barButtonWidth: CGFloat = 150
-    let barHeight: CGFloat = 120
+    let barHeight: CGFloat = 140
     var nBarGroups = 1
     var currentGroup = 0
     var barButtons = [UIBarButtonItem]()
@@ -239,7 +239,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let rightButton = makeNextBarButton(tag: 1)
         self.leftToolBarButton = UIBarButtonItem(customView: leftButton)
         self.rightToolBarButton = UIBarButtonItem(customView: rightButton)
-        self.leftToolBarButton.isEnabled = false //Shouldn't be able go right before first going left
+        self.leftToolBarButton.isEnabled = false //Shouldn't be able go left before going right first
         
         // Add buttons to toolbar
         setToolBarButtons()
@@ -391,7 +391,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.barGroupIndicators[self.currentGroup].image = UIImage(named: "unselectedCircle")
         print("Sender tag: \(sender.tag)")
         // Sender is the left button
-        if sender == self.leftToolBarButton {
+        if sender.tag == 0 {
             self.currentGroup -= 1
             if self.currentGroup == 0 {
                 self.leftToolBarButton.isEnabled = false
@@ -424,6 +424,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         print("Trying to swipe left")
         print("self.rightToolBarButton.tag: \(self.rightToolBarButton.tag)")
         if self.rightToolBarButton.isEnabled {
+            self.rightToolBarButton.tag = 1
             handleNextButton(sender: self.rightToolBarButton)
         }
     }
@@ -486,7 +487,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         archiveButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         archiveButton.imageView?.contentMode = .scaleAspectFit
         archiveButton.addTarget(self, action: #selector(archiveButtonPressed(button:)), for: .touchUpInside)
-        archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
+        //archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
         let archiveBarButton = UIBarButtonItem(customView: archiveButton)
         
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
@@ -506,7 +507,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         editButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         editButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         editButton.imageView?.contentMode = .scaleAspectFit
-        editButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 100)
+        //editButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 100)
         editButton.addTarget(self, action: #selector(handleEditing), for: .touchUpInside)
         
         return editButton
