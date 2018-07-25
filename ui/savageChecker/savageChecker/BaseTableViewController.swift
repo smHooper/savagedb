@@ -694,8 +694,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let table = Table(tableName)
             print("Deleting \(id) from \(tableName)")
             
-            //observations.remove(at: indexPath.row)
-            //let recordToRemove = observationsTable.where(idColumn == id.datatypeValue)
             let recordToRemove = table.where(idColumn == id.datatypeValue)
             observationCells.removeValue(forKey: index)
             

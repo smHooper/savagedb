@@ -61,35 +61,4 @@ class Session {//}: NSObject, NSCoding {
         self.closeTime = closeTime!
     }
     
-    /*//MARK: NSCoding
-    func encode(with aCoder: NSCoder) {
-        aCoder.encode(observerName, forKey: PropertyKey.observerName)
-        aCoder.encode(date, forKey: PropertyKey.date)
-        aCoder.encode(openTime, forKey: PropertyKey.openTime)
-        aCoder.encode(closeTime, forKey: PropertyKey.closeTime)
-    }
-    
-    required convenience init?(coder aDecoder: NSCoder) {
-        
-        // Initialize required properties.
-        guard let observerName = aDecoder.decodeObject(forKey: PropertyKey.observerName) as? String else {
-            os_log("Unable to decode the name for a Session object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let date = aDecoder.decodeObject(forKey: PropertyKey.date) as? String else {
-            os_log("Unable to decode the name for a Session object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let openTime = aDecoder.decodeObject(forKey: PropertyKey.openTime) as? String else {
-            os_log("Unable to decode the name for a Session object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-        guard let closeTime = aDecoder.decodeObject(forKey: PropertyKey.closeTime) as? String else {
-            os_log("Unable to decode the name for a Session object.", log: OSLog.default, type: .debug)
-            return nil
-        }
-
-        self.init(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
-    }*/
-    
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14109" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
-    <device id="retina4_7" orientation="portrait">
+    <device id="ipad10_5" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
@@ -15,17 +15,24 @@
             <objects>
                 <viewController id="01J-lp-oVM" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
-                        <rect key="frame" x="0.0" y="0.0" width="375" height="667"/>
+                        <rect key="frame" x="0.0" y="0.0" width="834" height="1112"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" alignment="top" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="rrm-DK-wrK">
                                 <rect key="frame" x="0.0" y="138" width="375" height="20.5"/>
                             </stackView>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="viewControllerBackground" translatesAutoresizingMaskIntoConstraints="NO" id="fdm-JK-YF7">
+                                <rect key="frame" x="0.0" y="0.0" width="834" height="1112"/>
+                            </imageView>
                         </subviews>
                         <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                         <constraints>
-                            <constraint firstItem="rrm-DK-wrK" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="7LD-mJ-ID6"/>
-                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="rrm-DK-wrK" secondAttribute="trailing" id="xpM-Qr-X3i"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="fdm-JK-YF7" secondAttribute="bottom" id="5IS-cv-aFf"/>
+                            <constraint firstItem="fdm-JK-YF7" firstAttribute="centerY" secondItem="Ze5-6b-2t3" secondAttribute="centerY" id="641-mZ-hcj"/>
+                            <constraint firstItem="fdm-JK-YF7" firstAttribute="centerX" secondItem="Ze5-6b-2t3" secondAttribute="centerX" id="TTd-6h-nB0"/>
+                            <constraint firstItem="fdm-JK-YF7" firstAttribute="top" secondItem="rrm-DK-wrK" secondAttribute="bottom" id="ZHo-Mq-PKh"/>
+                            <constraint firstItem="fdm-JK-YF7" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="cTt-AR-fE2"/>
+                            <constraint firstItem="fdm-JK-YF7" firstAttribute="trailing" secondItem="6Tk-OE-BBY" secondAttribute="trailing" id="cg8-sZ-VGe"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
@@ -35,4 +42,7 @@
             <point key="canvasLocation" x="52" y="374.66266866566718"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="viewControllerBackground" width="200" height="266"/>
+    </resources>
 </document>
