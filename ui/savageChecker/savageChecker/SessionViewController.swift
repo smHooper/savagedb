@@ -217,11 +217,15 @@ class SessionViewController: BaseFormViewController {
         if rows.count > 1 {
             fatalError("Multiple sessions found")
         }
+        var session: Session?
         for row in rows{
-            self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
-            //print("Session date: \(row[dateColumn])")
+            session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
-        return self.session
+        guard let thisSession = session else {
+            return nil
+        }
+        
+        return thisSession
     }
 
 }
