@@ -88,8 +88,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let iconName: String
         let observation: Observation
     }
-    var observationCells = [Date: ObservationCell]()
-    var cellOrder = [Int: String]()
+    var observationCells = [Int: ObservationCell]()
+    var cellOrder = [Int]()
     
     //MARK: db properties
     //var modelObjects = [Any]()
@@ -490,9 +490,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         //archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
         let archiveBarButton = UIBarButtonItem(customView: archiveButton)
         
-        let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: nil, action: nil)
-        navigationItem.leftBarButtonItems = [backBarButton, flexSpace, archiveBarButton]
-        navigationItem.rightBarButtonItems = [addObservationButton, flexSpace, self.editBarButton]
+        let fixedSpaceLeft = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
+        let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
+        fixedSpaceLeft.width = 60
+        fixedSpaceRight.width = 60
+        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton]
+        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
@@ -632,8 +635,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Fetch the right observation for the data source layout
         //let observation = observations[indexPath.row]
 
-        let stamp = observationCells.keys.sorted()[indexPath.row]
-        let observationCell = observationCells[stamp]!
+        let index = self.cellOrder[indexPath.row]
+        let observationCell = observationCells[index]!
         let observation = observationCell.observation
         let imageName = (icons[observationCell.observationType]?.normal)!
         
@@ -655,9 +658,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     // called when the cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        let stamp = self.observationCells.keys.sorted()[indexPath.row]
-        let thisObservation = (self.observationCells[stamp]?.observation)!
-        let observationType = (self.observationCells[stamp]?.observationType)!
+        let index = self.cellOrder[indexPath.row]
+        let thisObservation = (self.observationCells[index]?.observation)!
+        let observationType = (self.observationCells[index]?.observationType)!
         /*let tableName = (self.icons[observationType]?.tableName)!
         let observationClassName = (self.icons[observationType]?.dataClassName)!*/
         
@@ -683,8 +686,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         if editingStyle == .delete {
             // Delete the row from the data source
             //let id = observations[indexPath.row].id
-            let stamp = observationCells.keys.sorted()[indexPath.row]
-            let thisCell = observationCells[stamp]!
+            let index = self.cellOrder[indexPath.row]
+            let thisCell = self.observationCells[index]!
             let id = thisCell.observation.id
             let observationType = thisCell.observationType
             let tableName = (icons[observationType]?.tableName)!
@@ -694,7 +697,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             //observations.remove(at: indexPath.row)
             //let recordToRemove = observationsTable.where(idColumn == id.datatypeValue)
             let recordToRemove = table.where(idColumn == id.datatypeValue)
-            observationCells.removeValue(forKey: stamp)
+            observationCells.removeValue(forKey: index)
             
             do {
                 try db.run(recordToRemove.delete())
@@ -734,6 +737,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.observationCells.removeAll()
         
         // For each table query all records
+        var datetimeStamps = [Int: Date]()
+        var i = 0
         for label in observationTypes {
             let info = self.icons[label]!
             let table = Table(info.tableName)
@@ -754,16 +759,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 guard let datetime = formatter.date(from: datetimeString) else {
                     fatalError("Could not interpret datetimeString: \(datetimeString)")
                 }
-                self.observationCells[datetime] = observationCell
+                datetimeStamps[i] = datetime
+                self.observationCells[i] = observationCell
                 loadedObservations.append(observation!)
+                i += 1
             }
             
         }
         
-        
-        /*for (index, stamp) in observationCells.keys.sorted().enumerated() {
-            cellOrder[index] = stamp
-        }*/
+        // Get the indices sorted by datetime
+        self.cellOrder.removeAll()
+        let sortedStamps = datetimeStamps.sorted{$0.value < $1.value}
+        for (index, _) in sortedStamps {
+            self.cellOrder.append(index)
+        }
         
         self.observations = loadedObservations
         
