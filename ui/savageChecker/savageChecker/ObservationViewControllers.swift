@@ -221,8 +221,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
             textField.font = UIFont.systemFont(ofSize: 14.0)
             textField.layer.cornerRadius = 5
-            textField.frame.size.height = 28.5
-            textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: 28.5)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
+            //textField.frame.size.height = 28.5
+            textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: 40)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
             textField.tag = i
             textField.delegate = self
             //textFields.append(textField)
@@ -245,6 +245,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
                 textFields[i]?.rightAnchor.constraint(equalTo: container.rightAnchor).isActive = true
                 textFields[i]?.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
+                textFields[i]?.heightAnchor.constraint(equalToConstant: 40).isActive = true
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
             
             case "dropDown":
@@ -268,6 +269,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
                 dropDownTextFields[i]!.rightAnchor.constraint(equalTo: container.rightAnchor).isActive = true
                 dropDownTextFields[i]!.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
+                dropDownTextFields[i]!.heightAnchor.constraint(equalToConstant: 40).isActive = true
                 lastBottomAnchor = dropDownTextFields[i]!.bottomAnchor
                 
                 //Set the drop down menu's options
@@ -1403,11 +1405,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",             type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",             type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",            type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Work division",      placeholder: "Select or enter the driver's division",   type: "dropDown"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
         
@@ -1427,11 +1429,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",             type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",             type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",            type: "normal"),
-                             (label: "Division",      placeholder: "Select or enter the driver's division",   type: "dropDown"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
+                             (label: "Work division",      placeholder: "Select or enter the driver's division",   type: "dropDown"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
         
