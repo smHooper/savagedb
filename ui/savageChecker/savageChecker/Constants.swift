@@ -23,3 +23,5 @@ let observationIcons: DictionaryLiteral = ["Bus": "busIcon",
                                            "Hunting": "busIcon",
                                            "Road lottery": "busIcon",
                                            "Other": "busIcon"]
+
+let destinations = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna"]

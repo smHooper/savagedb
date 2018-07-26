@@ -141,7 +141,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         // MARK: - NPS approved table
-        let vehicleTypeColumn = Expression<String>("vehicleType")
+        let approvedTypeColumn = Expression<String>("approvedType")
         
         let NPSApprovedTable = Table("npsApproved")
         do {
@@ -155,7 +155,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(tripPurposeColumn)
-                t.column(vehicleTypeColumn)
+                t.column(approvedTypeColumn)
                 t.column(nExpectedNightsColumn)
             })
         } catch let error {
@@ -293,7 +293,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         // MARK: - Hunter table
-        let hunterTable = Table("hunters")
+        let hunterTable = Table("subsistenceUsers")
         do {
             try db.run(hunterTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
