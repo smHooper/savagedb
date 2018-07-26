@@ -31,7 +31,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                                     "Bicycle": "cyclistIcon",
                                     "Propho": "photographerIcon",
                                     "Accessibility": "accessibilityIcon",
-                                    "Hunter": "hunterIcon",
+                                    "Subsistence": "subsistenceIcon",
                                     "Road Lottery": "roadLotteryIcon",
                                     "Other": "otherIcon"]
     
@@ -280,7 +280,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "Bicycle": CyclistObservationViewController.self,
                      "Propho": PhotographerObservationViewController.self,
                      "Accessibility": AccessibilityObservationViewController.self,
-                     "Hunter": HunterObservationViewController.self,
+                     "Subsistence": SubsistenceObservationViewController.self,
                      "Road Lottery": RoadLotteryObservationViewController.self,
                      "Other": OtherObservationViewController.self]
         

@@ -3461,20 +3461,20 @@ class AccessibilityObservationViewController: BaseObservationViewController {
 
 //MARK:-
 //MARK:-
-class HunterObservationViewController: BaseObservationViewController {
+class SubsistenceObservationViewController: BaseObservationViewController {
     
     var observation: Observation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class
     
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.observationsTable = Table("hunters")
+        self.observationsTable = Table("subsistenceUsers")
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.observationsTable = Table("hunters")
+        self.observationsTable = Table("subsistenceUsers")
     }
     
     override func viewDidLoad() {

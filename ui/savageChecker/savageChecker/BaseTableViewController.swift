@@ -23,8 +23,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var dismiss = false
     var blurEffectView: UIVisualEffectView!
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
+    let documentInteractionController = UIDocumentInteractionController()
     
     let observationViewControllers = ["Bus": BusObservationViewController(),
+                                      "Lodge Bus": LodgeBusObservationViewController(),
                         "NPS Vehicle": NPSVehicleObservationViewController(),
                         "NPS Approved": NPSApprovedObservationViewController(),
                         "NPS Contractor": NPSContractorObservationViewController(),
@@ -34,11 +36,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                         "Bicycle": CyclistObservationViewController(),
                         "Propho": PhotographerObservationViewController(),
                         "Accessibility": AccessibilityObservationViewController(),
-                        "Hunter": HunterObservationViewController(),
+                        "Subsistence": SubsistenceObservationViewController(),
                         "Road Lottery": RoadLotteryObservationViewController(),
                         "Other": OtherObservationViewController()]
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
+                 "Lodge Bus": (normal: "lodgeBusIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
                  "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
                  "NPS Contractor": (normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors", dataClassName: "NPSContractorObservation"),
@@ -48,7 +51,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                  "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
                  "Propho": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                  "Accessibility": (normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
-                 "Hunter": (normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
+                 "Subsistence": (normal: "subsistenceIcon", selected: "shuttleBusImg", tableName: "subsistenceUsers", dataClassName: "Observation"),
                  "Road Lottery": (normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                  "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
@@ -57,6 +60,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     let barButtonIcons = [(label: "All", normal: "allTableIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "Bus", normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
+                          (label: "Lodge Bus", normal: "lodgeBusIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "NPS Vehicle", normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
                           (label: "NPS Approved", normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
                           (label: "NPS Contractor", normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors", dataClassName: "NPSContractorObservation"),
@@ -66,7 +70,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                           (label: "Bicycle", normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
                           (label: "Propho", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                           (label: "Accessibility", normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
-                          (label: "Hunter", normal: "hunterIcon", selected: "shuttleBusImg", tableName: "hunters", dataClassName: "Observation"),
+                          (label: "Subsistence", normal: "subsistenceIcon", selected: "shuttleBusImg", tableName: "subsistenceUsers", dataClassName: "Observation"),
                           (label: "Road Lottery", normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
                           (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
     
@@ -486,7 +490,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         archiveButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         archiveButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         archiveButton.imageView?.contentMode = .scaleAspectFit
-        archiveButton.addTarget(self, action: #selector(archiveButtonPressed(button:)), for: .touchUpInside)
+        archiveButton.addTarget(self, action: #selector(archiveButtonPressed), for: .touchUpInside)//button:)), for: .touchUpInside)
         //archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
         let archiveBarButton = UIBarButtonItem(customView: archiveButton)
         
@@ -553,16 +557,92 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
     }
     
+    func saveFile(url: URL) {
+        print("saving file")
+        documentInteractionController.url = url
+        documentInteractionController.uti = url.typeIdentifier ?? "public.data, public.content"
+        documentInteractionController.name = url.localizedName ?? url.lastPathComponent
+        documentInteractionController.presentOptionsMenu(from: self.view.frame, in: self.view, animated: true)
+    }
     
-    @objc func archiveButtonPressed(button: UIBarButtonItem){
+    
+    @objc func archiveButtonPressed() {
+        // Shouldn't need to check if the file alread exists because time stamp in filename should prevent that
+        let fileManager = FileManager.default
+        let dbURL = URL(fileURLWithPath: dbPath).absoluteURL
+        //let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("copy.db")
+        saveFile(url: dbURL)
+        /*let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+         let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
+         
+         
+         if fileManager.fileExists(atPath: outputURL.absoluteString) {
+         print("File already exists")
+         } else {
+         do {
+         try fileManager.copyItem(at: dbURL, to: outputURL)//(atPath: (dbURL.absoluteString)!, toPath: outputURL!)
+         } catch {
+         print(error)
+         }
+         }*/
+        
+        // Delete all records from the db
+        //  First get names of all tables in the DB
+        let tableQuery: Statement
+        do {
+            tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%');")
+        } catch {
+            fatalError("Could not fetch all tables because \(error.localizedDescription)")
+        }
+        //  Loop through all tables and delete all records
+        for row in tableQuery {
+            let tableName = "\(row[0]!)"
+            let table = Table(tableName)
+            do {
+                try db.run(table.delete()) // Deletes all rows in table
+            } catch {
+                print("Could not delete records from \(tableName) because \(error.localizedDescription)")
+            }
+        }
+        
+        // Prepare the session controller by clearing all fields and disabling the navigation button
+        let presentingController = self.presentingViewController?.presentingViewController as! SessionViewController
+        presentingController.dropDownTextFields[0]!.text = ""
+        for (_, textField) in presentingController.textFields {
+            textField.text = ""
+        }
+        presentingController.viewVehiclesButton.isEnabled = false
+        
+        // Add an activity indicator and show it for a couple seconds. Otherwise, the transition is too abrupt
+        let activityIndicator = UIActivityIndicatorView()
+        activityIndicator.activityIndicatorViewStyle = .whiteLarge
+        activityIndicator.color = UIColor.gray
+        activityIndicator.center = self.view.center
+        let translucentWhiteView = UIView(frame: self.view.frame)
+        translucentWhiteView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        self.view.addSubview(translucentWhiteView)
+        self.view.addSubview(activityIndicator)
+        
+        let delay = 2.0
+        activityIndicator.startAnimating()
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+            translucentWhiteView.removeFromSuperview()
+            presentingController.dismiss(animated: true, completion: nil)
+        }
+        
+    }
+
+    /*@objc func archiveButtonPressed(button: UIBarButtonItem){
         
         let popoverController = ArchivePopoverViewController()
         popoverController.modalPresentationStyle = .formSheet
         popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 450.0), height: min(self.view.frame.height, 300.0))//CGSize.init(width: 600, height: 600)
         
-        present(popoverController, animated: true, completion: nil)//*/
+        present(popoverController, animated: true, completion: nil)
         
-    }
+    }*/
     
     
     func addBlur() {
