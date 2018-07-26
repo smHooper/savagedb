@@ -101,7 +101,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(observerNameColumn)
                 t.column(dateColumn)
                 t.column(timeColumn)
-                t.column(driverNameColumn)
+                t.column(driverNameColumn, defaultValue: " ")
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
@@ -170,7 +170,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(observerNameColumn)
                 t.column(dateColumn)
                 t.column(timeColumn)
-                t.column(driverNameColumn)
+                t.column(driverNameColumn, defaultValue: " ")
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
@@ -191,7 +191,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(dateColumn)
                 t.column(timeColumn)
                 t.column(driverNameColumn)
-                t.column(destinationColumn)
+                t.column(destinationColumn, defaultValue: " ")
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(permitHolderColumn)
@@ -201,6 +201,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         // MARK: - Right of way table
+        let permitNumberColumn = Expression<String>("permitNumber")
         let rightOfWayTable = Table("rightOfWay")
         do {
             try db.run(rightOfWayTable.create(ifNotExists: true) { t in
@@ -209,10 +210,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(dateColumn)
                 t.column(timeColumn)
                 t.column(driverNameColumn)
-                t.column(destinationColumn)
+                t.column(destinationColumn, defaultValue: " ")
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
-                t.column(permitHolderColumn)
+                t.column(permitNumberColumn)
                 t.column(tripPurposeColumn)
             })
         } catch let error {
@@ -228,8 +229,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(observerNameColumn)
                 t.column(dateColumn)
                 t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn, defaultValue: " ")
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(hasTekPassColumn)
@@ -239,7 +240,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         // MARK: - Propho table
-        let permitNumberColumn = Expression<String>("permitNumber")
         let photographerTable = Table("photographers")
         do {
             try db.run(photographerTable.create(ifNotExists: true) { t in
@@ -248,10 +248,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(dateColumn)
                 t.column(timeColumn)
                 t.column(driverNameColumn)
-                t.column(destinationColumn)
+                t.column(destinationColumn, defaultValue: " ")
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(permitNumberColumn)
+                t.column(nExpectedNightsColumn)
             })
         } catch let error {
             fatalError(error.localizedDescription)
@@ -269,7 +270,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
-                t.column(tripPurposeColumn)
             })
         } catch let error {
             fatalError(error.localizedDescription)
@@ -283,7 +283,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(observerNameColumn)
                 t.column(dateColumn)
                 t.column(timeColumn)
-                t.column(driverNameColumn)
+                t.column(driverNameColumn, defaultValue: " ")
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
@@ -300,7 +300,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(observerNameColumn)
                 t.column(dateColumn)
                 t.column(timeColumn)
-                t.column(driverNameColumn)
+                t.column(driverNameColumn, defaultValue: " ")
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
@@ -317,9 +317,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(observerNameColumn)
                 t.column(dateColumn)
                 t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn, defaultValue: " ")
                 t.column(nPassengersColumn)
+                t.column(permitNumberColumn)
                 t.column(commentsColumn)
             })
         } catch let error {

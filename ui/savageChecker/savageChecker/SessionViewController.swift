@@ -95,6 +95,8 @@ class SessionViewController: BaseFormViewController {
             let formatter = DateFormatter()
             formatter.dateStyle = .short
             self.textFields[1]?.text = formatter.string(from: now)
+            self.textFields[2]?.text = "6:30 AM"
+            self.textFields[3]?.text = "9:30 PM"
             
             // Disable navigation to vehicle list until all fields are filled
             self.viewVehiclesButton.isEnabled = false

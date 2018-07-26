@@ -1075,7 +1075,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Transit", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
         self.observationsTable = Table("buses")
     }
     
@@ -1095,7 +1095,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Transit", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
         self.observationsTable = Table("buses")
     }
     
@@ -1133,7 +1133,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
-            self.textFields[7]?.text = "No"
+            self.textFields[6]?.text = "No"
             self.saveButton.isEnabled = false
         // The observation already exists and is open for viewing/editing
         } else {
@@ -1852,7 +1852,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
@@ -1872,7 +1871,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
@@ -1916,7 +1914,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
-            self.textFields[7]?.text = "0"
+            self.textFields[6]?.text = "0"
             self.saveButton.isEnabled = false
             
             // The observation already exists and is open for viewing/editing
@@ -1937,12 +1935,11 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.dropDownTextFields[5]?.text = self.observation?.tripPurpose
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text  = self.observation?.nExpectedNights
-            self.textFields[8]?.text = self.observation?.comments
+            self.dropDownTextFields[3]?.text = self.observation?.destination
+            self.dropDownTextFields[4]?.text = self.observation?.tripPurpose
+            self.textFields[5]?.text = self.observation?.nPassengers
+            self.textFields[6]?.text  = self.observation?.nExpectedNights
+            self.textFields[7]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -1985,18 +1982,16 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
-        let driverName = self.textFields[3]?.text ?? ""
-        let destination = self.dropDownTextFields[4]?.text ?? ""
-        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let nExpectedNights = self.textFields[7]?.text ?? ""
-        let comments = self.textFields[8]?.text ?? ""
+        let destination = self.dropDownTextFields[3]?.text ?? ""
+        let tripPurpose = self.dropDownTextFields[4]?.text ?? ""
+        let nPassengers = self.textFields[5]?.text ?? ""
+        let nExpectedNights = self.textFields[6]?.text ?? ""
+        let comments = self.textFields[7]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
-                !driverName.isEmpty &&
                 !destination.isEmpty &&
                 !tripPurpose.isEmpty &&
                 !nPassengers.isEmpty &&
@@ -2008,7 +2003,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.observation?.observerName = observerName
             self.observation?.date = date
             self.observation?.time = time
-            self.observation?.driverName = driverName
             self.observation?.destination = destination
             self.observation?.tripPurpose = tripPurpose
             self.observation?.nPassengers = nPassengers
@@ -2027,7 +2021,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
                                                             dateColumn <- (self.observation?.date)!,
                                                             timeColumn <- (self.observation?.time)!,
-                                                            driverNameColumn <- (self.observation?.driverName)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             tripPurposeColumn <- (self.observation?.tripPurpose)!,
@@ -2047,7 +2040,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
-                                        driverNameColumn <- (self.observation?.driverName)!,
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         tripPurposeColumn <- (self.observation?.tripPurpose)!,
@@ -2082,7 +2074,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2100,7 +2091,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2163,10 +2153,9 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.textFields[5]?.text = self.observation?.permitHolder
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text = self.observation?.comments
+            self.textFields[4]?.text = self.observation?.permitHolder
+            self.textFields[5]?.text = self.observation?.nPassengers
+            self.textFields[6]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -2201,25 +2190,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    override func dismissController() {
-        if self.isAddingNewObservation {
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            /*presentingController.modalPresentationStyle = .custom
-             presentingController.transitioningDelegate = self
-             presentingController.modalTransitionStyle = .flipHorizontal*/
-            presentingController.dismiss(animated: true, completion: nil)
-            presentingController.tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }
     
     //MARK: - DB methods
     @objc override func updateData(){
@@ -2229,17 +2199,15 @@ class EmployeeObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let driverName = self.textFields[3]?.text ?? ""
-        let destination = self.dropDownTextFields[4]?.text ?? ""
-        let permitHolder = self.textFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let permitHolder = self.textFields[4]?.text ?? ""
+        let nPassengers = self.textFields[5]?.text ?? ""
+        let comments = self.textFields[6]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !driverName.isEmpty &&
-                !destination.isEmpty &&
                 !permitHolder.isEmpty &&
                 !nPassengers.isEmpty
         
@@ -2249,7 +2217,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.driverName = driverName
-            self.observation?.destination = destination
             self.observation?.permitHolder = permitHolder
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
@@ -2267,7 +2234,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                                             dateColumn <- (self.observation?.date)!,
                                                             timeColumn <- (self.observation?.time)!,
                                                             driverNameColumn <- (self.observation?.driverName)!,
-                                                            destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             permitHolderColumn <- (self.observation?.permitHolder)!,
                                                             commentsColumn <- (self.observation?.comments)!))
@@ -2286,7 +2252,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
                                         driverNameColumn <- (self.observation?.driverName)!,
-                                        destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         permitHolderColumn <- (self.observation?.permitHolder)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
@@ -2307,7 +2272,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     //MARK: - Properties
     //MARK: DB properties
     var observation: RightOfWayObservation?
-    let permitHolderColumn = Expression<String>("permitHolder")
+    let permitNumberColumn = Expression<String>("permitNumber")
     let tripPurposeColumn = Expression<String>("tripPurpose")
     //private let observationsTable = Table("rightOfWay")
     
@@ -2319,8 +2284,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Permit number",   placeholder: "Enter the permit holder's last name",   type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2337,8 +2301,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Permit holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Permit number",   placeholder: "Enter the permit holder's last name",   type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2374,13 +2337,12 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Create the observation instance
-            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", permitHolder: "", tripPurpose: "N/A")
+            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", permitNumber: "", tripPurpose: "N/A")
             
             //Fill in text fields
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
-            self.dropDownTextFields[5]?.text = "Kantishna"
             self.saveButton.isEnabled = false
             
             // The observation already exists and is open for viewing/editing
@@ -2396,16 +2358,15 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             } catch {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
-            self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitHolder: record[permitHolderColumn], tripPurpose: record[tripPurposeColumn], comments: record[commentsColumn])
+            self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], tripPurpose: record[tripPurposeColumn], comments: record[commentsColumn])
             
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.textFields[5]?.text = self.observation?.permitHolder
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text = self.observation?.comments
+            self.textFields[4]?.text = self.observation?.permitNumber
+            self.textFields[5]?.text = self.observation?.nPassengers
+            self.textFields[6]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -2449,18 +2410,16 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let driverName = self.textFields[3]?.text ?? ""
-        let destination = self.dropDownTextFields[4]?.text ?? ""
-        let permitHolder = self.textFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let permitNumber = self.textFields[4]?.text ?? ""
+        let nPassengers = self.textFields[5]?.text ?? ""
+        let comments = self.textFields[6]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !driverName.isEmpty &&
-                !destination.isEmpty &&
-                !permitHolder.isEmpty &&
+                !permitNumber.isEmpty &&
                 !nPassengers.isEmpty
         
         if fieldsFull {
@@ -2469,8 +2428,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.driverName = driverName
-            self.observation?.destination = destination
-            self.observation?.permitHolder = permitHolder
+            self.observation?.permitNumber = permitNumber
             self.observation?.nPassengers = nPassengers
             self.observation?.tripPurpose = ""
             self.observation?.comments = comments
@@ -2490,7 +2448,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                                             driverNameColumn <- (self.observation?.driverName)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
-                                                            permitHolderColumn <- (self.observation?.permitHolder)!,
+                                                            permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
@@ -2510,7 +2468,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                         driverNameColumn <- (self.observation?.driverName)!,
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
-                                        permitHolderColumn <- (self.observation?.permitHolder)!,
+                                        permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
                 print("updated record")
             } else {
@@ -2530,7 +2488,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     //MARK: - Properties
     //MARK: DB properties
     var observation: TeklanikaCamperObservation?
-    let hasTekPassColumn = Expression<Bool>("hasTekPass")
+    let hasTekPassColumn = Expression<Bool>("hasTekPass") // Doesn't need to go in master DB, but need it for data persistence in the app
     //private let observationsTable = Table("tekCampers")
     
     //MARK: - Initialization
@@ -2540,7 +2498,6 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2556,7 +2513,6 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2592,8 +2548,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
-            self.textFields[3]?.text = "N/A"
-            self.textFields[4]?.text = "Yes"
+            self.textFields[3]?.text = "No"
             
             self.saveButton.isEnabled = false
             
@@ -2623,14 +2578,13 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
             if (self.observation?.hasTekPass)! {
-                self.textFields[4]?.text = "Yes"
+                self.textFields[3]?.text = "Yes"
             } else {
-                self.textFields[4]?.text = "No"
+                self.textFields[3]?.text = "No"
             }
-            self.textFields[5]?.text = self.observation?.nPassengers
-            self.textFields[6]?.text = self.observation?.comments
+            self.textFields[4]?.text = self.observation?.nPassengers
+            self.textFields[5]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -2672,16 +2626,14 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
-        let driverName = self.textFields[3]?.text ?? ""
-        let hasTekPass = self.textFields[4]?.text ?? ""
-        let nPassengers = self.textFields[5]?.text ?? ""
-        let comments = self.textFields[6]?.text ?? ""
+        let hasTekPass = self.textFields[3]?.text ?? ""
+        let nPassengers = self.textFields[4]?.text ?? ""
+        let comments = self.textFields[5]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
-                !driverName.isEmpty &&
                 !nPassengers.isEmpty
         
         if fieldsFull {
@@ -2689,7 +2641,6 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.observation?.observerName = observerName
             self.observation?.date = date
             self.observation?.time = time
-            self.observation?.driverName = driverName
             if hasTekPass == "Yes" {
                 self.observation?.hasTekPass = true
             } else {
@@ -2710,7 +2661,6 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
                                                             dateColumn <- (self.observation?.date)!,
                                                             timeColumn <- (self.observation?.time)!,
-                                                            driverNameColumn <- (self.observation?.driverName)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             hasTekPassColumn <- (self.observation?.hasTekPass)!,
@@ -2729,7 +2679,6 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
-                                        driverNameColumn <- (self.observation?.driverName)!,
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         hasTekPassColumn <- (self.observation?.hasTekPass)!,
@@ -2894,6 +2843,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
     //MARK: DB properties
     var observation: PhotographerObservation?
     let permitNumberColumn = Expression<String>("permitNumber")
+    let nExpectedNightsColumn = Expression<String>("nExpectedNights")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -2906,6 +2856,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("photographers")
@@ -2921,6 +2872,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("photographers")
@@ -2952,6 +2904,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
+            self.textFields[7]?.text = "0"
             
             self.saveButton.isEnabled = false
             
@@ -2977,6 +2930,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                                        destination: record[destinationColumn],
                                                        nPassengers: record[nPassengersColumn],
                                                        permitNumber: record[permitNumberColumn],
+                                                       nExpectedNights: record[nExpectedNightsColumn],
                                                        comments: record[commentsColumn])
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
@@ -2985,6 +2939,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[4]?.text = self.observation?.destination
             self.textFields[5]?.text = self.observation?.permitNumber
             self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[6]?.text = self.observation?.nExpectedNights
             self.textFields[7]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
@@ -3031,7 +2986,8 @@ class PhotographerObservationViewController: BaseObservationViewController {
         let destination = self.dropDownTextFields[4]?.text ?? ""
         let permitNumber = self.textFields[5]?.text ?? ""
         let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let nExpectedNights = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -3039,7 +2995,8 @@ class PhotographerObservationViewController: BaseObservationViewController {
                 !time.isEmpty &&
                 !driverName.isEmpty &&
                 !destination.isEmpty &&
-                !nPassengers.isEmpty
+                !nPassengers.isEmpty &&
+                !nExpectedNights.isEmpty
         
         if fieldsFull {
             // Update the observation instance
@@ -3050,6 +3007,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
             self.observation?.destination = destination
             self.observation?.permitNumber = permitNumber
             self.observation?.nPassengers = nPassengers
+            self.observation?.nExpectedNights = nExpectedNights
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
@@ -3068,6 +3026,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
+                                                            nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
@@ -3087,6 +3046,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
+                                        nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
                 print("updated record")
             } else {
@@ -3105,7 +3065,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     
     //MARK: - Properties
     //MARK: DB properties
-    var observation: AccessibilityObservation?
+    var observation: Observation?
     let tripPurposeColumn = Expression<String>("tripPurpose")
     
     //MARK: - Initialization
@@ -3117,7 +3077,6 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Trip purpose",  placeholder: "Select or enter the trip purpose",    type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -3136,7 +3095,6 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Trip purpose",  placeholder: "Select or enter the trip purpose",    type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -3167,7 +3125,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = AccessibilityObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "N/A")
+            self.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "")
             
             // Fill text fields with defaults
             self.dropDownTextFields[0]?.text = session?.observerName
@@ -3191,23 +3149,21 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
             
-            self.observation = AccessibilityObservation(id: id,
+            self.observation = Observation(id: id,
                                                        observerName: record[observerNameColumn],
                                                        date: record[dateColumn],
                                                        time: record[timeColumn],
                                                        driverName: record[driverNameColumn],
                                                        destination: record[destinationColumn],
                                                        nPassengers: record[nPassengersColumn],
-                                                       tripPurpose: record[tripPurposeColumn],
                                                        comments: record[commentsColumn])
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             self.textFields[3]?.text = self.observation?.driverName
             self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.textFields[5]?.text = self.observation?.tripPurpose
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text = self.observation?.comments
+            self.textFields[5]?.text = self.observation?.nPassengers
+            self.textFields[6]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -3251,9 +3207,8 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         let time = self.textFields[2]?.text ?? ""
         let driverName = self.textFields[3]?.text ?? ""
         let destination = self.dropDownTextFields[4]?.text ?? ""
-        let tripPurpose = self.textFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let nPassengers = self.textFields[5]?.text ?? ""
+        let comments = self.textFields[6]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -3270,7 +3225,6 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             self.observation?.time = time
             self.observation?.driverName = driverName
             self.observation?.destination = destination
-            self.observation?.tripPurpose = tripPurpose
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
             
@@ -3289,7 +3243,6 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                                             driverNameColumn <- (self.observation?.driverName)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
-                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
@@ -3308,7 +3261,6 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                         driverNameColumn <- (self.observation?.driverName)!,
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
-                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
                 print("updated record")
             } else {
@@ -3487,16 +3439,32 @@ class HunterObservationViewController: BaseObservationViewController {
 //MARK:-
 class RoadLotteryObservationViewController: BaseObservationViewController {
     
-    var observation: Observation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class
+    var observation: RoadLotteryObservation?
+    let permitNumberColumn = Expression<String>("permitNumber")
     
+    // MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
+                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("roadLottery")
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
+                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("roadLottery")
     }
@@ -3512,7 +3480,12 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         
         // Initialize the observation. Also, fill destination field with default.
         if self.isAddingNewObservation {
-            self.observation = Observation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "N/A", nPassengers: "")
+            self.observation = RoadLotteryObservation(id: -1, observerName: "",
+                                                      date: (session?.date)!,
+                                                      time: self.textFields[2]!.text!,
+                                                      driverName: "N/A", destination: "N/A",
+                                                      nPassengers: "",
+                                                      permitNumber: "")
             self.dropDownTextFields[4]?.text = "N/A"
         } else {
             // Query the db to get the observation
@@ -3527,63 +3500,60 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
             
-            self.observation = Observation(id: id,
-                                           observerName: record[observerNameColumn],
-                                           date: record[dateColumn],
-                                           time: record[timeColumn],
-                                           driverName: record[driverNameColumn],
-                                           destination: record[destinationColumn],
-                                           nPassengers: record[nPassengersColumn],
-                                           comments: record[commentsColumn])
+            self.observation = RoadLotteryObservation(id: id,
+                                                      observerName: record[observerNameColumn],
+                                                      date: record[dateColumn],
+                                                      time: record[timeColumn],
+                                                      driverName: "N/A",
+                                                      destination: "N/A",
+                                                      nPassengers: record[nPassengersColumn],
+                                                      permitNumber: record[permitNumberColumn],
+                                                      comments: record[commentsColumn])
             self.dropDownTextFields[0]?.text = observation?.observerName
             self.textFields[1]?.text = observation?.date
             self.textFields[2]?.text = observation?.time
-            self.textFields[3]?.text = observation?.driverName
-            self.dropDownTextFields[4]?.text = observation?.destination
-            self.textFields[5]?.text = observation?.nPassengers
-            self.textFields[6]?.text = observation?.comments
+            self.textFields[3]?.text = observation?.nPassengers
+            self.textFields[4]?.text = observation?.permitNumber
+            self.textFields[5]?.text = observation?.comments
         }
     }
     
     //MARK: - DB methods
     @objc override func updateData(){
-        super.updateData()
+        //super.updateData()
         
-        // Would be enabled in super.updateData if all fields are full
-        if self.saveButton.isEnabled {
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let time = self.textFields[2]?.text ?? ""
+        let nPassengers = self.textFields[3]?.text ?? ""
+        let permitNumber = self.textFields[4]?.text ?? "" //This is an optional field for now
+        let comments = self.textFields[5]?.text ?? ""
+        print(observerName)
+        
+        if !observerName.isEmpty && !date.isEmpty && !time.isEmpty && !nPassengers.isEmpty {//}&& !permitNumber.isEmpty {
             // Update the observation instance
             self.observation?.observerName = self.dropDownTextFields[0]!.text!
             self.observation?.date = self.textFields[1]!.text!
             self.observation?.time = self.textFields[2]!.text!
-            self.observation?.driverName = self.textFields[3]!.text!
-            self.observation?.destination = self.dropDownTextFields[4]!.text!
-            self.observation?.nPassengers = self.textFields[5]!.text!
-            self.observation?.comments = self.textFields[6]!.text!
+            self.observation?.nPassengers = self.textFields[3]!.text!
+            self.observation?.permitNumber = self.textFields[4]!.text
+            self.observation?.comments = self.textFields[5]!.text!
             
-            //self.saveButton.isEnabled = true
+            self.saveButton.isEnabled = true
         }
     }
     
     // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
     override func insertRecord() {
-        // Can just get text values from the observation because it has to be updated before saveButton is enabled
-        let observerName = observation?.observerName
-        let date = observation?.date
-        let time = observation?.time
-        let driverName = observation?.driverName
-        let destination = observation?.destination
-        let nPassengers = observation?.nPassengers
-        let comments = observation?.comments
         
         // Insert into DB
         do {
-            let rowid = try db.run(observationsTable.insert(observerNameColumn <- observerName!,
-                                                            dateColumn <- date!,
-                                                            timeColumn <- time!,
-                                                            driverNameColumn <- driverName!,
-                                                            destinationColumn <- destination!,
-                                                            nPassengersColumn <- nPassengers!,
-                                                            commentsColumn <- comments!))
+            let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
+                                                            dateColumn <- (self.observation?.date)!,
+                                                            timeColumn <- (self.observation?.time)!,
+                                                            nPassengersColumn <- (self.observation?.nPassengers)!,
+                                                            permitNumberColumn <- (self.observation?.permitNumber)!,
+                                                            commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
         }
@@ -3600,9 +3570,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
             if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
-                                        driverNameColumn <- (self.observation?.driverName)!,
-                                        destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
+                                        permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
                 print("updated record")
             } else {

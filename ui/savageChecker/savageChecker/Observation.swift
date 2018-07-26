@@ -150,13 +150,13 @@ class EmployeeObservation: Observation {
 class RightOfWayObservation: Observation {
     
     var tripPurpose: String?
-    var permitHolder: String?
+    var permitNumber: String?
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String = "Kantishna", nPassengers: String, permitHolder: String, tripPurpose: String = "N/A", comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String = "Kantishna", nPassengers: String, permitNumber: String, tripPurpose: String = "N/A", comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
-        self.permitHolder = permitHolder
+        self.permitNumber = permitNumber
         self.tripPurpose = tripPurpose
     }
 }
@@ -184,36 +184,42 @@ class TeklanikaCamperObservation: Observation {
 class PhotographerObservation: Observation {
     
     var permitNumber: String?
+    var nExpectedNights = "0"
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitNumber: String, comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, permitNumber: String, nExpectedNights: String = "0", comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.permitNumber = permitNumber
+        self.nExpectedNights = nExpectedNights
     }
 }
 
 
-class AccessibilityObservation: Observation {
+/*class AccessibilityObservation: Observation {
+
     
-    var tripPurpose: String?
-    
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
-        
-        self.tripPurpose = tripPurpose
     }
     
-}
+}*/
 
 // Not needed because this class doesn't have any other properties than Observation base class
 // class HunterObservation: Observation {
 
 //}
 
-// Not needed because this class doesn't have any other properties than Observation base class
-// class RoadLotteryObservation: Observation {
+class RoadLotteryObservation: Observation {
 
-//}
+    var permitNumber: String?
+    
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String = "", nPassengers: String, permitNumber: String, comments: String = ""){
+        
+        super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
+        
+        self.permitNumber = permitNumber
+    }
+}
 
