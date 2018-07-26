@@ -18,6 +18,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var scrollView: UIScrollView!
+    var navigationBar: CustomNavigationBar!
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "NPS Vehicle": "npsVehicleIcon",
@@ -36,8 +37,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Add blur effect
-        //addBlur()
+        setNavigationBar()
         
         // Add make buttons to arrange
         for (offset: index, (key: labelText, value: iconName)) in self.icons.enumerated() {
@@ -65,6 +65,13 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Dispose of any resources that can be recreated.
     }
     
+    
+    // If the
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.scrollView.flashScrollIndicators()
+    }
+    
     // Redo the layout when rotated
     //override func viewDidLayoutSubviews() {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
@@ -84,6 +91,8 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Redo the menu
         setupMenuLayout()
         self.view.backgroundColor = UIColor.clear
+        
+        setNavigationBar()
         
         // Reset the scrollView position to 0 if necessary
         //self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
@@ -118,7 +127,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.scrollView.heightAnchor.constraint(equalToConstant:CGFloat(menuHeight)).isActive = true*/
         self.scrollView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: CGFloat(self.menuPadding)).isActive = true
         self.scrollView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: CGFloat(-self.menuPadding)).isActive = true
-        self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: CGFloat(self.menuPadding)).isActive = true
+        self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.menuPadding/2)).isActive = true
         self.scrollView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: CGFloat(-self.menuPadding)).isActive = true
         
         // Set up the container
@@ -207,6 +216,59 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     // MARK: - Navigation
+    func setNavigationBar() {
+        let screenSize: CGRect = UIScreen.main.bounds
+        let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
+        
+        let navItem = UINavigationItem(title: "")
+        //self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
+        
+        let backButton = UIButton(type: .custom)
+        backButton.setImage(UIImage (named: "backButton"), for: .normal)
+        backButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
+        backButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
+        backButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        let backButtonTitle = "Vehicle list"
+        let buttonFont = UIFont.systemFont(ofSize: 18)
+        let titleWidth = backButtonTitle.width(withConstrainedHeight: 200, font: buttonFont)
+        let backLabel = UILabel(frame: CGRect(x: 0, y: 0, width: titleWidth + backButton.frame.width + 10, height: backButtonTitle.height(withConstrainedWidth: 200, font: buttonFont)))
+        backLabel.font = buttonFont
+        backLabel.text = backButtonTitle
+        backLabel.textAlignment = .right
+        backLabel.textColor = UIColor(red: 0, green: 122/255, blue: 1, alpha: 1)
+        backButton.addSubview(backLabel)
+        let backBarButton = UIBarButtonItem(customView: backButton)
+        navItem.leftBarButtonItem = backBarButton
+        
+        self.navigationBar.setItems([navItem], animated: false)
+        self.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        self.navigationBar.shadowImage = UIImage()
+        self.navigationBar.isOpaque = false
+        
+        self.view.addSubview(self.navigationBar)
+    }
+    
+    
+    func getImage(from view:UIView) -> UIImage? {
+        defer {
+            UIGraphicsEndImageContext()
+        }
+        
+        /*let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
+        let navigationBarHeight = self.navigationBar.frame.height
+        let barSize = CGSize(width: self.view.frame.width, height: statusBarHeight + navigationBarHeight)*/
+        
+        UIGraphicsBeginImageContextWithOptions(self.view.frame.size, true, UIScreen.main.scale)
+        guard let context =  UIGraphicsGetCurrentContext() else {
+            return nil
+        }
+        self.view.layer.render(in: context)
+        
+        return UIGraphicsGetImageFromCurrentImageContext()
+    }
+    
     
     @objc func moveToObservationViewController(button: UIButton){
         let session = loadSession()
@@ -226,7 +288,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "Other": OtherObservationViewController.self]
         
         // Remove the blur effect
-        animateRemoveMenu()
+        //animateRemoveMenu()
         
         let viewController = types[labelText]!.init()
         viewController.isAddingNewObservation = true
@@ -267,7 +329,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     @objc func dismissMenu(){
-        print("tapped around")
         dismiss(animated: true, completion: nil)
         animateRemoveMenu(duration: 0.25)
     }
