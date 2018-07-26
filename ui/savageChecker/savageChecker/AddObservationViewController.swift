@@ -57,20 +57,15 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Because scrollView and container are centered in setupMenuLayout(),
         //  scroll position is in the middle of the view when first loaded
         setScrollViewPositionToTop()
-        //self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     
-    // If the
+    // Flash scroll indicators so user knows they can scroll. Should only flash if content goes off screen.
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         self.scrollView.flashScrollIndicators()
     }
+    
     
     // Redo the layout when rotated
     //override func viewDidLayoutSubviews() {
@@ -329,6 +324,8 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     @objc func dismissMenu(){
+        let presentingController = self.presentingViewController as! BaseTableViewController
+        presentingController.loadData()
         dismiss(animated: true, completion: nil)
         animateRemoveMenu(duration: 0.25)
     }
