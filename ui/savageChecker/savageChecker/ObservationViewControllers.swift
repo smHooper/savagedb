@@ -417,11 +417,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 print("Guard failed")
                 return
             }
-            // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+            textField.resignFirstResponder()
+            /*// Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
             if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
                 textField.resignFirstResponder()
             } else {
-            }
+            }*/
         case "time", "date":
             setupDatetimePicker(textField)
         default:
@@ -896,19 +897,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     // Dismiss with left to right transiton
     @objc func cancelButtonPressed() {
-        if self.isAddingNewObservation {
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            
-            presentingController.dismissTransition = LeftToRightTransition()
-            // Reset dismissTransition to nil when done
-            presentingController.dismiss(animated: true, completion: {
-                presentingController.dismissTransition = nil
-            })
-        } else {
-            
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-        }
+        dismissController()
     }
     
     // Configure tableview controller before it's presented
@@ -940,41 +929,20 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
     }
     
-    /*func dismissController() {
-        if self.isAddingNewObservation {
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            /*presentingController.modalPresentationStyle = .custom
-             presentingController.transitioningDelegate = self
-             presentingController.modalTransitionStyle = .flipHorizontal*/
-            presentingController.dismiss(animated: true, completion: nil)
-            presentingController.loadData()//observations.append(self.observation!)
-            //presentingController.tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }*/
     func dismissController() {
         if self.isAddingNewObservation {
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            presentingController.dismiss(animated: true, completion: nil)
-            //presentingController.observations.append(self.observation!)
-            presentingController.loadData()//tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
+            let presentingController = self.presentingViewController!//self.presentingViewController?.presentingViewController as! BaseTableViewController
+            self.dismissTransition = RightToLeftTransition()
+            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+            //presentingController.dismiss(animated: true, completion: nil)
+            //presentingController.presentingViewContoller?.loadData()//tableView.reloadData()
         } else {
             // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
+            let presentingController = self.presentingViewController!//self.presentingViewController as! BaseTableViewController
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.loadData()//tableView.reloadData()
+            //presentingController.loadData()//tableView.reloadData()
         }
         
         // Deregister notifications from keyboard
@@ -1098,8 +1066,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
-                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
@@ -1108,7 +1075,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
         self.observationsTable = Table("buses")
     }
     
@@ -1119,8 +1086,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
-                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
@@ -1129,7 +1095,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
                                     "Destination": ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna", "Other"],
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Eielson Excursion", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Shuttle", "Camper", "Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
         self.observationsTable = Table("buses")
     }
     
@@ -1140,6 +1106,7 @@ class BusObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         
@@ -1148,6 +1115,7 @@ class BusObservationViewController: BaseObservationViewController {
         updateNOvernightFieldStatus()
     }
 
+    
     override func autoFillTextFields() {
 
         // This is a completely new observation
@@ -1187,19 +1155,19 @@ class BusObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = self.observation?.time
             self.dropDownTextFields[3]?.text = self.observation?.busType
             self.textFields[4]?.text = self.observation?.busNumber
-            self.textFields[5]?.text = self.observation?.driverName
-            self.dropDownTextFields[6]?.text = self.observation?.destination
+            self.dropDownTextFields[5]?.text = self.observation?.destination
             if (self.observation?.isTraining)! {
-                self.textFields[7]?.text = "Yes"
+                self.textFields[6]?.text = "Yes"
             } else {
-                self.textFields[7]?.text = "No"
+                self.textFields[6]?.text = "No"
             }
-            self.textFields[8]?.text = self.observation?.nPassengers
-            self.textFields[9]?.text  = self.observation?.nOvernightPassengers
-            self.textFields[10]?.text = self.observation?.comments
+            self.textFields[7]?.text = self.observation?.nPassengers
+            self.textFields[8]?.text  = self.observation?.nOvernightPassengers
+            self.textFields[9]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
+    
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
@@ -1230,35 +1198,6 @@ class BusObservationViewController: BaseObservationViewController {
         dismissController()
     }
     
-    /*override func dismissController() {
-        print("dismissing controller")
-        if self.isAddingNewObservation {
-            let formatter = DateFormatter()
-            formatter.timeStyle = .short
-            formatter.dateStyle = .short
-            guard let timeStamp = formatter.date(from: "\((self.observation?.date)!), \((self.observation?.time)!)") else {
-                fatalError("Couldn't format timestamp from \((self.observation?.date)!), \((self.observation?.time)!)")
-            }
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
-            /*presentingController.modalPresentationStyle = .custom
-             presentingController.transitioningDelegate = self
-             presentingController.modalTransitionStyle = .flipHorizontal*/
-            presentingController.dismiss(animated: true, completion: nil)
-            //presentingController.observations.append(self.observation!)
-            
-            //presentingController.observationCells[timeStamp] = 
-            presentingController.tableView.reloadData()
-            //presentingController.dismissTransition = LeftToRightTransition()
-            //presentingController.dismiss(animated: true, completion: {presentingController.dismissTransition = nil})
-        } else {
-            // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController as! BaseTableViewController
-            self.dismissTransition = LeftToRightTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            presentingController.tableView.reloadData()
-        }
-    }*/
     
     //MARK: - Private methods
     @objc override func updateData(){
@@ -1268,12 +1207,11 @@ class BusObservationViewController: BaseObservationViewController {
         let time = self.textFields[2]?.text ?? ""
         let busType = self.dropDownTextFields[3]?.text ?? ""
         let busNumber = self.textFields[4]?.text ?? ""
-        let driverName = self.textFields[5]?.text ?? ""
-        let destination = self.dropDownTextFields[6]?.text ?? ""
-        let isTraining = self.textFields[7]?.text ?? ""
-        let nPassengers = self.textFields[8]?.text ?? ""
-        let nOvernightPassengers = self.textFields[9]?.text ?? ""
-        let comments = self.textFields[10]?.text ?? ""
+        let destination = self.dropDownTextFields[5]?.text ?? ""
+        let isTraining = self.textFields[6]?.text ?? ""
+        let nPassengers = self.textFields[7]?.text ?? ""
+        let nOvernightPassengers = self.textFields[8]?.text ?? ""
+        let comments = self.textFields[9]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -1281,7 +1219,6 @@ class BusObservationViewController: BaseObservationViewController {
             !time.isEmpty &&
             !busType.isEmpty &&
             !busNumber.isEmpty &&
-            !driverName.isEmpty &&
             !destination.isEmpty &&
             !nPassengers.isEmpty
 
@@ -1293,7 +1230,6 @@ class BusObservationViewController: BaseObservationViewController {
             self.observation?.time = time
             self.observation?.busType = busType
             self.observation?.busNumber = busNumber
-            self.observation?.driverName = driverName
             self.observation?.destination = destination
             if isTraining == "Yes" {
                 self.observation?.isTraining = true
@@ -1328,7 +1264,6 @@ class BusObservationViewController: BaseObservationViewController {
                                                             timeColumn <- (self.observation?.time)!,
                                                             busTypeColumn <- (self.observation?.busType)!,
                                                             busNumberColumn <- (self.observation?.busNumber)!,
-                                                            driverNameColumn <- (self.observation?.driverName)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             isTrainingColumn <- (self.observation?.isTraining)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
@@ -1348,7 +1283,6 @@ class BusObservationViewController: BaseObservationViewController {
             if try db.run(record.update(observerNameColumn <- (self.observation?.observerName)!,
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
-                                        driverNameColumn <- (self.observation?.driverName)!,
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         busTypeColumn <- (self.observation?.busType)!,
@@ -1369,15 +1303,15 @@ class BusObservationViewController: BaseObservationViewController {
     private func updateNOvernightFieldStatus() {
         let busType = self.dropDownTextFields[3]?.text ?? ""
         if self.lodgeBusTypes.contains(busType) {
-            self.labels[9].textColor = UIColor.black
-            self.labels[9].text = self.textFieldIds[9].label
-            self.textFields[9]?.placeholder = self.textFieldIds[9].placeholder
-            self.textFields[9]?.isEnabled = true
+            self.labels[8].textColor = UIColor.black
+            self.labels[8].text = self.textFieldIds[8].label
+            self.textFields[8]?.placeholder = self.textFieldIds[8].placeholder
+            self.textFields[8]?.isEnabled = true
         } else {
-            self.labels[9].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
-            self.labels[9].text = "\(self.textFieldIds[9].label) (must be a lodge bus to enable this field)"
-            self.textFields[9]?.placeholder = ""
-            self.textFields[9]?.isEnabled = false
+            self.labels[8].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+            self.labels[8].text = "\(self.textFieldIds[8].label) (must be a lodge bus to enable this field)"
+            self.textFields[8]?.placeholder = ""
+            self.textFields[8]?.isEnabled = false
         }
     }
     
@@ -1452,10 +1386,10 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         //autoFillTextFields()
         
         // Add notification
-        dropDownTextFields[5]?.isEnabled = false
-        labels[5].text = "\(textFieldIds[5].label) (select a division first)"
-        labels[5].textColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
-        NotificationCenter.default.addObserver(self, selector: #selector(setWorkGroupOptions), name: Notification.Name("dropDownPressed:4"), object: nil)
+        dropDownTextFields[6]?.isEnabled = false
+        labels[6].text = "\(textFieldIds[5].label) (select a division first)"
+        labels[6].textColor = UIColor.gray//(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
+        NotificationCenter.default.addObserver(self, selector: #selector(setWorkGroupOptions), name: Notification.Name("dropDownPressed:5"), object: nil)
     }
     
     
@@ -1520,6 +1454,9 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     }
     
     @objc private func setWorkGroupOptions(){
+        // Clear the workgroup field
+        dropDownTextFields[6]?.text?.removeAll()
+        
         var workGroups = ["Administration": ["Human Resources", "IT", "Other"],
                           "Buildings and Utilities": ["Maintenance", "Roads", "Support", "Trails", "Other"],
                           "External Affairs": ["Concessions", "Planning", "Superintendent's Office"],
@@ -1527,18 +1464,21 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                           "Visitor and Resource Protection": ["Law Enforcement", "Comm. Center","Other"],
                           "Interpetation": ["East District", "West District", "Backcountry", "Education"],
                           "Other": []]
-        let division = (dropDownTextFields[4]?.text)!
+        let division = (dropDownTextFields[5]?.text)!
         if workGroups.keys.contains(division) && division != "Other" {
-            dropDownTextFields[5]?.dropView.dropDownOptions = workGroups[division]!
+            dropDownTextFields[6]?.dropView.dropDownOptions = workGroups[division]!
+            dropDownTextFields[6]?.isEnabled = true
+            labels[6].textColor = UIColor.black
         } else { //"Other" was selected and the field was filled manually with keyboard
-            dropDownTextFields[5]?.dropView.dropDownOptions = []
-            dropDownTextFields[5]?.text = ""
+            dropDownTextFields[6]?.dropView.dropDownOptions = []
+            dropDownTextFields[6]?.text = "Other"
+            dropDownTextFields[6]?.isEnabled = false
+            labels[6].textColor = UIColor.gray
         }
         
-        dropDownTextFields[5]?.dropView.tableView.reloadData()
-        dropDownTextFields[5]?.isEnabled = true
-        labels[5].text = textFieldIds[5].label
-        labels[5].textColor = UIColor.black
+        dropDownTextFields[6]?.dropView.tableView.reloadData()
+        //dropDownTextFields[6]?.isEnabled = true
+        labels[6].text = textFieldIds[6].label
     }
     
     //MARK:  - Navigation
@@ -2964,7 +2904,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Permit number", placeholder: "Enter the permit number",             type: "normal"),
+                             (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2979,7 +2919,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Permit number", placeholder: "Enter the permit number",             type: "normal"),
+                             (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
