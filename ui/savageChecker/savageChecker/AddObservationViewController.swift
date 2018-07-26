@@ -21,6 +21,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var navigationBar: CustomNavigationBar!
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
+                                    "Lodge Bus": "lodgeBusIcon",
                                     "NPS Vehicle": "npsVehicleIcon",
                                     "NPS Approved": "npsApprovedIcon",
                                     "NPS Contractor": "npsContractorIcon",
@@ -269,6 +270,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let session = loadSession()
         let labelText = icons[button.tag].key
         let types = ["Bus": BusObservationViewController.self,
+                     "Lodge Bus": LodgeBusObservationViewController.self,
                      "NPS Vehicle": NPSVehicleObservationViewController.self,
                      "NPS Approved": NPSApprovedObservationViewController.self,
                      "NPS Contractor": NPSContractorObservationViewController.self,
