@@ -137,7 +137,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.tableView = UITableView(frame: CGRect(x: 0, y: statusBarHeight + navigationBarHeight, width: displayWidth, height: displayHeight - (statusBarHeight + navigationBarHeight + self.barHeight)))
         self.tableView.register(BaseObservationTableViewCell.self, forCellReuseIdentifier: "cell")         // register cell name
         //Auto-set the UITableViewCell's height (requires iOS8+)
-        self.tableView.rowHeight = 110//UITableViewAutomaticDimension
+        self.tableView.rowHeight = 85//UITableViewAutomaticDimension
         self.tableView.dataSource = self
         self.tableView.delegate = self
         self.view.addSubview(tableView)
@@ -720,8 +720,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let observation = observationCell.observation
         let imageName = (icons[observationCell.observationType]?.normal)!
         
-        cell.driverLabel.text = observation.driverName
-        cell.destinationLabel.text = observation.destination
+        //cell.driverLabel.text = observation.driverName
+        let destination = observation.destination
+        if destination.replacingOccurrences(of: " ", with: "").isEmpty {
+            cell.destinationLabel.text =  "N/A"
+        } else {
+            cell.destinationLabel.text = destination
+        }
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
         cell.nPassengersLabel.text = observation.nPassengers
         cell.mainIcon.image = UIImage(named: imageName)
