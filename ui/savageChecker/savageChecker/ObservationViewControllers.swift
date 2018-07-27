@@ -26,7 +26,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
 
     
     // track when the text field in focus changes with a property observer
-    private var currentTextField = 0 {
+    var currentTextField = 0 {
         willSet {
             // Check to make sure the current text field is not a dropDown. When a dropDownTextField is first pressed, it resigns as first responder (and didEndEditing is called) because the dropDownView takes over (and shouldBeginEditing is called again). This means  currentTextField is changed each time the dropDownTextField is pressed. If we don't exclude dropdowns from the dismissInputView() call, it immediately dismisses the dropdown.
             let currentType = self.textFieldIds[self.currentTextField].type
@@ -411,6 +411,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 return
             }
             textField.resignFirstResponder()
+            
+            // Interp staff thought that other should be the actual entry rather than having people type something in
             /*// Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
             if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
                 textField.resignFirstResponder()
@@ -498,14 +500,14 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
-    // When dropdown is pressed
+    // This method currently does nothing, here but it's useful in subclasses
     @objc func dropDownDidChange(notification: NSNotification) {
         guard let textDictionary = notification.object as? Dictionary<Int, String> else {
             fatalError("Couldn't downcast textDictionary: \(notification.object!)")
         }
         let index = textDictionary.keys.first!
         let text = textDictionary.values.first!
-        textFields[index]?.text = text
+        //textFields[index]?.text = text
         
         updateData()
     }
@@ -620,9 +622,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 let alertTitle = "Date Entry Alert"
                 let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
                 let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.textFields[sender.tag]!.text = datetimeString}))
+                alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[sender.tag]!.text = datetimeString}))
                 alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
-                alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.textFields[sender.tag]!.text = datetimeString;
+                alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[sender.tag]!.text = datetimeString;
                     sendDateEntryAlert = false}))
                 present(alertController, animated: true, completion: nil)
             } else {
@@ -1039,10 +1041,6 @@ class BusObservationViewController: BaseObservationViewController {
     let busNumberColumn = Expression<String>("busNumber")
     let isTrainingColumn = Expression<Bool>("isTraining")
     let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
-    //let observationsTable = Table("buses")
-    
-    let lodgeBusTypes = ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face"]
-    
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1177,6 +1175,30 @@ class BusObservationViewController: BaseObservationViewController {
         observation?.id = Int(max)
         
         dismissController()
+    }
+    
+    
+    // Check if a
+    @objc override func dropDownDidChange(notification: NSNotification) {
+        
+        super.dropDownDidChange(notification: notification)
+        
+        let destinationLookup = ["Denali Natural History Tour": "Primrose/Mile 17",
+                                 "Tundra Wilderness Tour": "Stony Overlook",
+                                 "Kantishna Experience": "Kantishna",
+                                 "Camper": "Kantishna"]
+        
+        // Check if the destination field has been filled yet
+        let destinationText = self.dropDownTextFields[5]?.text ?? ""
+        print(destinationText.isEmpty)
+        // If this field is the bus type field and destination hasn't been filled in (wouldn't want to change it unexpectedly)
+        if self.textFieldIds[self.currentTextField].label == "Bus type" && destinationText.isEmpty {
+            // Check if bus type field is empty, and if it isn't then try to set the destination
+            if let busType = self.dropDownTextFields[self.currentTextField]!.text {
+                self.dropDownTextFields[5]?.text = destinationLookup[busType] ?? ""
+            }
+        }
+    
     }
     
     
