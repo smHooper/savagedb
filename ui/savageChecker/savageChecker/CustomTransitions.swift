@@ -83,7 +83,7 @@ class LeftToRightTransition: NSObject, UIViewControllerAnimatedTransitioning {
         let fromView = transitionContext.view(forKey: .from)!
         
         container.addSubview(fromView)
-        fromView.frame.origin = .zero
+        fromView.frame.origin = CGPoint(x: 0, y: 0)
         
         UIView.animate(withDuration: duration, delay: 0, options: .curveEaseIn, animations: {
             fromView.frame.origin = CGPoint(x: fromView.frame.width, y: 0)

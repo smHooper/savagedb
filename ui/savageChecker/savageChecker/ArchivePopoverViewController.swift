@@ -19,6 +19,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     let dateColumn = Expression<String>("date")
     let openTimeColumn = Expression<String>("openTime")
     let closeTimeColumn = Expression<String>("closeTime")
+    let documentInteractionController = UIDocumentInteractionController()
     
     var session: Session!
     var fileName: String!
@@ -160,12 +161,34 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         dismiss(animated: true, completion: nil)
     }
     
+    
+    func saveFile(url: URL) {
+        
+        documentInteractionController.url = url
+        documentInteractionController.uti = url.typeIdentifier ?? "public.data, public.content"
+        documentInteractionController.name = url.localizedName ?? url.lastPathComponent
+        documentInteractionController.presentOptionsMenu(from: view.frame, in: view, animated: true)
+    }
+    
+    
     @objc func archiveButtonPressed() {
-        // Shouldn't need to check if the file alread exists because time stamp in filename would prevent that
+        // Shouldn't need to check if the file alread exists because time stamp in filename should prevent that
         let fileManager = FileManager.default
-        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
         let dbURL = URL(fileURLWithPath: dbPath).absoluteURL
+        
+        URLSession.shared.dataTask(with: dbURL) { data, response, error in
+            guard let data = data, error == nil else { return }
+            let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(response?.suggestedFilename ?? self.fileName)
+            do {
+                try data.write(to: tmpURL)
+            } catch { print(error) }
+            DispatchQueue.main.async {
+                self.saveFile(url: tmpURL)
+            }
+        }.resume()
+        /*let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
+        
         
         if fileManager.fileExists(atPath: outputURL.absoluteString) {
             print("File already exists")
@@ -175,21 +198,22 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
             } catch {
                 print(error)
             }
-        }
+        }*/
         
         // Delete all records from the db
+        //  First get names of all tables in the DB
         let tableQuery: Statement
         do {
             tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%');")
         } catch {
             fatalError("Could not fetch all tables because \(error.localizedDescription)")
         }
+        //  Loop through all tables and delete all records
         for row in tableQuery {
             let tableName = "\(row[0]!)"
             let table = Table(tableName)
-            
             do {
-                try db.run(table.delete())
+                try db.run(table.delete()) // Deletes all rows in table
             } catch {
                 print("Could not delete records from \(tableName) because \(error.localizedDescription)")
             }

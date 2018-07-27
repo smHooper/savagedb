@@ -65,6 +65,15 @@ extension UIViewController {
     }
 }
 
+extension URL {
+    var typeIdentifier: String? {
+        return (try? resourceValues(forKeys: [.typeIdentifierKey]))?.typeIdentifier
+    }
+    var localizedName: String? {
+        return (try? resourceValues(forKeys: [.localizedNameKey]))?.localizedName
+    }
+}
+
 // Add extension to dismiss keyboard for any text field
 /*extension UIViewController {
     func hideKeyboardWhenTappedAround() {

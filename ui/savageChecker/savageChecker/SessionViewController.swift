@@ -121,11 +121,6 @@ class SessionViewController: BaseFormViewController {
         // Dispose of any resources that can be recreated.
     }
     
-    //MARK: - TabBarControllerDelegate methods
-    func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
-        print("Selected \(type(of: viewController))")
-    }
-    
     //MARK: - Navigation
     // Set up the nav bar
     override func setNavigationBar() {
