@@ -558,21 +558,30 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     func saveFile(url: URL) {
-        print("saving file")
         documentInteractionController.url = url
-        documentInteractionController.uti = url.typeIdentifier ?? "public.data, public.content"
+        documentInteractionController.uti = url.typeIdentifier ?? "public.data, public.content, public.database"
         documentInteractionController.name = url.localizedName ?? url.lastPathComponent
         documentInteractionController.presentOptionsMenu(from: self.view.frame, in: self.view, animated: true)
     }
     
     
-    @objc func archiveButtonPressed() {
+    /*@objc func archiveButtonPressed() {
         // Shouldn't need to check if the file alread exists because time stamp in filename should prevent that
         let fileManager = FileManager.default
         let dbURL = URL(fileURLWithPath: dbPath).absoluteURL
         //let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("copy.db")
-        saveFile(url: dbURL)
-        /*let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        URLSession.shared.dataTask(with: dbURL) { data, response, error in
+            guard let data = data, error == nil else { return }
+            let tmpURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent(response?.suggestedFilename ?? "dbcopy.db")
+            do {
+                try data.write(to: tmpURL)
+            } catch { print(error) }
+            DispatchQueue.main.async {
+                self.saveFile(url: tmpURL)
+            }
+        }.resume()
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
          let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
          
          
@@ -588,7 +597,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Delete all records from the db
         //  First get names of all tables in the DB
-        let tableQuery: Statement
+        /*let tableQuery: Statement
         do {
             tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%');")
         } catch {
@@ -630,11 +639,11 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             activityIndicator.isHidden = true
             translucentWhiteView.removeFromSuperview()
             presentingController.dismiss(animated: true, completion: nil)
-        }
+        }*/
         
-    }
+    //}
 
-    /*@objc func archiveButtonPressed(button: UIBarButtonItem){
+    @objc func archiveButtonPressed(button: UIBarButtonItem){
         
         let popoverController = ArchivePopoverViewController()
         popoverController.modalPresentationStyle = .formSheet
@@ -642,7 +651,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         present(popoverController, animated: true, completion: nil)
         
-    }*/
+        /*let popoverController = DatabaseBrowserViewController()
+        //popoverController.modalPresentationStyle = .formSheet
+        //popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 800.0))
+        present(popoverController, animated: true, completion: nil)*/
+        
+    }
     
     
     func addBlur() {
@@ -721,12 +735,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let imageName = (icons[observationCell.observationType]?.normal)!
         
         //cell.driverLabel.text = observation.driverName
-        let destination = observation.destination
+        cell.destinationLabel.text = {
+            let destination = observation.destination
+            if destination.replacingOccurrences(of: " ", with: "").isEmpty {
+                return "N/A"
+            } else {
+                return destination
+            }
+        }()
+        /*let destination = observation.destination
         if destination.replacingOccurrences(of: " ", with: "").isEmpty {
             cell.destinationLabel.text =  "N/A"
         } else {
             cell.destinationLabel.text = destination
-        }
+        }*/
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
         cell.nPassengersLabel.text = observation.nPassengers
         cell.mainIcon.image = UIImage(named: imageName)

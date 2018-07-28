@@ -12,23 +12,45 @@ class DatabaseBrowserViewController: UIDocumentBrowserViewController, UIDocument
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         self.delegate = self
+        
         self.allowsPickingMultipleItems = false
         
-
-        // Do any additional setup after loading the view.
     }
 
     
 
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destinationViewController.
-        // Pass the selected object to the new view controller.
+    // MARK: UIDocumentBrowserViewControllerDelegate
+    func documentBrowser(_ controller: UIDocumentBrowserViewController, didRequestDocumentCreationWithHandler importHandler: @escaping (URL?, UIDocumentBrowserViewController.ImportMode) -> Void) {
+        let newDocumentURL: URL? = nil
+        
+        // Set the URL for the new document here.
+        if newDocumentURL != nil {
+            importHandler(newDocumentURL, .move)
+        } else {
+            importHandler(nil, .none)
+        }
     }
-    */
+    
+    // When user selects document
+    func documentBrowser(_ controller: UIDocumentBrowserViewController, didPickDocumentURLs documentURLs: [URL]) {
+        guard let sourceURL = documentURLs.first else { return }
+        
+        //presentDocument(at: sourceURL)
+    }
+    
+    // User imports a document
+    func documentBrowser(_ controller: UIDocumentBrowserViewController, didImportDocumentAt sourceURL: URL, toDestinationURL destinationURL: URL) {
+        // Present the Document View Controller for the new newly created document
+        //presentDocument(at: destinationURL)
+    }
+    
+    func documentBrowser(_ controller: UIDocumentBrowserViewController, failedToImportDocumentAt documentURL: URL, error: Error?) {
+        // Make sure to handle the failed import appropriately, e.g., by presenting an error message to the user.
+    }
+    
+    // MARK: Load data
+    
 
 }

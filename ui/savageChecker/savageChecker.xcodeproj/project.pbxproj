@@ -27,6 +27,7 @@
 		AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */; };
 		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
 		AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */; };
+		AFFA20BA210B8D2B0034E536 /* DatabaseBrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFA20B9210B8D2B0034E536 /* DatabaseBrowserViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -116,6 +117,7 @@
 		AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddObservationViewController.swift; sourceTree = "<group>"; };
 		AFF3E15D20C084980079A389 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchivePopoverViewController.swift; sourceTree = "<group>"; };
+		AFFA20B9210B8D2B0034E536 /* DatabaseBrowserViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DatabaseBrowserViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -177,6 +179,7 @@
 				AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */,
 				AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */,
 				AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */,
+				AFFA20B9210B8D2B0034E536 /* DatabaseBrowserViewController.swift */,
 				AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */,
 				AF5E82F720AA2A9300386083 /* Observation.swift */,
 				AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */,
@@ -434,6 +437,7 @@
 				AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */,
 				AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */,
 				AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */,
+				AFFA20BA210B8D2B0034E536 /* DatabaseBrowserViewController.swift in Sources */,
 				AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */,
 				AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */,
 				AF67172120A4D0AC0039C490 /* Session.swift in Sources */,

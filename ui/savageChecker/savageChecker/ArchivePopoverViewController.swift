@@ -176,17 +176,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         let fileManager = FileManager.default
         let dbURL = URL(fileURLWithPath: dbPath).absoluteURL
         
-        URLSession.shared.dataTask(with: dbURL) { data, response, error in
-            guard let data = data, error == nil else { return }
-            let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent(response?.suggestedFilename ?? self.fileName)
-            do {
-                try data.write(to: tmpURL)
-            } catch { print(error) }
-            DispatchQueue.main.async {
-                self.saveFile(url: tmpURL)
-            }
-        }.resume()
-        /*let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
         let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
         
         
@@ -198,7 +188,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
             } catch {
                 print(error)
             }
-        }*/
+        }
         
         // Delete all records from the db
         //  First get names of all tables in the DB

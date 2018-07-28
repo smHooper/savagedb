@@ -202,6 +202,22 @@ class SessionViewController: BaseFormViewController {
         }
     }
     
+    
+    //MARK: - TextFieldDelegate methods
+    
+    /*@objc override  func dropDownDidChange(notification: NSNotification) {
+        
+        let currentText = self.dropDownTextFields[self.currentTextField]?.text ?? ""
+        
+        super.dropDownDidChange(notification: notification)
+        
+        // This doesn't work
+        if self.textFieldIds[self.currentTextField].label == "Observer name" {//&& observerName == currentText{
+            sendDateEntryAlert = true // Originally set at the top of ObservationViewControllers.swift
+        }
+    }*/
+    
+    
     //MARK: Private methods
     private func loadSession() -> Session? {
         // ************* check that the table exists first **********************
