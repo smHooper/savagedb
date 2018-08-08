@@ -349,12 +349,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Set the background image of the selected button to the selected image
         self.selectedToolBarButton = sender.tag
-        let currentButton = makeBarButton(buttonTag: sender.tag)
-        self.barButtons[sender.tag] = UIBarButtonItem(customView: currentButton)
+        //let currentButton = makeBarButton(buttonTag: sender.tag)
+        //self.barButtons[sender.tag] = UIBarButtonItem(customView: currentButton)
         
         // Set background image of the previously selected button to the unselected image
-        let previousButton = makeBarButton(buttonTag: previousButtonTag)
-        self.barButtons[previousButtonTag] = UIBarButtonItem(customView: previousButton)
+        //let previousButton = makeBarButton(buttonTag: previousButtonTag)
+        //self.barButtons[previousButtonTag] = UIBarButtonItem(customView: previousButton)
         
         // If the previous query was empty, no need to scroll to the top (throws an error). Otherwise, reset the scroll position to the first row.
         if self.tableView.numberOfRows(inSection: 0) > 0 {
@@ -425,11 +425,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 }
             }, completion: {_ in self.setToolBarButtons()})
         }
-        
-        // **** ANIMATE THIS left to right ******
-        
-        //setToolBarButtons()
-        
         
         // Draw group indicators
         self.barGroupIndicators[self.currentGroup].image = UIImage(named: "selectedCircle")
