@@ -466,7 +466,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         backButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         let backBarButton = UIBarButtonItem(customView: backButton)
-        //backBarButton.setTitleTextAttributes([], for: <#T##UIControlState#>)
         
         // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
         let editButton: UIButton
@@ -490,6 +489,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
         let addObservationButton = UIBarButtonItem(customView: addButton)
         
+        //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
+        
         //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
         // Add the archive button
         let archiveButton = UIButton(type: .custom)
@@ -508,7 +509,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         fixedSpaceLeft.width = 60
         fixedSpaceRight.width = 60
         navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton]
-        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton]
+        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton]//, fixedSpaceRight, QRButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
         self.view.addSubview(self.navigationBar)
@@ -548,6 +549,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Re-adjust scrollable area to be able to scroll past toolBar
         self.tableView.contentSize.height += self.toolBar.frame.height
+    }
+    
+    
+    @objc func qrButtonPressed(){
+        let scannerController = ScannerViewController()
+        present(scannerController, animated: true)
     }
     
     
