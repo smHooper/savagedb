@@ -402,8 +402,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             }
             // Make sure the other button is enabled
             self.rightToolBarButton.isEnabled = true
-            // **** ANIMATE THIS left to right ******
-            setToolBarButtons()
+            UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseInOut, animations: {
+                for button in self.barButtons {
+                    let frame = (button.customView?.frame)!
+                    button.customView?.frame = CGRect(x: frame.maxX + self.view.bounds.width, y: frame.minY, width: self.barButtonSize, height: self.barButtonSize)
+                }
+            }, completion: {_ in self.setToolBarButtons()})
+            
         
         // Sender is the right button
         } else {
@@ -413,9 +418,18 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             }
             // Make sure the other button is enabled
             self.leftToolBarButton.isEnabled = true
-            // **** ANIMATE THIS right to left ******
-            setToolBarButtons()
+            UIView.animate(withDuration: 0.5, delay: 0, options: .curveEaseInOut, animations: {
+                for button in self.barButtons {
+                    let frame = (button.customView?.frame)!
+                    button.customView?.frame = CGRect(x: frame.minX - self.view.bounds.width, y: frame.minY, width: self.barButtonSize, height: self.barButtonSize)
+                }
+            }, completion: {_ in self.setToolBarButtons()})
         }
+        
+        // **** ANIMATE THIS left to right ******
+        
+        //setToolBarButtons()
+        
         
         // Draw group indicators
         self.barGroupIndicators[self.currentGroup].image = UIImage(named: "selectedCircle")
