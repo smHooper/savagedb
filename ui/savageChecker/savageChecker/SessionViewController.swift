@@ -30,7 +30,7 @@ class SessionViewController: BaseFormViewController {
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
                              (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"]]
+        self.dropDownMenuOptions = ["Observer name": observers]
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -39,7 +39,7 @@ class SessionViewController: BaseFormViewController {
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
                              (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"]]
+        self.dropDownMenuOptions = ["Observer name": observers]
     }
     
     //MARK: - Layout
@@ -102,6 +102,7 @@ class SessionViewController: BaseFormViewController {
             self.viewVehiclesButton.isEnabled = false
         }
         
+        print(self.view.frame.size)
     }
     
     

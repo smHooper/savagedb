@@ -771,7 +771,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
     }
     
@@ -786,7 +786,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
     }
 
@@ -1056,7 +1056,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Transit", "Camper", "Other"]]
         self.observationsTable = Table("buses")
@@ -1075,7 +1075,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Transit", "Camper", "Other"]]
         self.observationsTable = Table("buses")
@@ -1316,7 +1316,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Lodge": ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
         
@@ -1338,7 +1338,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "normal"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Lodge": ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
         self.observationsTable = Table("buses")
@@ -1567,7 +1567,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Work division": ["Administration", "Buildings and Utilities", "External Affairs", "Resources", "Visitor and Resource Protection", "Other"],
                                     "Work group": ["Maintenance", "Roads", "Trails", "Other"],
@@ -1591,7 +1591,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Work division": ["Administration", "Buildings and Utilities", "External Affairs", "Resources", "Visitor and Resource Protection", "Other"],
                                     "Work group": ["Maintenance", "Roads", "Trails", "Other"],
@@ -1844,7 +1844,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Approved category": ["Education", "Researcher", "V.I.P.", "Other"]]
         
@@ -1864,7 +1864,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Approved category": ["Education", "Researcher", "Other"]]
         
@@ -2073,7 +2073,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
         
@@ -2092,7 +2092,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
         self.observationsTable = Table("npsContractors")
@@ -2292,7 +2292,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
         
         self.observationsTable = Table("employees")
@@ -2309,7 +2309,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
         
         self.observationsTable = Table("employees")
@@ -2501,7 +2501,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
         
         self.observationsTable = Table("rightOfWay")
@@ -2518,7 +2518,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
         
         self.observationsTable = Table("rightOfWay")
@@ -2714,7 +2714,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"]]
+        self.dropDownMenuOptions = ["Observer name": observers]
         
         self.observationsTable = Table("tekCampers")
     }
@@ -2729,7 +2729,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"]]
+        self.dropDownMenuOptions = ["Observer name": observers]
         
         self.observationsTable = Table("tekCampers")
     }
@@ -3289,7 +3289,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Trip purpose": ["Other"]]
         
@@ -3307,7 +3307,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
-        self.dropDownMenuOptions = ["Observer name": ["Jakara Hubbard", "Andrea Markell", "Maddi Owen", "Keith Gortowski", "Elizabeth Beavers", "Other"],
+        self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     "Trip purpose": ["Other"]]
         
