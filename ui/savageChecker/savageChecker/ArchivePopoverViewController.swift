@@ -212,9 +212,15 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         // Prepare the session controller by clearing all fields and disabling the navigation button
         let presentingController = self.presentingViewController?.presentingViewController as! SessionViewController
         presentingController.dropDownTextFields[0]!.text = ""
-        for (_, textField) in presentingController.textFields {
+        /*for (_, textField) in presentingController.textFields {
             textField.text = ""
-        }
+        }*/
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        presentingController.textFields[1]?.text = formatter.string(from: now)
+        presentingController.textFields[2]?.text = "6:30 AM"
+        presentingController.textFields[3]?.text = "9:30 PM"
         presentingController.viewVehiclesButton.isEnabled = false
         
         // Add an activity indicator and show it for a couple seconds. Otherwise, the transition is too abrupt
