@@ -766,7 +766,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name", type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -781,7 +781,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name", type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -1558,7 +1558,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name",     type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",             type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",             type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",            type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Work division",      placeholder: "Select or enter the driver's division",   type: "dropDown"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
@@ -1582,7 +1582,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name",     type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",             type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",             type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",            type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Work division",      placeholder: "Select or enter the driver's division",   type: "dropDown"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
@@ -1838,7 +1838,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Approved category",  placeholder: "Select the type of vehicle",          type: "dropDown"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
@@ -1858,7 +1858,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Approved category",  placeholder: "Select the type of vehicle",          type: "dropDown"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
@@ -2058,6 +2058,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     var observation: NPSContractorObservation?
     let tripPurposeColumn = Expression<String>("tripPurpose")
     let nExpectedNightsColumn = Expression<String>("nExpectedDays")
+    let organizationNameColumn = Expression<String>("organizationName")
     //private let observationsTable = Table("npsContractors")
     
     //MARK: - Initialization
@@ -2068,6 +2069,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Company/Organization name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
                              (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
@@ -2087,6 +2089,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Company/Organization Name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
                              (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
@@ -2124,12 +2127,12 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             
             // Initialize the observation
-            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", tripPurpose: "", nExpectedNights: "")
+            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", tripPurpose: "", nExpectedNights: "", organizationName: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
-            self.textFields[6]?.text = "0"
+            self.textFields[7]?.text = "0"
             self.saveButton.isEnabled = false
             
             // The observation already exists and is open for viewing/editing
@@ -2145,16 +2148,17 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             } catch {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
-            self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], nExpectedNights: record[nExpectedNightsColumn], comments: record[commentsColumn])
+            self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], nExpectedNights: record[nExpectedNightsColumn], organizationName: record[organizationNameColumn], comments: record[commentsColumn])
             
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             self.dropDownTextFields[3]?.text = self.observation?.destination
-            self.dropDownTextFields[4]?.text = self.observation?.tripPurpose
-            self.textFields[5]?.text = self.observation?.nPassengers
-            self.textFields[6]?.text  = self.observation?.nExpectedNights
-            self.textFields[7]?.text = self.observation?.comments
+            self.textFields[4]?.text = self.observation?.organizationName
+            self.dropDownTextFields[5]?.text = self.observation?.tripPurpose
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text  = self.observation?.nExpectedNights
+            self.textFields[8]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -2198,16 +2202,18 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let destination = self.dropDownTextFields[3]?.text ?? ""
-        let tripPurpose = self.dropDownTextFields[4]?.text ?? ""
-        let nPassengers = self.textFields[5]?.text ?? ""
-        let nExpectedNights = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let organizationName = self.textFields[4]?.text ?? ""
+        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let nExpectedNights = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !destination.isEmpty &&
+                !organizationName.isEmpty &&
                 !tripPurpose.isEmpty &&
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
@@ -2219,6 +2225,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.destination = destination
+            self.observation?.organizationName = organizationName
             self.observation?.tripPurpose = tripPurpose
             self.observation?.nPassengers = nPassengers
             self.observation?.nExpectedNights = nExpectedNights
@@ -2237,6 +2244,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                                             dateColumn <- (self.observation?.date)!,
                                                             timeColumn <- (self.observation?.time)!,
                                                             destinationColumn <- (self.observation?.destination)!,
+                                                            organizationNameColumn <- (self.observation?.organizationName)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
@@ -2256,6 +2264,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
                                         destinationColumn <- (self.observation?.destination)!,
+                                        organizationNameColumn <- (self.observation?.organizationName)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
@@ -2287,7 +2296,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2304,7 +2313,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2496,7 +2505,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number",   placeholder: "Enter the permit holder's last name",   type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2513,7 +2522,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number",   placeholder: "Enter the permit holder's last name",   type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -3062,7 +3071,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
@@ -3078,7 +3087,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
@@ -3284,7 +3293,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -3302,7 +3311,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's name", placeholder: "Enter the driver's last name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]

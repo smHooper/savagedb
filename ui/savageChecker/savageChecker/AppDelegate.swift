@@ -163,6 +163,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
         
         // MARK: - NPS conctractor table
+        let organizationNameColumn = Expression<String>("organizationName")
         let NPSContractorTable = Table("npsContractors")
         do {
             try db.run(NPSContractorTable.create(ifNotExists: true) { t in
@@ -176,6 +177,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 t.column(commentsColumn)
                 t.column(tripPurposeColumn)
                 t.column(nExpectedNightsColumn)
+                t.column(organizationNameColumn)
             })
         } catch let error {
             fatalError(error.localizedDescription)

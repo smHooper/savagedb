@@ -123,13 +123,15 @@ class NPSContractorObservation: Observation {
     
     var tripPurpose: String?
     var nExpectedNights = "0"
+    var organizationName: String?
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, nExpectedNights: String = "0", comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, nExpectedNights: String = "0", organizationName: String, comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.tripPurpose = tripPurpose
         self.nExpectedNights = nExpectedNights
+        self.organizationName = organizationName
     }
 }
 
