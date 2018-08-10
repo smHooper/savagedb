@@ -491,6 +491,17 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
         
+        // Add a button for switching the active database file
+        let databaseButton = UIButton(type: .custom)
+        databaseButton.setImage(UIImage(named: "switchDatabaseIcon"), for: .normal)
+        databaseButton.frame = CGRect(x: 0.0, y: 0.0, width: 30, height: 30)
+        databaseButton.translatesAutoresizingMaskIntoConstraints = false
+        databaseButton.widthAnchor.constraint(equalToConstant: 30).isActive = true
+        databaseButton.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        databaseButton.imageView?.contentMode = .scaleAspectFit
+        databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
+        let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
+        
         //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
         // Add the archive button
         let archiveButton = UIButton(type: .custom)
@@ -508,7 +519,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         fixedSpaceLeft.width = 60
         fixedSpaceRight.width = 60
-        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton]
+        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton]
         navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton]//, fixedSpaceRight, QRButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
@@ -580,7 +591,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         documentInteractionController.presentOptionsMenu(from: self.view.frame, in: self.view, animated: true)
     }
     
-    
+    @objc func selectDatabaseButtonPressed() {
+        let browserViewController = DatabaseBrowserViewController()
+        browserViewController.modalPresentationStyle = .formSheet
+        browserViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
+        
+        present(browserViewController, animated: true, completion: nil)
+    }
     /*@objc func archiveButtonPressed() {
         // Shouldn't need to check if the file alread exists because time stamp in filename should prevent that
         let fileManager = FileManager.default

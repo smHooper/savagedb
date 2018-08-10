@@ -7,50 +7,176 @@
 //
 
 import UIKit
+import SQLite
 
-class DatabaseBrowserViewController: UIDocumentBrowserViewController, UIDocumentBrowserViewControllerDelegate {
 
+
+class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+
+    var files = [String]()
+    var fileTableView: UITableView!
+    let spacing: CGFloat = 16
+    //var cancelButton: UI
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.delegate = self
+        self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
         
-        self.allowsPickingMultipleItems = false
+        findFiles()
+        
+        // Add a title at the top
+        let titleLabel = UILabel()
+        titleLabel.text = "Select a database file to load"
+        titleLabel.textAlignment = .center
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 20)
+        self.view.addSubview(titleLabel)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: self.view.centerYAnchor, constant: -(self.view.frame.height - self.preferredContentSize.height)/2 + self.spacing * 1.5).isActive = true
+        
+        // Add a cancel button at the bottom
+        let cancelButton = UIButton(type: .system)
+        cancelButton.setTitle("Cancel", for: .normal)
+        cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+        cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
+        self.view.addSubview(cancelButton)
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        cancelButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        cancelButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
+        
+        // Configure the tableView
+        let cancelButtonFont = (cancelButton.titleLabel?.font)!
+        let cancelButtonTextWidth = "Cancel".width(withConstrainedHeight: 30, font: cancelButtonFont)
+        let cancelButtonTextHeight = "Cancel".height(withConstrainedWidth: cancelButtonTextWidth, font: cancelButtonFont)
+        let titleWidth = titleLabel.text?.width(withConstrainedHeight: 30, font: titleLabel.font)
+        let titleHeight = titleLabel.text?.height(withConstrainedWidth: titleWidth!, font: titleLabel.font)
+        let tableViewMinY = self.view.frame.minY + self.spacing * 2 + titleHeight!
+        let tableViewHeight = self.preferredContentSize.height - self.spacing * 5 - cancelButtonTextHeight - titleHeight!
+        self.fileTableView = UITableView(frame: CGRect(x: self.view.frame.minX, y: tableViewMinY, width: self.preferredContentSize.width, height: tableViewHeight))
+        self.fileTableView.register(DatabaseBrowserTableViewCell.self, forCellReuseIdentifier: "DatabaseBrowserCell")
+        self.fileTableView.rowHeight = 65//UITableViewAutomaticDimension
+        self.fileTableView.dataSource = self
+        self.fileTableView.delegate = self
+        self.view.addSubview(self.fileTableView)
         
     }
 
     
-
-    // MARK: UIDocumentBrowserViewControllerDelegate
-    func documentBrowser(_ controller: UIDocumentBrowserViewController, didRequestDocumentCreationWithHandler importHandler: @escaping (URL?, UIDocumentBrowserViewController.ImportMode) -> Void) {
-        let newDocumentURL: URL? = nil
-        
-        // Set the URL for the new document here.
-        if newDocumentURL != nil {
-            importHandler(newDocumentURL, .move)
-        } else {
-            importHandler(nil, .none)
+    private func findFiles(){
+        let fileManager = FileManager.default
+        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        do {
+            let fileURLs = try fileManager.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
+            for url in fileURLs {
+                let fileName = url.lastPathComponent
+                if fileName != "savageChecker.db" {
+                    self.files.append(fileName)
+                }
+            }
+        } catch {
+            print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
         }
-    }
-    
-    // When user selects document
-    func documentBrowser(_ controller: UIDocumentBrowserViewController, didPickDocumentURLs documentURLs: [URL]) {
-        guard let sourceURL = documentURLs.first else { return }
         
-        //presentDocument(at: sourceURL)
+        // Sort in alphabetical order
+        self.files.sort()
     }
     
-    // User imports a document
-    func documentBrowser(_ controller: UIDocumentBrowserViewController, didImportDocumentAt sourceURL: URL, toDestinationURL destinationURL: URL) {
-        // Present the Document View Controller for the new newly created document
-        //presentDocument(at: destinationURL)
+    
+    //MARK: - Navigation
+    @objc func cancelButtonPressed() {
+        dismiss(animated: true, completion: nil)
     }
     
-    func documentBrowser(_ controller: UIDocumentBrowserViewController, failedToImportDocumentAt documentURL: URL, error: Error?) {
-        // Make sure to handle the failed import appropriately, e.g., by presenting an error message to the user.
+    
+    //MARK: - TableView Delegate Methods
+    func numberOfSections(in tableView: UITableView) -> Int{
+        return 1
     }
     
-    // MARK: Load data
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        //return self.observations.count
+        return self.files.count
+    }
     
+    // Compose each cell
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        
+        // Table view cells are reused and should be dequeued using a cell identifier.
+        let cell = tableView.dequeueReusableCell(withIdentifier: "DatabaseBrowserCell", for: indexPath) as! DatabaseBrowserTableViewCell
+        
+        // Fetch the right observation for the data source layout
+        let fileString = self.files[indexPath.row]
+        
+        // Set the label's text to the filename
+        cell.fileNameLabel.text = fileString
+        
+        return cell
+    }
+    
+    // Called when the cell is selected.
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        
+        let fileManager = FileManager.default
+        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        let selectedFileName = self.files[indexPath.row]
+        dbPath = documentsURL.appendingPathComponent(selectedFileName).absoluteString
+        
+        let presentingController = self.presentingViewController as! BaseTableViewController
+        do {
+            presentingController.db = try Connection(dbPath)
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        dismiss(animated: true, completion: {presentingController.loadData()})
+    }
 
+}
+
+
+class DatabaseBrowserTableViewCell: UITableViewCell {
+    
+    let icon = UIImageView()
+    let fileNameLabel = UILabel()
+    
+    let iconSize: CGFloat = 30
+    let fontSize: CGFloat = 20
+    let spacing: CGFloat = 16
+    
+    override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
+        super.init(style: style, reuseIdentifier: reuseIdentifier)
+        
+        self.icon.image = UIImage(named: "databaseIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
+        self.icon.contentMode = .scaleAspectFill
+        
+        let contentSafeArea = UIView()
+        self.contentView.addSubview(contentSafeArea)
+        contentSafeArea.translatesAutoresizingMaskIntoConstraints = false
+        contentSafeArea.leftAnchor.constraint(equalTo: self.contentView.leftAnchor, constant: self.spacing).isActive = true
+        contentSafeArea.topAnchor.constraint(equalTo: self.contentView.topAnchor, constant: self.spacing).isActive = true
+        contentSafeArea.rightAnchor.constraint(equalTo: self.contentView.rightAnchor, constant: self.spacing * -1).isActive = true
+        contentSafeArea.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor, constant: self.spacing * -1).isActive = true
+        
+        contentSafeArea.addSubview(self.icon)
+        contentSafeArea.addSubview(self.fileNameLabel)
+        
+        self.icon.translatesAutoresizingMaskIntoConstraints = false
+        self.icon.leftAnchor.constraint(equalTo: contentSafeArea.leftAnchor).isActive = true
+        self.icon.topAnchor.constraint(equalTo: contentSafeArea.topAnchor).isActive = true
+        self.icon.heightAnchor.constraint(equalTo: contentSafeArea.heightAnchor).isActive = true
+        self.icon.widthAnchor.constraint(equalToConstant: self.iconSize).isActive = true
+        
+        self.fileNameLabel.translatesAutoresizingMaskIntoConstraints = false
+        self.fileNameLabel.centerYAnchor.constraint(equalTo: self.icon.centerYAnchor).isActive = true
+        self.fileNameLabel.leftAnchor.constraint(equalTo: self.icon.rightAnchor, constant: spacing).isActive = true
+        self.fileNameLabel.textAlignment = .left
+        self.fileNameLabel.font = UIFont.systemFont(ofSize: fontSize)
+        
+        self.backgroundColor = UIColor.clear
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
 }

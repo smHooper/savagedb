@@ -11,8 +11,6 @@ import UIKit
 import SQLite
 
 
-let dbPath = "\(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)/savageChecker.db"
-
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
@@ -35,7 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // Connect to DB and create all necessary tables
     func configureDatabase(){
         // Open a connection to the database
-        let db : Connection
+        var db : Connection?
         do {
             db = try Connection(dbPath)
         } catch let error {
@@ -54,7 +52,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let sessionsTable = Table("sessions")
         do {
-            try db.run(sessionsTable.create(ifNotExists: true) { t in
+            try db?.run(sessionsTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -74,7 +72,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let observationsTable = Table("observations")
         do {
-            try db.run(observationsTable.create(ifNotExists: true) { t in
+            try db?.run(observationsTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -96,7 +94,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let busesTable = Table("buses")
         do {
-            try db.run(busesTable.create(ifNotExists: true) { t in
+            try db?.run(busesTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -122,7 +120,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let NPSVehicleTable = Table("npsVehicles")
         do {
-            try db.run(NPSVehicleTable.create(ifNotExists: true) { t in
+            try db?.run(NPSVehicleTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -145,7 +143,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         let NPSApprovedTable = Table("npsApproved")
         do {
-            try db.run(NPSApprovedTable.create(ifNotExists: true) { t in
+            try db?.run(NPSApprovedTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -166,7 +164,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let organizationNameColumn = Expression<String>("organizationName")
         let NPSContractorTable = Table("npsContractors")
         do {
-            try db.run(NPSContractorTable.create(ifNotExists: true) { t in
+            try db?.run(NPSContractorTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -187,7 +185,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let permitHolderColumn = Expression<String>("permitHolder")
         let EmployeeTable = Table("employees")
         do {
-            try db.run(EmployeeTable.create(ifNotExists: true) { t in
+            try db?.run(EmployeeTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -206,7 +204,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let permitNumberColumn = Expression<String>("permitNumber")
         let rightOfWayTable = Table("rightOfWay")
         do {
-            try db.run(rightOfWayTable.create(ifNotExists: true) { t in
+            try db?.run(rightOfWayTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -226,7 +224,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         let hasTekPassColumn = Expression<Bool>("hasTekPass")
         let teklanikaCamperTable = Table("tekCampers")
         do {
-            try db.run(teklanikaCamperTable.create(ifNotExists: true) { t in
+            try db?.run(teklanikaCamperTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -244,7 +242,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MARK: - Propho table
         let photographerTable = Table("photographers")
         do {
-            try db.run(photographerTable.create(ifNotExists: true) { t in
+            try db?.run(photographerTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -263,7 +261,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MARK: - Accessibility table
         let accessibilityTable = Table("accessibility")
         do {
-            try db.run(accessibilityTable.create(ifNotExists: true) { t in
+            try db?.run(accessibilityTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -280,7 +278,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MARK: - Cyclist table
         let cyclistTable = Table("cyclists")
         do {
-            try db.run(cyclistTable.create(ifNotExists: true) { t in
+            try db?.run(cyclistTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -297,7 +295,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MARK: - Hunter table
         let hunterTable = Table("subsistenceUsers")
         do {
-            try db.run(hunterTable.create(ifNotExists: true) { t in
+            try db?.run(hunterTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -314,7 +312,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MARK: - Road lottery table
         let roadLotteryTable = Table("roadLottery")
         do {
-            try db.run(roadLotteryTable.create(ifNotExists: true) { t in
+            try db?.run(roadLotteryTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)
@@ -332,7 +330,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // MARK: - Other table
         let otherVehicleTable = Table("other")
         do {
-            try db.run(otherVehicleTable.create(ifNotExists: true) { t in
+            try db?.run(otherVehicleTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
                 t.column(observerNameColumn)
                 t.column(dateColumn)

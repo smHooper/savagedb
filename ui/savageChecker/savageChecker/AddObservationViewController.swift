@@ -226,7 +226,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         backButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
         backButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
-        let backButtonTitle = "Vehicle list"
+        let backButtonTitle = "Observation list"
         let buttonFont = UIFont.systemFont(ofSize: 18)
         let titleWidth = backButtonTitle.width(withConstrainedHeight: 200, font: buttonFont)
         let backLabel = UILabel(frame: CGRect(x: 0, y: 0, width: titleWidth + backButton.frame.width + 10, height: backButtonTitle.height(withConstrainedWidth: 200, font: buttonFont)))
