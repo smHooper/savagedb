@@ -109,6 +109,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         label.topAnchor.constraint(equalTo: messageView.bottomAnchor, constant: self.borderSpacing * CGFloat(2)).isActive = true
         
         // Add a text field for the file name
+        // *******Change this so fileName is just the filename. Then maybe set dbPath to "" or something **********
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
