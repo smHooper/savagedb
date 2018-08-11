@@ -19,8 +19,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
-        configureDatabase()
-        
+        //configureDatabase()
+
         let sessionController = SessionViewController()
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
@@ -30,320 +30,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
     
-    // Connect to DB and create all necessary tables
-    func configureDatabase(){
-        // Open a connection to the database
-        var db : Connection?
-        do {
-            db = try Connection(dbPath)
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        print(dbPath)
-        
-        // Make tables
-        
-        // MARK: - Session table
-        let idColumn = Expression<Int64>("id")
-        let observerNameColumn = Expression<String>("observerName")
-        let dateColumn = Expression<String>("date")
-        let openTimeColumn = Expression<String>("openTime")
-        let closeTimeColumn = Expression<String>("closeTime")
-        
-        let sessionsTable = Table("sessions")
-        do {
-            try db?.run(sessionsTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(openTimeColumn)
-                t.column(closeTimeColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Observations table
-        let timeColumn = Expression<String>("time")
-        let driverNameColumn = Expression<String>("driverName")
-        let destinationColumn = Expression<String>("destination")
-        let nPassengersColumn = Expression<String>("nPassengers")
-        let commentsColumn = Expression<String>("comments")
-        
-        let observationsTable = Table("observations")
-        do {
-            try db?.run(observationsTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Buses table
-        let busTypeColumn = Expression<String>("busType")
-        let busNumberColumn = Expression<String>("busNumber")
-        let isTrainingColumn = Expression<Bool>("isTraining")
-        let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
-        
-        let busesTable = Table("buses")
-        do {
-            try db?.run(busesTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn, defaultValue: " ")
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(busTypeColumn)
-                t.column(busNumberColumn)
-                t.column(isTrainingColumn)
-                t.column(nOvernightPassengersColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - NPS vehicle table
-        let tripPurposeColumn = Expression<String>("tripPurpose")
-        let workDivisionColumn = Expression<String>("workDivision")
-        let workGroupColumn = Expression<String>("workGroup")
-        let nExpectedNightsColumn = Expression<String>("nExpectedDays")
-        
-        let NPSVehicleTable = Table("npsVehicles")
-        do {
-            try db?.run(NPSVehicleTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(tripPurposeColumn)
-                t.column(workDivisionColumn)
-                t.column(workGroupColumn)
-                t.column(nExpectedNightsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - NPS approved table
-        let approvedTypeColumn = Expression<String>("approvedType")
-        
-        let NPSApprovedTable = Table("npsApproved")
-        do {
-            try db?.run(NPSApprovedTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(tripPurposeColumn)
-                t.column(approvedTypeColumn)
-                t.column(nExpectedNightsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - NPS conctractor table
-        let organizationNameColumn = Expression<String>("organizationName")
-        let NPSContractorTable = Table("npsContractors")
-        do {
-            try db?.run(NPSContractorTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn, defaultValue: " ")
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(tripPurposeColumn)
-                t.column(nExpectedNightsColumn)
-                t.column(organizationNameColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - employee table
-        let permitHolderColumn = Expression<String>("permitHolder")
-        let EmployeeTable = Table("employees")
-        do {
-            try db?.run(EmployeeTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn, defaultValue: " ")
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(permitHolderColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Right of way table
-        let permitNumberColumn = Expression<String>("permitNumber")
-        let rightOfWayTable = Table("rightOfWay")
-        do {
-            try db?.run(rightOfWayTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn, defaultValue: " ")
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(permitNumberColumn)
-                t.column(tripPurposeColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Tek camper table
-        let hasTekPassColumn = Expression<Bool>("hasTekPass")
-        let teklanikaCamperTable = Table("tekCampers")
-        do {
-            try db?.run(teklanikaCamperTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn, defaultValue: " ")
-                t.column(destinationColumn, defaultValue: " ")
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(hasTekPassColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Propho table
-        let photographerTable = Table("photographers")
-        do {
-            try db?.run(photographerTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn, defaultValue: " ")
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-                t.column(permitNumberColumn)
-                t.column(nExpectedNightsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Accessibility table
-        let accessibilityTable = Table("accessibility")
-        do {
-            try db?.run(accessibilityTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Cyclist table
-        let cyclistTable = Table("cyclists")
-        do {
-            try db?.run(cyclistTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn, defaultValue: " ")
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Hunter table
-        let hunterTable = Table("subsistenceUsers")
-        do {
-            try db?.run(hunterTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn, defaultValue: " ")
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Road lottery table
-        let roadLotteryTable = Table("roadLottery")
-        do {
-            try db?.run(roadLotteryTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn, defaultValue: " ")
-                t.column(destinationColumn, defaultValue: " ")
-                t.column(nPassengersColumn)
-                t.column(permitNumberColumn)
-                t.column(commentsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
-        
-        // MARK: - Other table
-        let otherVehicleTable = Table("other")
-        do {
-            try db?.run(otherVehicleTable.create(ifNotExists: true) { t in
-                t.column(idColumn, primaryKey: .autoincrement)
-                t.column(observerNameColumn)
-                t.column(dateColumn)
-                t.column(timeColumn)
-                t.column(driverNameColumn)
-                t.column(destinationColumn)
-                t.column(nPassengersColumn)
-                t.column(commentsColumn)
-            })
-        } catch let error {
-            fatalError(error.localizedDescription)
-        }
     
+    func replaceBackgroundImage() {
+        let fileManager = FileManager.default
+        
+        if let documentsDirectory = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
+            
+            let url = URL(fileURLWithPath: documentsDirectory.absoluteString).appendingPathComponent("background.png")
+            
+            if !fileManager.fileExists(atPath: url.path){
+                do { try fileManager.removeItem(atPath: url.absoluteString)}
+                catch {print("Could not delete background.png")}
+            }
+        }
     }
     
     func applicationWillResignActive(_ application: UIApplication) {
@@ -356,6 +55,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
         //print("applicationDidEnterBackground")
+        
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {

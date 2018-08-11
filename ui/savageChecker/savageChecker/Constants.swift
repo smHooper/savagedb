@@ -53,3 +53,4 @@ let observers = ["Jaz Ammon",
                  "Stony Yanuchi",
                  "Nathan Ziegler",
                  "Other"]
+let backgroundImages = [""]

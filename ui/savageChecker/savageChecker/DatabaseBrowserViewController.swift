@@ -70,7 +70,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             let fileURLs = try fileManager.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
             for url in fileURLs {
                 let fileName = url.lastPathComponent
-                if fileName != "savageChecker.db" {
+                if fileName != "savageChecker.db" && fileName.hasSuffix(".db"){
                     self.files.append(fileName)
                 }
             }

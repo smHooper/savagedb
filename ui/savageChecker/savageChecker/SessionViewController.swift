@@ -45,50 +45,36 @@ class SessionViewController: BaseFormViewController {
     //MARK: - Layout
     override func viewDidLoad() {
         
-        /*let startingBackGroundView = UIImageView(image: UIImage(named: "viewControllerBackground"))
-        startingBackGroundView.frame = self.view.frame
-        startingBackGroundView.contentMode = .scaleAspectFill
-        self.view.addSubview(startingBackGroundView)
-        
-        let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))
-        backgroundImageView.frame = self.view.frame
-        backgroundImageView.contentMode = .scaleAspectFill
-        let translucentView = UIView(frame: self.view.frame)
-        translucentView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        let backgroundView = UIView(frame: self.view.frame)
-        backgroundView.addSubview(translucentView)
-        backgroundView.addSubview(backgroundImageView)
-        backgroundView.sendSubview(toBack: backgroundImageView)
-        backgroundView.tag = -1
-        
-        UIView.animate(withDuration: 2, animations: {self.view.addSubview(backgroundView)}, completion: {(finished: Bool) in self.view.sendSubview(toBack: backgroundView)})
-        //self.view.addSubview(backgroundView)
-        //self.view.sendSubview(toBack: backgroundView)
-        startingBackGroundView.removeFromSuperview()*/
-        
-        
-        
         super.viewDidLoad()
         
-        // The user is opening the app again after closing it or returning from another scene
-        if let session = loadSession() {
-            self.dropDownTextFields[0]?.text = session.observerName
-            self.textFields[1]?.text = session.date
-            self.textFields[2]?.text = session.openTime
-            self.textFields[3]?.text = session.closeTime
-            self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+        print(dbPath)
+        // First check if the database exists. If it does, try to load the session.
+        let url = URL(fileURLWithPath: dbPath)
+        if FileManager.default.fileExists(atPath: url.path){
+            db = nil
+            do {try FileManager.default.removeItem(at: url)}
+            catch{print("couldn't delete db")}
         }
+        if FileManager.default.fileExists(atPath: url.path){
+
+            // The user is opening the app again after closing it or returning from another scene
+            if let session = loadSession() {
+                self.dropDownTextFields[0]?.text = session.observerName
+                self.textFields[1]?.text = session.date
+                self.textFields[2]?.text = session.openTime
+                self.textFields[3]?.text = session.closeTime
+                self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+            }
             // The user is returning to the session scene from another scene
-        else if let session = self.session {
-            self.dropDownTextFields[0]?.text = session.observerName
-            self.textFields[1]?.text = session.date
-            self.textFields[2]?.text = session.openTime
-            self.textFields[3]?.text = session.closeTime
-            self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+            else if let session = self.session {
+                self.dropDownTextFields[0]?.text = session.observerName
+                self.textFields[1]?.text = session.date
+                self.textFields[2]?.text = session.openTime
+                self.textFields[3]?.text = session.closeTime
+                self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+            }
         }
-        
-        
-            // The user has opened the app for the first time since data were cleared
+        // The user has opened the app for the first time since data were cleared
         else {
             // date defaults to today
             let now = Date()
@@ -102,20 +88,8 @@ class SessionViewController: BaseFormViewController {
             self.viewVehiclesButton.isEnabled = false
         }
         
-        print(self.view.frame.size)
     }
     
-    
-    /*override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
-        
-        for (i, view) in self.view.subviews.enumerated() {
-            if view.tag == -1 {
-                self.view.subviews[i].subviews[0].frame = UIScreen.main.bounds
-                self.view.subviews[i].subviews[1].frame = UIScreen.main.bounds
-            }
-        }
-    }*/
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
@@ -136,7 +110,7 @@ class SessionViewController: BaseFormViewController {
     
     @objc func moveToVehicleList(){
         
-        let vehicleTableViewContoller = BaseTableViewController()//BusTableViewController()//
+        let vehicleTableViewContoller = BaseTableViewController()
         vehicleTableViewContoller.modalPresentationStyle = .custom
         vehicleTableViewContoller.transitioningDelegate = self
         self.presentTransition = RightToLeftTransition()
@@ -179,6 +153,23 @@ class SessionViewController: BaseFormViewController {
                 let thisId = Int(max)
                 self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             } else {
+                // Set up the DB
+                // Set the dbPath with a unique tag that includes the observer's name and a timestamp
+                let formatter = DateFormatter()
+                formatter.timeStyle = .short
+                formatter.dateStyle = .none
+                let now = Date()
+                let currentTimeString = formatter.string(from: now).replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: ":", with: "-")
+                let dateString = "\(date.replacingOccurrences(of: "/", with: "-"))"
+                let fileNameTag = "\(observerName.replacingOccurrences(of: " ", with: "_"))_\(dateString)_\(currentTimeString)"
+                
+                if let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
+                    dbPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageChecker_\(fileNameTag).db").absoluteString
+                }
+                
+                // Set up the database
+                configureDatabase()
+                
                 // This is a new session so create a new recod in the DB
                 do {
                     let rowid = try db.run(sessionsTable.insert(observerNameColumn <- observerName,
@@ -224,9 +215,13 @@ class SessionViewController: BaseFormViewController {
         // ************* check that the table exists first **********************
         var rows = [Row]()
         do {
+            guard let db = self.db else {
+                return nil
+            }
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            fatalError(error.localizedDescription)
+            //fatalError(error.localizedDescription)
+            return nil
         }
         if rows.count > 1 {
             fatalError("Multiple sessions found")
@@ -242,4 +237,319 @@ class SessionViewController: BaseFormViewController {
         return thisSession
     }
 
+    // Connect to DB and create all necessary tables
+    func configureDatabase(){
+        // Open a connection to the database
+        //var db : Connection?
+        do {
+            self.db = try Connection(dbPath)
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        print(dbPath)
+        
+        // Make tables
+        
+        // MARK: - Session table
+        let idColumn = Expression<Int64>("id")
+        let observerNameColumn = Expression<String>("observerName")
+        let dateColumn = Expression<String>("date")
+        let openTimeColumn = Expression<String>("openTime")
+        let closeTimeColumn = Expression<String>("closeTime")
+        
+        let sessionsTable = Table("sessions")
+        do {
+            try db?.run(sessionsTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(openTimeColumn)
+                t.column(closeTimeColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Observations table
+        let timeColumn = Expression<String>("time")
+        let driverNameColumn = Expression<String>("driverName")
+        let destinationColumn = Expression<String>("destination")
+        let nPassengersColumn = Expression<String>("nPassengers")
+        let commentsColumn = Expression<String>("comments")
+        
+        let observationsTable = Table("observations")
+        do {
+            try db?.run(observationsTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Buses table
+        let busTypeColumn = Expression<String>("busType")
+        let busNumberColumn = Expression<String>("busNumber")
+        let isTrainingColumn = Expression<Bool>("isTraining")
+        let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
+        
+        let busesTable = Table("buses")
+        do {
+            try db?.run(busesTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(busTypeColumn)
+                t.column(busNumberColumn)
+                t.column(isTrainingColumn)
+                t.column(nOvernightPassengersColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - NPS vehicle table
+        let tripPurposeColumn = Expression<String>("tripPurpose")
+        let workDivisionColumn = Expression<String>("workDivision")
+        let workGroupColumn = Expression<String>("workGroup")
+        let nExpectedNightsColumn = Expression<String>("nExpectedDays")
+        
+        let NPSVehicleTable = Table("npsVehicles")
+        do {
+            try db?.run(NPSVehicleTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(tripPurposeColumn)
+                t.column(workDivisionColumn)
+                t.column(workGroupColumn)
+                t.column(nExpectedNightsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - NPS approved table
+        let approvedTypeColumn = Expression<String>("approvedType")
+        
+        let NPSApprovedTable = Table("npsApproved")
+        do {
+            try db?.run(NPSApprovedTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(tripPurposeColumn)
+                t.column(approvedTypeColumn)
+                t.column(nExpectedNightsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - NPS conctractor table
+        let organizationNameColumn = Expression<String>("organizationName")
+        let NPSContractorTable = Table("npsContractors")
+        do {
+            try db?.run(NPSContractorTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(tripPurposeColumn)
+                t.column(nExpectedNightsColumn)
+                t.column(organizationNameColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - employee table
+        let permitHolderColumn = Expression<String>("permitHolder")
+        let EmployeeTable = Table("employees")
+        do {
+            try db?.run(EmployeeTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn, defaultValue: " ")
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(permitHolderColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Right of way table
+        let permitNumberColumn = Expression<String>("permitNumber")
+        let rightOfWayTable = Table("rightOfWay")
+        do {
+            try db?.run(rightOfWayTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn, defaultValue: " ")
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(permitNumberColumn)
+                t.column(tripPurposeColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Tek camper table
+        let hasTekPassColumn = Expression<Bool>("hasTekPass")
+        let teklanikaCamperTable = Table("tekCampers")
+        do {
+            try db?.run(teklanikaCamperTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn, defaultValue: " ")
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(hasTekPassColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Propho table
+        let photographerTable = Table("photographers")
+        do {
+            try db?.run(photographerTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn, defaultValue: " ")
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+                t.column(permitNumberColumn)
+                t.column(nExpectedNightsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Accessibility table
+        let accessibilityTable = Table("accessibility")
+        do {
+            try db?.run(accessibilityTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Cyclist table
+        let cyclistTable = Table("cyclists")
+        do {
+            try db?.run(cyclistTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Hunter table
+        let hunterTable = Table("subsistenceUsers")
+        do {
+            try db?.run(hunterTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Road lottery table
+        let roadLotteryTable = Table("roadLottery")
+        do {
+            try db?.run(roadLotteryTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn, defaultValue: " ")
+                t.column(destinationColumn, defaultValue: " ")
+                t.column(nPassengersColumn)
+                t.column(permitNumberColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+        // MARK: - Other table
+        let otherVehicleTable = Table("other")
+        do {
+            try db?.run(otherVehicleTable.create(ifNotExists: true) { t in
+                t.column(idColumn, primaryKey: .autoincrement)
+                t.column(observerNameColumn)
+                t.column(dateColumn)
+                t.column(timeColumn)
+                t.column(driverNameColumn)
+                t.column(destinationColumn)
+                t.column(nPassengersColumn)
+                t.column(commentsColumn)
+            })
+        } catch let error {
+            fatalError(error.localizedDescription)
+        }
+        
+    }
 }
