@@ -84,21 +84,37 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         titleView.textAlignment = .center
         
         // Add detailed message
-        let message = "If you press Archive, your data will be saved but you won't be able to view or edit your observations from this device."
+        //  Split the message where the image of 'swtichDatabase' button will be inserted so we have the length before the image
+        let messageBeforeAttachment = "If you press Archive, your data will be saved and a blank database will be created. You will have to use the  "
+        let messageAfterAttachment = "   button to make changes to your previous observations."
+        let message = messageBeforeAttachment + messageAfterAttachment
+        
         let messageFrame = CGRect(x: controllerFrame.minX + self.borderSpacing, y: controllerFrame.minY + self.borderSpacing, width: controllerFrame.width - self.borderSpacing * CGFloat(2), height: CGFloat(40))
         let messageView = UITextView(frame: messageFrame)
-        messageView.font = UIFont.systemFont(ofSize: 16)
+        messageView.font = UIFont.systemFont(ofSize: 18)
         self.view.addSubview(messageView)
-        let messageViewHeight = message.height(withConstrainedWidth: messageViewWidth - 20, font: messageView.font!) + (messageView.textContainerInset.top + messageView.textContainerInset.bottom)
+        let messageHeight = message.height(withConstrainedWidth: messageViewWidth - 20, font: messageView.font!)
+        let textHeightWithCurrentFont = "A".height(withConstrainedWidth: messageViewWidth - 20, font: messageView.font!)
+        let messageViewHeight = messageHeight + (messageView.textContainerInset.top + messageView.textContainerInset.bottom) + textHeightWithCurrentFont
         print("messageView.textContainerInset.top: \(messageView.textContainerInset.top) \nmessageView.textContainerInset.bottom: \(messageView.textContainerInset.bottom)")
         messageView.translatesAutoresizingMaskIntoConstraints = false
         messageView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
         messageView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: self.borderSpacing).isActive = true
         messageView.widthAnchor.constraint(equalToConstant: messageViewWidth).isActive = true
         messageView.heightAnchor.constraint(equalToConstant: CGFloat(messageViewHeight)).isActive = true
-        messageView.text = message
         messageView.isEditable = false
         messageView.backgroundColor = UIColor.clear
+        
+        // Set the text with an attachment
+        let attributedString = NSMutableAttributedString(string: message)
+        let attachment = NSTextAttachment()
+        attachment.image = UIImage(named: "switchDatabaseIcon")
+        let scale =  attachment.image!.size.height / textHeightWithCurrentFont * 2 //This is counter intuitive. Scale of >1 makes image smaller
+        attachment.image = UIImage(cgImage: (UIImage(named: "switchDatabaseIcon")?.cgImage)!, scale: scale, orientation: .up)
+        let attributedStringWithImage = NSAttributedString(attachment: attachment)
+        attributedString.replaceCharacters(in: NSMakeRange(messageBeforeAttachment.count, 1), with: attributedStringWithImage) // Insert image at end of beforeAttachment string
+        attributedString.addAttribute(.font, value: messageView.font!, range: NSMakeRange(0, message.count))//Have set font for attributedString because it overrides messageView.font
+        messageView.attributedText = attributedString
         
         // Add a lable
         let label = UILabel()
@@ -110,16 +126,16 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         
         // Add a text field for the file name
         // *******Change this so fileName is just the filename. Then maybe set dbPath to "" or something **********
-        let formatter = DateFormatter()
+        /*let formatter = DateFormatter()
         formatter.timeStyle = .short
         formatter.dateStyle = .none
         let now = Date()
         let currentTimeString = formatter.string(from: now).replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: ":", with: "-")
         let dateString = "\(session.date.replacingOccurrences(of: "/", with: "-"))"
-        let fileNameTag = "\(session.observerName.replacingOccurrences(of: " ", with: "_"))_\(dateString)_\(currentTimeString)"
-        self.fileName = "savageChecker_\(fileNameTag).db"
+        let fileNameTag = "\(session.observerName.replacingOccurrences(of: " ", with: "_"))_\(dateString)_\(currentTimeString)"*/
+        self.fileName = URL(fileURLWithPath: dbPath).lastPathComponent //"savageChecker_\(fileNameTag).db"
         let fileNameTextField = UITextField()
-        fileNameTextField.text = fileName
+        fileNameTextField.text = self.fileName
         self.view.addSubview(fileNameTextField)
         fileNameTextField.translatesAutoresizingMaskIntoConstraints = false
         fileNameTextField.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true

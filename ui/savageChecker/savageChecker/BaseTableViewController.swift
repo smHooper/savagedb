@@ -680,7 +680,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         let popoverController = ArchivePopoverViewController()
         popoverController.modalPresentationStyle = .formSheet
-        popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 450.0), height: min(self.view.frame.height, 300.0))//CGSize.init(width: 600, height: 600)
+        popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 450.0), height: min(self.view.frame.height, 350.0))//CGSize.init(width: 600, height: 600)
         
         present(popoverController, animated: true, completion: nil)
         
