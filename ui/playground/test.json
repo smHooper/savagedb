@@ -1,0 +1,122 @@
+{
+  "fields": {
+    "global": {
+      "Observer name": {
+        "sorted": true,
+        "options": [
+          "Jaz Ammon",
+          "Elizabeth Beavers",
+          "Amanda Bertino",
+          "Jenn Boyd",
+          "John Brueck",
+          "Marinell Chandler",
+          "Christina Chatfield",
+          "Tyler Dempsey",
+          "NJ Gates",
+          "Keith Gortowski",
+          "Jakara Hubbard",
+          "Brian Janson",
+          "Sami King",
+          "Andrea Markell",
+          "Anna Moore",
+          "Chad Oelke",
+          "Maddi Owen",
+          "Bill Reynolds",
+          "Mara Scallon",
+          "Jan Tomsen",
+          "Matthew Trucano",
+          "Susan Trucano",
+          "Laura Vachula",
+          "Seth Williams",
+          "Malia Walters",
+          "Stony Yanuchi",
+          "Nathan Ziegler",
+          "Other"
+          ]
+      },
+      "Destination": {
+        "context": "global",
+        "sorted": false,
+        "options": [
+          "Primrose/Mile 17",
+          "Teklanika",
+          "Toklat",
+          "Stony Overlook",
+          "Eielson",
+          "Wonder Lake",
+          "Kantishna"]
+      }
+    },
+    "Bus": {
+      "Bus type": {
+        "sorted": false,
+        "options": [
+          "Denali Natural History Tour",
+          "Tundra Wilderness Tour",
+          "Kantishna Experience",
+          "Transit",
+          "Camper",
+          "Other"
+        ]
+      }
+    },
+    "Lodge Bus": {
+      "Lodge": {
+        "sorted": false,
+        "options": [
+          "Denali Backcountry Lodge",
+          "Kantishna Roadhouse",
+          "Camp Denali/North Face",
+          "Other"
+        ]
+      }
+    },
+    "NPS Vehicle": {
+      "Work division": {
+        "sorted": false,
+        "options": [
+          "Administration",
+          "Buildings and Utilities",
+          "External Affairs",
+          "Resources",
+          "Visitor and Resource Protection",
+          "Other"
+        ]
+      },
+      "Work group": {
+        "sorted": false,
+        "options": {
+          "Administration": ["Human Resources", "IT", "Other"],
+          "Buildings and Utilities": ["Maintenance", "Roads", "Support", "Trails", "Other"],
+          "External Affairs": ["Concessions", "Planning", "Superintendent's Office", "Other"],
+          "Resources": ["Cultural Resources", "Water, Air, Geology, Soil", "Wildlife", "Other"],
+          "Visitor and Resource Protection": ["Law Enforcement", "Comm. Center", "Other"],
+          "Interpetation": ["East District", "West District", "Backcountry", "Education", "Other"],
+          "Other": []
+        }
+      }
+    },
+    "NPS Approved": {
+      "Approved category": {
+        "sorted": false,
+        "options": [
+          "Education",
+          "Researcher",
+          "V.I.P.",
+          "Other"
+        ]
+      }
+    },
+    "NPS Contractor": {
+      "Trip purpose": {
+        "sorted": false,
+        "options": [
+          "Delivery",
+          "Maintenance",
+          "Construction",
+          "Other"
+        ]
+      }
+    }
+  }
+}

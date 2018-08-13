@@ -356,7 +356,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // Configure the cell
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let cell = TextFieldCell()
+        /*let cell = TextFieldCell()
         
         let label = UILabel()
         label.text = textFieldIds[indexPath.row].label
@@ -373,7 +373,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         cell.addSubview(cell.label!)
         cell.addSubview(cell.textField!)
         
-        return cell
+        return cell*/
+        return UITableViewCell()
     }
     
     

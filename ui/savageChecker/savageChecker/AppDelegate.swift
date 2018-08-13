@@ -20,7 +20,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
         //configureDatabase()
-
+        parseDropDownOptionJSON()
+        
         let sessionController = SessionViewController()
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
@@ -28,6 +29,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         self.window?.makeKeyAndVisible()
         
         return true
+    }
+    
+    func parseDropDownOptionJSON(){
+        var jsonURL = URL(fileURLWithPath: "")
+        // Look for config file in Documents folder.
+        let fileManager = FileManager.default
+        if let documentsDirectory = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
+            let url = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageCheckAdmin.json")
+            if fileManager.fileExists(atPath: url.absoluteString) {
+                jsonURL = url
+            }
+            // If it's not there, use the default config file in Resources
+            else if let url = Bundle.main.url(forResource: "savageCheckAdmin", withExtension: "json", subdirectory: "Resources") {
+                jsonURL = url
+            } else {
+                fatalError("Could not configure dropDown menus")
+            }
+        }
+        
+        // Read in the .json as one long text string
+        let jsonString: String
+        jsonString = try! String(contentsOf: jsonURL, encoding: .utf8)
+        //catch {print(error)}
+        
+        // If we can read the binary string from the text string
+        if let data = jsonString.data(using: .utf8) {
+            // Try to read it as a JSON struct (from JSONParser)
+            let jsonObject: JSON!
+            jsonObject = try! JSON(data: data)
+            if jsonObject != nil {
+                let globalOptions = jsonObject["fields"]["globals"]
+                for item in  globalOptions["Observer name"].arrayValue {
+                    observers.append(item.rawString()!)
+                }
+                for item in globalOptions["Destinations"].arrayValue {
+                    destinations.append(item.rawString()!)
+                }
+            }
+        }
+        
     }
     
     
