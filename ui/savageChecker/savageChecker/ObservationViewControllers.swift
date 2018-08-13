@@ -112,6 +112,17 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
+    // Get the dropDown options for a given controller/field combo
+    func parseJSON(controllerLabel: String, fieldName: String) -> [String] {
+        let fields = dropDownJSON[controllerLabel]
+        var options = [String]()
+        for item in fields[fieldName]["options"].arrayValue {
+            options.append(item.stringValue)
+        }
+        return options
+    }
+    
+    
     func resetLayout() {
         
         //let safeArea = self.view.safeAreaInsets
@@ -1059,7 +1070,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Transit", "Camper", "Other"]]
+                                    "Bus type": parseJSON(controllerLabel: "Bus", fieldName: "Bus type")]
         self.observationsTable = Table("buses")
     }
     
@@ -1078,7 +1089,7 @@ class BusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Bus type": ["Denali Natural History Tour", "Tundra Wilderness Tour", "Kantishna Experience", "Transit", "Camper", "Other"]]
+                                    "Bus type": parseJSON(controllerLabel: "Bus", fieldName: "Bus type")]
         self.observationsTable = Table("buses")
     }
     
@@ -1095,7 +1106,6 @@ class BusObservationViewController: BaseObservationViewController {
         // This needs to go in viewDidAppear() because viewDidLoad() only gets called the first time you push to each type of view controller
         autoFillTextFields()
     }
-
     
     override func autoFillTextFields() {
 
@@ -1319,7 +1329,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Lodge": ["Denali Backcountry Lodge", "Kantishna Roadhouse", "Camp Denali/North Face", "Other"]]
+                                    "Lodge": parseJSON(controllerLabel: "Lodge Bus", fieldName: "Lodge")]
         
         // These observations still get stored in the buses table. Lodge buses are a separately form because Savage box staff requested it, but that distinction is unnecessary for the DB
         self.observationsTable = Table("buses")
@@ -1570,8 +1580,8 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Work division": ["Administration", "Buildings and Utilities", "External Affairs", "Resources", "Visitor and Resource Protection", "Other"],
-                                    "Work group": ["Maintenance", "Roads", "Trails", "Other"],
+                                    "Work division": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work division"),
+                                    "Work group": ["Other"],
                                     "Trip purpose": ["Other"]]
         self.observationsTable = Table("npsVehicles")
 
@@ -1594,8 +1604,8 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Work division": ["Administration", "Buildings and Utilities", "External Affairs", "Resources", "Visitor and Resource Protection", "Other"],
-                                    "Work group": ["Maintenance", "Roads", "Trails", "Other"],
+                                    "Work division": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work division"),
+                                    "Work group": ["Other"],
                                     "Trip purpose": ["Other"]]
         self.observationsTable = Table("npsVehicles")
     }
@@ -1618,7 +1628,6 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         super.viewDidAppear(animated)
         autoFillTextFields()
     }
-    
     
     override func autoFillTextFields() {
         /*guard let observation = self.observation else {
@@ -1673,18 +1682,21 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         }
     }
     
+    
     @objc private func setWorkGroupOptions(){
         // Clear the workgroup field
         dropDownTextFields[6]?.text?.removeAll()
         
-        var workGroups = ["Administration": ["Human Resources", "IT", "Other"],
-                          "Buildings and Utilities": ["Maintenance", "Roads", "Support", "Trails", "Other"],
-                          "External Affairs": ["Concessions", "Planning", "Superintendent's Office"],
-                          "Resources": ["Cultural Resources", "Water, Air, Geology, Soil", "Wildlife", "Other"],
-                          "Visitor and Resource Protection": ["Law Enforcement", "Comm. Center","Other"],
-                          "Interpetation": ["East District", "West District", "Backcountry", "Education"],
-                          "Other": []]
+        let workGroupField = dropDownJSON["NPS Vehicle"]["Work group"]
+        var workGroups = [String: [String]]()
+        for (key, array) in workGroupField["options"] {
+            var optionsArray = [String]()
+            for item in array.arrayValue { optionsArray.append(item.stringValue) }
+            workGroups[key] = optionsArray
+        }
+        
         let division = (dropDownTextFields[5]?.text)!
+        
         if workGroups.keys.contains(division) && division != "Other" {
             dropDownTextFields[6]?.dropView.dropDownOptions = workGroups[division]!
             dropDownTextFields[6]?.isEnabled = true
@@ -1847,7 +1859,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Approved category": ["Education", "Researcher", "V.I.P.", "Other"]]
+                                    "Approved category": parseJSON(controllerLabel: "NPS Approved", fieldName: "Approved category")]
         
         self.observationsTable = Table("npsApproved")
     }
@@ -1867,7 +1879,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Approved category": ["Education", "Researcher", "Other"]]
+                                    "Approved category": parseJSON(controllerLabel: "NPS Approved", fieldName: "Approved category")]
         
         self.observationsTable = Table("npsApproved")
     }
@@ -2078,7 +2090,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
+                                    "Trip purpose": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Trip purpose")]
         
         self.observationsTable = Table("npsContractors")
     }
@@ -2098,7 +2110,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Trip purpose": ["Delivery", "Maintenance", "Construction", "Other"]]
+                                    "Trip purpose": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Trip purpose")]
         self.observationsTable = Table("npsContractors")
     }
     

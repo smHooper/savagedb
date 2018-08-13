@@ -41,7 +41,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 jsonURL = url
             }
             // If it's not there, use the default config file in Resources
-            else if let url = Bundle.main.url(forResource: "savageCheckAdmin", withExtension: "json", subdirectory: "Resources") {
+            else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
                 jsonURL = url
             } else {
                 fatalError("Could not configure dropDown menus")
@@ -59,16 +59,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             let jsonObject: JSON!
             jsonObject = try! JSON(data: data)
             if jsonObject != nil {
-                let globalOptions = jsonObject["fields"]["globals"]
-                for item in  globalOptions["Observer name"].arrayValue {
-                    observers.append(item.rawString()!)
+                // Get globally applicable dropDown options
+                let globalFields = jsonObject["fields"]["global"]
+                for item in globalFields["Observer name"]["options"].arrayValue {
+                    observers.append(item.stringValue)
                 }
-                for item in globalOptions["Destinations"].arrayValue {
-                    destinations.append(item.rawString()!)
+                for item in globalFields["Destinations"]["options"].arrayValue {
+                    destinations.append(item.stringValue)
                 }
+                
+                dropDownJSON = jsonObject["fields"]
             }
         }
-        
     }
     
     
