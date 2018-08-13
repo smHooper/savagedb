@@ -45,16 +45,16 @@ extension UIViewController {
             return
         }*/
         
-        /*let backgroundImage: UIImage
+        let backgroundImage: UIImage
         if let image = loadBackgroundImage(named: "background.png") {
             backgroundImage = image
         } else {
             let defaultImage = UIImage(named: "viewControllerBackgroundBlurred")
             saveImage(image: defaultImage!)
             backgroundImage = defaultImage!
-        }*/
+        }
         
-        /*let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))//backgroundImage)//
+        let backgroundImageView = UIImageView(image: backgroundImage)//"UIImage(named: viewControllerBackgroundBlurred"))//
         backgroundImageView.frame = self.view.frame
         backgroundImageView.contentMode = .redraw//.scaleAspectFill
         
@@ -66,8 +66,8 @@ extension UIViewController {
         backgroundView.addSubview(backgroundImageView)
         backgroundView.sendSubview(toBack: backgroundImageView)
         backgroundView.tag = -1
-        self.view.addSubview(backgroundView)*/
-        let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))
+        self.view.addSubview(backgroundView)
+        /*let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))
         backgroundImageView.frame = self.view.frame
         backgroundImageView.contentMode = .scaleAspectFill
         
@@ -79,7 +79,7 @@ extension UIViewController {
         backgroundView.addSubview(backgroundImageView)
         backgroundView.sendSubview(toBack: backgroundImageView)
         backgroundView.tag = -1
-        self.view.addSubview(backgroundView)
+        self.view.addSubview(backgroundView)*/
     }
     
     func loadBackgroundImage(named: String) -> UIImage? {

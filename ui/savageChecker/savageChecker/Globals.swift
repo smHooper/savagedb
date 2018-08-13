@@ -10,3 +10,8 @@ import SQLite
 
 
 var dbPath = "\(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)/savageChecker.db"
+
+// Vars to store dropdownOptions that are redefined when JSON is parsed
+var destinations = [String]()
+var observers = [String]()
+

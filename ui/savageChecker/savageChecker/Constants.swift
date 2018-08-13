@@ -24,8 +24,8 @@ let observationIcons: DictionaryLiteral = ["Bus": "busIcon",
                                            "Road lottery": "busIcon",
                                            "Other": "busIcon"]
 
-let destinations = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna"]
-let observers = ["Jaz Ammon",
+//let destinations = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna"]
+/*let observers = ["Jaz Ammon",
                  "Elizabeth Beavers",
                  "Amanda Bertino",
                  "Jenn Boyd",
@@ -52,5 +52,5 @@ let observers = ["Jaz Ammon",
                  "Malia Walters",
                  "Stony Yanuchi",
                  "Nathan Ziegler",
-                 "Other"]
+                 "Other"]*/
 let backgroundImages = [""]

@@ -111,6 +111,14 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         // Set the label's text to the filename
         cell.fileNameLabel.text = fileString
         
+        // Check if this is the current DB. If so, make this cell look selected
+        let currentDBName = dbPath.split(separator: "/").last!
+        if fileString == currentDBName {
+            cell.backgroundColor = UIColor(red: 190/255, green: 220/255, blue: 240/255, alpha: 1)
+        } else {
+            cell.backgroundColor = UIColor.clear
+        }
+        
         return cell
     }
     

@@ -8,14 +8,20 @@
 
 /* Begin PBXBuildFile section */
 		AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */; };
+		AF21A2E521214E3700433B82 /* Resources in Resources */ = {isa = PBXBuildFile; fileRef = AF21A2E421214E3700433B82 /* Resources */; };
+		AF21A2E62121563600433B82 /* Resources in Sources */ = {isa = PBXBuildFile; fileRef = AF21A2E421214E3700433B82 /* Resources */; };
 		AF2D9A4E20BF6AD90006EF72 /* ObservationViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */; };
 		AF33C257211B734C002E40A7 /* ScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF33C256211B734C002E40A7 /* ScannerViewController.swift */; };
 		AF3A23F620E1463800200038 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3A23F520E1463800200038 /* Constants.swift */; };
+<<<<<<< HEAD
 		AF40B75221079E2000A2F071 /* TextFieldCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF40B75021079E1F00A2F071 /* TextFieldCell.swift */; };
 		AF40B75321079E2000A2F071 /* TextFieldTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF40B75121079E1F00A2F071 /* TextFieldTableViewController.swift */; };
 		AF47D29E211CEE7E00A6E72D /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF47D29D211CEE7E00A6E72D /* Globals.swift */; };
+=======
+>>>>>>> 82ee65e4433ee141b0cb6811a9a8e33972119353
 		AF5E82F420AA1F3000386083 /* ObservationTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */; };
 		AF5E82F820AA2A9300386083 /* Observation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F720AA2A9300386083 /* Observation.swift */; };
+		AF5EE44721212B4D00F23AFE /* JSONParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5EE44621212B4D00F23AFE /* JSONParser.swift */; };
 		AF67170120A4C58F0039C490 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67170020A4C58F0039C490 /* AppDelegate.swift */; };
 		AF67170320A4C58F0039C490 /* SessionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67170220A4C58F0039C490 /* SessionViewController.swift */; };
 		AF67170820A4C5910039C490 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AF67170720A4C5910039C490 /* Assets.xcassets */; };
@@ -24,6 +30,8 @@
 		AF7B986820B64F7000D315C3 /* SQLite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF7B985A20B64F0C00D315C3 /* SQLite.framework */; };
 		AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */; };
 		AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBC5B3420C6338800551378 /* CustomTransitions.swift */; };
+		AFD09FC42120B315004101FF /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD09FC32120B314004101FF /* Globals.swift */; };
+		AFD09FC62120B480004101FF /* ScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD09FC52120B47F004101FF /* ScannerViewController.swift */; };
 		AFF2A2F120BDEE0B007201F6 /* VehicleButtonControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */; };
 		AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */; };
 		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
@@ -95,14 +103,19 @@
 		77DF342FDA407ACFC81BE419 /* Pods_savageChecker.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_savageChecker.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		ACADEF357EBD71DEAAC2C99D /* Pods-savageChecker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-savageChecker.release.xcconfig"; path = "Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker.release.xcconfig"; sourceTree = "<group>"; };
 		AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownTextFieldControl.swift; sourceTree = "<group>"; };
+		AF21A2E421214E3700433B82 /* Resources */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Resources; sourceTree = "<group>"; };
 		AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationViewControllers.swift; sourceTree = "<group>"; };
 		AF33C256211B734C002E40A7 /* ScannerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
 		AF3A23F520E1463800200038 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
+<<<<<<< HEAD
 		AF40B75021079E1F00A2F071 /* TextFieldCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TextFieldCell.swift; path = ../../../../../.Trash/TextFieldCell.swift; sourceTree = "<group>"; };
 		AF40B75121079E1F00A2F071 /* TextFieldTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = TextFieldTableViewController.swift; path = ../../../../../.Trash/TextFieldTableViewController.swift; sourceTree = "<group>"; };
 		AF47D29D211CEE7E00A6E72D /* Globals.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
+=======
+>>>>>>> 82ee65e4433ee141b0cb6811a9a8e33972119353
 		AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationTableViewCell.swift; sourceTree = "<group>"; };
 		AF5E82F720AA2A9300386083 /* Observation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Observation.swift; sourceTree = "<group>"; };
+		AF5EE44621212B4D00F23AFE /* JSONParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONParser.swift; sourceTree = "<group>"; };
 		AF6716FD20A4C58F0039C490 /* savageChecker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = savageChecker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF67170020A4C58F0039C490 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AF67170220A4C58F0039C490 /* SessionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewController.swift; sourceTree = "<group>"; };
@@ -115,6 +128,8 @@
 		AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQLite.xcodeproj; path = ../SQLite.swift/SQLite.xcodeproj; sourceTree = "<group>"; };
 		AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseTableViewController.swift; sourceTree = "<group>"; };
 		AFBC5B3420C6338800551378 /* CustomTransitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTransitions.swift; sourceTree = "<group>"; };
+		AFD09FC32120B314004101FF /* Globals.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
+		AFD09FC52120B47F004101FF /* ScannerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
 		AFF2A2F020BDEE0B007201F6 /* VehicleButtonControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VehicleButtonControl.swift; sourceTree = "<group>"; };
 		AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddObservationViewController.swift; sourceTree = "<group>"; };
 		AFF3E15D20C084980079A389 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
@@ -174,13 +189,18 @@
 		AF6716FF20A4C58F0039C490 /* savageChecker */ = {
 			isa = PBXGroup;
 			children = (
+<<<<<<< HEAD
 				AF47D29D211CEE7E00A6E72D /* Globals.swift */,
+=======
+				AF21A2E421214E3700433B82 /* Resources */,
+>>>>>>> 82ee65e4433ee141b0cb6811a9a8e33972119353
 				AF3A23F520E1463800200038 /* Constants.swift */,
 				AF67170020A4C58F0039C490 /* AppDelegate.swift */,
 				AF67170220A4C58F0039C490 /* SessionViewController.swift */,
 				AF67172020A4D0AC0039C490 /* Session.swift */,
 				AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */,
 				AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */,
+				AFD09FC52120B47F004101FF /* ScannerViewController.swift */,
 				AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */,
 				AF33C256211B734C002E40A7 /* ScannerViewController.swift */,
 				AFFA20B9210B8D2B0034E536 /* DatabaseBrowserViewController.swift */,
@@ -191,8 +211,8 @@
 				AFF3E15D20C084980079A389 /* Extensions.swift */,
 				AFBC5B3420C6338800551378 /* CustomTransitions.swift */,
 				AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */,
-				AF40B75021079E1F00A2F071 /* TextFieldCell.swift */,
-				AF40B75121079E1F00A2F071 /* TextFieldTableViewController.swift */,
+				AFD09FC32120B314004101FF /* Globals.swift */,
+				AF5EE44621212B4D00F23AFE /* JSONParser.swift */,
 				AF67170720A4C5910039C490 /* Assets.xcassets */,
 				AF67170C20A4C5910039C490 /* Info.plist */,
 			);
@@ -371,6 +391,10 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+<<<<<<< HEAD
+=======
+				AF21A2E521214E3700433B82 /* Resources in Resources */,
+>>>>>>> 82ee65e4433ee141b0cb6811a9a8e33972119353
 				AF67170820A4C5910039C490 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -428,15 +452,17 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF21A2E62121563600433B82 /* Resources in Sources */,
 				AF5E82F420AA1F3000386083 /* ObservationTableViewCell.swift in Sources */,
-				AF40B75321079E2000A2F071 /* TextFieldTableViewController.swift in Sources */,
 				AF5E82F820AA2A9300386083 /* Observation.swift in Sources */,
 				AFF2A2F120BDEE0B007201F6 /* VehicleButtonControl.swift in Sources */,
 				AF67170320A4C58F0039C490 /* SessionViewController.swift in Sources */,
 				AF67170120A4C58F0039C490 /* AppDelegate.swift in Sources */,
 				AF47D29E211CEE7E00A6E72D /* Globals.swift in Sources */,
 				AF3A23F620E1463800200038 /* Constants.swift in Sources */,
+				AFD09FC62120B480004101FF /* ScannerViewController.swift in Sources */,
 				AF2D9A4E20BF6AD90006EF72 /* ObservationViewControllers.swift in Sources */,
+				AFD09FC42120B315004101FF /* Globals.swift in Sources */,
 				AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */,
 				AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */,
 				AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */,
@@ -444,9 +470,9 @@
 				AFF2A2FA20BE0791007201F6 /* AddObservationViewController.swift in Sources */,
 				AF33C257211B734C002E40A7 /* ScannerViewController.swift in Sources */,
 				AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */,
+				AF5EE44721212B4D00F23AFE /* JSONParser.swift in Sources */,
 				AF67172120A4D0AC0039C490 /* Session.swift in Sources */,
 				AFF3E15E20C084980079A389 /* Extensions.swift in Sources */,
-				AF40B75221079E2000A2F071 /* TextFieldCell.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -591,7 +617,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = C4T43F6ZLM;
 				INFOPLIST_FILE = savageChecker/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -611,7 +637,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = C4T43F6ZLM;
 				INFOPLIST_FILE = savageChecker/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
