@@ -36,8 +36,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Look for config file in Documents folder.
         let fileManager = FileManager.default
         if let documentsDirectory = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
-            let url = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageCheckAdmin.json")
-            if fileManager.fileExists(atPath: url.absoluteString) {
+            let url = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageCheckerConfig.json")
+            print(fileManager.fileExists(atPath: url.path))
+            if fileManager.fileExists(atPath: url.path) {
                 jsonURL = url
             }
             // If it's not there, use the default config file in Resources
