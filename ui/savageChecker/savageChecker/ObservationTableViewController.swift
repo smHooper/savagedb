@@ -793,10 +793,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 return destination
             }
         }()*/
-        cell.destinationLabel.text = observationCell.label2
+        cell.centerLabel.text = observationCell.label2
         let observationType = self.cellLabelColumns[observationCell.observationType]!
         let label2IconName = "\(observationType.label2)Icon"
-        cell.destinationIcon.image = UIImage(named: label2IconName)
+        cell.centerIcon.image = UIImage(named: label2IconName)
         /*let destination = observation.destination
         if destination.replacingOccurrences(of: " ", with: "").isEmpty {
             cell.destinationLabel.text =  "N/A"
@@ -804,9 +804,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             cell.destinationLabel.text = destination
         }*/
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
-        cell.nPassengersLabel.text = observationCell.label3//observation.nPassengers
+        cell.rightLabel.text = observationCell.label3//observation.nPassengers
         let label3IconName = "\(observationType.label3)Icon"
-        cell.nPassengersIcon.image = UIImage(named: label3IconName)
+        cell.rightIcon.image = UIImage(named: label3IconName)
         cell.mainIcon.image = UIImage(named: imageName)
         
         // Show the selected cell with a translucent white
