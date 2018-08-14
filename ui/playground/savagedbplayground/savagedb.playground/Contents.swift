@@ -50,6 +50,14 @@ let now = Date()
 now + 2
 
 
+let dict = ["0": "a", "1": "b"]
+var empty = [String: String]()
+for key in dict.keys {
+    empty[key] = dict[key]
+}
+print(empty)
+
+
 
 
 
