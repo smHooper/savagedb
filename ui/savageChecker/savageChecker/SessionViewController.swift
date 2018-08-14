@@ -14,6 +14,7 @@ class SessionViewController: BaseFormViewController {
     
     //MARK: - Properties
     var viewVehiclesButton: UIBarButtonItem!
+    var userData: UserData?
     
     //MARK: DB properties
     let sessionsTable = Table("sessions")
@@ -47,17 +48,19 @@ class SessionViewController: BaseFormViewController {
         
         super.viewDidLoad()
         
-        print(dbPath)
-        // First check if the database exists. If it does, try to load the session.
+        // First check if there's user data from a previous session
+        if let userData = loadUserData() {
+            dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
+            self.userData = userData
+            print(dbPath)
+        }
+        
+        // Then check if the database at dbPath exists
         let url = URL(fileURLWithPath: dbPath)
         if FileManager.default.fileExists(atPath: url.path){
-            db = nil
-            do {try FileManager.default.removeItem(at: url)}
-            catch{print("couldn't delete db")}
-        }
-        if FileManager.default.fileExists(atPath: url.path){
-
             // The user is opening the app again after closing it or returning from another scene
+            do {self.db = try Connection(dbPath)}
+            catch {print(error)}
             if let session = loadSession() {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
@@ -86,6 +89,9 @@ class SessionViewController: BaseFormViewController {
             
             // Disable navigation to vehicle list until all fields are filled
             self.viewVehiclesButton.isEnabled = false
+            
+            // Create the userData instance for storing info
+            self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
         
     }
@@ -95,6 +101,8 @@ class SessionViewController: BaseFormViewController {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
+    
+    
     
     //MARK: - Navigation
     // Set up the nav bar
@@ -152,8 +160,13 @@ class SessionViewController: BaseFormViewController {
                 }
                 let thisId = Int(max)
                 self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
-            } else {
-                // Set up the DB
+                
+                // Update the UserData instance
+                self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
+            }
+            
+            // Create the DB
+            else {
                 // Set the dbPath with a unique tag that includes the observer's name and a timestamp
                 let formatter = DateFormatter()
                 formatter.timeStyle = .short
@@ -180,6 +193,9 @@ class SessionViewController: BaseFormViewController {
                 } catch {
                     print("Session insertion failed: \(error)")
                 }
+                
+                // Save the UserData instance
+                self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
             }
             
             //print("Session updated")
@@ -223,6 +239,7 @@ class SessionViewController: BaseFormViewController {
             //fatalError(error.localizedDescription)
             return nil
         }
+
         if rows.count > 1 {
             fatalError("Multiple sessions found")
         }

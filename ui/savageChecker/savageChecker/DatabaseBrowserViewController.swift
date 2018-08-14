@@ -12,7 +12,8 @@ import SQLite
 
 
 class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-
+    
+    var userData: UserData?
     var files = [String]()
     var fileTableView: UITableView!
     let spacing: CGFloat = 16
@@ -22,6 +23,12 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         super.viewDidLoad()
         
         self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
+        
+        guard let userData = loadUserData() else {
+            print("Couldn't load user data")
+            return
+        }
+        self.userData = userData
         
         findFiles()
         
@@ -125,11 +132,16 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     // Called when the cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
+        // Change the dbPath
         let fileManager = FileManager.default
         let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
         let selectedFileName = self.files[indexPath.row]
-        dbPath = documentsURL.appendingPathComponent(selectedFileName).absoluteString
+        dbPath = documentsURL.appendingPathComponent(selectedFileName).path
         
+        // Update UserData instance
+        self.userData?.update(databaseFileName: selectedFileName)
+        
+        // Open the new datbase
         let presentingController = self.presentingViewController as! BaseTableViewController
         do {
             presentingController.db = try Connection(dbPath)

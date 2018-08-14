@@ -24,33 +24,6 @@ let observationIcons: DictionaryLiteral = ["Bus": "busIcon",
                                            "Road lottery": "busIcon",
                                            "Other": "busIcon"]
 
-//let destinations = ["Primrose/Mile 17", "Teklanika", "Toklat", "Stony Overlook", "Eielson", "Wonder Lake", "Kantishna"]
-/*let observers = ["Jaz Ammon",
-                 "Elizabeth Beavers",
-                 "Amanda Bertino",
-                 "Jenn Boyd",
-                 "John Brueck",
-                 "Narinell Chandler",
-                 "Christina Chatfield",
-                 "Tyler Dempsey",
-                 "NJ Gates",
-                 "Keith Gortowski",
-                 "Jakara Hubbard",
-                 "Brian Janson",
-                 "Sami King",
-                 "Andrea Markell",
-                 "Anna Moore",
-                 "Chad Oelke",
-                 "Maddi Owen",
-                 "Bill Reynolds",
-                 "Mara Scallon",
-                 "Jan Tomsen",
-                 "Matthew Trucano",
-                 "Susan Trucano",
-                 "Laura Vachula",
-                 "Seth Williams",
-                 "Malia Walters",
-                 "Stony Yanuchi",
-                 "Nathan Ziegler",
-                 "Other"]*/
+let userDataPath = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("userData").path
+
 let backgroundImages = [""]

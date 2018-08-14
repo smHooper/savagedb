@@ -27,6 +27,7 @@ extension String {
 
 
 extension UIViewController {
+    
     func addBackground() {
         /*let startingBackGroundView = UIImageView(image: UIImage(named: "viewControllerBackground"))
         startingBackGroundView.frame = self.view.frame
@@ -120,6 +121,15 @@ extension UIViewController {
         
         return topController!
     }
+    
+    func loadUserData() -> UserData? {
+        let userData = NSKeyedUnarchiver.unarchiveObject(withFile: userDataPath) as? UserData
+        if let data = userData { print("User data successfully loaded: \(userData!.activeDatabase)") }
+        
+        return userData
+    }
+    
+    
 }
 
 extension URL {
