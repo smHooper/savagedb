@@ -1251,6 +1251,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
             
+            self.saveButton.isEnabled = true
         }
     }
     
@@ -1475,7 +1476,8 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                 !busType.isEmpty &&
                 !busNumber.isEmpty &&
                 !destination.isEmpty &&
-                !nPassengers.isEmpty
+                !nPassengers.isEmpty &&
+                !nOvernightPassengers.isEmpty
         
         if fieldsFull {
             
