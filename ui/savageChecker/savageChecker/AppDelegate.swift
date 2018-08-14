@@ -65,7 +65,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                 for item in globalFields["Observer name"]["options"].arrayValue {
                     observers.append(item.stringValue)
                 }
-                for item in globalFields["Destinations"]["options"].arrayValue {
+                for item in globalFields["Destination"]["options"].arrayValue {
                     destinations.append(item.stringValue)
                 }
                 

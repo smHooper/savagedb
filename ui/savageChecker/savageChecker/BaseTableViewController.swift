@@ -86,14 +86,31 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var barGroupIndicators = [UIImageView]()
     //var observationIcons = [String: String]() // For storing icon IDs asociated with each
     
-    //MARK: properties for ordering cells
+    //MARK: properties for ordering and displaying cells
     struct ObservationCell {
         let observationType: String
         let iconName: String
         let observation: Observation
+        let label2: String
+        let label3: String
     }
     var observationCells = [Int: ObservationCell]()
     var cellOrder = [Int]()
+    let cellLabelColumns = ["Bus":            (label2: "busType",         label3: "destination"),
+                            "Lodge Bus":      (label2: "busType",         label3: "busNumber"),
+                            "NPS Vehicle":    (label2: "driverName",      label3: "workDivision"),
+                            "NPS Approved":   (label2: "approvedType",    label3: "destination"),
+                            "NPS Contractor": (label2: "destination",     label3: "organizationName"),
+                            "Employee":       (label2: "driverName",      label3: "nPassengers"),
+                            "Right of Way":   (label2: "driverName",      label3: "nPassengers"),
+                            "Tek Camper":     (label2: "nPassengers",     label3: ""),
+                            "Bicycle":        (label2: "destination",     label3: "nPassengers"),
+                            "Propho":         (label2: "driverName",      label3: "nExpectedNights"),
+                            "Accessibility":  (label2: "driverName",      label3: "destination"),
+                            "Subsistence":    (label2: "driverName",      label3: "nPassengers"),
+                            "Road Lottery":   (label2: "permitNumber",    label3: "nPassengers"),
+                            "Other":          (label2: "destination",     label3: "nPassengers")]
+    
     
     //MARK: db properties
     //var modelObjects = [Any]()
@@ -768,14 +785,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let imageName = (icons[observationCell.observationType]?.normal)!
         
         //cell.driverLabel.text = observation.driverName
-        cell.destinationLabel.text = {
+        /*cell.destinationLabel.text = {
             let destination = observation.destination
             if destination.replacingOccurrences(of: " ", with: "").isEmpty {
                 return "N/A"
             } else {
                 return destination
             }
-        }()
+        }()*/
+        cell.destinationLabel.text = observationCell.label2
         /*let destination = observation.destination
         if destination.replacingOccurrences(of: " ", with: "").isEmpty {
             cell.destinationLabel.text =  "N/A"
@@ -783,7 +801,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             cell.destinationLabel.text = destination
         }*/
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
-        cell.nPassengersLabel.text = observation.nPassengers
+        cell.nPassengersLabel.text = observationCell.label3//observation.nPassengers
         cell.mainIcon.image = UIImage(named: imageName)
         
         // Show the selected cell with a translucent white
@@ -880,17 +898,52 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         for label in observationTypes {
             let info = self.icons[label]!
             let table = Table(info.tableName)
+            let label2ColumnName = self.cellLabelColumns[label]!.label2
+            let label3ColumnName = self.cellLabelColumns[label]!.label3
+            let label2Column = Expression<String>(label2ColumnName)
+            let label3Column = Expression<String>(label3ColumnName)
             var rows: [Row]
+            
             do {
                 rows = Array(try db.prepare(table))
             } catch {
                 fatalError("Could not load observations: \(error.localizedDescription)")
             }
             
+            
+            guard let statement = try? db.prepare("PRAGMA table_info(\(info.tableName))") else {
+                return
+            }
+            var columnNames = [String]()
+            for row in statement{
+                for (index, name) in statement.columnNames.enumerated() {
+                    if name == "name" {
+                        columnNames.append("\(row[index]!)")
+                    }
+                }
+            }
             for row in rows{
                 //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
                 let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
-                let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!)
+
+                // Check if the columns for labels actually exist. If not, set the labels to empty strings
+                let label2: String
+                if columnNames.contains(label2ColumnName) {
+                    label2 = row[label2Column]
+                }
+                else {
+                    label2 = ""
+                }
+                
+                let label3: String
+                if columnNames.contains(label3ColumnName) {
+                    label3 = row[label3Column]
+                }
+                else {
+                    label3 = ""
+                }
+                
+                let observationCell = ObservationCell(observationType: label, iconName: info.normal, observation: observation!, label2: label2, label3: label3)
                 
                 // Get the time stamp as an NSDate object so all timestamps can be properly sorted
                 let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
