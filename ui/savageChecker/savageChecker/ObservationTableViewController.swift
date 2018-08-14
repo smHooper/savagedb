@@ -595,7 +595,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let editButton = makeEditButton(imageName: "deleteIcon")
             self.editBarButton.customView = editButton
         }
-
+        
+        // Reload session info so it reflects the active DB
+        if let presentingContoller = self.presentingViewController as? SessionViewController {
+            presentingContoller.loadData()
+        }
+        
         self.dismissTransition = LeftToRightTransition()
         dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
         

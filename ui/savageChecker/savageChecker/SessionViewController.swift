@@ -48,6 +48,11 @@ class SessionViewController: BaseFormViewController {
         
         super.viewDidLoad()
         
+        loadData()
+        
+    }
+    
+    func loadData() {
         // First check if there's user data from a previous session
         if let userData = loadUserData() {
             dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
@@ -68,7 +73,7 @@ class SessionViewController: BaseFormViewController {
                 self.textFields[3]?.text = session.closeTime
                 self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
             }
-            // The user is returning to the session scene from another scene
+                // The user is returning to the session scene from another scene
             else if let session = self.session {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
@@ -77,7 +82,7 @@ class SessionViewController: BaseFormViewController {
                 self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
             }
         }
-        // The user has opened the app for the first time since data were cleared
+            // The user has opened the app for the first time since data were cleared
         else {
             // date defaults to today
             let now = Date()
@@ -93,15 +98,12 @@ class SessionViewController: BaseFormViewController {
             // Create the userData instance for storing info
             self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
-        
     }
-    
     
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-    
     
     
     //MARK: - Navigation
