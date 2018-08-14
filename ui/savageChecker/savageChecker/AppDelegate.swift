@@ -69,6 +69,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                     destinations.append(item.stringValue)
                 }
                 
+                // Set 'lodges' global var because ObservationTableViewController needs access to these values
+                for item in jsonObject["fields"]["Lodge Bus"]["Lodge"]["options"].arrayValue {
+                    lodges.append(item.stringValue)
+                }
+                
+                // For all the controller-specific options, just set the global var dropDownJSON so each controller can access it
                 dropDownJSON = jsonObject["fields"]
             }
         }

@@ -928,7 +928,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 }
             }
             for row in rows{
-                //let session = Session(observerName: row[observerNameColumn], openTime: " ", closeTime: " ", givenDate: row[dateColumn])
+                // Since 'Bus' and 'Lodge Bus' are both stored in the 'buses' table, but they're separate
+                //  vehicle types, make sure that they're not double counted when listing observations.
+                //  Do so by checking the bus type (center label)
+                if (label == "Bus" && lodges.contains(row[label2Column])) || (label == "Lodge Bus" && !lodges.contains(row[label2Column])) {
+                    continue
+                }
+                // Create a generic observation instance
                 let observation = Observation(id: Int(row[idColumn]), observerName: row[observerNameColumn], date: row[dateColumn], time: row[timeColumn], driverName: row[driverNameColumn], destination: row[destinationColumn], nPassengers: row[nPassengersColumn], comments: row[commentsColumn])
 
                 // Check if the columns for labels actually exist. If not, set the labels to empty strings
