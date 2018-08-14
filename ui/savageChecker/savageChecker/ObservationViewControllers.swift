@@ -824,30 +824,25 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         setNavigationBar()
         self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
         
-        /*// Lay out all text fields
-        self.view.addSubview(tableView)
-        tableView.dataSource = self
-        tableView.delegate = self
-        tableView.register(TextFieldCell.self, forCellReuseIdentifier: "cell")
-        tableView.translatesAutoresizingMaskIntoConstraints = false
-        
-        tableView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
-        tableView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
-        tableView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
-        tableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true*/
-        
         autoFillTextFields()
         
-        for (i, _) in boolSwitches {
-            if textFields[i]?.text == "Yes" {
-                boolSwitches[i]?.isOn = true
+        for (i, _) in self.boolSwitches {
+            if self.textFields[i]?.text == "Yes" {
+                self.boolSwitches[i]?.isOn = true
             } else {
-                boolSwitches[i]?.isOn = false
+                self.boolSwitches[i]?.isOn = false
+            }
+        }
+        
+        // Make sure if driverName is a field for this vehicle type, the UITextField has autocapitalization set
+        for (index, fieldInfo) in self.textFieldIds.enumerated() {
+            if fieldInfo.label == "Driver's full name" {
+                self.textFields[index]?.autocapitalizationType = .words
             }
         }
     }
     
-    // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
+    // This portion of viewDidLoad() needs to be easily overridable to customize the order of text fields
     func autoFillTextFields(){
 
         /*guard let observation = self.modelObject as? Observation else {
