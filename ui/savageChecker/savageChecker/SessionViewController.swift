@@ -47,8 +47,69 @@ class SessionViewController: BaseFormViewController {
     override func viewDidLoad() {
         
         super.viewDidLoad()
-        
+        showQuote(seconds: 5.0)
         loadData()
+        
+    }
+    
+    func showQuote(seconds: Double) {
+        
+        let borderSpacing: CGFloat = 16
+        let randomIndex = Int(arc4random_uniform(UInt32(launchScreenQuotes.count)))
+        let randomQuote = launchScreenQuotes[randomIndex]
+        
+        let screenBounds = UIScreen.main.bounds
+        
+        // Configure the message
+        let messageViewWidth = min(screenBounds.width, 450)
+        let font = UIFont.systemFont(ofSize: 18)
+        let messageHeight = randomQuote.height(withConstrainedWidth: messageViewWidth - borderSpacing * 2, font: font)
+        let messageFrame = CGRect(x: screenBounds.width/2 - messageViewWidth/2, y: screenBounds.height/2 - (messageHeight/2 + borderSpacing), width: messageViewWidth, height: messageHeight + borderSpacing * 2)
+        let messageView = UITextView(frame: messageFrame)
+        messageView.font = font
+        messageView.layer.cornerRadius = 25
+        messageView.layer.borderColor = UIColor.clear.cgColor
+        messageView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        messageView.textContainerInset = UIEdgeInsets(top: borderSpacing, left: borderSpacing, bottom: borderSpacing, right: borderSpacing)
+        messageView.text = randomQuote
+        let blurEffect = UIBlurEffect(style: .light)
+        let messageViewBackground = UIVisualEffectView(effect: blurEffect)
+        messageViewBackground.frame = messageFrame
+        messageViewBackground.layer.cornerRadius = messageView.layer.cornerRadius
+        messageViewBackground.layer.masksToBounds = true
+        messageView.addSubview(messageViewBackground)
+        //messageView.sendSubview(toBack: messageViewBackground)
+        
+        // Add the message view with the background
+        let screenView = UIImageView(frame: screenBounds)
+        screenView.image = UIImage(named: "viewControllerBackground")
+        screenView.addSubview(messageViewBackground)
+        screenView.addSubview(messageView)
+        self.view.addSubview(screenView)
+        
+        // Set up the false background that's identical to the viewController's background so it looks like all of the view controller elements fade into view
+        let blurredBackground = UIImageView(frame: screenView.frame)//image:
+        blurredBackground.image = UIImage(named: "viewControllerBackgroundBlurred")
+        blurredBackground.alpha = 0.0
+        let translucentWhite = UIView(frame: screenView.frame)
+        translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        blurredBackground.addSubview(translucentWhite)
+        self.view.addSubview(blurredBackground)
+        
+        let quoteTimeSeconds = min(7.0, max(Double(randomQuote.count/200 * 5), 3.0))
+        print(quoteTimeSeconds)
+        // First, animate the messageView disappearing
+        UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
+            messageView.removeFromSuperview()
+            // Next, animate the blurred background appearing
+            UIView.animate(withDuration: 0.75, delay: 0.2, animations: {blurredBackground.alpha = 1.0}, completion: {_ in
+                screenView.removeFromSuperview()
+                // Finally, make the blurred background disappear. Because it's just a crossfade, it looks like the screen elements are the ones fading into view.
+                UIView.animate(withDuration: 0.5, animations: {blurredBackground.alpha = 0.0}, completion: {_ in
+                    blurredBackground.removeFromSuperview()
+                })
+            })
+        })
         
     }
     
@@ -57,8 +118,8 @@ class SessionViewController: BaseFormViewController {
         if let userData = loadUserData() {
             dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
             self.userData = userData
-            print(dbPath)
         }
+        print(dbPath)
         
         // Then check if the database at dbPath exists
         let url = URL(fileURLWithPath: dbPath)
@@ -98,11 +159,6 @@ class SessionViewController: BaseFormViewController {
             // Create the userData instance for storing info
             self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
-    }
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
     }
     
     
