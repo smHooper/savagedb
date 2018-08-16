@@ -22,7 +22,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
+        //self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
+        self.view.backgroundColor = UIColor.clear
         
         guard let userData = loadUserData() else {
             print("Couldn't load user data")
@@ -65,6 +66,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         self.fileTableView.rowHeight = 65//UITableViewAutomaticDimension
         self.fileTableView.dataSource = self
         self.fileTableView.delegate = self
+        self.fileTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.2)
         self.view.addSubview(self.fileTableView)
         
     }
@@ -121,7 +123,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         // Check if this is the current DB. If so, make this cell look selected
         let currentDBName = dbPath.split(separator: "/").last!
         if fileString == currentDBName {
-            cell.backgroundColor = UIColor(red: 190/255, green: 220/255, blue: 240/255, alpha: 1)
+            cell.backgroundColor = UIColor(red: 190/255, green: 220/255, blue: 240/255, alpha: 0.7)
         } else {
             cell.backgroundColor = UIColor.clear
         }
@@ -153,7 +155,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
 
 }
 
-
+//MARK: -
+//MARK: -
 class DatabaseBrowserTableViewCell: UITableViewCell {
     
     let icon = UIImageView()

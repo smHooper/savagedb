@@ -105,6 +105,17 @@ extension UIViewController {
             return false
         }
     }
+    
+    func getVisibleFrame() -> CGRect {
+        let frame = self.view.frame// frame is actually the size of the device even though preferredContentSize is smaller
+        let contentSize = self.preferredContentSize
+        let controllerMinX = frame.minX + frame.width/2 - contentSize.width/2
+        let controllerMinY = frame.minY + frame.height/2 - contentSize.height/2
+        let controllerFrame = CGRect(x: controllerMinX, y: controllerMinY, width: contentSize.width, height: contentSize.height)
+        
+        return controllerFrame
+    }
+    
 /*    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
  
  while (topController.presentedViewController) {
@@ -124,13 +135,52 @@ extension UIViewController {
     
     func loadUserData() -> UserData? {
         let userData = NSKeyedUnarchiver.unarchiveObject(withFile: userDataPath) as? UserData
-        if let data = userData { print("User data successfully loaded: \(userData!.activeDatabase)") }
+        if userData != nil { print("User data successfully loaded: \(userData!.activeDatabase)") }
         
         return userData
     }
     
     
 }
+
+
+extension UIImageView {
+    
+    func blurEffect(radius: Int) -> UIImageView {
+        let context = CIContext(options: nil)
+        
+        let currentFilter = CIFilter(name: "CIGaussianBlur")
+        let beginImage = CIImage(image: self.image!)
+        currentFilter!.setValue(beginImage, forKey: kCIInputImageKey)
+        currentFilter!.setValue(radius, forKey: kCIInputRadiusKey)
+        
+        let cropFilter = CIFilter(name: "CICrop")
+        cropFilter!.setValue(currentFilter!.outputImage, forKey: kCIInputImageKey)
+        cropFilter!.setValue(CIVector(cgRect: beginImage!.extent), forKey: "inputRectangle")
+        
+        let output = cropFilter!.outputImage
+        let cgimg = context.createCGImage(output!, from: output!.extent)
+        let processedImage = UIImage(cgImage: cgimg!)
+        
+        return UIImageView(image: processedImage)
+    }
+}
+
+
+extension UIView {
+    
+    func takeSnapshot() -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(bounds.size, false, UIScreen.main.scale)
+        
+        drawHierarchy(in: self.bounds, afterScreenUpdates: true)
+        
+        let image = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        
+        return image
+    }
+}
+
 
 extension URL {
     var typeIdentifier: String? {
@@ -140,16 +190,3 @@ extension URL {
         return (try? resourceValues(forKeys: [.localizedNameKey]))?.localizedName
     }
 }
-
-// Add extension to dismiss keyboard for any text field
-/*extension UIViewController {
-    func hideKeyboardWhenTappedAround() {
-        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(UIViewController.dismissKeyboard))
-        tap.cancelsTouchesInView = false
-        view.addGestureRecognizer(tap)
-    }
-    
-    @objc func dismissKeyboard() {
-        view.endEditing(true)
-    }
-}*/

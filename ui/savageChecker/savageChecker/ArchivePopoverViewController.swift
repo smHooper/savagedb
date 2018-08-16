@@ -28,7 +28,10 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     //MARK: - Layout
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
+        
+        //self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
+        //addBackground()
+        
         // Open connection to the DB
         do {
             db = try Connection(dbPath)
@@ -50,7 +53,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     }
     
     // Helper function to get the actual visible frame because self.view.frame actually returns a frame bordering the whole device
-    func getVisibleFrame() -> CGRect {
+    /*func getVisibleFrame() -> CGRect {
         let frame = self.view.frame// frame is actually the size of the device even though preferredContentSize is smaller
         let contentSize = self.preferredContentSize
         let controllerMinX = frame.minX + frame.width/2 - contentSize.width/2
@@ -58,12 +61,20 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         let controllerFrame = CGRect(x: controllerMinX, y: controllerMinY, width: contentSize.width, height: contentSize.height)
         
         return controllerFrame
-    }
+    }*/
     
     // Set up subviews
     func setUpLayout() {
 
         let controllerFrame = getVisibleFrame()
+        
+        // Add translucent blurred image
+        /*for subview in self.view.subviews {
+            if subview.tag == -1 {
+                subview.frame = controllerFrame
+                subview.contentMode = .center
+            }
+        }*/
         
         // Add title message
         let titleMessage = "Are you sure you want to archive your data?"
@@ -125,14 +136,6 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         label.topAnchor.constraint(equalTo: messageView.bottomAnchor, constant: self.borderSpacing * CGFloat(2)).isActive = true
         
         // Add a text field for the file name
-        // *******Change this so fileName is just the filename. Then maybe set dbPath to "" or something **********
-        /*let formatter = DateFormatter()
-        formatter.timeStyle = .short
-        formatter.dateStyle = .none
-        let now = Date()
-        let currentTimeString = formatter.string(from: now).replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: ":", with: "-")
-        let dateString = "\(session.date.replacingOccurrences(of: "/", with: "-"))"
-        let fileNameTag = "\(session.observerName.replacingOccurrences(of: " ", with: "_"))_\(dateString)_\(currentTimeString)"*/
         self.fileName = URL(fileURLWithPath: dbPath).lastPathComponent //"savageChecker_\(fileNameTag).db"
         let fileNameTextField = UITextField()
         fileNameTextField.text = self.fileName
@@ -166,6 +169,28 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
         cancelButton.centerXAnchor.constraint(equalTo: messageView.centerXAnchor, constant: controllerFrame.width/4).isActive = true
         cancelButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.borderSpacing).isActive = true//self.view.bottomAnchor, constant: -(frame.maxY - controllerFrame.maxY - self.borderSpacing)).isActive = true
+        
+        // Draw lines to separate buttons from text
+        //  Horizontal line
+        let lineColor = UIColor(red: 0.3, green: 0.3, blue: 0.3, alpha: 0.4)
+        let horizontalLine = UIView(frame: CGRect(x:0, y: 0, width: controllerFrame.width, height: 1))
+        self.view.addSubview(horizontalLine)
+        horizontalLine.backgroundColor = lineColor
+        horizontalLine.translatesAutoresizingMaskIntoConstraints = false
+        horizontalLine.centerXAnchor.constraint(equalTo: messageView.centerXAnchor).isActive = true
+        horizontalLine.topAnchor.constraint(equalTo: archiveButton.topAnchor, constant: -self.borderSpacing/2).isActive = true
+        horizontalLine.widthAnchor.constraint(equalTo: messageView.widthAnchor).isActive = true
+        horizontalLine.heightAnchor.constraint(equalToConstant: 1.0).isActive = true
+        
+        //  Vertical line
+        let verticalLine = UIView(frame: CGRect(x:0, y: 0, width: 1, height: 1))
+        self.view.addSubview(verticalLine)
+        verticalLine.backgroundColor = lineColor
+        verticalLine.translatesAutoresizingMaskIntoConstraints = false
+        verticalLine.centerXAnchor.constraint(equalTo: messageView.centerXAnchor).isActive = true
+        verticalLine.topAnchor.constraint(equalTo: archiveButton.topAnchor, constant: -self.borderSpacing/2).isActive = true
+        verticalLine.widthAnchor.constraint(equalToConstant: 1.0).isActive = true
+        verticalLine.bottomAnchor.constraint(equalTo: archiveButton.bottomAnchor).isActive = true
     }
     
     override func didReceiveMemoryWarning() {

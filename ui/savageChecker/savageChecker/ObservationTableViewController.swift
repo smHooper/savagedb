@@ -618,101 +618,70 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         browserViewController.modalPresentationStyle = .formSheet
         browserViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
         
+        // Add blurred background from current view
+        let popoverFrame = browserViewController.getVisibleFrame()
+        let backgroundView = getBlurredSnapshot(frame: popoverFrame, whiteAlpha: 0.3)
+        browserViewController.view.addSubview(backgroundView)
+        browserViewController.view.sendSubview(toBack: backgroundView)
+        
         present(browserViewController, animated: true, completion: nil)
     }
-    /*@objc func archiveButtonPressed() {
-        // Shouldn't need to check if the file alread exists because time stamp in filename should prevent that
-        let fileManager = FileManager.default
-        let dbURL = URL(fileURLWithPath: dbPath).absoluteURL
-        //let tmpURL = FileManager.default.temporaryDirectory.appendingPathComponent("copy.db")
-        URLSession.shared.dataTask(with: dbURL) { data, response, error in
-            guard let data = data, error == nil else { return }
-            let tmpURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(response?.suggestedFilename ?? "dbcopy.db")
-            do {
-                try data.write(to: tmpURL)
-            } catch { print(error) }
-            DispatchQueue.main.async {
-                self.saveFile(url: tmpURL)
-            }
-        }.resume()
-        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-         let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
-         
-         
-         if fileManager.fileExists(atPath: outputURL.absoluteString) {
-         print("File already exists")
-         } else {
-         do {
-         try fileManager.copyItem(at: dbURL, to: outputURL)//(atPath: (dbURL.absoluteString)!, toPath: outputURL!)
-         } catch {
-         print(error)
-         }
-         }*/
+    
+    
+    // Return a blurred image of all currently visible views
+    func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
         
-        // Delete all records from the db
-        //  First get names of all tables in the DB
-        /*let tableQuery: Statement
-        do {
-            tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%');")
-        } catch {
-            fatalError("Could not fetch all tables because \(error.localizedDescription)")
-        }
-        //  Loop through all tables and delete all records
-        for row in tableQuery {
-            let tableName = "\(row[0]!)"
-            let table = Table(tableName)
-            do {
-                try db.run(table.delete()) // Deletes all rows in table
-            } catch {
-                print("Could not delete records from \(tableName) because \(error.localizedDescription)")
-            }
+        //add blur temporarily
+        addBlur()
+        
+        // Get image of all currently visible views
+        let backgroundView = UIImageView(image: self.view.takeSnapshot())
+        
+        // remove blurview
+        self.blurEffectView.removeFromSuperview()
+        
+        // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
+        backgroundView.contentMode = .scaleAspectFill
+        let currentFrame = self.view.frame
+        backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
+        
+        // Add translucent white
+        if whiteAlpha > 0 {
+            let translucentWhite = UIView(frame: backgroundView.frame)
+            translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
+            backgroundView.addSubview(translucentWhite)
         }
         
-        // Prepare the session controller by clearing all fields and disabling the navigation button
-        let presentingController = self.presentingViewController?.presentingViewController as! SessionViewController
-        presentingController.dropDownTextFields[0]!.text = ""
-        for (_, textField) in presentingController.textFields {
-            textField.text = ""
-        }
-        presentingController.viewVehiclesButton.isEnabled = false
-        
-        // Add an activity indicator and show it for a couple seconds. Otherwise, the transition is too abrupt
-        let activityIndicator = UIActivityIndicatorView()
-        activityIndicator.activityIndicatorViewStyle = .whiteLarge
-        activityIndicator.color = UIColor.gray
-        activityIndicator.center = self.view.center
-        let translucentWhiteView = UIView(frame: self.view.frame)
-        translucentWhiteView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        self.view.addSubview(translucentWhiteView)
-        self.view.addSubview(activityIndicator)
-        
-        let delay = 2.0
-        activityIndicator.startAnimating()
-        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-            activityIndicator.stopAnimating()
-            activityIndicator.isHidden = true
-            translucentWhiteView.removeFromSuperview()
-            presentingController.dismiss(animated: true, completion: nil)
-        }*/
-        
-    //}
-
+        return backgroundView
+    }
+    
+    
     @objc func archiveButtonPressed(button: UIBarButtonItem){
         
         let popoverController = ArchivePopoverViewController()
         popoverController.modalPresentationStyle = .formSheet
         popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 450.0), height: min(self.view.frame.height, 350.0))//CGSize.init(width: 600, height: 600)
         
-        present(popoverController, animated: true, completion: nil)
+        // Add blurred background from current view
+        let popoverFrame = popoverController.getVisibleFrame()
+        let backgroundView = getBlurredSnapshot(frame: popoverFrame, whiteAlpha: 0.3)
+        popoverController.view.addSubview(backgroundView)
+        popoverController.view.sendSubview(toBack: backgroundView)
         
-        /*let popoverController = DatabaseBrowserViewController()
-        //popoverController.modalPresentationStyle = .formSheet
-        //popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 800.0))
-        present(popoverController, animated: true, completion: nil)*/
+        present(popoverController, animated: true, completion: nil)
         
     }
     
+    func makeBlurView() -> UIVisualEffectView {
+        
+        let blurEffect = UIBlurEffect(style: .light)
+        let blurEffectView = UIVisualEffectView(effect: blurEffect)
+        //blurEffectView.frame = frame
+        //blurEffectView.layer.cornerRadius = messageView.layer.cornerRadius
+        //blurEffectView.layer.masksToBounds = true
+        
+        return blurEffectView
+    }
     
     func addBlur() {
         // Only apply the blur if the user hasn't disabled transparency effects
