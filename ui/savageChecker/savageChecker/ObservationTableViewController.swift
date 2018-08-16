@@ -620,7 +620,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Add blurred background from current view
         let popoverFrame = browserViewController.getVisibleFrame()
-        let backgroundView = getBlurredSnapshot(frame: popoverFrame, whiteAlpha: 0.3)
+        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
         browserViewController.view.addSubview(backgroundView)
         browserViewController.view.sendSubview(toBack: backgroundView)
         

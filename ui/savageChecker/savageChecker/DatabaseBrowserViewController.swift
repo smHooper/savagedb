@@ -17,6 +17,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     var files = [String]()
     var fileTableView: UITableView!
     let spacing: CGFloat = 16
+    let legendIconSize: CGFloat = 30
+    let selectedColor = UIColor(red: 0.5, green: 0.6, blue: 0.7, alpha: 0.5)
     //var cancelButton: UI
     
     override func viewDidLoad() {
@@ -50,24 +52,57 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
         self.view.addSubview(cancelButton)
         cancelButton.translatesAutoresizingMaskIntoConstraints = false
-        cancelButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        cancelButton.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.spacing * 2).isActive = true
         cancelButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
         
+        // Add legend for file status (uploaded or not)
+        let notUploadedIcon = UIImageView(image: UIImage(named: "databaseFileIcon"))
+        self.view.addSubview(notUploadedIcon)
+        notUploadedIcon.contentMode = .scaleAspectFit
+        notUploadedIcon.translatesAutoresizingMaskIntoConstraints = false
+        notUploadedIcon.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: self.spacing * 2).isActive = true
+        notUploadedIcon.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
+        notUploadedIcon.widthAnchor.constraint(equalToConstant: self.legendIconSize).isActive = true
+        notUploadedIcon.heightAnchor.constraint(equalToConstant: self.legendIconSize).isActive = true
+        
+        let notUploadedLabel = UILabel()
+        self.view.addSubview(notUploadedLabel)
+        notUploadedLabel.text = "Not uploaded"
+        notUploadedLabel.font = UIFont.systemFont(ofSize: 16)
+        notUploadedLabel.translatesAutoresizingMaskIntoConstraints = false
+        notUploadedLabel.leftAnchor.constraint(equalTo: notUploadedIcon.rightAnchor, constant: self.spacing).isActive = true
+        notUploadedLabel.centerYAnchor.constraint(equalTo: notUploadedIcon.centerYAnchor).isActive = true
+        
+        let uploadedIcon = UIImageView(image: UIImage(named: "databaseFileUploadedIcon"))
+        self.view.addSubview(uploadedIcon)
+        uploadedIcon.contentMode = .scaleAspectFit
+        uploadedIcon.translatesAutoresizingMaskIntoConstraints = false
+        uploadedIcon.leftAnchor.constraint(equalTo: notUploadedIcon.leftAnchor).isActive = true
+        uploadedIcon.bottomAnchor.constraint(equalTo: notUploadedIcon.topAnchor, constant: -self.spacing).isActive = true
+        uploadedIcon.widthAnchor.constraint(equalToConstant: self.legendIconSize).isActive = true
+        uploadedIcon.heightAnchor.constraint(equalToConstant: self.legendIconSize).isActive = true
+        
+        let uploadedLabel = UILabel()
+        self.view.addSubview(uploadedLabel)
+        uploadedLabel.text = "Uploaded to Google Drive"
+        uploadedLabel.font = UIFont.systemFont(ofSize: 16)
+        uploadedLabel.translatesAutoresizingMaskIntoConstraints = false
+        uploadedLabel.leftAnchor.constraint(equalTo: notUploadedIcon.rightAnchor, constant: self.spacing).isActive = true
+        uploadedLabel.centerYAnchor.constraint(equalTo: uploadedIcon.centerYAnchor).isActive = true
+        
         // Configure the tableView
-        let cancelButtonFont = (cancelButton.titleLabel?.font)!
-        let cancelButtonTextWidth = "Cancel".width(withConstrainedHeight: 30, font: cancelButtonFont)
-        let cancelButtonTextHeight = "Cancel".height(withConstrainedWidth: cancelButtonTextWidth, font: cancelButtonFont)
         let titleWidth = titleLabel.text?.width(withConstrainedHeight: 30, font: titleLabel.font)
         let titleHeight = titleLabel.text?.height(withConstrainedWidth: titleWidth!, font: titleLabel.font)
         let tableViewMinY = self.view.frame.minY + self.spacing * 2 + titleHeight!
-        let tableViewHeight = self.preferredContentSize.height - self.spacing * 5 - cancelButtonTextHeight - titleHeight!
+        let tableViewHeight = self.preferredContentSize.height - self.spacing * 5 - self.legendIconSize * 2 - titleHeight! // vertical layout = spacing * 2 | title | spacing | table | spacing | legendIcon | spacing | legendIcon | spacing
         self.fileTableView = UITableView(frame: CGRect(x: self.view.frame.minX, y: tableViewMinY, width: self.preferredContentSize.width, height: tableViewHeight))
+        self.view.addSubview(self.fileTableView)
         self.fileTableView.register(DatabaseBrowserTableViewCell.self, forCellReuseIdentifier: "DatabaseBrowserCell")
         self.fileTableView.rowHeight = 65//UITableViewAutomaticDimension
         self.fileTableView.dataSource = self
         self.fileTableView.delegate = self
         self.fileTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.2)
-        self.view.addSubview(self.fileTableView)
+        
         
     }
 
@@ -123,7 +158,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         // Check if this is the current DB. If so, make this cell look selected
         let currentDBName = dbPath.split(separator: "/").last!
         if fileString == currentDBName {
-            cell.backgroundColor = UIColor(red: 190/255, green: 220/255, blue: 240/255, alpha: 0.7)
+            //cell.backgroundColor = UIColor(red: 190/255, green: 220/255, blue: 240/255, alpha: 0.7)
+            cell.backgroundColor = selectedColor
         } else {
             cell.backgroundColor = UIColor.clear
         }
@@ -153,6 +189,19 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         dismiss(animated: true, completion: {presentingController.loadData()})
     }
 
+    // Set custom color for selected cell
+    func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        
+        let cell = tableView.dequeueReusableCell(withIdentifier: "DatabaseBrowserCell", for: indexPath) as! DatabaseBrowserTableViewCell
+        
+        let selectionView = UIView()
+        selectionView.layer.borderWidth = 1
+        selectionView.layer.borderColor = self.selectedColor.cgColor
+        selectionView.backgroundColor = self.selectedColor
+        cell.selectedBackgroundView = selectionView
+        
+        return indexPath
+    }
 }
 
 //MARK: -
@@ -169,7 +218,7 @@ class DatabaseBrowserTableViewCell: UITableViewCell {
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
-        self.icon.image = UIImage(named: "databaseIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
+        self.icon.image = UIImage(named: "databaseFileIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
         self.icon.contentMode = .scaleAspectFill
         
         let contentSafeArea = UIView()
