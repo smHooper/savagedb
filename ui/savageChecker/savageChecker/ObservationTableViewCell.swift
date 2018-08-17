@@ -24,13 +24,13 @@ class BaseObservationTableViewCell: UITableViewCell {
     let spacing: CGFloat = 16
     let largeTextSize: CGFloat = 24
     let smallTextSize: CGFloat = 20
-    let mainIconImageSize: CGFloat = 75
+    let mainIconImageSize: CGFloat = 60
     let smallIconImageSize: CGFloat = 30
     
     override init(style: UITableViewCellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
-        let iconSpacing = (UIScreen.main.bounds.height - mainIconImageSize - spacing * 2) / 4
+        let iconSpacing = (min(UIScreen.main.bounds.width, UIScreen.main.bounds.height) - mainIconImageSize - spacing * 2) / 3
         let bundle = Bundle(for: type(of: self))
         mainIcon.image = UIImage(named: "busIcon", in: bundle, compatibleWith: self.traitCollection)
         mainIcon.frame = CGRect(x: 0, y: 0, width: mainIconImageSize, height: mainIconImageSize)
@@ -74,7 +74,7 @@ class BaseObservationTableViewCell: UITableViewCell {
         
         mainIcon.leftAnchor.constraint(equalTo: contentSafeArea.leftAnchor).isActive = true
         mainIcon.topAnchor.constraint(equalTo: contentSafeArea.topAnchor).isActive = true
-        mainIcon.heightAnchor.constraint(equalTo: contentSafeArea.heightAnchor).isActive = true
+        mainIcon.heightAnchor.constraint(equalToConstant: mainIconImageSize).isActive = true
         mainIcon.widthAnchor.constraint(equalToConstant: mainIconImageSize).isActive = true
         
         datetimeIcon.heightAnchor.constraint(equalToConstant: smallIconImageSize).isActive = true

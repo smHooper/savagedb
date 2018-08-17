@@ -45,8 +45,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     let scrollView = UIScrollView()
     let container = UIView()
-    var formWidthConstraint = NSLayoutConstraint()
-    var formHeightConstraint = NSLayoutConstraint()
+    //var formWidthConstraint = NSLayoutConstraint()
+    //var formHeightConstraint = NSLayoutConstraint()
     let topSpacing = 40.0
     let sideSpacing: CGFloat = 8.0
     let textFieldSpacing: CGFloat = 30.0
@@ -127,23 +127,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         //let safeArea = self.view.safeAreaInsets
         let newScreenSize = UIScreen.main.bounds//Gives size after rotation
-        // In theory, the scrollView should always be anchored to the center of the screen regardless of it's orientation, so I should just need to reset the width and height
-        self.formWidthConstraint.constant = newScreenSize.width - CGFloat(self.sideSpacing * 2)// - safeArea.left - safeArea.right
-        self.formHeightConstraint.constant = newScreenSize.height - CGFloat(self.topSpacing) - self.navigationBarHeight
-        
-        /*// Remove X and Y constraints, then reset them with the new orientation's layout guide
-        for constraint in self.scrollView.constraints {
-            if let identifier = constraint.identifier {
-                print(identifier)
-            }
-            /*if (constraint.identifier?.contains("X"))! || (constraint.identifier?.contains("Y"))! {
-                self.scrollView.removeConstraint(constraint)
-            }*/
-        }
-        self.formXConstraint = self.scrollView.centerXAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerXAnchor)
-        self.formYConstraint = self.scrollView.centerYAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.centerYAnchor, constant: self.navigationBarHeight + CGFloat(self.topSpacing))
-        self.formXConstraint.isActive = true
-        self.formYConstraint.isActive = true*/
         
         self.scrollView.contentSize = CGSize(width: newScreenSize.width - CGFloat(self.sideSpacing * 2), height: self.scrollView.contentSize.height)
         self.scrollView.setNeedsUpdateConstraints()
@@ -151,13 +134,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.view.layoutIfNeeded()
         self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: newScreenSize.width, height: self.navigationBarHeight)
         
-        // Update background image
-        for (i, view) in self.view.subviews.enumerated() {
-            if view.tag == -1 {
-                self.view.subviews[i].subviews[0].frame = UIScreen.main.bounds
-                self.view.subviews[i].subviews[1].frame = UIScreen.main.bounds
-            }
-        }
     }
     
     
@@ -172,16 +148,18 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.view.addSubview(self.scrollView)
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
         self.scrollView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: self.sideSpacing).isActive = true
-        self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.topSpacing)).isActive = true
-        self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2))// - safeArea.left - safeArea.right)
-        self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.height)
+        self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: CGFloat(self.topSpacing) + self.navigationBarHeight + UIApplication.shared.statusBarFrame.height).isActive = true
+        self.scrollView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.sideSpacing).isActive = true
+        self.scrollView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        //self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2))// - safeArea.left - safeArea.right)
+        //self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.height)
         
         //self.formXConstraint.identifier = "formX"
         //self.formYConstraint.identifier = "formY"
-        self.formWidthConstraint.identifier = "formWidth"
-        self.formHeightConstraint.identifier = "formHeight"
-        self.formWidthConstraint.isActive = true
-        self.formHeightConstraint.isActive = true
+        //self.formWidthConstraint.identifier = "formWidth"
+        //self.formHeightConstraint.identifier = "formHeight"
+        //self.formWidthConstraint.isActive = true
+        //self.formHeightConstraint.isActive = true
         //self.formXConstraint.isActive = true
         //self.formYConstraint.isActive = true
         //self.scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
@@ -698,13 +676,26 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     // MARK: Navigation
-    //#######################################################################
-    // MARK: Override in all subclasses
     func setNavigationBar() {
+        
+        // Remove from superview and set to nil so if this method is called on rotation, the old nav bar isn't visible
+        /*if let navigationBar = self.navigationBar {
+            if self.view.subviews.contains(self.navigationBar) {
+                self.navigationBar.removeFromSuperview()
+                self.navigationBar = nil
+            }
+        }*/
+        
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: self.navigationBarHeight))
         self.view.addSubview(self.navigationBar)
+        
+        self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
+        self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        self.navigationBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
+        self.navigationBar.heightAnchor.constraint(equalToConstant: self.navigationBarHeight).isActive = true
         // Customize buttons and title in all subclasses
     }
     
@@ -882,9 +873,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     // MARK: - Navigation
     override func setNavigationBar() {
-        let screenSize: CGRect = UIScreen.main.bounds
+        /*let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))*/
+        
+        super.setNavigationBar()
         
         let navItem = UINavigationItem(title: self.title!)
         self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
@@ -893,7 +886,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         navItem.leftBarButtonItem = cancelButton
         self.navigationBar.setItems([navItem], animated: false)
         
-        self.view.addSubview(self.navigationBar)
+        //self.view.addSubview(self.navigationBar)
     }
     
     // Dismiss with left to right transiton

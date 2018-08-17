@@ -96,7 +96,7 @@ class SessionViewController: BaseFormViewController {
         blurredBackground.addSubview(translucentWhite)
         self.view.addSubview(blurredBackground)
         
-        let quoteTimeSeconds = min(7.0, max(Double(randomQuote.count/200 * 5), 3.0))
+        let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
         print(quoteTimeSeconds)
         // First, animate the messageView disappearing
         UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
@@ -331,6 +331,7 @@ class SessionViewController: BaseFormViewController {
         let dateColumn = Expression<String>("date")
         let openTimeColumn = Expression<String>("openTime")
         let closeTimeColumn = Expression<String>("closeTime")
+        let uploadedColumn = Expression<Bool>("uploaded")
         
         let sessionsTable = Table("sessions")
         do {
@@ -340,6 +341,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(dateColumn)
                 t.column(openTimeColumn)
                 t.column(closeTimeColumn)
+                t.column(uploadedColumn, defaultValue: false)
             })
         } catch let error {
             fatalError(error.localizedDescription)

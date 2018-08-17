@@ -57,17 +57,37 @@ extension UIViewController {
         
         let backgroundImageView = UIImageView(image: backgroundImage)//"UIImage(named: viewControllerBackgroundBlurred"))//
         backgroundImageView.frame = self.view.frame
-        backgroundImageView.contentMode = .redraw//.scaleAspectFill
+        backgroundImageView.contentMode = .scaleAspectFill
         
         let translucentView = UIView(frame: self.view.frame)
         translucentView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
         
-        let backgroundView = UIView(frame: self.view.frame)
+        let backgroundView = UIView()//frame: self.view.frame)
+        backgroundView.backgroundColor = UIColor.red
         backgroundView.addSubview(translucentView)
         backgroundView.addSubview(backgroundImageView)
         backgroundView.sendSubview(toBack: backgroundImageView)
         backgroundView.tag = -1
         self.view.addSubview(backgroundView)
+        
+        // Set constraints to the whole view
+        backgroundView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        backgroundView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        backgroundView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+        backgroundView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        
+        translucentView.translatesAutoresizingMaskIntoConstraints = false
+        translucentView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        translucentView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        translucentView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+        translucentView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        
+        backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
+        backgroundImageView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        backgroundImageView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        backgroundImageView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+        backgroundImageView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
         /*let backgroundImageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))
         backgroundImageView.frame = self.view.frame
         backgroundImageView.contentMode = .scaleAspectFill

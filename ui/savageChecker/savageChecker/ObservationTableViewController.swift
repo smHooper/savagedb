@@ -24,6 +24,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var blurEffectView: UIVisualEffectView!
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     let documentInteractionController = UIDocumentInteractionController()
+    var currentScreenFrame = UIScreen.main.bounds // Annoyingly, when requires full screen is checked, the screen size doesn't update until after willTransitionTo() is called. So I'll have to calculate it manually
     
     let observationViewControllers = ["Bus": BusObservationViewController(),
                                       "Lodge Bus": LodgeBusObservationViewController(),
@@ -193,15 +194,22 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         super.didReceiveMemoryWarning()
     }
     
-    
+    // Handle rotation
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         
         let statusBarHeight: CGFloat = UIApplication.shared.statusBarFrame.size.height
         let navigationBarHeight: CGFloat = self.navigationBar.frame.size.height
-        let newScreenSize = UIScreen.main.bounds
+        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
+        self.currentScreenFrame = {
+            if UIDevice.current.orientation.isPortrait {
+                return CGRect(x: 0, y: 0, width: min(screenSize.width, screenSize.height), height: max(screenSize.width, screenSize.height))
+            } else {
+                return CGRect(x: 0, y: 0, width: max(screenSize.width, screenSize.height), height: min(screenSize.width, screenSize.height))
+            }
+        }()
         
-        self.tableView.frame = CGRect(x: 0, y: statusBarHeight + navigationBarHeight, width: newScreenSize.width, height: newScreenSize.height - (statusBarHeight + navigationBarHeight + self.barHeight))
+        self.tableView.frame = CGRect(x: 0, y: statusBarHeight + navigationBarHeight, width: self.currentScreenFrame.width, height: self.currentScreenFrame.height - (statusBarHeight + navigationBarHeight + self.barHeight))
         
         // Set up tool bar and nav bar. If the rotation happens while AddObs menu is open,
         //  the tool and nav bars will be placed overtop of the blurEffectView, so check to see if this is true first
@@ -245,13 +253,16 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     // Arrange the tool bar for selecting the table display mode
     func setupToolBarLayout(){
         
-        //let screenSize: CGRect = UIScreen.main.bounds
-        let screenSize = UIScreen.main.bounds
-        self.toolBar.frame = CGRect(x: 0, y: screenSize.height - self.barHeight, width: screenSize.width, height: self.barHeight)
-        //self.toolBar.layer.position = CGPoint(x: screenSize.width/2, y: self.barHeight)
+        self.view.addSubview(self.toolBar)
+        self.toolBar.translatesAutoresizingMaskIntoConstraints = false
+        self.toolBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        self.toolBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        self.toolBar.topAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.barHeight).isActive = true
+        self.toolBar.heightAnchor.constraint(equalToConstant: self.barHeight).isActive = true
+        
         
         //figure out how many buttons per group
-        let tableViewButtonWidth = screenSize.width - (self.barButtonSize * 2) // Make room for back/forward buttons plus space on either side
+        let tableViewButtonWidth = self.currentScreenFrame.width - (self.barButtonSize * 2) // Make room for back/forward buttons plus space on either side
         let nButtonsPerGroup = floor(tableViewButtonWidth / self.barButtonWidth)
         self.nBarGroups = Int(ceil(CGFloat(barButtonIcons.count) / nButtonsPerGroup))
         
@@ -264,8 +275,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Add buttons to toolbar
         setToolBarButtons()
-        
-        self.view.addSubview(self.toolBar)
         
         // Draw group indicators
         addBarGroupIndicators()
@@ -304,25 +313,31 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         let indicatorYSpacing: CGFloat = self.barHeight / 10
         let indicatorXSpacing = indicatorYSpacing * 2
-        let indicatorTop = self.toolBar.frame.minY + indicatorYSpacing
+        //let indicatorTop = self.toolBar.frame.minY + indicatorYSpacing
         let indicatorSize: CGFloat = 7
         let indicatorWidth = CGFloat(indicatorSize * CGFloat(self.nBarGroups)) + (indicatorXSpacing * CGFloat(self.nBarGroups - 1))
-        let indicatorMinX = UIScreen.main.bounds.width / 2 - indicatorWidth / 2
+        //let indicatorMinX = self.view.frame.width / 2 - indicatorWidth / 2
         for i in 0..<self.nBarGroups {
             var indicator = UIImageView()
             if i == self.currentGroup {
                 indicator = UIImageView(image: UIImage(named: "selectedCircle"))
-                //indicator.image = UIImage(named: "selectedCircle")
             } else {
                 indicator = UIImageView(image: UIImage(named: "unselectedCircle"))
-                //indicator.image = UIImage(named: "unselectedCircle")
             }
-            let thisMinX = indicatorMinX + (indicatorXSpacing + CGFloat(indicatorSize)) * CGFloat(i)
-            indicator.frame = CGRect(x: thisMinX, y: indicatorTop, width: indicatorSize, height: indicatorSize)
-            indicator.contentMode = .scaleAspectFit
-
+            //let thisMinX = indicatorMinX + (indicatorXSpacing + CGFloat(indicatorSize)) * CGFloat(i)
+            //indicator.frame = CGRect(x: thisMinX, y: indicatorTop, width: indicatorSize, height: indicatorSize)
+            let indicatorOffset = (indicatorXSpacing + CGFloat(indicatorSize)) * CGFloat(i)
             self.barGroupIndicators.append(indicator)
             self.view.addSubview(self.barGroupIndicators[i])
+            self.barGroupIndicators[i].translatesAutoresizingMaskIntoConstraints = false
+            self.barGroupIndicators[i].leftAnchor.constraint(equalTo: self.view.centerXAnchor, constant: indicatorOffset - indicatorWidth / 2).isActive = true
+            self.barGroupIndicators[i].topAnchor.constraint(equalTo: self.toolBar.topAnchor, constant: indicatorYSpacing).isActive = true
+            self.barGroupIndicators[i].widthAnchor.constraint(equalToConstant: indicatorSize).isActive = true
+            self.barGroupIndicators[i].heightAnchor.constraint(equalToConstant: indicatorSize).isActive = true
+            
+            indicator.contentMode = .scaleAspectFit
+
+            
         }
     }
     
@@ -474,6 +489,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
+        self.view.addSubview(self.navigationBar)
+        self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
+        self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        self.navigationBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
+        self.navigationBar.heightAnchor.constraint(equalToConstant: 44).isActive = true
         
         let navigationItem = UINavigationItem(title: self.title!)
         let backButton = UIButton(type: .custom)
@@ -506,7 +527,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
         let addObservationButton = UIBarButtonItem(customView: addButton)
         
-        //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
+        let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
         
         // Add a button for switching the active database file
         let databaseButton = UIButton(type: .custom)
@@ -537,10 +558,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         fixedSpaceLeft.width = 60
         fixedSpaceRight.width = 60
         navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton]
-        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton]//, fixedSpaceRight, QRButton]
+        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton, fixedSpaceRight, QRButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
-        self.view.addSubview(self.navigationBar)
     }
     
     // Helper function to create edit button
