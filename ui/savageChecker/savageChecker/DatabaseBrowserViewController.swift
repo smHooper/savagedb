@@ -91,11 +91,13 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         uploadedLabel.centerYAnchor.constraint(equalTo: uploadedIcon.centerYAnchor).isActive = true
         
         // Configure the tableView
+        let screenFrame = self.view.frame
         let titleWidth = titleLabel.text?.width(withConstrainedHeight: 30, font: titleLabel.font)
         let titleHeight = titleLabel.text?.height(withConstrainedWidth: titleWidth!, font: titleLabel.font)
-        let tableViewMinY = self.view.frame.minY + self.spacing * 2 + titleHeight!
+        let tableViewMinY = screenFrame.height/2 - self.preferredContentSize.height/2 + self.spacing * 2 + titleHeight!
+        let tableViewMinX = screenFrame.width/2 - self.preferredContentSize.width/2 + self.spacing
         let tableViewHeight = self.preferredContentSize.height - self.spacing * 5 - self.legendIconSize * 2 - titleHeight! // vertical layout = spacing * 2 | title | spacing | table | spacing | legendIcon | spacing | legendIcon | spacing
-        self.fileTableView = UITableView(frame: CGRect(x: self.view.frame.minX, y: tableViewMinY, width: self.preferredContentSize.width, height: tableViewHeight))
+        self.fileTableView = UITableView(frame: CGRect(x: 0, y: self.spacing * 2 + titleHeight!, width: self.preferredContentSize.width, height: tableViewHeight))
         self.view.addSubview(self.fileTableView)
         self.fileTableView.register(DatabaseBrowserTableViewCell.self, forCellReuseIdentifier: "DatabaseBrowserCell")
         self.fileTableView.rowHeight = 65//UITableViewAutomaticDimension
