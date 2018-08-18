@@ -9,6 +9,8 @@
 /* Begin PBXBuildFile section */
 		AF14B75320ABA3B900EB60D8 /* DropDownTextFieldControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */; };
 		AF1EFD242121DF7100C78DD8 /* savageCheckerConfig.json in Resources */ = {isa = PBXBuildFile; fileRef = AF1EFD232121DF7100C78DD8 /* savageCheckerConfig.json */; };
+		AF1EFD26212347AA00C78DD8 /* UserData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1EFD25212347AA00C78DD8 /* UserData.swift */; };
+		AF1EFD2821237F0700C78DD8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AF1EFD2721237F0700C78DD8 /* LaunchScreen.storyboard */; };
 		AF2D9A4E20BF6AD90006EF72 /* ObservationViewControllers.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */; };
 		AF3A23F620E1463800200038 /* Constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF3A23F520E1463800200038 /* Constants.swift */; };
 		AF5E82F420AA1F3000386083 /* ObservationTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */; };
@@ -20,7 +22,7 @@
 		AF67171620A4C5910039C490 /* savageCheckerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67171520A4C5910039C490 /* savageCheckerTests.swift */; };
 		AF67172120A4D0AC0039C490 /* Session.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF67172020A4D0AC0039C490 /* Session.swift */; };
 		AF7B986820B64F7000D315C3 /* SQLite.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AF7B985A20B64F0C00D315C3 /* SQLite.framework */; };
-		AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */; };
+		AFA19F0920C59082002DEAC4 /* ObservationTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFA19F0120C59081002DEAC4 /* ObservationTableViewController.swift */; };
 		AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFBC5B3420C6338800551378 /* CustomTransitions.swift */; };
 		AFD09FC42120B315004101FF /* Globals.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD09FC32120B314004101FF /* Globals.swift */; };
 		AFD09FC62120B480004101FF /* ScannerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD09FC52120B47F004101FF /* ScannerViewController.swift */; };
@@ -29,6 +31,7 @@
 		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
 		AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */; };
 		AFFA20BA210B8D2B0034E536 /* DatabaseBrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFA20B9210B8D2B0034E536 /* DatabaseBrowserViewController.swift */; };
+		D6F4C8186A011CC455D6069E /* Pods_savageChecker.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DF342FDA407ACFC81BE419 /* Pods_savageChecker.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -96,6 +99,8 @@
 		ACADEF357EBD71DEAAC2C99D /* Pods-savageChecker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-savageChecker.release.xcconfig"; path = "Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker.release.xcconfig"; sourceTree = "<group>"; };
 		AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DropDownTextFieldControl.swift; sourceTree = "<group>"; };
 		AF1EFD232121DF7100C78DD8 /* savageCheckerConfig.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = savageCheckerConfig.json; sourceTree = "<group>"; };
+		AF1EFD25212347AA00C78DD8 /* UserData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserData.swift; sourceTree = "<group>"; };
+		AF1EFD2721237F0700C78DD8 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = ../../LaunchScreen.storyboard; sourceTree = "<group>"; };
 		AF2D9A4D20BF6AD90006EF72 /* ObservationViewControllers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationViewControllers.swift; sourceTree = "<group>"; };
 		AF3A23F520E1463800200038 /* Constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Constants.swift; sourceTree = "<group>"; };
 		AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObservationTableViewCell.swift; sourceTree = "<group>"; };
@@ -105,14 +110,15 @@
 		AF67170020A4C58F0039C490 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		AF67170220A4C58F0039C490 /* SessionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionViewController.swift; sourceTree = "<group>"; };
 		AF67170720A4C5910039C490 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		AF67170A20A4C5910039C490 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		AF67170C20A4C5910039C490 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AF67171120A4C5910039C490 /* savageCheckerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = savageCheckerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AF67171520A4C5910039C490 /* savageCheckerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = savageCheckerTests.swift; sourceTree = "<group>"; };
 		AF67171720A4C5910039C490 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AF67172020A4D0AC0039C490 /* Session.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Session.swift; sourceTree = "<group>"; };
 		AF7B984F20B64F0C00D315C3 /* SQLite.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = SQLite.xcodeproj; path = ../SQLite.swift/SQLite.xcodeproj; sourceTree = "<group>"; };
-		AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseTableViewController.swift; sourceTree = "<group>"; };
+		AFA19F0120C59081002DEAC4 /* ObservationTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ObservationTableViewController.swift; sourceTree = "<group>"; };
+		AFABD5D0212490FB0064DEB8 /* Pods */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Pods; sourceTree = "<group>"; };
+		AFABD5D2212491130064DEB8 /* GoogleAPIClientForREST */ = {isa = PBXFileReference; lastKnownFileType = folder; name = GoogleAPIClientForREST; path = Pods/GoogleAPIClientForREST; sourceTree = "<group>"; };
 		AFBC5B3420C6338800551378 /* CustomTransitions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomTransitions.swift; sourceTree = "<group>"; };
 		AFD09FC32120B314004101FF /* Globals.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Globals.swift; sourceTree = "<group>"; };
 		AFD09FC52120B47F004101FF /* ScannerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScannerViewController.swift; sourceTree = "<group>"; };
@@ -129,6 +135,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AF7B986820B64F7000D315C3 /* SQLite.framework in Frameworks */,
+				D6F4C8186A011CC455D6069E /* Pods_savageChecker.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,7 +186,9 @@
 				AF67170020A4C58F0039C490 /* AppDelegate.swift */,
 				AF67170220A4C58F0039C490 /* SessionViewController.swift */,
 				AF67172020A4D0AC0039C490 /* Session.swift */,
-				AFA19F0120C59081002DEAC4 /* BaseTableViewController.swift */,
+				AF1EFD25212347AA00C78DD8 /* UserData.swift */,
+				AFA19F0120C59081002DEAC4 /* ObservationTableViewController.swift */,
+				AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */,
 				AFF2A2F920BE0791007201F6 /* AddObservationViewController.swift */,
 				AFD09FC52120B47F004101FF /* ScannerViewController.swift */,
 				AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */,
@@ -190,12 +199,11 @@
 				AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */,
 				AFF3E15D20C084980079A389 /* Extensions.swift */,
 				AFBC5B3420C6338800551378 /* CustomTransitions.swift */,
-				AF5E82F320AA1F3000386083 /* ObservationTableViewCell.swift */,
 				AFD09FC32120B314004101FF /* Globals.swift */,
 				AF5EE44621212B4D00F23AFE /* JSONParser.swift */,
 				AF1EFD232121DF7100C78DD8 /* savageCheckerConfig.json */,
 				AF67170720A4C5910039C490 /* Assets.xcassets */,
-				AF67170920A4C5910039C490 /* LaunchScreen.storyboard */,
+				AF1EFD2721237F0700C78DD8 /* LaunchScreen.storyboard */,
 				AF67170C20A4C5910039C490 /* Info.plist */,
 			);
 			path = savageChecker;
@@ -227,6 +235,8 @@
 		AF7B986720B64F7000D315C3 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				AFABD5D2212491130064DEB8 /* GoogleAPIClientForREST */,
+				AFABD5D0212490FB0064DEB8 /* Pods */,
 				77DF342FDA407ACFC81BE419 /* Pods_savageChecker.framework */,
 			);
 			name = Frameworks;
@@ -244,6 +254,7 @@
 				AF6716FA20A4C58F0039C490 /* Frameworks */,
 				AF6716FB20A4C58F0039C490 /* Resources */,
 				378053D981A8741965438169 /* [CP] Embed Pods Frameworks */,
+				15D1A1A73189F57E9D7BF774 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -373,6 +384,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AF1EFD2821237F0700C78DD8 /* LaunchScreen.storyboard in Resources */,
 				AF1EFD242121DF7100C78DD8 /* savageCheckerConfig.json in Resources */,
 				AF67170820A4C5910039C490 /* Assets.xcassets in Resources */,
 			);
@@ -388,6 +400,24 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		15D1A1A73189F57E9D7BF774 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"${SRCROOT}/Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker-resources.sh",
+				"${PODS_ROOT}/GoogleSignIn/Resources/GoogleSignIn.bundle",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleSignIn.bundle",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		378053D981A8741965438169 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -395,10 +425,18 @@
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-savageChecker/Pods-savageChecker-frameworks.sh",
+				"${BUILT_PRODUCTS_DIR}/GTMOAuth2/GTMOAuth2.framework",
+				"${BUILT_PRODUCTS_DIR}/GTMSessionFetcher/GTMSessionFetcher.framework",
+				"${BUILT_PRODUCTS_DIR}/GoogleAPIClientForREST/GoogleAPIClientForREST.framework",
+				"${BUILT_PRODUCTS_DIR}/GoogleToolboxForMac/GoogleToolboxForMac.framework",
 				"${BUILT_PRODUCTS_DIR}/SQLite.swift/SQLite.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMOAuth2.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GTMSessionFetcher.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleAPIClientForREST.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/GoogleToolboxForMac.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SQLite.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -434,13 +472,14 @@
 				AF5E82F420AA1F3000386083 /* ObservationTableViewCell.swift in Sources */,
 				AF5E82F820AA2A9300386083 /* Observation.swift in Sources */,
 				AFF2A2F120BDEE0B007201F6 /* VehicleButtonControl.swift in Sources */,
+				AF1EFD26212347AA00C78DD8 /* UserData.swift in Sources */,
 				AF67170320A4C58F0039C490 /* SessionViewController.swift in Sources */,
 				AF67170120A4C58F0039C490 /* AppDelegate.swift in Sources */,
 				AF3A23F620E1463800200038 /* Constants.swift in Sources */,
 				AFD09FC62120B480004101FF /* ScannerViewController.swift in Sources */,
 				AF2D9A4E20BF6AD90006EF72 /* ObservationViewControllers.swift in Sources */,
 				AFD09FC42120B315004101FF /* Globals.swift in Sources */,
-				AFA19F0920C59082002DEAC4 /* BaseTableViewController.swift in Sources */,
+				AFA19F0920C59082002DEAC4 /* ObservationTableViewController.swift in Sources */,
 				AFBC5B3520C6338800551378 /* CustomTransitions.swift in Sources */,
 				AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */,
 				AFFA20BA210B8D2B0034E536 /* DatabaseBrowserViewController.swift in Sources */,
@@ -469,17 +508,6 @@
 			targetProxy = AF67171220A4C5910039C490 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
-
-/* Begin PBXVariantGroup section */
-		AF67170920A4C5910039C490 /* LaunchScreen.storyboard */ = {
-			isa = PBXVariantGroup;
-			children = (
-				AF67170A20A4C5910039C490 /* Base */,
-			);
-			name = LaunchScreen.storyboard;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		AF67171820A4C5910039C490 /* Debug */ = {
@@ -604,7 +632,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = C4T43F6ZLM;
 				INFOPLIST_FILE = savageChecker/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -624,7 +652,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = C4T43F6ZLM;
 				INFOPLIST_FILE = savageChecker/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 11.3;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.4;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

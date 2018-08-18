@@ -9,18 +9,25 @@
 import UIKit
 //import SQLite3
 import SQLite
+import GoogleSignIn
 
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
 
     var window: UIWindow?
 
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         
-        //configureDatabase()
+        // Initialize sign-in
+        GIDSignIn.sharedInstance().clientID = "59359788509-qqmv7kic2loknn25atsbsoumofu9vvf6.apps.googleusercontent.com"
+        GIDSignIn.sharedInstance().delegate = self
+        
+        // Parse global vars from JSON
         parseDropDownOptionJSON()
+        
+        // Set the status bar height var from Globals.swift
+        statusBarHeight = application.statusBarFrame.size.height
         
         let sessionController = SessionViewController()
         
@@ -30,6 +37,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
         return true
     }
+    
     
     func parseDropDownOptionJSON(){
         var jsonURL = URL(fileURLWithPath: "")
@@ -95,6 +103,37 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
     
+    
+    //MARK: - GoogleSignin delegate methods
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
+        return GIDSignIn.sharedInstance().handle(url as URL?,
+                                                 sourceApplication: options[UIApplicationOpenURLOptionsKey.sourceApplication] as? String,
+                                                 annotation: options[UIApplicationOpenURLOptionsKey.annotation]
+        )
+    }
+    
+    func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!,
+              withError error: Error!) {
+        if let error = error {
+            print("\(error.localizedDescription)")
+        } else {
+            // Perform any operations on signed in user here.
+            let userId = user.userID                  // For client-side use only!
+            let idToken = user.authentication.idToken // Safe to send to the server
+            let fullName = user.profile.name
+            let givenName = user.profile.givenName
+            let familyName = user.profile.familyName
+            let email = user.profile.email
+            // ...
+        }
+    }
+    
+    func sign(_ signIn: GIDSignIn!, didDisconnectWith user: GIDGoogleUser!,
+              withError error: Error!) {
+        // Perform any operations when the user disconnects from app here.
+        // ...
+    }
+    
     func applicationWillResignActive(_ application: UIApplication) {
         // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
         // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
@@ -122,6 +161,5 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
         //print("applicationWillTerminate")
     }
-
 
 }

@@ -17,7 +17,8 @@ protocol dropDownProtocol {
     // Keep track of whether the dropDownMenu was pressed. This helps suppress the keyboard the first time the text field is pressed
     var dropDownWasPressed = false
     var dropDownID: Int? = 0//: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
-    //var height: NSLayoutConstraint!
+    var dropView = DropDownView()
+    @IBInspectable var height = NSLayoutConstraint()
     
     func dropDownPressed(string: String) {
         /*if (self.dropView.dropDownOptions.contains(string)){// && string != "Other"){
@@ -45,8 +46,7 @@ protocol dropDownProtocol {
         self.dropDownWasPressed = true
     }
     
-    var dropView = DropDownView()
-    @IBInspectable var height = NSLayoutConstraint()
+
     
     func setupDropView(){
         self.dropView = DropDownView.init(frame: CGRect.init(x: 0, y: 0, width: 0, height: 0))
