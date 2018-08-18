@@ -8,6 +8,7 @@
 
 import AVFoundation
 import UIKit
+import SQLite
 
 class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var captureSession: AVCaptureSession!
@@ -24,21 +25,12 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         return CGSize(width: minDimension, height: maxDimension)
     }()
     
-    
-    // Lock device orientation
-    /*override var shouldAutorotate: Bool {
-        return true
-    }*/
-    
-
-    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         self.view.backgroundColor = UIColor.black
         self.captureSession = AVCaptureSession()
         
-        setAutoRotation(value: false)
         
         // Configure the video capture device
         guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return }
@@ -98,11 +90,7 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         
         self.captureSession.startRunning()
     }
-    
-    // Prevent rotation by passing the current orientation
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: self.portraitDeviceSize, with: coordinator)
-    }
+
     
     func failed() {
         let alert = UIAlertController(title: "Scanning not supported", message: "Your device does not support scanning a code from an item. Please use a device with a camera.", preferredStyle: .alert)
@@ -125,9 +113,7 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         if (self.captureSession?.isRunning == true) {
             self.captureSession.stopRunning()
         }
-        
-        // Reset autorotation to true
-        setAutoRotation(value: true)
+
     }
     
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
@@ -139,9 +125,6 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
             found(code: stringValue)
         }
-        
-        // Prepare and move to the appropriate view controller
-        dismiss(animated: true)
     }
     
     func setMetadataOutput () {
@@ -173,10 +156,25 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
     }
     
     func found(code: String) {
-        // parse code
-        // get vehicle type and use dictionary to present appropriate view controller. Maybe vehicle type is first item followed by :, then rest is comma-delimited
-        //  each view controller should have its own method for parsing the string
-        print(code)
+        // parse code from format label: comma-separated string
+        let label = code.components(separatedBy: ":").first!
+        let values = code.components(separatedBy: ":").last!
+        
+        if let viewController = observationViewControllers[label] {
+            viewController.qrString = values
+            viewController.isAddingNewObservation = true
+            viewController.session = loadSession()
+            viewController.title = "New \(label) Observation"
+            present(viewController, animated: true)
+        } else {
+            let alertTitle = "QR Code read error"
+            let typesString = Array(observationViewControllers.keys).joined(separator: "\n")
+            let alertMessage = "The vehicle type '\(label)' from the QR Code string '\(code)' did not match one of these types: \n\n\(typesString)\n"
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "Cancel scan", style: .cancel, handler: {handler in self.dismiss(animated: true, completion: nil)}))
+            alertController.addAction(UIAlertAction(title: "Try again", style: .default, handler: {handler in self.captureSession.startRunning()}))
+            present(alertController, animated: true, completion: nil)
+        }
     }
     
     override var prefersStatusBarHidden: Bool {
@@ -185,5 +183,32 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
     
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return .portrait
+    }
+    
+    private func loadSession() -> Session? {
+        // ************* check that the table exists first **********************
+        var rows = [Row]()
+        let db: Connection!
+        let sessionsTable = Table("sessions")
+        let idColumn = Expression<Int64>("id")
+        let observerNameColumn = Expression<String>("observerName")
+        let dateColumn = Expression<String>("date")
+        let openTimeColumn = Expression<String>("openTime")
+        let closeTimeColumn = Expression<String>("closeTime")
+        do {
+            db = try Connection(dbPath)
+            rows = Array(try db.prepare(sessionsTable))
+        } catch {
+            fatalError(error.localizedDescription)
+        }
+        if rows.count > 1 {
+            fatalError("Multiple sessions found")
+        }
+        var session: Session?
+        for row in rows{
+            session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
+        }
+        
+        return session
     }
 }

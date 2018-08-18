@@ -357,7 +357,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         for row in rows{
             session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
-        print("loaded all session. Observername: \(session?.observerName)")
+        
         return session
     }
 

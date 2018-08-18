@@ -26,20 +26,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     let documentInteractionController = UIDocumentInteractionController()
     var currentScreenFrame = UIScreen.main.bounds // Annoyingly, when requires full screen is checked, the screen size doesn't update until after willTransitionTo() is called. So I'll have to calculate it manually
     
-    let observationViewControllers = ["Bus": BusObservationViewController(),
-                                      "Lodge Bus": LodgeBusObservationViewController(),
-                                      "NPS Vehicle": NPSVehicleObservationViewController(),
-                                      "NPS Approved": NPSApprovedObservationViewController(),
-                                      "NPS Contractor": NPSContractorObservationViewController(),
-                                      "Employee": EmployeeObservationViewController(),
-                                      "Right of Way": RightOfWayObservationViewController(),
-                                      "Tek Camper": TeklanikaCamperObservationViewController(),
-                                      "Bicycle": CyclistObservationViewController(),
-                                      "Propho": PhotographerObservationViewController(),
-                                      "Accessibility": AccessibilityObservationViewController(),
-                                      "Subsistence": SubsistenceObservationViewController(),
-                                      "Road Lottery": RoadLotteryObservationViewController(),
-                                      "Other": OtherObservationViewController()]
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "Lodge Bus": (normal: "lodgeBusIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
@@ -821,7 +807,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         /*let tableName = (self.icons[observationType]?.tableName)!
         let observationClassName = (self.icons[observationType]?.dataClassName)!*/
         
-        let observationViewController = self.observationViewControllers[observationType]!
+        let observationViewController = observationViewControllers[observationType]! //Stored in Globals.swift
         observationViewController.observationId = thisObservation.id
         observationViewController.title = observationType
         

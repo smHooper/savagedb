@@ -65,7 +65,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         // Open connection to the DB
         do {
-            db = try Connection(dbPath)
+            print(dbPath)
+            if URL(fileURLWithPath: dbPath).lastPathComponent != "savageChecker.db" {
+                db = try Connection(dbPath)
+            }
         } catch let error {
             fatalError(error.localizedDescription)
         }
@@ -687,7 +690,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }*/
         
         let screenSize: CGRect = UIScreen.main.bounds
-        let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: self.navigationBarHeight))
         self.view.addSubview(self.navigationBar)
         
@@ -737,6 +739,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     var isAddingNewObservation: Bool!
     var lastTextFieldIndex = 0
     var observationId: Int?
+    var qrString = ""
     
     // MARK: observation DB columns
     let idColumn = Expression<Int64>("id")
@@ -833,14 +836,23 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
     }
     
+    // Dummy function to be overriden in all subclasses
+    func parseQRString() {
+        print("This needs to be overridden in the subclass. QR code string: \(self.qrString)")
+    }
+    
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of text fields
     func autoFillTextFields(){
 
         /*guard let observation = self.modelObject as? Observation else {
             fatalError("No valid observation passed from TableViewController")
         }*/
+        
+        if !self.qrString.isEmpty {
+            
+        }
         // This is a completely new observation
-        if self.isAddingNewObservation {
+        else if self.isAddingNewObservation {
             //self.observation = observation
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -923,15 +935,19 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     func dismissController() {
         if self.isAddingNewObservation {
+            // Go back to the addObs menu
+            if self.qrString.isEmpty {
+                //let presentingController = self.presentingViewController!
+                self.dismissTransition = RightToLeftTransition()
+                dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
-            let presentingController = self.presentingViewController!//self.presentingViewController?.presentingViewController as! BaseTableViewController
-            self.dismissTransition = RightToLeftTransition()
-            dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            //presentingController.dismiss(animated: true, completion: nil)
-            //presentingController.presentingViewContoller?.loadData()//tableView.reloadData()
+            } else {
+                let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+                presentingController.dismiss(animated: true, completion: nil)
+            }
         } else {
             // Just dismiss this controller to get back to the tableView
-            let presentingController = self.presentingViewController!//self.presentingViewController as! BaseTableViewController
+            //let presentingController = self.presentingViewController!//self.presentingViewController as! BaseTableViewController
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             //presentingController.loadData()//tableView.reloadData()
@@ -1042,6 +1058,11 @@ class BusObservationViewController: BaseObservationViewController {
     let isTrainingColumn = Expression<Bool>("isTraining")
     let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
     
+    let destinationLookup = ["Denali Natural History Tour": "Teklanika",
+                             "Tundra Wilderness Tour": "Stony Overlook",
+                             "Kantishna Experience": "Kantishna",
+                             "Camper": "Kantishna"]
+    
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
@@ -1095,6 +1116,22 @@ class BusObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    
+    override func parseQRString() {
+        var qrValues = [String]()
+        for value in self.qrString.components(separatedBy: ",") {
+            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
+        }
+        
+        if qrValues.count != 1 {
+            print("qrString not understood: \(self.qrString)")
+            return
+        }
+        self.dropDownTextFields[3]!.text = qrValues[0] // busType
+        self.dropDownTextFields[5]!.text = self.destinationLookup[qrValues[0]] ?? "" // Try to fill destination
+    }
+    
+    
     override func autoFillTextFields() {
 
         // This is a completely new observation
@@ -1114,6 +1151,10 @@ class BusObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = currentTime
             self.textFields[6]?.text = "No"
             self.saveButton.isEnabled = false
+            
+            if !self.qrString.isEmpty {
+                parseQRString()
+            }
         // The observation already exists and is open for viewing/editing
         } else {
             // Query the db to get the observation
@@ -1182,14 +1223,8 @@ class BusObservationViewController: BaseObservationViewController {
         
         super.dropDownDidChange(notification: notification)
         
-        let destinationLookup = ["Denali Natural History Tour": "Primrose/Mile 17",
-                                 "Tundra Wilderness Tour": "Stony Overlook",
-                                 "Kantishna Experience": "Kantishna",
-                                 "Camper": "Kantishna"]
-        
         // Check if the destination field has been filled yet
         let destinationText = self.dropDownTextFields[5]?.text ?? ""
-        print(destinationText.isEmpty)
         // If this field is the bus type field and destination hasn't been filled in (wouldn't want to change it unexpectedly)
         if self.textFieldIds[self.currentTextField].label == "Bus type" && destinationText.isEmpty {
             // Check if bus type field is empty, and if it isn't then try to set the destination
@@ -1289,7 +1324,8 @@ class BusObservationViewController: BaseObservationViewController {
     
 }
 
-
+//MARK: -
+//MARK: -
 class LodgeBusObservationViewController: BaseObservationViewController {
     
     //MARK: - Properties
@@ -1356,6 +1392,16 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         super.viewDidAppear(animated)
         // This needs to go in viewDidAppear() because viewDidLoad() only gets called the first time you push to each type of view controller
         autoFillTextFields()
+    }
+    
+    
+    override func parseQRString() {
+        var qrValues = [String]()
+        for value in self.qrString.components(separatedBy: ",") {
+            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
+        }
+        
+        self.dropDownTextFields[3]!.text = qrValues[0] // lodge
     }
     
     
@@ -1885,6 +1931,16 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         autoFillTextFields()
+    }
+    
+    
+    override func parseQRString() {
+        var qrValues = [String]()
+        for value in self.qrString.components(separatedBy: ",") {
+            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
+        }
+        
+        self.dropDownTextFields[3]!.text = qrValues[0] // approvedType
     }
     
     
