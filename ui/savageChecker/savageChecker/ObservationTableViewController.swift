@@ -7,7 +7,7 @@
 //
 import UIKit
 import SQLite
-
+import os.log
 
 class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableViewDataSource, UITabBarControllerDelegate{//UITabBarDelegate {
     
@@ -411,7 +411,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     @objc func handleNextButton(sender: UIBarButtonItem) {
         
         self.barGroupIndicators[self.currentGroup].image = UIImage(named: "unselectedCircle")
-        print("Sender tag: \(sender.tag)")
+        
         // Sender is the left button
         if sender.tag == 0 {
             self.currentGroup -= 1
@@ -832,7 +832,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let observationType = thisCell.observationType
             let tableName = (icons[observationType]?.tableName)!
             let table = Table(tableName)
-            print("Deleting \(id) from \(tableName)")
             
             let recordToRemove = table.where(idColumn == id.datatypeValue)
             observationCells.removeValue(forKey: index)
@@ -963,7 +962,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let rows = Array(try db.prepare(sessionsTable))
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            print("\n\nmultiple sessions found\n\n")
+            os_log("Multiple sessions found", log: OSLog.default, type: .default)
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

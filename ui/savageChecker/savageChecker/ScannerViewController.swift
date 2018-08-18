@@ -9,6 +9,7 @@
 import AVFoundation
 import UIKit
 import SQLite
+import os.log
 
 class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var captureSession: AVCaptureSession!
@@ -200,10 +201,11 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             rows = Array(try db.prepare(sessionsTable))
         } catch {
             print(error.localizedDescription)
+            os_log("Error loading session", log: OSLog.default, type: .default)
         }
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            print("Multiple sessions found")
+            os_log("Multiple sessions found", log: OSLog.default, type: .default)
         }
         
         var session: Session?

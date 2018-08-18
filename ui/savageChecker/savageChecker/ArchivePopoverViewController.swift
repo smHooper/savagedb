@@ -8,6 +8,7 @@
 
 import UIKit
 import SQLite
+import os.log
 
 class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     
@@ -37,6 +38,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
             db = try Connection(dbPath)
         } catch let error {
             print(error.localizedDescription)
+            os_log("Error connecting to DB in ArchivePopoverViewController.viewDidLoad()", log: OSLog.default, type: .default)
         }
         
         // Get session data for making new file name
@@ -107,7 +109,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         let messageHeight = message.height(withConstrainedWidth: messageViewWidth - 20, font: messageView.font!)
         let textHeightWithCurrentFont = "A".height(withConstrainedWidth: messageViewWidth - 20, font: messageView.font!)
         let messageViewHeight = messageHeight + (messageView.textContainerInset.top + messageView.textContainerInset.bottom) + textHeightWithCurrentFont
-        print("messageView.textContainerInset.top: \(messageView.textContainerInset.top) \nmessageView.textContainerInset.bottom: \(messageView.textContainerInset.bottom)")
+        
         messageView.translatesAutoresizingMaskIntoConstraints = false
         messageView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
         messageView.topAnchor.constraint(equalTo: titleView.bottomAnchor, constant: self.borderSpacing).isActive = true
@@ -229,6 +231,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
                 try fileManager.copyItem(at: dbURL, to: outputURL)//(atPath: (dbURL.absoluteString)!, toPath: outputURL!)
             } catch {
                 print(error)
+                os_log("Could not save copy of DB", log: OSLog.default, type: .default)
             }
         }
         
@@ -248,6 +251,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
                 try db.run(table.delete()) // Deletes all rows in table
             } catch {
                 print("Could not delete records from \(tableName) because \(error.localizedDescription)")
+                os_log("Could not delete row from DB", log: OSLog.default, type: .default)
             }
         }
         
@@ -289,14 +293,13 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     //MARK: - UITextFieldDelgate methods
     // Make sure the file ends with the extension .db
     func textFieldDidEndEditing(_ textField: UITextField) {
-        print("textField editing did end")
         guard let text = textField.text else {
             return
         }
         guard let fileExtension = text.split(separator: ".").last else {
             return
         }
-        print("appending extension")
+
         if !(fileExtension == "db") {
             textField.text = "\(text).db"
         }
@@ -327,10 +330,11 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
             rows = Array(try db.prepare(sessionsTable))
         } catch {
             print(error.localizedDescription)
+            os_log("Error loading session", log: OSLog.default, type: .default)
         }
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            print("Multiple sessions found")
+            os_log("Multiple sessions found", log: OSLog.default, type: .default)
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

@@ -8,7 +8,7 @@
 
 import UIKit
 import SQLite
-
+import os.log
 
 
 class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
@@ -28,7 +28,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         self.view.backgroundColor = UIColor.clear
         
         guard let userData = loadUserData() else {
-            print("Couldn't load user data")
+            os_log("Couldn't load user data", log: OSLog.default, type: .default)
             return
         }
         self.userData = userData
@@ -91,11 +91,11 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         uploadedLabel.centerYAnchor.constraint(equalTo: uploadedIcon.centerYAnchor).isActive = true
         
         // Configure the tableView
-        let screenFrame = self.view.frame
+        //let screenFrame = self.view.frame
         let titleWidth = titleLabel.text?.width(withConstrainedHeight: 30, font: titleLabel.font)
         let titleHeight = titleLabel.text?.height(withConstrainedWidth: titleWidth!, font: titleLabel.font)
-        let tableViewMinY = screenFrame.height/2 - self.preferredContentSize.height/2 + self.spacing * 2 + titleHeight!
-        let tableViewMinX = screenFrame.width/2 - self.preferredContentSize.width/2 + self.spacing
+        //let tableViewMinY = screenFrame.height/2 - self.preferredContentSize.height/2 + self.spacing * 2 + titleHeight!
+        //let tableViewMinX = screenFrame.width/2 - self.preferredContentSize.width/2 + self.spacing
         let tableViewHeight = self.preferredContentSize.height - self.spacing * 5 - self.legendIconSize * 2 - titleHeight! // vertical layout = spacing * 2 | title | spacing | table | spacing | legendIcon | spacing | legendIcon | spacing
         self.fileTableView = UITableView(frame: CGRect(x: 0, y: self.spacing * 2 + titleHeight!, width: self.preferredContentSize.width, height: tableViewHeight))
         self.view.addSubview(self.fileTableView)
@@ -122,6 +122,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             }
         } catch {
             print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
+            os_log("Error while enumerating files", log: OSLog.default, type: .default)
         }
         
         // Sort in alphabetical order

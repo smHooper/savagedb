@@ -97,7 +97,7 @@ class SessionViewController: BaseFormViewController {
         self.view.addSubview(blurredBackground)
         
         let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
-        print(quoteTimeSeconds)
+        
         // First, animate the messageView disappearing
         UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
             messageView.removeFromSuperview()
@@ -126,7 +126,9 @@ class SessionViewController: BaseFormViewController {
         if FileManager.default.fileExists(atPath: url.path){
             // The user is opening the app again after closing it or returning from another scene
             do {self.db = try Connection(dbPath)}
-            catch {print(error)}
+            catch {
+                os_log("Connecting to DB in SessionViewController.loadData() failed", log: OSLog.default, type: .default)
+                print(error)}
             if let session = loadSession() {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
@@ -204,10 +206,10 @@ class SessionViewController: BaseFormViewController {
                                                 openTimeColumn <- openTime,
                                                 closeTimeColumn <- closeTime)) > 0 {
                     } else {
-                        print("record not found")
+                        os_log("record not found", log: OSLog.default, type: .default)
                     }
                 } catch {
-                    print("Session update failed")
+                    os_log("Session update failed", log: OSLog.default, type: .default)
                 }
                 // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
                 var max: Int64!
@@ -250,6 +252,7 @@ class SessionViewController: BaseFormViewController {
                     self.session?.id = Int(rowid)
                 } catch {
                     print("Session insertion failed: \(error)")
+                    os_log("Session insertion failed", log: OSLog.default, type: .default)
                 }
                 
                 // Save the UserData instance
@@ -303,8 +306,8 @@ class SessionViewController: BaseFormViewController {
         //var db : Connection?
         do {
             self.db = try Connection(dbPath)
-        } catch let error {
-            print("\n\nCouldn't cofigure the DB\n\n")
+        } catch {
+            os_log("Couldn't cofigure the DB", log: OSLog.default, type: .default)
             //fatalError(error.localizedDescription)
         }
         print(dbPath)
@@ -329,8 +332,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(closeTimeColumn)
                 t.column(uploadedColumn, defaultValue: false)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the session table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Observations table
@@ -352,8 +355,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the observations table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Buses table
@@ -378,8 +381,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(isTrainingColumn)
                 t.column(nOvernightPassengersColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the buses table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the buses table", log: OSLog.default, type: .default)
         }
         
         // MARK: - NPS vehicle table
@@ -404,8 +407,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(workGroupColumn)
                 t.column(nExpectedNightsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the nps vehicles table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the npsVehicles table", log: OSLog.default, type: .default)
         }
         
         // MARK: - NPS approved table
@@ -426,8 +429,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(approvedTypeColumn)
                 t.column(nExpectedNightsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the nps approved table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the nps approved table", log: OSLog.default, type: .default)
         }
         
         // MARK: - NPS conctractor table
@@ -447,8 +450,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
                 t.column(organizationNameColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the nps contractor table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the nps contractors table", log: OSLog.default, type: .default)
         }
         
         // MARK: - employee table
@@ -466,8 +469,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
                 t.column(permitHolderColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the employee table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the employee table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Right of way table
@@ -486,8 +489,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(permitNumberColumn)
                 t.column(tripPurposeColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the rightofway table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the rightofway table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Tek camper table
@@ -505,8 +508,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
                 t.column(hasTekPassColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the tek table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the tekCampers table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Propho table
@@ -524,8 +527,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(permitNumberColumn)
                 t.column(nExpectedNightsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the propho table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the photographers table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Accessibility table
@@ -541,8 +544,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the accessibility table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the accessibilty table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Cyclist table
@@ -558,8 +561,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the cyclist table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the cyclists table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Hunter table
@@ -575,8 +578,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the subsistence table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the subsistenceUsers table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Road lottery table
@@ -593,8 +596,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(permitNumberColumn)
                 t.column(commentsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the road lottery table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the roadLottery table", log: OSLog.default, type: .default)
         }
         
         // MARK: - Other table
@@ -610,8 +613,8 @@ class SessionViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
             })
-        } catch let error {
-            print("\n\nCouldn't cofigure the other vehicle table\n\n")
+        } catch {
+            os_log("Couldn't cofigure the the other table", log: OSLog.default, type: .default)
         }
         
     }

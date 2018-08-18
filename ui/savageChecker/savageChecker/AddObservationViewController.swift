@@ -352,7 +352,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         }
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            print("\n\nmultiple sessions found\n\n")
+            os_log("Multiple sessions found", log: OSLog.default, type: .default)
         }
         
         var session: Session?

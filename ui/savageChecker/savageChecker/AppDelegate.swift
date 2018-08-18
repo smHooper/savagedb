@@ -10,6 +10,7 @@ import UIKit
 //import SQLite3
 import SQLite
 import GoogleSignIn
+import os.log
 
 
 @UIApplicationMain
@@ -29,6 +30,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         // Set the status bar height var from Globals.swift
         statusBarHeight = application.statusBarFrame.size.height
         
+        // Set up log file
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let fileName = "\(Date()).log"
+        let logFilePath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
+        freopen(logFilePath.cString(using: String.Encoding.ascii)!, "a+", stderr)
+        
         let sessionController = SessionViewController()
         
         self.window = UIWindow(frame: UIScreen.main.bounds)
@@ -45,7 +52,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         let fileManager = FileManager.default
         if let documentsDirectory = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
             let url = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageCheckerConfig.json")
-            print(fileManager.fileExists(atPath: url.path))
+            
             if fileManager.fileExists(atPath: url.path) {
                 jsonURL = url
             }
@@ -53,7 +60,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
                 jsonURL = url
             } else {
-                print("Could not configure dropDown menus")
+                os_log("Could not configure dropDown menus in AppDelegate.parseDropDownOptions()", log: OSLog.default, type: .debug)
             }
         }
         
@@ -98,7 +105,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             
             if !fileManager.fileExists(atPath: url.path){
                 do { try fileManager.removeItem(atPath: url.absoluteString)}
-                catch {print("Could not delete background.png")}
+                catch {os_log("Could not delete background.png", log: OSLog.default, type: .debug)}
             }
         }
     }
@@ -116,6 +123,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
               withError error: Error!) {
         if let error = error {
             print("\(error.localizedDescription)")
+            os_log("Google sign in failed", log: OSLog.default, type: .debug)
         } else {
             // Perform any operations on signed in user here.
             let userId = user.userID                  // For client-side use only!
