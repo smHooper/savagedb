@@ -53,7 +53,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
                 jsonURL = url
             } else {
-                fatalError("Could not configure dropDown menus")
+                print("Could not configure dropDown menus")
             }
         }
         

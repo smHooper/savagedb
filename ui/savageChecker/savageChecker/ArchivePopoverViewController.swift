@@ -36,7 +36,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         do {
             db = try Connection(dbPath)
         } catch let error {
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         
         // Get session data for making new file name
@@ -326,10 +326,11 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         do {
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         if rows.count > 1 {
-            fatalError("Multiple sessions found")
+            //fatalError("Multiple sessions found")
+            print("Multiple sessions found")
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

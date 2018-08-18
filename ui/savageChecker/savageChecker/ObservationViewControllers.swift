@@ -71,6 +71,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             }
         } catch let error {
             fatalError(error.localizedDescription)
+            //print(error.lo)
         }
         
         self.deviceOrientation = UIDevice.current.orientation.rawValue
@@ -259,7 +260,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 
                 //Set the drop down menu's options
                 guard let dropDownOptions = dropDownMenuOptions[textFieldIds[i].label] else {
-                    fatalError("Either self.dropDownMenuOptions not set or \(textFieldIds[i].label) is not a key: \(self.dropDownMenuOptions)")
+                    print("Either self.dropDownMenuOptions not set or \(textFieldIds[i].label) is not a key: \(self.dropDownMenuOptions)")
+                    return
                 }
                 dropDownTextFields[i]!.dropView.dropDownOptions = dropDownOptions
                 
@@ -306,7 +308,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
             
             default:
-                fatalError("Text field type not understood")
+                print("Text field type not understood")
             }
             
             // Set up custom keyboards
@@ -806,14 +808,14 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         do {
             db = try Connection(dbPath)
         } catch let error {
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         
         //Load the session
         do {
             try loadSession()
         } catch {
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         setNavigationBar()
         self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
@@ -878,7 +880,8 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     @objc func getObservationFromNotification(notification: NSNotification) {
         guard let observation = notification.object as? Observation else {
-            fatalError("Couldn't downcast observation: \(notification.object!)")
+            print("Couldn't downcast observation: \(notification.object!)")
+            return
         }
         self.observation = observation
     }
@@ -1038,7 +1041,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         // ************* check that the table exists first **********************
         let rows = Array(try db.prepare(sessionsTable))
         if rows.count > 1 {
-            fatalError("Multiple sessions found")
+            print("Multiple sessions found")
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

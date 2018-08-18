@@ -160,7 +160,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         do {
             db = try Connection(dbPath)
         } catch let error {
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         
         // Load observations
@@ -221,7 +221,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             //self.observations = loadObservations()!
             loadObservations()
         } catch let error{
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         
         self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
@@ -452,8 +452,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     // When user swipes left on toolbar, call the function associated with the right "next" button
     @objc func swipeLeftOnToolBar() {
-        print("Trying to swipe left")
-        print("self.rightToolBarButton.tag: \(self.rightToolBarButton.tag)")
         if self.rightToolBarButton.isEnabled {
             self.rightToolBarButton.tag = 1
             handleNextButton(sender: self.rightToolBarButton)
@@ -463,7 +461,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     // When user swipes right on toolbar, call the function associated with the left "next" button
     @objc func swipeRightOnToolBar() {
-        print("Trying to swipe right")
         if self.leftToolBarButton.isEnabled {
             handleNextButton(sender: self.leftToolBarButton)
         }
@@ -753,7 +750,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         //let cellIdentifier = "cell"
         
         /*guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ObservationTableViewCell else {
-         fatalError("The dequeued cell is not an instance of ObservationTableViewCell.")
+         print("The dequeued cell is not an instance of ObservationTableViewCell.")
          }*/
         
         // Fetch the right observation for the data source layout
@@ -939,7 +936,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 // Get the time stamp as an NSDate object so all timestamps can be properly sorted
                 let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
                 guard let datetime = formatter.date(from: datetimeString) else {
-                    fatalError("Could not interpret datetimeString: \(datetimeString)")
+                    print("Could not interpret datetimeString: \(datetimeString)")
+                    return
                 }
                 datetimeStamps[i] = datetime
                 self.observationCells[i] = observationCell
@@ -964,7 +962,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // ************* check that the table exists first **********************
         let rows = Array(try db.prepare(sessionsTable))
         if rows.count > 1 {
-            fatalError("Multiple sessions found")
+            //fatalError("Multiple sessions found")
+            print("\n\nmultiple sessions found\n\n")
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

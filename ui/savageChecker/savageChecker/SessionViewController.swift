@@ -304,7 +304,8 @@ class SessionViewController: BaseFormViewController {
         do {
             self.db = try Connection(dbPath)
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the DB\n\n")
+            //fatalError(error.localizedDescription)
         }
         print(dbPath)
         
@@ -329,7 +330,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(uploadedColumn, defaultValue: false)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the session table\n\n")
         }
         
         // MARK: - Observations table
@@ -352,7 +353,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the observations table\n\n")
         }
         
         // MARK: - Buses table
@@ -378,7 +379,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nOvernightPassengersColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the buses table\n\n")
         }
         
         // MARK: - NPS vehicle table
@@ -404,7 +405,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the nps vehicles table\n\n")
         }
         
         // MARK: - NPS approved table
@@ -426,7 +427,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the nps approved table\n\n")
         }
         
         // MARK: - NPS conctractor table
@@ -447,7 +448,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(organizationNameColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the nps contractor table\n\n")
         }
         
         // MARK: - employee table
@@ -466,7 +467,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(permitHolderColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the employee table\n\n")
         }
         
         // MARK: - Right of way table
@@ -486,7 +487,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(tripPurposeColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the rightofway table\n\n")
         }
         
         // MARK: - Tek camper table
@@ -505,7 +506,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(hasTekPassColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the tek table\n\n")
         }
         
         // MARK: - Propho table
@@ -524,7 +525,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the propho table\n\n")
         }
         
         // MARK: - Accessibility table
@@ -541,7 +542,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the accessibility table\n\n")
         }
         
         // MARK: - Cyclist table
@@ -558,7 +559,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the cyclist table\n\n")
         }
         
         // MARK: - Hunter table
@@ -575,7 +576,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the subsistence table\n\n")
         }
         
         // MARK: - Road lottery table
@@ -593,7 +594,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the road lottery table\n\n")
         }
         
         // MARK: - Other table
@@ -610,7 +611,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch let error {
-            fatalError(error.localizedDescription)
+            print("\n\nCouldn't cofigure the other vehicle table\n\n")
         }
         
     }

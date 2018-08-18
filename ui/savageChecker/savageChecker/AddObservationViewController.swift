@@ -348,11 +348,13 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             db = try Connection(dbPath)
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         if rows.count > 1 {
-            fatalError("Multiple sessions found")
+            //fatalError("Multiple sessions found")
+            print("\n\nmultiple sessions found\n\n")
         }
+        
         var session: Session?
         for row in rows{
             session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
