@@ -43,7 +43,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         self.view.addSubview(titleLabel)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        titleLabel.topAnchor.constraint(equalTo: self.view.centerYAnchor, constant: -(self.view.frame.height - self.preferredContentSize.height)/2 + self.spacing * 1.5).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: self.view.topAnchor, constant: self.spacing * 1.5).isActive = true
+        print((self.view.frame.height - min(self.preferredContentSize.height, self.view.frame.height))/2)
         
         // Add a cancel button at the bottom
         let cancelButton = UIButton(type: .system)
