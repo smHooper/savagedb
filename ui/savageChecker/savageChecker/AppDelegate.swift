@@ -33,7 +33,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         // Set up log file
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
         let fileName = "\(Date()).log"
-        let logFilePath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
+        let logDirectory = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("logs")
+        let fileManager = FileManager.default
+        var isDir: ObjCBool = false
+        if !fileManager.fileExists(atPath: logDirectory.path, isDirectory:&isDir) {
+            try? fileManager.createDirectory(at: logDirectory, withIntermediateDirectories: true, attributes: nil)
+        }
+        let logFilePath = fileManager.fileExists(atPath: logDirectory.path, isDirectory:&isDir) ? logDirectory.appendingPathComponent(fileName).path : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
         freopen(logFilePath.cString(using: String.Encoding.ascii)!, "a+", stderr)
         
         let sessionController = SessionViewController()
