@@ -312,9 +312,6 @@ class SessionViewController: BaseFormViewController {
         // Set up the database
         configureDatabase()
         
-        guard let sessionID = self.session?.id else {
-            return
-        }
         if self.isNewSession ?? false {
             // This is a new session so create a new recod in the DB
             do {

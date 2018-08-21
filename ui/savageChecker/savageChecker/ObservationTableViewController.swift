@@ -510,7 +510,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
         let addObservationButton = UIBarButtonItem(customView: addButton)
         
-        let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
+        let qrButton = UIButton(type: .custom)
+        qrButton.setImage(UIImage (named: "scanQRIcon"), for: .normal)
+        qrButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
+        qrButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
+        qrButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
+        qrButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
+        qrButton.addTarget(self, action: #selector(qrButtonPressed), for: .touchUpInside)
+        let qrBarButton = UIBarButtonItem(customView: qrButton)
+        //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
         
         // Add a button for switching the active database file
         let databaseButton = UIButton(type: .custom)
@@ -541,7 +549,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         fixedSpaceLeft.width = 60
         fixedSpaceRight.width = 60
         navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton]
-        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, self.editBarButton, fixedSpaceRight, QRButton]
+        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
     }
