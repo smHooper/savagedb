@@ -84,6 +84,7 @@ class SessionViewController: BaseFormViewController {
         // Add the message view with the background
         let screenView = UIImageView(frame: screenBounds)
         screenView.image = UIImage(named: "viewControllerBackground")
+        screenView.contentMode = .scaleAspectFill
         screenView.addSubview(messageViewBackground)
         screenView.addSubview(messageView)
         self.view.addSubview(screenView)

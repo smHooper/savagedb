@@ -247,7 +247,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.toolBar.topAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.barHeight).isActive = true
         self.toolBar.heightAnchor.constraint(equalToConstant: self.barHeight).isActive = true
         
-        
         //figure out how many buttons per group
         let barWidth = self.currentScreenFrame.width - (self.barButtonSize * 2) // Make room for back/forward buttons plus space on either side
         let nButtonsPerGroup = floor(barWidth / self.barButtonWidth)
@@ -677,7 +676,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         backgroundView.contentMode = .scaleAspectFill
         let currentFrame = self.view.frame
         backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
-        
+
         // Add translucent white
         if whiteAlpha > 0 {
             let translucentWhite = UIView(frame: backgroundView.frame)

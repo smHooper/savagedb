@@ -136,14 +136,7 @@ extension UIViewController {
         return controllerFrame
     }
     
-/*    UIViewController *topController = [UIApplication sharedApplication].keyWindow.rootViewController;
- 
- while (topController.presentedViewController) {
- topController = topController.presentedViewController;
- }
- 
- return topController;
- }*/
+    
     func getTopMostController() -> UIViewController {
         var topController = UIApplication.shared.keyWindow?.rootViewController
         while topController?.presentedViewController != nil {
