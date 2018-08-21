@@ -434,8 +434,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // When finished editing, check if the data model instance should be updated
     func textFieldDidEndEditing(_ textField: UITextField) {
-        updateData()
-        if self.textFieldIds[self.currentTextField].type != "dropDown" {
+        // Don't update after a dropDown finished editing because this method is
+        //  called when it's first pressed and when a menu item is selected.
+        //  dropDownDidChange() handles the latter via notification, and the former
+        //  should be ignored.
+        if self.textFieldIds[textField.tag].type != "dropDown" {
+            updateData()
             dismissInputView()
         }
     }
@@ -494,15 +498,15 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
-    // This method currently does nothing, here but it's useful in subclasses
+    // Update data when a the dropDown menu is selected
     @objc func dropDownDidChange(notification: NSNotification) {
-        guard let textDictionary = notification.object as? Dictionary<Int, String> else {
+        /*guard let textDictionary = notification.object as? Dictionary<Int, String> else {
             fatalError("Couldn't downcast textDictionary: \(notification.object!)")
         }
         let index = textDictionary.keys.first!
         let text = textDictionary.values.first!
-        //textFields[index]?.text = text
-        
+        //textFields[index]?.text = text*/
+
         updateData()
     }
     

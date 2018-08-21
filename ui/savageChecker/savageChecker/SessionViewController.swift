@@ -15,6 +15,7 @@ class SessionViewController: BaseFormViewController {
     //MARK: - Properties
     var viewVehiclesButton: UIBarButtonItem!
     var userData: UserData?
+    var isNewSession: Bool?
     
     //MARK: DB properties
     let sessionsTable = Table("sessions")
@@ -120,7 +121,7 @@ class SessionViewController: BaseFormViewController {
             self.userData = userData
         }
         print(dbPath)
-        
+
         // Then check if the database at dbPath exists
         let url = URL(fileURLWithPath: dbPath)
         if FileManager.default.fileExists(atPath: url.path){
@@ -135,8 +136,9 @@ class SessionViewController: BaseFormViewController {
                 self.textFields[2]?.text = session.openTime
                 self.textFields[3]?.text = session.closeTime
                 self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+                self.session = session
             }
-                // The user is returning to the session scene from another scene
+            // The user is returning to the session scene from another scene
             else if let session = self.session {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
@@ -145,7 +147,7 @@ class SessionViewController: BaseFormViewController {
                 self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
             }
         }
-            // The user has opened the app for the first time since data were cleared
+        // The user is coming back the the session form for the first time since data were cleared
         else {
             // date defaults to today
             let now = Date()
@@ -160,6 +162,8 @@ class SessionViewController: BaseFormViewController {
             
             // Create the userData instance for storing info
             self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
+            
+            self.isNewSession = true
         }
     }
     
@@ -194,8 +198,8 @@ class SessionViewController: BaseFormViewController {
         let openTime = self.textFields[2]?.text ?? ""
         let closeTime = self.textFields[3]?.text ?? ""
         if !observerName.isEmpty && !openTime.isEmpty && !closeTime.isEmpty && !date.isEmpty {
-            // Update the DB
-            if let session = loadSession() {
+            // Try to update the DB
+            if let session = self.session {
                 // The session already exists in the DB, so update it
                 do {
                     // Select the record to update
@@ -222,11 +226,14 @@ class SessionViewController: BaseFormViewController {
                 self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
                 
                 // Update the UserData instance
-                self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
+                //self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
             }
             
-            // Create the DB
+            // If the session is nil, this is a new session so create the DB
             else {
+                // initialize the session instance
+                self.session = Session(id: -1, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
+                
                 // Set the dbPath with a unique tag that includes the observer's name and a timestamp
                 let formatter = DateFormatter()
                 formatter.timeStyle = .short
@@ -234,38 +241,59 @@ class SessionViewController: BaseFormViewController {
                 let now = Date()
                 let currentTimeString = formatter.string(from: now).replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: ":", with: "-")
                 let dateString = "\(date.replacingOccurrences(of: "/", with: "-"))"
-                let fileNameTag = "\(observerName.replacingOccurrences(of: " ", with: "_"))_\(dateString)_\(currentTimeString)"
+                let observerNameString = observerName.replacingOccurrences(of: " ", with: "_")
+                let fileNameTag = "\(observerNameString)_\(dateString)_\(currentTimeString)"
                 
-                if let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
-                    dbPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageChecker_\(fileNameTag).db").absoluteString
+                guard let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) else {
+                    os_log("Could not find documents directory", log: OSLog.default, type: .default)
+                    return
                 }
                 
-                // Set up the database
-                configureDatabase()
-                
-                // This is a new session so create a new recod in the DB
-                do {
-                    let rowid = try db.run(sessionsTable.insert(observerNameColumn <- observerName,
-                                                                dateColumn <- date,
-                                                                openTimeColumn <- openTime,
-                                                                closeTimeColumn <- closeTime))
-                    self.session?.id = Int(rowid)
-                } catch {
-                    print("Session insertion failed: \(error)")
-                    os_log("Session insertion failed", log: OSLog.default, type: .default)
+                // If observer name was the field just modified, check to see if there's an existing DB from today with this user's name.
+                //  If so, ask user if they wan't to edit the existing DB or create a new one
+                var existingDBFile: String? = nil
+                if self.currentTextField == 0 {
+                    let databaseFiles = findFiles()
+                    for dbFile in databaseFiles.sorted() {
+                        if dbFile.contains(observerNameString) && dbFile.contains(dateString) {
+                            existingDBFile = dbFile
+                            break
+                        }
+                    }
                 }
-                
-                // Save the UserData instance
-                self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
+                // If existingDBFile isn't nil, then it was set because there's an existing DB with the observer's name
+                if let existingDBFile = existingDBFile {
+                    let alertTitle = "Existing database found"
+                    let alertMessage = "A database named \(existingDBFile) already exists for this observer from today. Do you want to create a new database file or add/modify observations in the existing one?"
+                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "Create new file", style: .default, handler: {handler in
+                        dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(fileNameTag).db").path // Use new path
+                        self.connectToDB()
+                    }))
+                    alertController.addAction(UIAlertAction(title: "Use existing file", style: .default, handler: {handler in
+                        dbPath = documentsDirectory.appendingPathComponent(existingDBFile).path // Use existing path
+                        self.isNewSession = false
+                        print("dbPath after Use existing file selected: \(dbPath)")
+                        self.connectToDB()
+                    }))
+                    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+                    present(alertController, animated: true, completion: nil)
+                }
+                // Otherwise, just create a new DB with the new path
+                else {
+                    dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(fileNameTag).db").path // Use new path
+                    connectToDB()
+                }
             }
-            
-            //print("Session updated")
             
             // Enable the nav button
             self.viewVehiclesButton.isEnabled = true
             
+            // Save the UserData instance
+            self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
-            // Disable the view vehicles button until all fields are filled in
+        
+        // All fields aren't full, so disable the view vehicles button until all fields are filled in
         else {
             self.viewVehiclesButton.isEnabled = false
         }
@@ -273,6 +301,57 @@ class SessionViewController: BaseFormViewController {
     
     
     //MARK: Private methods
+    private func connectToDB() {
+        
+        // Text fields should all be filled at this point, but unwrap safely just in case
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let openTime = self.textFields[2]?.text ?? ""
+        let closeTime = self.textFields[3]?.text ?? ""
+
+        // Set up the database
+        configureDatabase()
+        
+        guard let sessionID = self.session?.id else {
+            return
+        }
+        if self.isNewSession ?? false {
+            // This is a new session so create a new recod in the DB
+            do {
+                let rowid = try db.run(sessionsTable.insert(observerNameColumn <- observerName,
+                                                            dateColumn <- date,
+                                                            openTimeColumn <- openTime,
+                                                            closeTimeColumn <- closeTime))
+                self.session?.id = Int(rowid)
+            } catch {
+                print("Session insertion failed: \(error)")
+                os_log("Session insertion failed", log: OSLog.default, type: .default)
+            }
+        }
+        
+    }
+    
+    
+    private func findFiles() -> [String]{
+        let fileManager = FileManager.default
+        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+        var files = [String]()
+        do {
+            let fileURLs = try fileManager.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
+            for url in fileURLs {
+                let fileName = url.lastPathComponent
+                if fileName != "savageChecker.db" && fileName.hasSuffix(".db"){
+                    files.append(fileName)
+                }
+            }
+        } catch {
+            print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
+            os_log("Error while enumerating files", log: OSLog.default, type: .default)
+        }
+        
+        return files
+    }
+    
     private func loadSession() -> Session? {
         // ************* check that the table exists first **********************
         var rows = [Row]()

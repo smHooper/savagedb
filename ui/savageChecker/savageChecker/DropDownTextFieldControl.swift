@@ -16,6 +16,7 @@ protocol dropDownProtocol {
     
     // Keep track of whether the dropDownMenu was pressed. This helps suppress the keyboard the first time the text field is pressed
     var dropDownWasPressed = false
+    var dropDownMenuPressed = false
     var dropDownID: Int? = 0//: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
     var dropView = DropDownView()
     @IBInspectable var height = NSLayoutConstraint()
@@ -43,7 +44,17 @@ protocol dropDownProtocol {
         NotificationCenter.default.post(name: Notification.Name("dropDownPressed:\(self.dropDownID!)"), object: dictionary)
         
         // Indicate that the dropdown button has been pressed so the keyboard will appear when "Other" is selected
-        self.dropDownWasPressed = true
+        //  Also, when the dropdownTextField is initially pressed, didEndEditing() is called.
+        //  Use this property to distinguish between didEndEditing calls when an option was
+        //  actually chosen and when the keyboard is dismissed.
+        if self.dropView.wasPressed {
+            self.dropDownWasPressed = true
+            // reset dropView.wasPressed so that if a user selects the same text field, it behaves appropiately
+            self.dropView.wasPressed = false
+        } else {
+            self.dropDownWasPressed = false
+        }
+        
     }
     
 
@@ -118,7 +129,8 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
     //MARK: Properties
     var dropDownOptions = [String]()
     var tableView = UITableView()
-    var delegate : dropDownProtocol!
+    var delegate: dropDownProtocol!
+    var wasPressed = false
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -165,6 +177,7 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.wasPressed = true
         self.delegate.dropDownPressed(string: dropDownOptions[indexPath.row])
         self.tableView.deselectRow(at: indexPath, animated: true)
     }

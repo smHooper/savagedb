@@ -224,7 +224,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
         
         
-        if fileManager.fileExists(atPath: outputURL.absoluteString) {
+        /*if fileManager.fileExists(atPath: outputURL.path) {
             print("File already exists")
         } else {
             do {
@@ -253,11 +253,13 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
                 print("Could not delete records from \(tableName) because \(error.localizedDescription)")
                 os_log("Could not delete row from DB", log: OSLog.default, type: .default)
             }
-        }
+        }*/
         
         // Prepare the session controller by clearing all fields and disabling the navigation button
         let presentingController = self.presentingViewController?.presentingViewController as! SessionViewController
         presentingController.dropDownTextFields[0]!.text = ""
+        presentingController.isNewSession = true
+        presentingController.session = nil
         /*for (_, textField) in presentingController.textFields {
             textField.text = ""
         }*/

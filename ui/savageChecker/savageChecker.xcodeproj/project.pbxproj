@@ -30,6 +30,7 @@
 		AFF3E15E20C084980079A389 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF3E15D20C084980079A389 /* Extensions.swift */; };
 		AFF47C6520F96E0600D160FE /* ArchivePopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFF47C6420F96E0600D160FE /* ArchivePopoverViewController.swift */; };
 		AFFA20BA210B8D2B0034E536 /* DatabaseBrowserViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFFA20B9210B8D2B0034E536 /* DatabaseBrowserViewController.swift */; };
+		FB437AFD8F33562C92242620 /* Pods_savageChecker.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 77DF342FDA407ACFC81BE419 /* Pods_savageChecker.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -132,6 +133,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FB437AFD8F33562C92242620 /* Pods_savageChecker.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
