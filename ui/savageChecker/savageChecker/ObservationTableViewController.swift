@@ -65,7 +65,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     let barButtonWidth: CGFloat = 150
     let barHeight: CGFloat = 140
     var nBarGroups = 1
-    var currentGroup = 0
+    var currentBarGroup = 0
     var barButtons = [UIBarButtonItem]()
     var selectedToolBarButton = 0
     var leftToolBarButton = UIBarButtonItem()
@@ -212,6 +212,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             }
         }
         
+        
     }
     
     // Convenience function to load all tableView data
@@ -235,7 +236,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     
-    //MARK: ToolBar setup
+    //MARK: - ToolBar setup
     // Arrange the tool bar for selecting the table display mode
     func setupToolBarLayout(){
         
@@ -248,9 +249,18 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         
         //figure out how many buttons per group
-        let tableViewButtonWidth = self.currentScreenFrame.width - (self.barButtonSize * 2) // Make room for back/forward buttons plus space on either side
-        let nButtonsPerGroup = floor(tableViewButtonWidth / self.barButtonWidth)
-        self.nBarGroups = Int(ceil(CGFloat(barButtonIcons.count) / nButtonsPerGroup))
+        let barWidth = self.currentScreenFrame.width - (self.barButtonSize * 2) // Make room for back/forward buttons plus space on either side
+        let nButtonsPerGroup = floor(barWidth / self.barButtonWidth)
+        self.nBarGroups = Int(ceil(CGFloat(self.barButtonIcons.count) / nButtonsPerGroup))
+        
+        // Adjust the currentBarGroup so that the one that's currently selected is always shown.
+        //  Also, if this isn't adjusted when the device is rotated, the currentBarGroup could be > nBarGroups
+        //  if going from portrait to landscape
+        
+        let previousBarWidth = self.view.frame.width - (self.barButtonSize * 2) // self.view.frame is not updated until after rotation, so this is the width before rotation
+        let previousNButtonsPerGroup = floor(previousBarWidth / self.barButtonWidth)
+        let previousCenterButtonIndex = floor(CGFloat(previousNButtonsPerGroup * CGFloat(self.currentBarGroup) + nButtonsPerGroup/2) - 1)
+        self.currentBarGroup = Int(floor(previousCenterButtonIndex / nButtonsPerGroup))
         
         // Make the left and right buttons
         let leftButton = makeNextBarButton(tag: 0)
@@ -261,6 +271,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Add buttons to toolbar
         setToolBarButtons()
+        
+        // Enable/disable the next group buttons depending on self.currentGroup
+        self.leftToolBarButton.isEnabled = self.currentBarGroup == 0 ? false : true // Showing first group
+        self.rightToolBarButton.isEnabled = self.currentBarGroup == self.nBarGroups - 1 ? false : true // Showing last group
         
         // Draw group indicators
         addBarGroupIndicators()
@@ -275,16 +289,25 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         swipeRightGesture.direction = .right
         swipeRightGesture.cancelsTouchesInView = false
         self.toolBar.addGestureRecognizer(swipeRightGesture)
+        
     }
     
     
     func setToolBarButtons() {
         
-        let nButtonsPerGroup = self.barButtonIcons.count / self.nBarGroups
-        let leftButtonId = (nButtonsPerGroup + 1) * self.currentGroup
-        let rightButtonId = min(leftButtonId + nButtonsPerGroup + 1, self.barButtonIcons.count)
+        let nButtonsPerGroup = self.barButtonIcons.count / self.nBarGroups + 1
+        let leftButtonId = nButtonsPerGroup * self.currentBarGroup
+        let rightButtonId = min(leftButtonId + nButtonsPerGroup, self.barButtonIcons.count) - 1
+        let widthOfAllButtons = max(self.barButtonSize, self.barButtonWidth) * CGFloat(nButtonsPerGroup + 2)
+        let fixedSpaceWidth = (self.currentScreenFrame.width - widthOfAllButtons) / CGFloat(nButtonsPerGroup + 1)
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
-        let barItems = [self.leftToolBarButton, flexSpace] + self.barButtons[leftButtonId..<rightButtonId] + [flexSpace, self.rightToolBarButton]
+        let fixedSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: self, action: nil)
+        fixedSpace.width = fixedSpaceWidth
+        var barItems = [flexSpace, self.leftToolBarButton, flexSpace]//UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)]
+        for i in leftButtonId..<rightButtonId {
+            barItems += [self.barButtons[i], fixedSpace]//UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)] //self.barButtons[leftButtonId..<rightButtonId]
+        }
+        barItems += [self.barButtons[rightButtonId], flexSpace, self.rightToolBarButton, flexSpace]//[UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil), self.rightToolBarButton]
         self.toolBar.setItems(barItems, animated: true)
         
     }
@@ -305,7 +328,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         //let indicatorMinX = self.view.frame.width / 2 - indicatorWidth / 2
         for i in 0..<self.nBarGroups {
             var indicator = UIImageView()
-            if i == self.currentGroup {
+            if i == self.currentBarGroup {
                 indicator = UIImageView(image: UIImage(named: "selectedCircle"))
             } else {
                 indicator = UIImageView(image: UIImage(named: "unselectedCircle"))
@@ -329,7 +352,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     func setBarGroupIndicator() {
         
-        print(self.currentGroup)
+        print(self.currentBarGroup)
     }
     
     
@@ -410,12 +433,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     @objc func handleNextButton(sender: UIBarButtonItem) {
         
-        self.barGroupIndicators[self.currentGroup].image = UIImage(named: "unselectedCircle")
+        self.barGroupIndicators[self.currentBarGroup].image = UIImage(named: "unselectedCircle")
         
         // Sender is the left button
         if sender.tag == 0 {
-            self.currentGroup -= 1
-            if self.currentGroup == 0 {
+            self.currentBarGroup -= 1
+            if self.currentBarGroup == 0 {
                 self.leftToolBarButton.isEnabled = false
             }
             // Make sure the other button is enabled
@@ -430,8 +453,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Sender is the right button
         } else {
-            self.currentGroup += 1
-            if self.currentGroup == self.nBarGroups - 1 {
+            self.currentBarGroup += 1
+            if self.currentBarGroup == self.nBarGroups - 1 {
                 self.rightToolBarButton.isEnabled = false
             }
             // Make sure the other button is enabled
@@ -445,7 +468,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         }
         
         // Draw group indicators
-        self.barGroupIndicators[self.currentGroup].image = UIImage(named: "selectedCircle")
+        self.barGroupIndicators[self.currentBarGroup].image = UIImage(named: "selectedCircle")
         
     }
     
@@ -513,7 +536,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let qrButton = UIButton(type: .custom)
         qrButton.setImage(UIImage (named: "scanQRIcon"), for: .normal)
         qrButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
-        qrButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         qrButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         qrButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
         qrButton.addTarget(self, action: #selector(qrButtonPressed), for: .touchUpInside)
