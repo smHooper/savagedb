@@ -15,11 +15,15 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     
     var userData: UserData?
     var files = [String]()
+    var selectedFiles = [String]()
     var fileTableView: UITableView!
     let spacing: CGFloat = 16
-    let legendIconSize: CGFloat = 30
+    let legendIconSize: CGFloat = 25
     let selectedColor = UIColor(red: 0.5, green: 0.6, blue: 0.7, alpha: 0.5)
     //var cancelButton: UI
+    var isLoadingDatabase = true
+    var delegate: DBBrowserViewControllerDelegate?
+    let cancelButton = UIButton(type: .system)
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -37,24 +41,22 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         // Add a title at the top
         let titleLabel = UILabel()
-        titleLabel.text = "Select a database file to load"
+        titleLabel.text = self.isLoadingDatabase ? "Select one or more files to upload" : "Select a database file to load"
         titleLabel.textAlignment = .center
         titleLabel.font = UIFont.boldSystemFont(ofSize: 20)
         self.view.addSubview(titleLabel)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         titleLabel.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
         titleLabel.topAnchor.constraint(equalTo: self.view.topAnchor, constant: self.spacing * 1.5).isActive = true
-        print((self.view.frame.height - min(self.preferredContentSize.height, self.view.frame.height))/2)
         
         // Add a cancel button at the bottom
-        let cancelButton = UIButton(type: .system)
-        cancelButton.setTitle("Cancel", for: .normal)
-        cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
-        cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
-        self.view.addSubview(cancelButton)
-        cancelButton.translatesAutoresizingMaskIntoConstraints = false
-        cancelButton.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.spacing * 2).isActive = true
-        cancelButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
+        self.cancelButton.setTitle("Cancel", for: .normal)
+        self.cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+        self.cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
+        self.view.addSubview(self.cancelButton)
+        self.cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        self.cancelButton.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.spacing * 2).isActive = true
+        self.cancelButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
         
         // Add legend for file status (uploaded or not)
         let notUploadedIcon = UIImageView(image: UIImage(named: "databaseFileIcon"))
@@ -106,9 +108,33 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         self.fileTableView.delegate = self
         self.fileTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.2)
         
-        
     }
-
+    
+    // viewDidLoad() is called right when the view controller is created. Since this controller
+    //  might be created and not presented until later (i.e., for g drive upload), optional vars won't be assigned before
+    //  that call. Instead, set stuff up in viewWillAppear that's dependent on optional vars
+    //  that are set after viewDidLoad() is called
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        // If the delegate was set, the controller was presented from a GDriveUploadViewController
+        self.isLoadingDatabase = self.delegate == nil ? true : false
+        self.fileTableView.allowsMultipleSelection = self.isLoadingDatabase ? false : true // if uploading to Drive, allow multiple selections
+        
+        // Add a done button in the same place as the cancel button. If this browser is being used to select files
+        //  for upload to Google Drive, the cancel button will be hidden
+        if !self.isLoadingDatabase {
+            let doneButton = UIButton(type: .system)
+            doneButton.setTitle("Done", for: .normal)
+            doneButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+            doneButton.addTarget(self, action: #selector(doneButtonPressed), for: .touchUpInside)
+            self.view.addSubview(doneButton)
+            doneButton.translatesAutoresizingMaskIntoConstraints = false
+            doneButton.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.spacing * 2).isActive = true
+            doneButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
+            self.cancelButton.isHidden = true
+        }
+    }
     
     private func findFiles(){
         let fileManager = FileManager.default
@@ -137,6 +163,24 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     }
     
     
+    @objc func doneButtonPressed() {
+        guard let presentingController = self.delegate as? GoogleDriveUploadViewController else {
+            os_log("The presenting controller was not a GoogleDriveUploadViewController", log: .default, type: .default)
+            return
+        }
+        //presentingController.selectedFiles = self.files
+        presentingController.updateSelectedFiles(value: self.selectedFiles)
+        presentingController.fileTableView.tableView.reloadData()
+        presentingController.updateTableViewHeight()
+        dismiss(animated: true, completion: nil)
+    }
+    
+    //MARK: - GDriveUploadViewControllerDelegate method
+    func updateIsLoadingDatabase(value: Bool) {
+        self.isLoadingDatabase = value
+    }
+    
+    
     //MARK: - TableView Delegate Methods
     func numberOfSections(in tableView: UITableView) -> Int{
         return 1
@@ -152,6 +196,9 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         // Table view cells are reused and should be dequeued using a cell identifier.
         let cell = tableView.dequeueReusableCell(withIdentifier: "DatabaseBrowserCell", for: indexPath) as! DatabaseBrowserTableViewCell
+        let selectedBackgroundView = UIView()
+        selectedBackgroundView.backgroundColor = self.selectedColor
+        cell.selectedBackgroundView = selectedBackgroundView
         
         // Fetch the right observation for the data source layout
         let fileString = self.files[indexPath.row]
@@ -162,8 +209,10 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         // Check if this is the current DB. If so, make this cell look selected
         let currentDBName = dbPath.split(separator: "/").last!
         if fileString == currentDBName {
-            //cell.backgroundColor = UIColor(red: 190/255, green: 220/255, blue: 240/255, alpha: 0.7)
-            cell.backgroundColor = selectedColor
+            cell.isSelectedIcon.image = UIImage(named: "checkIcon")
+            cell.setSelected(true, animated: false)
+            tableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+            self.selectedFiles.append(self.files[indexPath.row])//make sure the file is in the list of selecteds
         } else {
             cell.backgroundColor = UIColor.clear
         }
@@ -174,48 +223,90 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     // Called when the cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
-        // Change the dbPath
-        let fileManager = FileManager.default
-        let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
-        let selectedFileName = self.files[indexPath.row]
-        dbPath = documentsURL.appendingPathComponent(selectedFileName).path
+        //Update cell appearance
+        let cell = tableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
         
-        // Update UserData instance
-        self.userData?.update(databaseFileName: selectedFileName)
-        
-        // Open the new datbase
-        let presentingController = self.presentingViewController as! BaseTableViewController
-        do {
-            presentingController.db = try Connection(dbPath)
-        } catch let error {
-            fatalError(error.localizedDescription)
+        guard let selectedRows = self.fileTableView.indexPathsForSelectedRows else {
+            print("no selected rows")
+            return
         }
-        dismiss(animated: true, completion: {presentingController.loadData()})
-    }
+        if selectedRows.contains(indexPath) {
+            // Set the appearance to look selected
+            cell.isSelectedIcon.image = UIImage(named: "checkIcon")
+            cell.backgroundColor = UIColor.clear
+        } else {
+            // Make it look deselected
+            cell.isSelectedIcon.image = nil
+            
+        }
+        
+        // If the db browser is being used for changing the DB, set that up
+        if self.isLoadingDatabase {
+            // Change the dbPath
+            let fileManager = FileManager.default
+            let documentsURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first!
+            let selectedFileName = self.files[indexPath.row]
+            dbPath = documentsURL.appendingPathComponent(selectedFileName).path
+            
+            // Update UserData instance
+            self.userData?.update(databaseFileName: selectedFileName)
+            
+            // Open the new datbase
+            let presentingController = self.presentingViewController as! BaseTableViewController
+            do {
+                presentingController.db = try Connection(dbPath)
+            } catch let error {
+                fatalError(error.localizedDescription)
+            }
+            presentingController.loadData()
+            dismiss(animated: true, completion: nil)
+        } else {
+            if let indexPathNotSelected = (tableView.indexPathsForSelectedRows?.contains(indexPath)) {
+                self.selectedFiles.append(self.files[indexPath.row])
+            }
+        }
 
-    // Set custom color for selected cell
+    }
+    
+    // If multiple selections are not allowed, make sure the previous cell is deselected when another one is selected
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
         
-        let cell = tableView.dequeueReusableCell(withIdentifier: "DatabaseBrowserCell", for: indexPath) as! DatabaseBrowserTableViewCell
+        if !tableView.allowsMultipleSelection, let previousIndexPath = tableView.indexPathForSelectedRow {
+            tableView.deselectRow(at: previousIndexPath, animated: true)
+            let previousCell = tableView.cellForRow(at: previousIndexPath) as! DatabaseBrowserTableViewCell
+            previousCell.isSelectedIcon.image = nil
+            previousCell.backgroundColor = UIColor.clear
+        }
         
-        let selectionView = UIView()
-        selectionView.layer.borderWidth = 1
-        selectionView.layer.borderColor = self.selectedColor.cgColor
-        selectionView.backgroundColor = self.selectedColor
-        cell.selectedBackgroundView = selectionView
+        return indexPath
+    }
+    
+    func tableView(_ tableView: UITableView, willDeselectRowAt indexPath: IndexPath) -> IndexPath? {
+        
+        let cell = tableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
+        cell.isSelectedIcon.image = nil
+        self.selectedFiles.remove(at: indexPath.row)
         
         return indexPath
     }
 }
 
+protocol GDriveUploadViewControllerDelegate {
+    
+    func updateIsLoadingDatabase(value: Bool)
+}
+
+    
 //MARK: -
 //MARK: -
 class DatabaseBrowserTableViewCell: UITableViewCell {
     
     let icon = UIImageView()
     let fileNameLabel = UILabel()
+    let isSelectedIcon = UIImageView()
     
     let iconSize: CGFloat = 30
+    let isSelectedIconSize: CGFloat = 15
     let fontSize: CGFloat = 20
     let spacing: CGFloat = 16
     
@@ -224,6 +315,9 @@ class DatabaseBrowserTableViewCell: UITableViewCell {
         
         self.icon.image = UIImage(named: "databaseFileIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
         self.icon.contentMode = .scaleAspectFill
+        
+        //self.isSelectedIcon.image = UIImage(named: "unselectedFileIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
+        self.isSelectedIcon.contentMode = .scaleAspectFill
         
         let contentSafeArea = UIView()
         self.contentView.addSubview(contentSafeArea)
@@ -234,10 +328,17 @@ class DatabaseBrowserTableViewCell: UITableViewCell {
         contentSafeArea.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor, constant: self.spacing * -1).isActive = true
         
         contentSafeArea.addSubview(self.icon)
+        contentSafeArea.addSubview(self.isSelectedIcon)
         contentSafeArea.addSubview(self.fileNameLabel)
         
+        self.isSelectedIcon.translatesAutoresizingMaskIntoConstraints = false
+        self.isSelectedIcon.leftAnchor.constraint(equalTo: contentSafeArea.leftAnchor).isActive = true
+        self.isSelectedIcon.centerYAnchor.constraint(equalTo: contentSafeArea.centerYAnchor).isActive = true
+        self.isSelectedIcon.heightAnchor.constraint(equalToConstant: self.isSelectedIconSize).isActive = true
+        self.isSelectedIcon.widthAnchor.constraint(equalToConstant: self.isSelectedIconSize).isActive = true
+        
         self.icon.translatesAutoresizingMaskIntoConstraints = false
-        self.icon.leftAnchor.constraint(equalTo: contentSafeArea.leftAnchor).isActive = true
+        self.icon.leftAnchor.constraint(equalTo: self.isSelectedIcon.rightAnchor, constant: self.spacing).isActive = true
         self.icon.topAnchor.constraint(equalTo: contentSafeArea.topAnchor).isActive = true
         self.icon.heightAnchor.constraint(equalTo: contentSafeArea.heightAnchor).isActive = true
         self.icon.widthAnchor.constraint(equalToConstant: self.iconSize).isActive = true

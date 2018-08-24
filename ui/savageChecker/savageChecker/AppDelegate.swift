@@ -125,8 +125,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         )
     }
     
-    func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!,
-              withError error: Error!) {
+    func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
         if let error = error {
             print("\(error.localizedDescription)")
             os_log("Google sign in failed", log: OSLog.default, type: .debug)

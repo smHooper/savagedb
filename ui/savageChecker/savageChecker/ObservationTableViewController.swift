@@ -8,8 +8,9 @@
 import UIKit
 import SQLite
 import os.log
+import GoogleSignIn
 
-class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableViewDataSource, UITabBarControllerDelegate{//UITabBarDelegate {
+class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableViewDataSource, UITabBarControllerDelegate, GIDSignInUIDelegate {//UITabBarDelegate {
     
     //MARK: - Properties
     //MARK: General
@@ -164,11 +165,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             print(error.localizedDescription)
         }
         
-        // Load observations
-        //loadData()
-        
         self.presentTransition = RightToLeftTransition()
         self.dismissTransition = LeftToRightTransition()
+        
+        // Google sign-in
+        GIDSignIn.sharedInstance().uiDelegate = self
+        
+        // Uncomment to automatically sign in the user.
+        //GIDSignIn.sharedInstance().signInSilently()
+
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -256,7 +261,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Adjust the currentBarGroup so that the one that's currently selected is always shown.
         //  Also, if this isn't adjusted when the device is rotated, the currentBarGroup could be > nBarGroups
         //  if going from portrait to landscape
-        
         let previousBarWidth = self.view.frame.width - (self.barButtonSize * 2) // self.view.frame is not updated until after rotation, so this is the width before rotation
         let previousNButtonsPerGroup = floor(previousBarWidth / self.barButtonWidth)
         let previousCenterButtonIndex = floor(CGFloat(previousNButtonsPerGroup * CGFloat(self.currentBarGroup) + nButtonsPerGroup/2) - 1)
@@ -553,6 +557,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
         let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
         
+        let googleDriveBarButton = UIBarButtonItem(title: "D", style: .plain, target: self, action: #selector(googleDriveButtonPressed))
+        
+        
         //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
         // Add the archive button
         let archiveButton = UIButton(type: .custom)
@@ -570,7 +577,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         fixedSpaceLeft.width = 60
         fixedSpaceRight.width = 60
-        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton]
+        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
         navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
@@ -646,7 +653,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         documentInteractionController.presentOptionsMenu(from: self.view.frame, in: self.view, animated: true)
     }
     
-    @objc func selectDatabaseButtonPressed() {
+    func prepareDatabaseBrowserViewController() -> DatabaseBrowserViewController {
         let browserViewController = DatabaseBrowserViewController()
         browserViewController.modalPresentationStyle = .formSheet
         browserViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
@@ -657,7 +664,61 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         browserViewController.view.addSubview(backgroundView)
         browserViewController.view.sendSubview(toBack: backgroundView)
         
+        return browserViewController
+    }
+    
+    @objc func selectDatabaseButtonPressed() {
+        let browserViewController = prepareDatabaseBrowserViewController()
+        
         present(browserViewController, animated: true, completion: nil)
+    }
+    
+    
+    @objc func googleDriveButtonPressed() {
+        
+        if Reachability.isConnectedToNetwork() {
+            let uploadViewController = GoogleDriveUploadViewController()
+            uploadViewController.modalPresentationStyle = .formSheet
+            uploadViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 400))
+            
+            // Add blurred background from current view
+            let popoverFrame = uploadViewController.getVisibleFrame()
+            let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+            uploadViewController.view.addSubview(backgroundView)
+            uploadViewController.view.sendSubview(toBack: backgroundView)
+            
+            // Configure the dbBrowserController now so that the blurred background is shows the tableView,
+            //  not the formsheet G Drive Upload controller
+            let dbBrowserViewController = prepareDatabaseBrowserViewController()
+            dbBrowserViewController.isLoadingDatabase = false
+            uploadViewController.dbBrowserViewController = dbBrowserViewController
+            
+            present(uploadViewController, animated: true, completion: {GIDSignIn.sharedInstance().signIn()})
+        } else {
+            // present an alert
+            let alertTitle = "No internet connection detected"
+            let alertMessage = "You cannot upload to Google Drive without an internet connection. Try again when you're internet connection is working."
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+            present(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    // Stop the UIActivityIndicatorView animation that was started when the user
+    // pressed the Sign In button
+    func signInWillDispatch(signIn: GIDSignIn!, error: Error!) {
+        //myActivityIndicator.stopAnimating()
+    }
+    
+    // Present a view that prompts the user to sign in with Google
+    func sign(_ signIn: GIDSignIn!,
+              present viewController: UIViewController!) {
+        self.present(viewController, animated: true, completion: nil)
+    }
+    
+    // Dismiss the "Sign in with Google" view
+    func sign(_ signIn: GIDSignIn!, dismiss viewController: UIViewController!) {
+        self.dismiss(animated: true, completion: nil)
     }
     
     
