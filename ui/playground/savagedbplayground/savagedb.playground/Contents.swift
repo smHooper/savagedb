@@ -55,7 +55,9 @@ var empty = [String: String]()
 for key in dict.keys {
     empty[key] = dict[key]
 }
-print(empty)
+for i in 0...3 {
+    print(i)
+}
 
 
 

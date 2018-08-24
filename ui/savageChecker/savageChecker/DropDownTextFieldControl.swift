@@ -19,7 +19,7 @@ protocol dropDownProtocol {
     var dropDownMenuPressed = false
     var dropDownID: Int? = 0//: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
     var dropView = DropDownView()
-    @IBInspectable var height = NSLayoutConstraint()
+    var height = NSLayoutConstraint()
     
     func dropDownPressed(string: String) {
         /*if (self.dropView.dropDownOptions.contains(string)){// && string != "Other"){

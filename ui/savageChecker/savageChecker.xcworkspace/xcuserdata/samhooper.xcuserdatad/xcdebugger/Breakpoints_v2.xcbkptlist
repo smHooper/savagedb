@@ -10,7 +10,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "556507622.338333"
+            timestampString = "556845755.817196"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "698"
@@ -25,13 +25,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "savageChecker/DatabaseBrowserViewController.swift"
-            timestampString = "556476713.558327"
+            filePath = "savageChecker/ObservationTableViewController.swift"
+            timestampString = "556845755.8173079"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "99"
-            endingLineNumber = "99"
-            landmarkName = "viewDidLoad()"
+            startingLineNumber = "738"
+            endingLineNumber = "738"
+            landmarkName = "getBlurredSnapshot(frame:whiteAlpha:)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
