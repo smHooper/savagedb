@@ -9,6 +9,7 @@
 import UIKit
 import SQLite
 import os.log
+import QuartzCore
 
 class SessionViewController: BaseFormViewController {
     
@@ -48,7 +49,13 @@ class SessionViewController: BaseFormViewController {
     override func viewDidLoad() {
         
         super.viewDidLoad()
+        
+        // Show animated quote the first time the view loads, but allow user to swipe to cancel
         showQuote(seconds: 5.0)
+        /*let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cancelAnimation))
+        swipeLeft.direction = .right
+        self.view.addGestureRecognizer(swipeLeft)*/
+        
         loadData()
         
     }
@@ -100,7 +107,17 @@ class SessionViewController: BaseFormViewController {
         
         let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
         
-        // First, animate the messageView disappearing
+        // Add acticity indicator so it looks like things are loading
+        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        activityIndicator.center = CGPoint(x: self.view.center.x, y: messageView.frame.maxY + (self.view.frame.height - messageView.frame.maxY)/2)
+        self.view.addSubview(activityIndicator)
+        activityIndicator.startAnimating()
+        DispatchQueue.main.asyncAfter(deadline: .now() + quoteTimeSeconds + 0.5) {
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+        }
+        
+        // First, animate the messageView disappearing (it appears with crossfade automatically
         UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
             messageView.removeFromSuperview()
             // Next, animate the blurred background appearing
@@ -166,6 +183,13 @@ class SessionViewController: BaseFormViewController {
             
             self.isNewSession = true
         }
+    }
+    
+    
+    // Cancel animation (to be used with swipe gesture)
+    @objc func cancelAnimation() {
+        print("swipeLeft")
+        self.view.layer.removeAllAnimations()
     }
     
     
