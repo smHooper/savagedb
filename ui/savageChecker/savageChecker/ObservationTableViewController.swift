@@ -26,7 +26,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var blurEffectView: UIVisualEffectView!
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     let documentInteractionController = UIDocumentInteractionController()
-    var currentScreenFrame = UIScreen.main.bounds // Annoyingly, when requires full screen is checked, the screen size doesn't update until after willTransitionTo() is called. So I'll have to calculate it manually
+    var currentScreenFrame = UIScreen.main.bounds // Annoyingly, when 'requires full screen' is checked, the screen size doesn't update until after willTransitionTo() is called. So I'll have to calculate it manually
     
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),

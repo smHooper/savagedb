@@ -130,13 +130,20 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     func resetLayout() {
         
         //let safeArea = self.view.safeAreaInsets
-        let newScreenSize = UIScreen.main.bounds//Gives size after rotation
+        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
+        let currentScreenFrame: CGRect = {
+            if UIDevice.current.orientation.isPortrait {
+                return CGRect(x: 0, y: 0, width: min(screenSize.width, screenSize.height), height: max(screenSize.width, screenSize.height))
+            } else {
+                return CGRect(x: 0, y: 0, width: max(screenSize.width, screenSize.height), height: min(screenSize.width, screenSize.height))
+            }
+        }()
         
-        self.scrollView.contentSize = CGSize(width: newScreenSize.width - CGFloat(self.sideSpacing * 2), height: self.scrollView.contentSize.height)
+        self.scrollView.contentSize = CGSize(width: currentScreenFrame.width - CGFloat(self.sideSpacing * 2), height: self.scrollView.contentSize.height)
         self.scrollView.setNeedsUpdateConstraints()
         self.scrollView.layoutIfNeeded()
         self.view.layoutIfNeeded()
-        self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: newScreenSize.width, height: self.navigationBarHeight)
+        self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: currentScreenFrame.width, height: self.navigationBarHeight)
         
     }
     

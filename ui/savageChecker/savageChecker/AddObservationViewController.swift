@@ -100,27 +100,28 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     private func setupMenuLayout(){
         
         // Figure out how many buttons fit in one row
-        let viewWidth = UIScreen.main.bounds.width
+        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
+        let currentScreenFrame: CGRect = {
+            if UIDevice.current.orientation.isPortrait {
+                return CGRect(x: 0, y: 0, width: min(screenSize.width, screenSize.height), height: max(screenSize.width, screenSize.height))
+            } else {
+                return CGRect(x: 0, y: 0, width: max(screenSize.width, screenSize.height), height: min(screenSize.width, screenSize.height))
+            }
+        }()
+        let viewWidth = currentScreenFrame.width
         let menuWidth = Double(viewWidth) - self.menuPadding * 2
         let nPerRow = floor((menuWidth + self.minSpacing) / (VehicleButtonControl.width + self.minSpacing))
         let nRows = Int(ceil(Double(buttons.count) / nPerRow))
         //let menuWidth = nRows * VehicleButtonControl.width + ((nRows - 1) * self.minSpacing)
         
         // Figure out if there are too many rows to fit in the window. If so, put all of the buttons in a scrollview
-        let viewHeight = UIScreen.main.bounds.height
+        let viewHeight = currentScreenFrame.height
         let menuHeight = Double(viewHeight) - menuPadding * 2//nRows * (VehicleButtonControl.height + self.minSpacing) + self.minSpacing
-        /*if Double(viewHeight) < menuHeight {
-            // Put it in a scrollview
-            
-        }*/
+
         self.scrollView = UIScrollView()
         self.scrollView.showsVerticalScrollIndicator = false
         self.view.addSubview(self.scrollView)
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
-        /*self.scrollView.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        self.scrollView.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        self.scrollView.widthAnchor.constraint(equalToConstant: CGFloat(menuWidth)).isActive = true
-        self.scrollView.heightAnchor.constraint(equalToConstant:CGFloat(menuHeight)).isActive = true*/
         self.scrollView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: CGFloat(self.menuPadding)).isActive = true
         self.scrollView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: CGFloat(-self.menuPadding)).isActive = true
         self.scrollView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor, constant: CGFloat(self.menuPadding/2)).isActive = true
@@ -128,13 +129,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
         // Set up the container
         let container = UIView()
-        //container.backgroundColor = UIColor.blue
-        /*self.view.addSubview(container)
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        container.centerYAnchor.constraint(equalTo: self.view.centerYAnchor).isActive = true
-        container.widthAnchor.constraint(equalToConstant: CGFloat(menuWidth)).isActive = true
-        container.heightAnchor.constraint(equalToConstant:CGFloat(menuHeight)).isActive = true*/
         self.scrollView.addSubview(container)
         container.translatesAutoresizingMaskIntoConstraints = false
         container.centerXAnchor.constraint(equalTo: self.scrollView.centerXAnchor).isActive = true
