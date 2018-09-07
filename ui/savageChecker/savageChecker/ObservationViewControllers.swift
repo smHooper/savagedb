@@ -1179,12 +1179,13 @@ class BusObservationViewController: BaseObservationViewController {
             
             let record: Row
             do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
+                // ******* Forced unrwapping a nil optional here **************
+                record = (try db.pluck(self.observationsTable.where(idColumn == id.datatypeValue)))!
             } catch {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
             self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: "0", comments: record[commentsColumn])
-
+            print(record[commentsColumn])
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
@@ -1262,7 +1263,7 @@ class BusObservationViewController: BaseObservationViewController {
         let destination = self.dropDownTextFields[5]?.text ?? ""
         let isTraining = self.textFields[6]?.text ?? ""
         let nPassengers = self.textFields[7]?.text ?? ""
-        let comments = self.textFields[9]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&

@@ -1045,11 +1045,12 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 i += 1
             }
             
+            
         }
         
-        // Get the indices sorted by datetime
+        // Get the indices sorted by datetime in reverse chronological order so most recent is always on top
         self.cellOrder.removeAll()
-        let sortedStamps = datetimeStamps.sorted{$0.value < $1.value}
+        let sortedStamps = datetimeStamps.sorted{$0.value > $1.value}
         for (index, _) in sortedStamps {
             self.cellOrder.append(index)
         }
