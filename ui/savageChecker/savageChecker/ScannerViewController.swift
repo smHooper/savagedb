@@ -201,11 +201,11 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             rows = Array(try db.prepare(sessionsTable))
         } catch {
             print(error.localizedDescription)
-            os_log("Error loading session", log: OSLog.default, type: .default)
+            os_log("Error loading session", log: OSLog.default, type: .debug)
         }
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            os_log("Multiple sessions found", log: OSLog.default, type: .default)
+            os_log("Multiple sessions found", log: OSLog.default, type: .debug)
         }
         
         var session: Session?

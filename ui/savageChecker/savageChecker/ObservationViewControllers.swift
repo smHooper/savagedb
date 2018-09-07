@@ -315,7 +315,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
             
             default:
-                os_log("Text field type not understood", log: OSLog.default, type: .default)
+                os_log("Text field type not understood", log: OSLog.default, type: .debug)
             }
             
             // Set up custom keyboards
@@ -1024,7 +1024,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                                                             commentsColumn <- comments!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1041,10 +1041,10 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record not found", log: OSLog.default, type: .default)
+            os_log("Record not found", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1138,7 +1138,7 @@ class BusObservationViewController: BaseObservationViewController {
         }
         
         if qrValues.count != 1 {
-            os_log("QR string not understood", log: OSLog.default, type: .default)
+            os_log("QR string not understood", log: OSLog.default, type: .debug)
             print(self.qrString)
             return
         }
@@ -1310,7 +1310,7 @@ class BusObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1331,10 +1331,10 @@ class BusObservationViewController: BaseObservationViewController {
                                         nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1569,7 +1569,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1590,10 +1590,10 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                                         nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1854,7 +1854,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Row insertion failed", log: OSLog.default, type: .default)
+            os_log("Row insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -1876,10 +1876,10 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .default)
+            os_log("Row update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -2099,7 +2099,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Row insertion failed", log: OSLog.default, type: .default)
+            os_log("Row insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -2118,10 +2118,10 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .default)
+            os_log("Row update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -2329,7 +2329,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Row insertion failed", log: OSLog.default, type: .default)
+            os_log("Row insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -2349,10 +2349,10 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .default)
+            os_log("Row update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -2541,7 +2541,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Row insertion failed", log: OSLog.default, type: .default)
+            os_log("Row insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -2559,10 +2559,10 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                         permitHolderColumn <- (self.observation?.permitHolder)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .default)
+            os_log("Row update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -2754,7 +2754,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                                             tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .default)
+            os_log("Row insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -2773,10 +2773,10 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .default)
+            os_log("Row update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -2968,7 +2968,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Row insertion failed", log: OSLog.default, type: .default)
+            os_log("Row insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -2986,10 +2986,10 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                                         hasTekPassColumn <- (self.observation?.hasTekPass)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -3108,7 +3108,7 @@ class CyclistObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3126,10 +3126,10 @@ class CyclistObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3331,7 +3331,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3351,10 +3351,10 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -3547,7 +3547,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3565,10 +3565,10 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
 }
@@ -3677,7 +3677,7 @@ class SubsistenceObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- comments!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3696,10 +3696,10 @@ class SubsistenceObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3856,7 +3856,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -3874,10 +3874,10 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -4016,7 +4016,7 @@ class OtherObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- comments!))
         } catch {
             print("insertion failed: \(error)")
-            os_log("Record insertion failed", log: OSLog.default, type: .default)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
     }
     
@@ -4035,10 +4035,10 @@ class OtherObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
-                os_log("Record not found", log: OSLog.default, type: .default)
+                os_log("Record not found", log: OSLog.default, type: .debug)
             }
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .default)
+            os_log("Record update failed", log: OSLog.default, type: .debug)
         }
     }
     

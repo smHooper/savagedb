@@ -185,6 +185,7 @@
 			isa = PBXGroup;
 			children = (
 				AF3A23F520E1463800200038 /* Constants.swift */,
+				AFD09FC32120B314004101FF /* Globals.swift */,
 				AF67170020A4C58F0039C490 /* AppDelegate.swift */,
 				AF67170220A4C58F0039C490 /* SessionViewController.swift */,
 				AF67172020A4D0AC0039C490 /* Session.swift */,
@@ -203,7 +204,6 @@
 				AF14B75220ABA3B900EB60D8 /* DropDownTextFieldControl.swift */,
 				AFF3E15D20C084980079A389 /* Extensions.swift */,
 				AFBC5B3420C6338800551378 /* CustomTransitions.swift */,
-				AFD09FC32120B314004101FF /* Globals.swift */,
 				AF5EE44621212B4D00F23AFE /* JSONParser.swift */,
 				AF1EFD232121DF7100C78DD8 /* savageCheckerConfig.json */,
 				AF67170720A4C5910039C490 /* Assets.xcassets */,

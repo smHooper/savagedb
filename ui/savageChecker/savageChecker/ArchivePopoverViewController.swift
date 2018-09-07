@@ -38,7 +38,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
             db = try Connection(dbPath)
         } catch let error {
             print(error.localizedDescription)
-            os_log("Error connecting to DB in ArchivePopoverViewController.viewDidLoad()", log: OSLog.default, type: .default)
+            os_log("Error connecting to DB in ArchivePopoverViewController.viewDidLoad()", log: OSLog.default, type: .debug)
         }
         
         // Get session data for making new file name
@@ -231,7 +231,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
                 try fileManager.copyItem(at: dbURL, to: outputURL)//(atPath: (dbURL.absoluteString)!, toPath: outputURL!)
             } catch {
                 print(error)
-                os_log("Could not save copy of DB", log: OSLog.default, type: .default)
+                os_log("Could not save copy of DB", log: OSLog.default, type: .debug)
             }
         }
         
@@ -251,7 +251,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
                 try db.run(table.delete()) // Deletes all rows in table
             } catch {
                 print("Could not delete records from \(tableName) because \(error.localizedDescription)")
-                os_log("Could not delete row from DB", log: OSLog.default, type: .default)
+                os_log("Could not delete row from DB", log: OSLog.default, type: .debug)
             }
         }*/
         
@@ -332,11 +332,11 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
             rows = Array(try db.prepare(sessionsTable))
         } catch {
             print(error.localizedDescription)
-            os_log("Error loading session", log: OSLog.default, type: .default)
+            os_log("Error loading session", log: OSLog.default, type: .debug)
         }
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            os_log("Multiple sessions found", log: OSLog.default, type: .default)
+            os_log("Multiple sessions found", log: OSLog.default, type: .debug)
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

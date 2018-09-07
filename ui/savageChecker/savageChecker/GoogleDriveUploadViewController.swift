@@ -186,7 +186,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         let fileManager = FileManager.default
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
         for fileName in self.selectedFiles {
-            let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
+            let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("background.png").path
             /*guard let fileData = fileManager.contents(atPath: fullPath) else {
                 os_log("could not load data from \(fileName)", log: .default, type: .default)
                 return
@@ -195,7 +195,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             metadata.name = fileName
             
             if let fileData = fileManager.contents(atPath: fullPath) {
-                let uploadParameters = GTLRUploadParameters(data: fileData, mimeType: "application/vnd.google-apps.file")
+                let uploadParameters = GTLRUploadParameters(data: fileData, mimeType: "image/png")
                 uploadParameters.shouldUploadWithSingleRequest = true
                 let query = GTLRDriveQuery_FilesCreate.query(withObject: metadata, uploadParameters: uploadParameters)
                 query.fields = "id"

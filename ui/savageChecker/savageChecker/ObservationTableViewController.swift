@@ -557,8 +557,17 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
         let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
         
-        let googleDriveBarButton = UIBarButtonItem(title: "D", style: .plain, target: self, action: #selector(googleDriveButtonPressed))
-        
+        //let googleDriveBarButton = UIBarButtonItem(title: "D", style: .plain, target: self, action: #selector(googleDriveButtonPressed))
+        // Add a button for switching the active database file
+        let googleDriveButton = UIButton(type: .custom)
+        googleDriveButton.setImage(UIImage(named: "googleDriveIcon"), for: .normal)
+        googleDriveButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        googleDriveButton.translatesAutoresizingMaskIntoConstraints = false
+        googleDriveButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        googleDriveButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        googleDriveButton.imageView?.contentMode = .scaleAspectFit
+        googleDriveButton.addTarget(self, action: #selector(googleDriveButtonPressed), for: .touchUpInside)
+        let googleDriveBarButton = UIBarButtonItem(customView: googleDriveButton)
         
         //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
         // Add the archive button
@@ -575,8 +584,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         let fixedSpaceLeft = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
-        fixedSpaceLeft.width = 60
-        fixedSpaceRight.width = 60
+        fixedSpaceLeft.width = 50
+        fixedSpaceRight.width = 50
         navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
         navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
@@ -979,6 +988,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             do {
                 rows = Array(try db.prepare(table))
             } catch {
+                os_log("Could not load observations", log:.default, type:.debug)
                 fatalError("Could not load observations: \(error.localizedDescription)")
             }
             
@@ -998,7 +1008,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 // Since 'Bus' and 'Lodge Bus' are both stored in the 'buses' table, but they're separate
                 //  vehicle types, make sure that they're not double counted when listing observations.
                 //  Do so by checking the bus type (center label)
-                if (label == "Bus" && lodges.contains(row[label2Column])) || (label == "Lodge Bus" && !lodges.contains(row[label2Column])) {
+                if (label == "Bus" && (lodges.contains(row[label2Column]) && row[label2Column] != "Other")) || (label == "Lodge Bus" && (!lodges.contains(row[label2Column]) || row[label2Column] == "Other")) {
                     continue
                 }
                 // Create a generic observation instance
@@ -1053,7 +1063,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let rows = Array(try db.prepare(sessionsTable))
         if rows.count > 1 {
             //fatalError("Multiple sessions found")
-            os_log("Multiple sessions found", log: OSLog.default, type: .default)
+            os_log("Multiple sessions found", log: OSLog.default, type: .debug)
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])

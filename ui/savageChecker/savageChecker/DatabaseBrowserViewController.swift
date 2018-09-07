@@ -32,7 +32,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         self.view.backgroundColor = UIColor.clear
         
         guard let userData = loadUserData() else {
-            os_log("Couldn't load user data", log: OSLog.default, type: .default)
+            os_log("Couldn't load user data", log: OSLog.default, type: .debug)
             return
         }
         self.userData = userData
@@ -149,7 +149,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             }
         } catch {
             print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
-            os_log("Error while enumerating files", log: OSLog.default, type: .default)
+            os_log("Error while enumerating files", log: OSLog.default, type: .debug)
         }
         
         // Sort in alphabetical order

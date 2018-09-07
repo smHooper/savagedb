@@ -55,7 +55,6 @@ class SessionViewController: BaseFormViewController {
         /*let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cancelAnimation))
         swipeLeft.direction = .right
         self.view.addGestureRecognizer(swipeLeft)*/
-        
         loadData()
         
     }
@@ -146,7 +145,7 @@ class SessionViewController: BaseFormViewController {
             // The user is opening the app again after closing it or returning from another scene
             do {self.db = try Connection(dbPath)}
             catch {
-                os_log("Connecting to DB in SessionViewController.loadData() failed", log: OSLog.default, type: .default)
+                os_log("Connecting to DB in SessionViewController.loadData() failed", log: OSLog.default, type: .debug)
                 print(error)}
             if let session = loadSession() {
                 self.dropDownTextFields[0]?.text = session.observerName
@@ -235,10 +234,10 @@ class SessionViewController: BaseFormViewController {
                                                 openTimeColumn <- openTime,
                                                 closeTimeColumn <- closeTime)) > 0 {
                     } else {
-                        os_log("record not found", log: OSLog.default, type: .default)
+                        os_log("record not found", log: OSLog.default, type: .debug)
                     }
                 } catch {
-                    os_log("Session update failed", log: OSLog.default, type: .default)
+                    os_log("Session update failed", log: OSLog.default, type: .debug)
                 }
                 // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
                 var max: Int64!
@@ -270,7 +269,7 @@ class SessionViewController: BaseFormViewController {
                 let fileNameTag = "\(observerNameString)_\(dateString)_\(currentTimeString)"
                 
                 guard let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) else {
-                    os_log("Could not find documents directory", log: OSLog.default, type: .default)
+                    os_log("Could not find documents directory", log: OSLog.default, type: .debug)
                     return
                 }
                 
@@ -347,7 +346,7 @@ class SessionViewController: BaseFormViewController {
                 self.session?.id = Int(rowid)
             } catch {
                 print("Session insertion failed: \(error)")
-                os_log("Session insertion failed", log: OSLog.default, type: .default)
+                os_log("Session insertion failed", log: OSLog.default, type: .debug)
             }
         }
         
@@ -368,7 +367,7 @@ class SessionViewController: BaseFormViewController {
             }
         } catch {
             print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
-            os_log("Error while enumerating files", log: OSLog.default, type: .default)
+            os_log("Error while enumerating files", log: OSLog.default, type: .debug)
         }
         
         return files
@@ -408,7 +407,7 @@ class SessionViewController: BaseFormViewController {
         do {
             self.db = try Connection(dbPath)
         } catch {
-            os_log("Couldn't cofigure the DB", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the DB", log: OSLog.default, type: .debug)
             //fatalError(error.localizedDescription)
         }
         print(dbPath)
@@ -434,7 +433,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(uploadedColumn, defaultValue: false)
             })
         } catch {
-            os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Observations table
@@ -457,7 +456,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Buses table
@@ -483,7 +482,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nOvernightPassengersColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the buses table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the buses table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - NPS vehicle table
@@ -509,7 +508,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the npsVehicles table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the npsVehicles table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - NPS approved table
@@ -531,7 +530,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the nps approved table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the nps approved table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - NPS conctractor table
@@ -552,7 +551,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(organizationNameColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the nps contractors table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the nps contractors table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - employee table
@@ -571,7 +570,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(permitHolderColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the employee table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the employee table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Right of way table
@@ -591,7 +590,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(tripPurposeColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the rightofway table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the rightofway table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Tek camper table
@@ -610,7 +609,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(hasTekPassColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the tekCampers table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the tekCampers table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Propho table
@@ -629,7 +628,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(nExpectedNightsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the photographers table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the photographers table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Accessibility table
@@ -646,7 +645,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the accessibilty table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the accessibilty table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Cyclist table
@@ -663,7 +662,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the cyclists table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the cyclists table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Hunter table
@@ -680,7 +679,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the subsistenceUsers table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the subsistenceUsers table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Road lottery table
@@ -698,7 +697,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the roadLottery table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the roadLottery table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Other table
@@ -715,7 +714,7 @@ class SessionViewController: BaseFormViewController {
                 t.column(commentsColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the other table", log: OSLog.default, type: .default)
+            os_log("Couldn't cofigure the the other table", log: OSLog.default, type: .debug)
         }
         
     }
