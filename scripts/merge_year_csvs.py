@@ -63,21 +63,31 @@ def main(root_dir, out_dir=None, drop_duplicates=True):
             dtypes_txt = os.path.join(os.path.join(root_dir, 'dtypes'), 'codenames.csv')
         else:
             dtypes_txt = os.path.join(os.path.join(root_dir, 'dtypes'), csv)
-        dtypes = pd.read_csv(dtypes_txt, index_col='field')
+        try:
+            dtypes = pd.read_csv(dtypes_txt, index_col='field')
+        except:
+            import pdb; pdb.set_trace()
         strings, datetimes = get_dtypes(dtypes)
         df = pd.DataFrame()
         for year in year_strs:
             this_path = os.path.join(os.path.join(root_dir, year), csv)
             if not os.path.isfile(this_path):
                 continue
-            this_df = pd.read_csv(this_path, dtype=strings, parse_dates=datetimes, infer_datetime_format=True)
+            try:
+                this_df = pd.read_csv(this_path, dtype=strings, parse_dates=datetimes, infer_datetime_format=True)
+            except:
+                import pdb; pdb.set_trace()
             try:
                 df = pd.concat([df, this_df])
             except:
                 import pdb; pdb.set_trace()
 
         if drop_duplicates and csv.replace('.csv','') in DROP_DUPLICATES:
-            df.drop_duplicates(inplace=True)
+            try:
+                df.drop_duplicates(inplace=True)
+            except:
+                import pdb;
+                pdb.set_trace()
         out_txt = os.path.join(out_dir, csv)
         df.to_csv(out_txt, index=False)
 

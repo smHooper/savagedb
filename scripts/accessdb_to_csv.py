@@ -5,6 +5,9 @@ Usage:
     acceessdb_to_csv.py <out_dir> (--db_path=<str> | --search_dir=<str>) [--year=<str>] [--table_names=<str> | --exclude_tables=<str>]
     acceessdb_to_csv.py -h | --help
 
+Examples:
+    python accessdb_to_csv.py "C:\Users\shooper\proj\savagedb\db\exported_tables" --search_dir="C:\Users\shooper\proj\savagedb\db\original"
+
 Options:
     -h --help               Show this screen
     --db_path=<str>         Path of a DB file. If not specified, search_dir must be given
@@ -30,7 +33,8 @@ EXCLUDED_TABLES = ['Paste Errors',
                    'Notes',
                    'time',
                    'Info',
-                   'Switchboard Items']
+                   'Switchboard Items',
+                   'Name AutoCorrect Save Failures']
 
 
 def export_tables(db_path, out_dir, table_names=None, replace_char='_'):
@@ -85,6 +89,8 @@ def main(out_dir, db_path=None, search_dir=None, year=None, table_names=None, ex
         db_paths = [db_path]  # make sure it's iterable for the for loop
     elif search_dir is not None:
         db_paths = glob.glob(os.path.join(search_dir, '*.mdb'))
+        if len(db_paths) == 0:
+            raise (IOError('No files found in %s' % search_dir))
     else:
         raise RuntimeError('Neither a path nor search directory specified')
 
@@ -106,13 +112,17 @@ def main(out_dir, db_path=None, search_dir=None, year=None, table_names=None, ex
     used_tables = []
     dtypes = {}
     yr = year #Get the starting value for year to check if year is None
+
     for path in db_paths:
         this_out_dir = out_dir  # if year is None, set working output dir to out_dir
         # if year isn't specified, try to infer it from the DB name
         matched_year = re.findall('\d\d\d\d', os.path.basename(path))
-        if len(matched_year) == 1 and yr is None:
-            year = matched_year[0]  #findall returns a list, so get the only item
-            this_out_dir = os.path.join(this_out_dir, year)
+        if len(matched_year) == 1:
+            if yr is None:
+                year = matched_year[0]  #findall returns a list, so get the only item
+                this_out_dir = os.path.join(this_out_dir, year)
+            elif yr != matched_year[0]:
+                continue
         if not os.path.isdir(this_out_dir):
             os.mkdir(this_out_dir)
 
@@ -141,7 +151,7 @@ def main(out_dir, db_path=None, search_dir=None, year=None, table_names=None, ex
     for tname in set(used_tables):
         table_dtypes = dtypes.loc[:, :, tname] # get all dtypes for this table for all DBs
         table_dtypes = table_dtypes.loc[~table_dtypes.isnull().all(axis=1)] # get rid of records for field not in this table
-        table_dtypes.index.name = 'table'
+        table_dtypes.index.name = 'field'
         table_dtypes.to_csv(os.path.join(dtype_out_dir, tname + '.csv'))
 
 
