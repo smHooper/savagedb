@@ -17,6 +17,7 @@ Options:
     --username=<str>            Username to login with. Default is 'postgres'
     --ip_address=<str>          IP address of the machine to connect to. Default is 'localhost'
     --port=<str>                Port to connect to. Default is '5432'
+    --primary_key=<str>         Field to use for primary key for all tables (if it exists)
     --convert_datetimes=<bool>  If True, any field with a name ending in 'date' or 'time' will be coerced into 'date' or 'timestamp' data type, respectively
 '''
 
