@@ -8,6 +8,7 @@ from titlecase import titlecase
 pd.options.mode.chained_assignment = None
 
 TABLES_WITH_DATES = ['nonbus', 'bustraffic', 'datadates']
+
 CODES = {'W': 'right_of_way',
          'B': 'nps_approved',
          'N': 'nps_vehicles',
@@ -22,6 +23,7 @@ CODES = {'W': 'right_of_way',
          'L': 'road_lottery'}
 
 CONSTANT_FIELDS = ['id', 'observer_name', 'obs_date', 'obs_time', 'n_passengers', 'comments', 'destination']
+
 NONBUS_FIELDS = {'W': ['driver_name',
                        'permit_number',
                        'permit_holder'],
@@ -48,6 +50,8 @@ NONBUS_FIELDS = {'W': ['driver_name',
                  'T': [],
                  'L': ['permit_number']
                  }
+
+
 
 # Names to replace misspelled right-of-way permit holders
 ROW_NAMES = {'Lisa&Steve Neff': 'Linda/Steve Neff',
@@ -83,11 +87,8 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         df = pd.read_csv(csv)
         if 'obs_date' in df.columns:
             df.obs_date = pd.to_datetime(df.obs_date, format='%Y-%m-%d %H:%M:%S') \
-                .dt.strftime('%m/%d/%Y')
-        for field in ['obs_time', 'close_time', 'open_time']:
-            if field in df.columns:
-                df.loc[df[field].isnull(), field] = ''
-                df[field] = df[field].apply(lambda x: ':'.join(x.split(' ')[-1].split(':')[:-1]))
+                .dt.strftime('%Y/%m/%d')
+        # Don't need to do anything with timestamps because pandas uses the format postgres expects
         df.to_csv(csv, index=False)
 
     # Rename here because renaming in _premerge screws up the code
@@ -113,17 +114,6 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         grouped = grouped.loc[:, these_fields]
         grouped.to_csv(os.path.join(search_dir, '%s.csv' % CODES[key]), index=False)
 
-    # Reset greenstudy IDs
-    '''greenstudy_txt = os.path.join(search_dir, 'greenstudy.csv')
-    greenstudy = pd.read_csv(greenstudy_txt)
-    nonbus['year'] = pd.to_datetime(nonbus.obs_date, format='%Y-%m-%d %H:%M:%S').dt.year#'%m/%d/%Y').dt.year
-    for year, index in greenstudy.groupby('year').indices.iteritems():
-        df = greenstudy.loc[index]
-        joined = pd.merge(df, nonbus.loc[nonbus.year == year], how='left', left_on='nps_vehicle_id', right_on='nid')
-        import pdb;
-        pdb.set_trace()
-        greenstudy.loc[index, 'nps_vehicle_id'] = joined.loc[index, 'id']
-    greenstudy.to_csv(greenstudy_txt, index=False)'''
     os.remove(nonbus_txt)
 
     print 'Removing duplicates from ...',
@@ -137,11 +127,11 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
 
     print 'destination_codes...',
     dest_codes_txt = os.path.join(out_dir, 'destination_codes.csv')
-    bus_codes = pd.read_csv(dest_codes_txt)
-    bus_codes.drop_duplicates('codename', inplace=True)
-    bus_codes.rename(columns={'cid': 'id'}, inplace=True)
-    bus_codes.id = range(len(bus_codes))
-    bus_codes.to_csv(dest_codes_txt, index=False)
+    dest_codes = pd.read_csv(dest_codes_txt)
+    dest_codes.drop_duplicates('codename', inplace=True)
+    dest_codes.rename(columns={'cid': 'id'}, inplace=True)
+    dest_codes.id = range(len(dest_codes))
+    dest_codes.to_csv(dest_codes_txt, index=False)
 
     print 'bus_codes...\n\n'
     bus_codes_txt = os.path.join(out_dir, 'bus_codes.csv')
@@ -172,8 +162,18 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments = pd.read_csv(row_txt)
     inholder_allotments.replace({'permitholder': ROW_NAMES}, inplace=True)
     inholder_allotments = inholder_allotments.pivot(index='permitholder', columns='year', values='totalallowed')
+    inholder_allotments.rename_axis('permit_holder', axis=0)
     inholder_allotments.to_csv(os.path.join(search_dir, 'right_of_way_allotments.csv'))
+
     os.remove(row_txt)
+
+    print 'Adding ID field to all tables...\n'
+    for csv in glob(os.path.join(search_dir, '*.csv')):
+        df = pd.read_csv(csv)
+        if 'id' not in df.columns:
+            df['id'] = 0
+        df.id = xrange(len(df))
+        df.to_csv(csv, index=False)
 
 
 if __name__ == '__main__':
