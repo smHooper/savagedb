@@ -92,7 +92,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         df.to_csv(csv, index=False)
 
     # Rename here because renaming in _premerge screws up the code
-    print '\nRename workgroup text files...\n'
+    print '\nRenaming workgroup text files...\n'
     os.rename(os.path.join(out_dir, 'greenstudy.csv'), os.path.join(out_dir, 'admin_use.csv'))
     os.rename(os.path.join(out_dir, 'greenstudywg.csv'), os.path.join(out_dir, 'nps_work_groups.csv'))
     os.rename(os.path.join(out_dir, 'greenstudytp.csv'), os.path.join(out_dir, 'nps_trip_purpose.csv'))
@@ -162,7 +162,8 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments = pd.read_csv(row_txt)
     inholder_allotments.replace({'permitholder': ROW_NAMES}, inplace=True)
     inholder_allotments = inholder_allotments.pivot(index='permitholder', columns='year', values='totalallowed')
-    inholder_allotments.rename_axis('permit_holder', axis=0)
+    inholder_allotments.rename_axis('permit_holder', axis=0, inplace=True)
+    inholder_allotments.rename(columns={c: '_%s' % c for c in inholder_allotments.columns}, inplace=True)
     inholder_allotments.to_csv(os.path.join(search_dir, 'right_of_way_allotments.csv'))
 
     os.remove(row_txt)

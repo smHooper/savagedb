@@ -16,7 +16,7 @@ INTEGER_FIELDS = {'buses':              ['n_passengers', 'n_wheelchair', 'n_lodg
                   'right_of_way':       ['n_passengers', 'permit_number'],
                   'road_lottery':       ['n_passengers', 'permit_number'],
                   'subsistence':        ['n_passengers'],
-                  'tek_camplers':       ['n_passengers'],
+                  'tek_campers':       ['n_passengers'],
                   'turned_around':      ['n_passengers']
                   }
 TEXT_FIELDS = {'employee_vehicles':  ['driver_name'],
@@ -67,19 +67,21 @@ def main(info_txt):
 
     # Make changes to the DB
     with engine.connect() as conn, conn.begin():
-        print 'Submitting the following commands: \n%s\n' % sql.replace(';', ';\n')
+        print 'Submitting the following commands: \n%s\n' % sql.replace('; ', ';\n')
         conn.execute(sql)
 
         # Set all numeric fields in right_of_way_allotments to int
         print 'Setting data types for integer fiels in right_of_way_allotments table\n'
-        result = conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'right_of_way_allotments'")
-        numeric_fields = [row['column_name'] for row in result if row['column_name' != 'permit_holder']]
-        for field in numeric_fields:
-            conn.execute('ALTER TABLE right_of_way_allotments'
-                         ' ALTER COLUMN {field} SET DATA TYPE bigint'
-                         ' USING {field}::bigint;'.format(field=field))
+        result = conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'right_of_way_allotments';")
+
+        for row in result:
+            field = row['column_name']
+            if field != 'permit_holder':
+                conn.execute('ALTER TABLE right_of_way_allotments'
+                             ' ALTER COLUMN {field} SET DATA TYPE bigint'
+                             ' USING {field}::bigint;'.format(field=field))
 
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(main(*sys.argv[1:]))
 
