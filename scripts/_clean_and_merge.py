@@ -30,7 +30,7 @@ def main():
     csvs_to_postgres.main(os.path.join(os.path.join(merged_dir, 'cleaned')), connection_txt=connection_txt)
 
     # Clean up datatypes in DB
-    _clean_db_after_import.main()
+    _clean_db_after_import.main(connection_txt)
 
 
 if __name__ == '__main__':

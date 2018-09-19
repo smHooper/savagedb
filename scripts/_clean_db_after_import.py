@@ -71,7 +71,7 @@ def main(info_txt):
         conn.execute(sql)
 
         # Set all numeric fields in right_of_way_allotments to int
-        print 'Setting data types for integer fiels in right_of_way_allotments table\n'
+        print 'Setting data types for integer fields in right_of_way_allotments table\n'
         result = conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'right_of_way_allotments';")
 
         for row in result:

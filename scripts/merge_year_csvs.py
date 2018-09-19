@@ -57,8 +57,9 @@ def main(root_dir, out_dir=None, drop_duplicates=True):
     tables = set(tables)
 
     year_strs = [str(y) for y in range(START_YEAR, END_YEAR + 1)]
+    print '\n'
     for csv in tables:
-        print '\nMerging %s...' % csv.replace('.csv','')
+        print 'Merging %s...' % csv.replace('.csv','')
         if '_codes' in csv:
             dtypes_txt = os.path.join(os.path.join(root_dir, 'dtypes'), 'codenames.csv')
         else:
@@ -78,7 +79,7 @@ def main(root_dir, out_dir=None, drop_duplicates=True):
             except:
                 import pdb; pdb.set_trace()
             try:
-                df = pd.concat([df, this_df])
+                df = pd.concat([df, this_df], sort=False)
             except:
                 import pdb; pdb.set_trace()
 

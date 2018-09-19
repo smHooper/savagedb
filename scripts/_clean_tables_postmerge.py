@@ -78,7 +78,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         if os.path.isdir(out_dir):
             shutil.rmtree(out_dir)
         shutil.copytree(search_dir, out_dir)
-        search_dir = out_dir
+        search_dir = out_dir # now just modify files in out_dir
 
     # Format dates here because each time to_csv() writes the data, it does so as a string without formatting
     print 'Fixing datetime formatting...\n'
