@@ -81,6 +81,9 @@ def main(info_txt):
                              ' ALTER COLUMN {field} SET DATA TYPE bigint'
                              ' USING {field}::bigint;'.format(field=field))
 
+        # Add tablefunc extension
+        conn.execute('CREATE EXTENSION IF NOT EXISTS tablefunc;')
+
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv[1:]))
