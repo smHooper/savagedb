@@ -239,7 +239,7 @@ def main(export_tables=False):
         for field in ['dataentry1', 'datacollector1', 'datacollector2', 'dataentry2']:
             if field in nonbus.columns:
                 nonbus.drop(field, axis=1, inplace=True)
-        bustraffic['training'] = bustraffic.training.isnull()
+        bustraffic['training'] = ~bustraffic.training.isnull()
         bustraffic.rename(columns=REPLACE_COLUMNS['bustraffic'], inplace=True)
         # replace bustype codes with actual values
         bustraffic['bus_type_code'] = bustraffic.bus_type
