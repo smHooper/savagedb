@@ -85,10 +85,25 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     for table in TABLES_WITH_DATES:
         csv = os.path.join(search_dir, '%s.csv' % table)
         df = pd.read_csv(csv)
-        if 'obs_date' in df.columns:
+        '''if 'obs_date' in df.columns:
             df.obs_date = pd.to_datetime(df.obs_date, format='%Y-%m-%d %H:%M:%S') \
                 .dt.strftime('%Y/%m/%d')
-        # Don't need to do anything with timestamps because pandas uses the format postgres expects
+        # Don't need to do anything with timestamps because pandas uses the format postgres expects'''
+        date_column = df.columns[df.columns.str.endswith('date')]
+        if date_column:
+            if 'time' in df.columns:
+                # combine date and time in the format postgres expects from a timestamp string
+                df['datetime'] = df.obs_date.str.split().apply(lambda x: x[0]) + \
+                                 pd.Series([' '] * len(df)) + \
+                                 df['time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
+            else:
+                # Just format the date since there is no time
+                df.obs_date = pd.to_datetime(df.obs_date, format='%Y-%m-%d %H:%M:%S') \
+                    .dt.strftime('%Y/%m/%d')
+
+        # If there's no date, the record is useless anyway so drop it
+        df = df.loc[df[date_column].isnull()]
+
         df.to_csv(csv, index=False)
 
     # Rename here because renaming in _premerge screws up the code

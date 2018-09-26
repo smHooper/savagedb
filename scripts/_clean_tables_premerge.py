@@ -36,8 +36,6 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_id',
                                   'lodg_o_n_':  'n_lodge_ovrnt',
                                   'pass_':      'n_passengers',
                                   'wlchair_':   'n_wheelchair',
-                                  'xdate':      'obs_date',
-                                  'time':       'obs_time',
                                   'training':   'is_training',
                                   'datacollector': 'observer_name'},
                    'datadates':  {'xdate':      'obs_date',
@@ -53,8 +51,6 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_id',
                                   'redwhite':   'permitholder_code',
                                   'trip_purp':  'trip_purpose',
                                   'workgrp':    'work_group',
-                                  'xdate':      'obs_date',
-                                  'time':       'obs_time',
                                   'nid':        'id',
                                   'datacollector': 'observer_name',
                                   'blue': 'approved_type'
@@ -73,7 +69,8 @@ BUS_TYPES = {'D': 'Denali Natural History Tour',
              'K': 'Kantishna Roadhouse',
              'E': 'Kantishna Experience',
              'O': 'Other',
-             'X': 'Eielson Excursion'}
+             'X': 'Eielson Excursion',
+             'M': 'McKinley Gold Camp'}
 APPROVED_TYPES = {'R': 'Researcher',
                   'E': 'Education',
                   'J': 'Concessionaire',
@@ -220,7 +217,7 @@ def main(export_tables=False):
 
         nonbus_txt = os.path.join(this_dir, 'nonbus.csv')
         nonbus = pd.read_csv(nonbus_txt)
-        for column in ['entrytype', 'ticket', 'redwhite', 'dest', 'xaccess']:
+        for column in ['entrytype', 'ticket', 'redwhite', 'dest', 'xaccess', 'blue']:
             nonbus[column] = nonbus[column].apply(make_upper)
         # delete the datacollector2 and dataentry2 fields. These contain employee IDs from the employees table, but only
         #   for 2001. All other years are blank. It's a completely unnecessary field because the name is already stored.
