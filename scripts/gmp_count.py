@@ -1,10 +1,36 @@
+'''
+Query summary stats for one or more years from the Savage Box DB
+
+Usage:
+    gmp_count.py <out_dir> <connection_txt> --years=<str>
+    gmp_count.py -h | --help
+
+Examples:
+    python csvs_to_postgres.py "C:\Users\shooper\proj\savagedb\db\exported_tables" --search_dir="C:\Users\shooper\proj\savagedb\db\original"
+
+Required parameters:
+    out_dir             path to the directory to store the output text file
+    connection_txt      text file containing information to connect to the DB. Each line
+                        in the text file must be in the form 'variable_name; variable_value.'
+                        Required variables: username, password, ip_address, port, db_name
+
+Options:
+    -h --help           Show this screen
+    --years=<str>       Either a single 4-digit year, a list of years separated by commas, or a range given in the form <start_year>-<end_year>
+
+'''
+
+
 import os, sys
+import re
 from datetime import datetime
 from sqlalchemy import create_engine
 import pandas as pd
+import docopt
 
 
-def simnple_query(engine, table_name, year, summary_field='obs_date', summary_stat='COUNT', other_criteria=''):
+
+def simple_query(engine, table_name, year, summary_field='datetime', summary_stat='COUNT', other_criteria=''):
 
     # Make sure other_criteria is prepended with AND unless the string is null or starts with 'OR'
     modify_criteria = other_criteria.strip() and \
@@ -14,12 +40,12 @@ def simnple_query(engine, table_name, year, summary_field='obs_date', summary_st
         other_criteria = 'AND ' + other_criteria
 
     sql = 'SELECT ' \
-          '   extract(month FROM obs_date) AS month, ' \
+          '   extract(month FROM datetime) AS month, ' \
           '   {summary_stat}({summary_field}) AS {table_name} ' \
           'FROM (SELECT DISTINCT * FROM {table_name}) AS {table_name} ' \
-          'WHERE obs_date BETWEEN \'{year}-05-28\' AND \'{year}-09-15\' ' \
+          'WHERE datetime BETWEEN \'{year}-05-28\' AND \'{year}-09-15\' ' \
           '{other_criteria} ' \
-          'GROUP BY extract(month FROM obs_date);' \
+          'GROUP BY extract(month FROM datetime);' \
         .format(**{'summary_stat': summary_stat,
                    'summary_field': summary_field,
                    'table_name': table_name,
@@ -52,13 +78,13 @@ def crosstab_query(engine, table_name, pivot_field, value_field, year, summary_s
     sql = 'SELECT * FROM crosstab(' \
           '\'SELECT ' \
           '   {pivot_field} AS vehicle_type, ' \
-          '   extract(month FROM obs_date), ' \
+          '   extract(month FROM datetime), ' \
           '   {summary_stat}({value_field}) ' \
           '  FROM (SELECT DISTINCT * FROM {table_name}) AS {table_name} ' \
           '  WHERE {pivot_field} IS NOT NULL ' \
-          '  AND obs_date BETWEEN \'\'{year}-05-28\'\' AND \'\'{year}-09-15\'\' ' \
+          '  AND datetime BETWEEN \'\'{year}-05-28\'\' AND \'\'{year}-09-15\'\' ' \
           '  {other_criteria} ' \
-          '  GROUP BY {pivot_field}, extract(month FROM obs_date) ORDER BY 1\', ' \
+          '  GROUP BY {pivot_field}, extract(month FROM datetime) ORDER BY 1\', ' \
           '\'SELECT m from generate_series(5,9) m \'' \
           ') AS ("vehicle_type" text, "May" int, "Jun" int, "Jul" int, "Aug" int, "Sep" int);' \
         .format(**{'summary_stat': summary_stat,
@@ -154,8 +180,14 @@ def main(out_dir, connection_txt, years=None):
     if not years:
         years = [datetime.now().year]
     # If passed from the command line, it will by in the form 'year1, year2'
-    else:
+    elif ',' in years:
         years = [int(y.strip()) for y in years.split(',')]
+    # or year_start-year_end
+    elif '-' in years:
+        year_start, year_end = [int(y.strip()) for y in years.split('-')]
+        years = range(year_start, year_end + 1)
+    else:
+        raise ValueError('years must be in the form "YYYY", "year1, year2, ...", or "year_start-year_end". Years given were %s' % years)
 
     connection_info = {}
     # read connection params from text. Need to keep them in a text file because password can't be stored in Github repo
@@ -202,15 +234,15 @@ def main(out_dir, connection_txt, years=None):
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
         for table_name in SIMPLE_COUNT_QUERIES:
-            simple_counts.append(simnple_query(engine, table_name, year, other_criteria='destination <> \'Primrose/Mile 17\''))
+            simple_counts.append(simple_query(engine, table_name, year, other_criteria='destination <> \'Primrose/Mile 17\''))
         simple_counts = pd.concat(simple_counts, sort=False)
 
         # Get tek and accessibility passengers and number of cyclists
-        accessibility_passengers = simnple_query(engine, 'accessibility', year, summary_field='n_passengers', summary_stat='SUM', other_criteria='destination <> \'Primrose/Mile 17\'')
+        accessibility_passengers = simple_query(engine, 'accessibility', year, summary_field='n_passengers', summary_stat='SUM', other_criteria='destination <> \'Primrose/Mile 17\'')
         accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
-        tek_passengers = simnple_query(engine, 'tek_campers', year, summary_field='n_passengers', summary_stat='SUM')
+        tek_passengers = simple_query(engine, 'tek_campers', year, summary_field='n_passengers', summary_stat='SUM')
         tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
-        cyclists = simnple_query(engine, 'cyclists', year, summary_field='n_passengers', summary_stat='SUM')
+        cyclists = simple_query(engine, 'cyclists', year, summary_field='n_passengers', summary_stat='SUM')
         cyclists.index = [PRINT_NAMES['cyclists']]
 
         all_data = pd.concat([bus_vehicles,
@@ -242,7 +274,7 @@ def main(out_dir, connection_txt, years=None):
         all_data.columns = [[year] * len(all_data.columns), all_data.columns]
         yearly_data.append(all_data)
 
-    # Combine all years into one df
+    # Combine all years into one df and calculate % change if
     all_data = pd.concat(yearly_data, axis=1)
     last_year = years[-1]
     for year in years[:-1]:
@@ -256,5 +288,13 @@ def main(out_dir, connection_txt, years=None):
     all_data.to_csv(out_csv)
 
 
+if __name__ == '__main__':
 
+    # Any args that don't have a default value and weren't specified will be None
+    cl_args = {k: v for k, v in docopt.docopt(__doc__).iteritems() if v is not None}
 
+    # get rid of extra characters from doc string and 'help' entry
+    args = {re.sub('[<>-]*', '', k): v for k, v in cl_args.iteritems()
+            if k != '--help' and k != '-h'}
+
+    sys.exit(main(**args))
