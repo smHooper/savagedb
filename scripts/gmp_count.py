@@ -2,14 +2,14 @@
 Query summary stats for one or more years from the Savage Box DB
 
 Usage:
-    gmp_count.py <out_dir> <connection_txt> --years=<str>
+    gmp_count.py <connection_txt> --years=<str> (--out_dir=<str> | --out_csv=<str>)
     gmp_count.py -h | --help
 
 Examples:
-    python csvs_to_postgres.py "C:\Users\shooper\proj\savagedb\db\exported_tables" --search_dir="C:\Users\shooper\proj\savagedb\db\original"
+    python gmp_count.py ..\..\connection_info.txt --out_dir=C:\users\shooper\desktop --years="2012,2016"
+    python gmp_count.py ..\..\connection_info.txt --out_csv=C:\users\shooper\desktop\ridership.csv --years="2013-2016"
 
 Required parameters:
-    out_dir             path to the directory to store the output text file
     connection_txt      text file containing information to connect to the DB. Each line
                         in the text file must be in the form 'variable_name; variable_value.'
                         Required variables: username, password, ip_address, port, db_name
@@ -17,6 +17,8 @@ Required parameters:
 Options:
     -h --help           Show this screen
     --years=<str>       Either a single 4-digit year, a list of years separated by commas, or a range given in the form <start_year>-<end_year>
+    --out_dir=<str>     path to the directory to store the output text file. If given, output text file will be saved to a file named ridership_<min_year>_<max_year>.csv will be written. If out_dir is not specified, out_csv must be given
+    --out_csv=<str>     path to output text file. If out_csv is not specified, out_dir must be given
 
 '''
 
@@ -174,7 +176,10 @@ SORT_ORDER = ['Tour',
               'Cyclists']
 
 
-def main(out_dir, connection_txt, years=None):
+def main(connection_txt, years=None, out_dir=None, out_csv=None):
+
+    if not (out_dir or out_csv):
+        raise ValueError('Either a valid out_dir or out_csv must be given')
 
     # If none given, just used the current year
     if not years:
@@ -282,10 +287,12 @@ def main(out_dir, connection_txt, years=None):
             ((all_data.loc[:, (last_year, 'total')] - all_data.loc[:, (year, 'total')]) /
              all_data.loc[:, (year, 'total')] * 100)\
                 .round(1)
-
-    out_basename = 'ridership_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'ridership_%s.csv' % years[0]
-    out_csv = os.path.join(out_dir, out_basename)
+    if not out_csv:
+        out_basename = 'ridership_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'ridership_%s.csv' % years[0]
+        out_csv = os.path.join(out_dir, out_basename)
     all_data.to_csv(out_csv)
+
+    print '\nCSV written to: %s' % out_csv
 
 
 if __name__ == '__main__':
