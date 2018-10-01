@@ -22,7 +22,7 @@ CODES = {'W': 'right_of_way',
          'T': 'turned_around',
          'L': 'road_lottery'}
 
-CONSTANT_FIELDS = ['id', 'observer_name', 'obs_date', 'obs_time', 'n_passengers', 'comments', 'destination']
+CONSTANT_FIELDS = ['id', 'observer_name', 'datetime', 'n_passengers', 'comments', 'destination']
 
 NONBUS_FIELDS = {'W': ['driver_name',
                        'permit_number',
@@ -89,20 +89,26 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
             df.obs_date = pd.to_datetime(df.obs_date, format='%Y-%m-%d %H:%M:%S') \
                 .dt.strftime('%Y/%m/%d')
         # Don't need to do anything with timestamps because pandas uses the format postgres expects'''
-        date_column = df.columns[df.columns.str.endswith('date')]
+        date_column = df.columns[df.columns.str.endswith('date')].any() # returns 1st if one exists
+        drop_columns = [date_column]
         if date_column:
             if 'time' in df.columns:
+
                 # combine date and time in the format postgres expects from a timestamp string
-                df['datetime'] = df.obs_date.str.split().apply(lambda x: x[0]) + \
+                df['datetime'] = df[date_column].str.split().apply(lambda x: x[0]) + \
                                  pd.Series([' '] * len(df)) + \
                                  df['time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
+                drop_columns.append('time')
+
             else:
                 # Just format the date since there is no time
                 df.obs_date = pd.to_datetime(df.obs_date, format='%Y-%m-%d %H:%M:%S') \
                     .dt.strftime('%Y/%m/%d')
 
-        # If there's no date, the record is useless anyway so drop it
-        df = df.loc[df[date_column].isnull()]
+            # If there's no date, the record is useless anyway so drop it
+            df = df.loc[~df[date_column].isnull()]
+
+        df.drop(drop_columns, axis=1, inplace=True)
 
         df.to_csv(csv, index=False)
 
@@ -159,7 +165,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     print 'Renaming "bustraffic" to "buses"...\n'
     buses_txt = os.path.join(search_dir, 'bustraffic.csv')
     buses = pd.read_csv(buses_txt)
-    buses.sort_values(['obs_date', 'obs_time'], inplace=True)
+    buses.sort_values(['datetime'], inplace=True)
     buses['id'] = xrange(len(buses))
     buses.to_csv(os.path.join(search_dir, 'buses.csv'), index=False)
     os.remove(buses_txt)
