@@ -26,7 +26,6 @@ Options:
 import os, sys
 import re
 from datetime import datetime
-from sqlalchemy import create_engine
 import pandas as pd
 import docopt
 
@@ -117,22 +116,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     else:
         raise ValueError('years must be in the form "YYYY", "year1, year2, ...", or "year_start-year_end". Years given were %s' % years)
 
-    connection_info = {}
     # read connection params from text. Need to keep them in a text file because password can't be stored in Github repo
-    connection_info = {}
-    with open(connection_txt) as txt:
-        for line in txt.readlines():
-            if ';' not in line:
-                continue
-            param_name, param_value = line.split(';')
-            connection_info[param_name.strip()] = param_value.strip()
-
-    try:
-        engine = create_engine(
-            'postgresql://{username}:{password}@{ip_address}:{port}/{db_name}'.format(**connection_info))
-    except:
-        message = '\n' + '\n\t'.join(['%s: %s' % (k, v) for k, v in connection_info.iteritems()])
-        raise ValueError('could not establish connection with parameters:%s' % message)
+    engine = query.connect_db(connection_txt)
 
     # Get field names that don't contain unique IDs
     field_names = query.query_field_names(engine)
