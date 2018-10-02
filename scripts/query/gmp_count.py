@@ -30,89 +30,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import docopt
 
-
-
-def simple_query(engine, table_name, year, field_names='*', summary_field='datetime', summary_stat='COUNT', other_criteria=''):
-
-    # Make sure other_criteria is prepended with AND unless the string is null or starts with 'OR'
-    modify_criteria = other_criteria.strip() and \
-                      not (other_criteria.lower().strip().startswith('and ') or
-                           other_criteria.lower().strip().startswith('or '))
-    if modify_criteria:
-        other_criteria = 'AND ' + other_criteria
-
-    sql = 'SELECT ' \
-          '   extract(month FROM datetime) AS month, ' \
-          '   {summary_stat}({summary_field}) AS {table_name} ' \
-          'FROM (SELECT DISTINCT {field_names} FROM {table_name}) AS {table_name} ' \
-          'WHERE datetime BETWEEN \'{year}-05-28\' AND \'{year}-09-15\' ' \
-          '{other_criteria} ' \
-          'GROUP BY extract(month FROM datetime);' \
-        .format(**{'summary_stat': summary_stat,
-                   'summary_field': summary_field,
-                   'table_name': table_name,
-                   'field_names': field_names,
-                   'year': str(year),
-                   'other_criteria': other_criteria}
-                )
-    # Execute query
-    with engine.connect() as conn, conn.begin():
-        counts = pd.read_sql(sql, conn)
-
-    # postgres won't capitalize aliases in result so make sure print_name is set
-    #counts.rename(columns={table_name: print_name}, inplace=True)
-
-    # transform data so months are columns and the only row is the thing we're counting
-    counts = counts.set_index('month').T
-    counts.rename(columns={5: 'May', 6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep'}, inplace=True)
-    counts.index.name = 'vehicle_type'
-
-    counts['total'] = counts.sum(axis=1)
-
-    return counts
-
-
-def crosstab_query(engine, table_name, pivot_field, value_field, year, field_names='*', summary_stat='COUNT', dissolve_names={}, other_criteria=''):
-
-    # Make sure other_criteria is prepended with AND unless the string is null
-    if other_criteria.strip() and not other_criteria.lower().strip().startswith('and '):
-        other_criteria = 'AND ' + other_criteria
-
-    sql = 'SELECT * FROM crosstab(' \
-          '\'SELECT ' \
-          '   {pivot_field} AS vehicle_type, ' \
-          '   extract(month FROM datetime), ' \
-          '   {summary_stat}({value_field}) ' \
-          '  FROM (SELECT DISTINCT {field_names} FROM {table_name}) AS {table_name} ' \
-          '  WHERE {pivot_field} IS NOT NULL ' \
-          '  AND datetime BETWEEN \'\'{year}-05-28\'\' AND \'\'{year}-09-15\'\' ' \
-          '  {other_criteria} ' \
-          '  GROUP BY {pivot_field}, extract(month FROM datetime) ORDER BY 1\', ' \
-          '\'SELECT m from generate_series(5,9) m \'' \
-          ') AS ("vehicle_type" text, "May" int, "Jun" int, "Jul" int, "Aug" int, "Sep" int);' \
-        .format(**{'summary_stat': summary_stat,
-                   'value_field': value_field,
-                   'pivot_field': pivot_field,
-                   'table_name': table_name,
-                   'field_names': field_names,
-                   'year': str(year),
-                   'other_criteria': other_criteria
-                   }
-                )
-    # Execture query
-    with engine.connect() as conn, conn.begin():
-        counts = pd.read_sql(sql, conn)
-
-    # Combine vehicle types as necessary
-    counts.set_index('vehicle_type', inplace=True)
-    for out_name, in_names in dissolve_names.iteritems():
-        in_names = [n for n in in_names if n in counts.index]
-        counts.loc[out_name] = counts.loc[in_names].sum(axis=0)
-        counts.drop(in_names, inplace=True)
-    counts['total'] = counts.sum(axis=1)
-
-    return counts
-
+import query
 
 # table_name: print_name
 SIMPLE_COUNT_QUERIES = {'tek_campers',
@@ -186,6 +104,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     # If none given, just used the current year
     if not years:
         years = [datetime.now().year]
+
     # If passed from the command line, it will by in the form 'year1, year2'
     elif ',' in years:
         years = [int(y.strip()) for y in years.split(',')]
@@ -193,6 +112,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     elif '-' in years:
         year_start, year_end = [int(y.strip()) for y in years.split('-')]
         years = range(year_start, year_end + 1)
+    elif len(years) == 4:
+        years = [int(years)]
     else:
         raise ValueError('years must be in the form "YYYY", "year1, year2, ...", or "year_start-year_end". Years given were %s' % years)
 
@@ -214,29 +135,20 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         raise ValueError('could not establish connection with parameters:%s' % message)
 
     # Get field names that don't contain unique IDs
-    with engine.connect() as conn, conn.begin():
-        sql = 'SELECT ' \
-              ' table_name, ' \
-              ' column_name ' \
-              'FROM information_schema.columns ' \
-              'WHERE table_schema = \'public\''
-        field_names = pd.read_sql(sql, conn)
-    field_names = {table_name: ', '.join([f for f in df.column_name if f not in ['index', 'id']])
-                   for table_name, df in field_names.groupby('table_name')}
-
+    field_names = query.query_field_names(engine)
 
     yearly_data = []
     for year in years:
 
         # Query buses
-        bus_names = {'VTS': ['Camper', 'Shuttle', 'Other'],#['Shuttle'],#
-                          'Tour': ['Kantishna Experience', 'Eielson Excursion', 'Tundra Wilderness Tour', 'Windows Into Wilderness']#['Tundra Wilderness Tour']#
+        bus_names = {'VTS': ['Shuttle'],#['Camper', 'Shuttle', 'Other'],#
+                     'Tour': ['Tundra Wilderness Tour']#['Kantishna Experience', 'Eielson Excursion', 'Tundra Wilderness Tour', 'Windows Into Wilderness']#['Tundra Wilderness Tour']#
                      }
         kwargs = {'dissolve_names': bus_names,
                   'other_criteria': 'is_training = \'\'false\'\'',
                   'field_names': field_names['buses']}
-        bus_vehicles = crosstab_query(engine, 'buses', 'bus_type', 'bus_type', year, **kwargs)
-        bus_passengers = crosstab_query(engine, 'buses', 'bus_type', 'n_passengers', year, summary_stat='SUM', **kwargs)
+        bus_vehicles = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', year, **kwargs)
+        bus_passengers = query.crosstab_query(engine, 'buses', 'bus_type', 'n_passengers', year, summary_stat='SUM', **kwargs)
         bus_passengers.index = [ind + ' pax' for ind in bus_passengers.index]
 
         # Query training buses
@@ -245,29 +157,33 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         kwargs = {'field_names': field_names['buses'],
                   'other_criteria': 'is_training',
                   'dissolve_names': training_names}
-        training_buses = crosstab_query(engine, 'buses', 'bus_type', 'bus_type', year, **kwargs)#field_names=field_names['buses'], other_criteria='is_training', dissolve_names=training_names)
+        training_buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', year, **kwargs)#field_names=field_names['buses'], other_criteria='is_training', dissolve_names=training_names)
 
         # Query nps_approved
-        approved_vehicles = crosstab_query(engine, 'nps_approved', 'approved_type', 'approved_type', year, field_names=field_names['nps_approved'], other_criteria='destination <> \'\'Primrose/Mile 17\'\'')
+        approved_vehicles = query.crosstab_query(engine, 'nps_approved', 'approved_type', 'approved_type', year, field_names=field_names['nps_approved'], other_criteria='destination <> \'\'Primrose/Mile 17\'\'')
+
         # Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
-        approved_vehicles_primrose = crosstab_query(engine, 'nps_approved', 'approved_type', 'approved_type', year, field_names=field_names['nps_approved'], other_criteria='destination = \'\'Primrose/Mile 17\'\'')
+        approved_vehicles_primrose = query.crosstab_query(engine, 'nps_approved', 'approved_type', 'approved_type', year, field_names=field_names['nps_approved'], other_criteria='destination = \'\'Primrose/Mile 17\'\'')
         approved_vehicles_primrose = approved_vehicles_primrose.reindex(['Concessionaire'])
         approved_vehicles_primrose.index = ['Concessionaire (Primrose)']
+
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
         for table_name in SIMPLE_COUNT_QUERIES:
-            simple_counts.append(simple_query(engine, table_name, year, field_names=field_names[table_name], other_criteria='destination <> \'Primrose/Mile 17\''))
+            simple_counts.append(query.simple_query(engine, table_name, year, field_names=field_names[table_name], other_criteria='destination <> \'Primrose/Mile 17\''))
         simple_counts = pd.concat(simple_counts, sort=False)
 
         # Get tek and accessibility passengers and number of cyclists
-        accessibility_passengers = simple_query(engine, 'accessibility', year, field_names=field_names['accessibility'], summary_field='n_passengers', summary_stat='SUM', other_criteria='destination <> \'Primrose/Mile 17\'')
+        accessibility_passengers = query.simple_query(engine, 'accessibility', year, field_names=field_names['accessibility'], summary_field='n_passengers', summary_stat='SUM', other_criteria='destination <> \'Primrose/Mile 17\'')
         accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
-        tek_passengers = simple_query(engine, 'tek_campers', year, field_names=field_names['tek_campers'], summary_field='n_passengers', summary_stat='SUM')
+        tek_passengers = query.simple_query(engine, 'tek_campers', year, field_names=field_names['tek_campers'], summary_field='n_passengers', summary_stat='SUM')
         tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
-        cyclists = simple_query(engine, 'cyclists', year, field_names=field_names['cyclists'],summary_field='n_passengers', summary_stat='SUM')
+        cyclists = query.simple_query(engine, 'cyclists', year, field_names=field_names['cyclists'],summary_field='n_passengers', summary_stat='SUM')
         cyclists.index = [PRINT_NAMES['cyclists']]
 
+        import pdb;
+        pdb.set_trace()
         all_data = pd.concat([bus_vehicles,
                              bus_passengers,
                              training_buses,
