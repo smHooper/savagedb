@@ -22,6 +22,15 @@ CODES = {'W': 'right_of_way',
          'T': 'turned_around',
          'L': 'road_lottery'}
 
+BUS_CODES = {'D': 'Denali Natural History Tour',
+             'T': 'Tundra Wilderness Tour',
+             'K': 'Kantishna Roadhouse',
+             'B': 'Denali Backcountry Lodge',
+             'O': 'Other',
+             'E': 'Kantishna Experience',
+             'M': 'McKinley Gold Camp',
+             'I': 'Windows Into Wilderness'}
+
 CONSTANT_FIELDS = ['id', 'observer_name', 'datetime', 'n_passengers', 'comments', 'destination']
 
 NONBUS_FIELDS = {'W': ['driver_name',
@@ -70,8 +79,6 @@ ROW_NAMES = {'Lisa&Steve Neff': 'Linda/Steve Neff',
 
 def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables'):
 
-    #if not os.path.isdir(out_dir):
-    #    os.mkdir(out_dir)
 
     # Copy all tables to out_dir if it's different from search_dir
     if not search_dir == out_dir:
@@ -85,10 +92,6 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     for table in TABLES_WITH_DATES:
         csv = os.path.join(search_dir, '%s.csv' % table)
         df = pd.read_csv(csv)
-        '''if 'obs_date' in df.columns:
-            df.obs_date = pd.to_datetime(df.obs_date, format='%Y-%m-%d %H:%M:%S') \
-                .dt.strftime('%Y/%m/%d')
-        # Don't need to do anything with timestamps because pandas uses the format postgres expects'''
         date_column = df.columns[df.columns.str.endswith('date')].any() # returns 1st if one exists
         drop_columns = [date_column]
         if date_column:
@@ -112,17 +115,9 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
 
         df.to_csv(csv, index=False)
 
-    # Rename here because renaming in _premerge screws up the code
-    print '\nRenaming workgroup text files...\n'
-    os.rename(os.path.join(out_dir, 'greenstudy.csv'), os.path.join(out_dir, 'admin_use.csv'))
-    os.rename(os.path.join(out_dir, 'greenstudywg.csv'), os.path.join(out_dir, 'nps_work_groups.csv'))
-    os.rename(os.path.join(out_dir, 'greenstudytp.csv'), os.path.join(out_dir, 'nps_trip_purpose.csv'))
-
     print '\nSplitting nonbus table...\n'
     nonbus_txt = os.path.join(search_dir, 'nonbus.csv')
     nonbus = pd.read_csv(nonbus_txt)
-    nonbus['nid'] = nonbus['id']
-    nonbus['id'] = xrange(len(nonbus))
 
     for key, grouped in nonbus.groupby('entrytype'):
         grouped.drop('entrytype', axis=1, inplace=True)
@@ -133,12 +128,13 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
             if field not in grouped.columns:
                 grouped[field] = ''
         grouped = grouped.loc[:, these_fields]
+        grouped['id'] = xrange(len(grouped))
         grouped.to_csv(os.path.join(search_dir, '%s.csv' % CODES[key]), index=False)
 
     os.remove(nonbus_txt)
 
     print 'Removing duplicates from ...',
-    print 'employees...',
+    print 'employees...', # Right now this table is deleted, but keep this in case I change that later
     employee_txt = os.path.join(out_dir, 'employees.csv')
     employees = pd.read_csv(employee_txt)
     employee_names = employees.employee_name.sort_values().apply(lambda x: titlecase(x)).unique()
@@ -150,6 +146,8 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     dest_codes_txt = os.path.join(out_dir, 'destination_codes.csv')
     dest_codes = pd.read_csv(dest_codes_txt)
     dest_codes.drop_duplicates('codename', inplace=True)
+    dest_codes.drop('explanation', axis=1, inplace=True)
+    dest_codes.loc[dest_codes.codename == 'Stony', 'codename'] = 'Stony Overlook'
     dest_codes.rename(columns={'cid': 'id'}, inplace=True)
     dest_codes.id = range(len(dest_codes))
     dest_codes.to_csv(dest_codes_txt, index=False)
@@ -157,7 +155,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     print 'bus_codes...\n\n'
     bus_codes_txt = os.path.join(out_dir, 'bus_codes.csv')
     bus_codes = pd.read_csv(bus_codes_txt)
-    bus_codes.drop_duplicates('codename', inplace=True)
+    bus_codes.drop_duplicates('codeletter', inplace=True)
+    bus_codes.drop('explanation', axis=1, inplace=True)
+    for letter, name in BUS_CODES.iteritems():
+        bus_codes.loc[bus_codes.codeletter == letter, 'codename'] = name
     bus_codes.rename(columns={'cid': 'id'}, inplace=True)
     bus_codes.id = range(len(bus_codes))
     bus_codes.to_csv(bus_codes_txt, index=False)
@@ -170,13 +171,43 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     buses.to_csv(os.path.join(search_dir, 'buses.csv'), index=False)
     os.remove(buses_txt)
 
-    print 'Deleting "researcher" and "codenames" tables...\n'
-    researcher_txt = os.path.join(search_dir, 'researcher.csv')
+    print 'Renaming "right_of_way" to "inholders"...\n'
+    os.rename(os.path.join(search_dir, 'right_of_way.csv'), os.path.join(search_dir, 'inholders.csv'))
+
+    print 'Deleting unnecessary tables...',
+    researcher_txt = os.path.join(out_dir, 'researcher.csv')
     if os.path.isfile(researcher_txt):
+        print 'researcher...',
         os.remove(researcher_txt)
-    codenames_txt = os.path.join(search_dir, 'codenames.csv')
+    codenames_txt = os.path.join(out_dir, 'codenames.csv')
     if os.path.isfile(codenames_txt):
+        print 'codenames...',
         os.remove(codenames_txt)
+    greenstudy_txt = os.path.join(out_dir, 'greenstudy.csv')
+    if os.path.isfile(greenstudy_txt):
+        print 'greenstudy...',
+        os.remove(greenstudy_txt)
+    greenstudywg_txt = greenstudy_txt.replace('.csv', 'wg.csv')
+    if os.path.isfile(greenstudywg_txt):
+        print 'greenstudywg...',
+        os.remove(greenstudywg_txt)
+    greenstudytp_txt = greenstudy_txt.replace('.csv', 'tp.csv')
+    if os.path.isfile(greenstudytp_txt):
+        print 'greenstudytp...',
+        os.remove(greenstudytp_txt)
+    gmp_txt = os.path.join(out_dir, 'gmp.csv')
+    if os.path.isfile(codenames_txt):
+        print 'gmp...',
+        os.remove(gmp_txt)
+    datadates_txt = os.path.join(out_dir, 'datadates.csv')
+    if os.path.isfile(codenames_txt):
+        print 'datadates...',
+        os.remove(datadates_txt)
+    employees_txt = os.path.join(out_dir, 'employees.csv')
+    if os.path.isfile(codenames_txt):
+        print 'employees...',
+        os.remove(employees_txt)
+    print '\n\n'
 
     print 'Pivoting right-of-way allotments and renaming to "inholder_allotments"...\n'
     row_txt = os.path.join(search_dir, 'row_max.csv')
@@ -185,8 +216,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments = inholder_allotments.pivot(index='permitholder', columns='year', values='totalallowed')
     inholder_allotments.rename_axis('permit_holder', axis=0, inplace=True)
     inholder_allotments.rename(columns={c: '_%s' % c for c in inholder_allotments.columns}, inplace=True)
-    inholder_allotments.to_csv(os.path.join(search_dir, 'right_of_way_allotments.csv'))
-
+    inholder_allotments.to_csv(os.path.join(search_dir, 'inholder_allotments.csv'))
     os.remove(row_txt)
 
     print 'Adding ID field to all tables...\n'

@@ -43,19 +43,30 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_id',
                                   'boxclose':   'close_time'},
                    'employees':  {'eprimary':   'employee_id',
                                   'ename':      'employee_name'},
-                   'greenstudy': {'tpcode':     'trip_purpose_code',
-                                  'wgcode':     'work_group_code',
+                   'greenstudy': {'tpcode':     'trip_purpose',
+                                  'wgcode':     'work_group',
                                   'nid':        'nps_vehicle_id'},
                    'nonbus':     {'dest':       'destination',
                                   'people_':    'n_passengers',
                                   'redwhite':   'permitholder_code',
-                                  'trip_purp':  'trip_purpose',
-                                  'workgrp':    'work_group',
+                                  #'trip_purp':  'trip_purpose',
+                                  #'workgrp':    'work_group',
                                   'nid':        'id',
                                   'datacollector': 'observer_name',
                                   'blue': 'approved_type'
                                   }
                    }
+WORK_GROUPS = {'B&U':               'Maintenance-BU',
+               'Maintenance-BnU':   'Maintenance-BU',
+               'Ranger':            'VRP Rangers',
+               'Rangers':           'VRP Rangers',
+               'Roads':             'Maintenance-Roads',
+               'Support-Maintenance': 'Maintenance-Support',
+               'Trails':            'Maintenance-Trails'}
+TRIP_PURPOSE = {'Special Projects (5yrs or less)': 'Special projects',
+                'Orientation Trip':                 'Orientation trip',
+                'Routine Work':                     'Routine work',
+                'Other (note in comment)':          'Other'}
 
 # Since definitions in the codenames table change year to year, use these values to consistently replace codes with
 #   actual names
@@ -185,6 +196,10 @@ def main(export_tables=False):
         nonbus_txt = codename_txt.replace('codenames.csv', 'nonbus.csv')
         nonbus = pd.read_csv(nonbus_txt)
         nonbus.entrytype = nonbus.entrytype.apply(replace_code)
+
+        # Only in 2013, Tek campers was changed to T
+        if yr == 2013:
+            nonbus.loc[nonbus.entrytype == 'T', 'entrytype'] = 'V'
         nonbus.to_csv(nonbus_txt, index=False)
 
     # Make all codes consistently uppercase. SQL doesn't care but other programs might
@@ -259,21 +274,24 @@ def main(export_tables=False):
 
         # fix greenstudy tables
         greenstudywg_txt = os.path.join(this_dir, 'greenstudywg.csv')
+        greenstudytp_txt = greenstudywg_txt.replace('wg', 'tp')
         if os.path.isfile(greenstudywg_txt):
             greenstudywg = pd.read_csv(greenstudywg_txt)
-            greenstudywg = greenstudywg.loc[~greenstudywg.work_group.isin(['B&U', 'Ranger', 'Rangers', 'Roads', 'Support-Maintenance', 'Trails'])]
             greenstudywg.rename(columns=REPLACE_COLUMNS['greenstudy'], inplace=True)
-            greenstudywg.to_csv(greenstudywg_txt, index=False)
             greenstudy_txt = os.path.join(this_dir, 'greenstudy.csv')
             greenstudy = pd.read_csv(greenstudy_txt)
+            greenstudytp = pd.read_csv(greenstudytp_txt)
+            greenstudywg.replace({'work_group': WORK_GROUPS}, inplace=True)
+            greenstudytp.replace({'trip_purpose': TRIP_PURPOSE}, inplace=True)
 
             # add the nonbus ID to the gsid column for 2007 only because this was the only year where green study ID
             #   was stored in nonbus rather than the nonbus ID being stored in the greenstudy table
             if yr == 2007:
                 #import pdb; pdb.set_trace()
-                greenstudy_cols = greenstudy.columns
+                greenstudy_cols = greenstudy.columns.tolist() + ['nps_vehicle_id']
                 nonbus['id'] = xrange(len(nonbus))
                 greenstudy = pd.merge(greenstudy, nonbus, how='left', left_on='gsid', right_on='gsid')
+
                 try:
                     greenstudy['nps_vehicle_id'] = greenstudy['id']
                 except Exception as e:
@@ -281,9 +299,37 @@ def main(export_tables=False):
                     import pdb; pdb.set_trace()
                 greenstudy = greenstudy[greenstudy_cols]
 
+            # Replace codes with descriptions
+            wg_code_dict = {code: name for _, (code, name) in greenstudywg[['work_group_code', 'work_group']].iterrows()}
+            tp_code_dict = {code: name for _, (code, name) in greenstudytp[['trip_code', 'trip_purpose']].iterrows()}
+            greenstudy.wgcode = greenstudy.wgcode.map(wg_code_dict).fillna('Other')
+            greenstudy.tpcode = greenstudy.tpcode.map(tp_code_dict).fillna('Other')
+
             greenstudy.rename(columns=REPLACE_COLUMNS['greenstudy'], inplace=True)
-            greenstudy.to_csv(greenstudy_txt, index=False)
-        nonbus.to_csv(nonbus_txt, index=False) # write table to disk here so I can add 'id' field if necessary
+
+            # There are several duplicates in pretty much every year's greenstudy table. There are
+            #  also ghost records that don't correspond to any record in the nonbus table
+            greenstudy = greenstudy.loc[~greenstudy.duplicated('nps_vehicle_id') &
+                                        greenstudy.nps_vehicle_id.isin(nonbus.id)]
+
+            # Join work group and trip purpose to nonbus
+            joined = pd.merge(nonbus, greenstudy, how='left', left_on='id', right_on='nps_vehicle_id')
+            try:
+                nonbus['work_group'] = joined.work_group
+                nonbus['trip_purpose'] = joined.trip_purpose
+            except:
+                import pdb; pdb.set_trace()
+
+            # 2013 and 2014, work group and trip purpose were (mostly) recorded in the nonbus table with the an ID from
+            #  the greenstudy work group/trip purpose tables
+            if 'workgrp' in nonbus.columns:
+                wg_code_dict = {code: name for _, (code, name) in greenstudywg[['gid', 'work_group']].iterrows()}
+                nonbus['work_group'] = nonbus.workgrp.map(wg_code_dict).fillna(nonbus.workgrp)
+            if 'trip_purp' in nonbus.columns:
+                tp_code_dict = {code: name for _, (code, name) in greenstudytp[['gtpid', 'trip_purpose']].iterrows()}
+                nonbus['trip_purpose'] = nonbus.trip_purp.map(tp_code_dict).fillna(nonbus.trip_purp)
+
+        nonbus.to_csv(nonbus_txt, index=False)
 
         # replace column names in datadates table
         datadates_txt = os.path.join(this_dir, 'datadates.csv')
