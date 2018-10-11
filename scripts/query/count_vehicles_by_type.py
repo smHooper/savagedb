@@ -5,6 +5,7 @@ Usage:
     count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates]
 
 Examples:
+    python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt "5/1/1997" "9/15/2017"--out_csv="C:\Users\shooper\Desktop\delete.csv" --plot_types="grouped bar" --summarize_by="year" --queries="pov" -s -g
 
 
 Required parameters:
@@ -303,10 +304,7 @@ def get_hourly_sql(table_name, start_str, end_str, value_field, other_criteria='
     return sql
 
 
-def query_all_vehicles(output_fields, field_names, start_date, end_date, summarize_by, engine, sort_order=None, other_criteria=''):
-
-    # This is the only query function that needs date_range so just recalculate it here
-    date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
+def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
     ########## Query non-training buses
     '''bus_other_criteria = "is_training = ''false'' " \
@@ -372,7 +370,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, summari
                                          other_criteria=kwargs['other_criteria'],
                                          query_type='crosstab', field_names=field_names['buses'])
     training_buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)'''
-    buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, summarize_by, engine, is_subquery=True, other_criteria=other_criteria)
+    buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria)
     buses.add(training_buses, fill_value=0)
 
 
@@ -414,11 +412,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, summari
     return data
 
 
-def query_buses(output_fields, field_names, start_date, end_date, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria=''):
-
-    ''' Since this both this and query buses for summary are so close, call this function with slightly different params by setting up an if statement and return buses/training separately so we can do different things with them'''
-    # This is the only query function that needs date_range so just recalculate it here
-    date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
+def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria=''):
 
     ########## Query non-training buses
     bus_other_criteria = "is_training = ''false'' " \
@@ -550,20 +544,38 @@ def query_buses(output_fields, field_names, start_date, end_date, summarize_by, 
     return data
 
 
-def query_total(output_fields, field_names, start_date, end_date, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
-    data = query_all_vehicles(output_fields, field_names, start_date, end_date, summarize_by, engine, other_criteria=other_criteria)
+    data = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria)
     totals = pd.DataFrame(data.sum(axis=0)).T
 
     return totals
 
 
-def query_nps(output_fields, field_names, start_date, end_date, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
-    return 1
+    if 'hour' in summarize_by:
+        sql = get_hourly_sql('nps_vehicles', start_date, end_date, 'datetime', query_type='crosstab',
+                             field_names=field_names['nps_vehicles'], summarize_by=summarize_by)
+    else:
+        sql = None
+
+    filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
+        .format(date_part=summarize_by, table_name='nps_vehicle',
+                where_clause='WHERE bus_type IS NOT NULL AND ' + other_criteria
+                )\
+        .replace("''", "'")
+    output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
+    output_field_str = 'vehicle_type text, ' + (' int, '.join(output_fields)) + ' int'
+    data = query.crosstab_query(engine, 'nps_vehicles', 'work_group', 'datetime', other_criteria=other_criteria, date_part=summarize_by, output_fields=output_field_str, sql=sql)
+
+    if sort_order:
+        data = data.reindex(sort_order)
+
+    return data
 
 
-def query_pov(output_fields, field_names, start_date, end_date, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
     OTHER_CRITERIA = {'nps_employee':   "AND destination IN ('Toklat', \'Wonder Lake\') ",
                       'other_employee': "AND destination NOT IN ('Toklat', 'Wonder Lake') ",
@@ -633,10 +645,13 @@ def query_pov(output_fields, field_names, start_date, end_date, summarize_by, en
         data.index = [print_name]
         all_data.append(data)
 
-    all_data = pd.concat(all_data, sort=False)
-    all_data = all_data.groupby(all_data.index).sum(axis=0)
+    data = pd.concat(all_data, sort=False)
+    data = data.groupby(data.index).sum(axis=0)
 
-    return all_data
+    if sort_order:
+        data = data.reindex(sort_order)
+
+    return data
 
 
 def strip_dataframe(data):
@@ -892,13 +907,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         # Check if any recognizable strings are in plot_types
         valid_strings = [s in ['stacked bar', 'grouped bar', 'line', 'best fit', ''] for s in plot_types]
         if not any(valid_strings):
-            warnings.warn('No valid plot type string found in plot_types: %s. No plots'
-                                 ' will be made.' % ', '.join(plot_types))
+            warnings.warn('No valid plot type string found in plot_types: %s. No plots will be made.'
+                          % ', '.join(plot_types))
 
     if not ('day' in plot_types or 'doy' in plot_types) and plot_vehicle_limits:
-        warnings.warn("The '--plot_vehicle_limits' flag was passed but 'day'/'doy' was not given in"
-                             " plot_types, so the vehicle limits won't make any sense. Try the command 'python"
-                             " count_vehicles_by_type --help' for more information")
+        warnings.warn("The '--plot_vehicle_limits' flag was passed but 'day'/'doy' was not given in plot_types, so the"
+                      " vehicle limits won't make any sense. Try the command 'python count_vehicles_by_type --help'"
+                      " information on valid parameters")
 
     # reformat dates for postgres (yyyy-mm-dd), assuming format mm/dd/yyyy
     try:
@@ -909,6 +924,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         raise ValueError('start and end dates must be in format mm/dd/YYYY')
 
     # If the --use_gmp_dates flag was passed, add additional criteria to makes sure dates are at least constrained to 5/20-9/15. Also make sure the date range is appropriately clipped.
+    gmp_date_criteria = ''
     if use_gmp_dates:
         gmp_date_criteria = " AND extract(doy FROM datetime) BETWEEN extract(doy FROM date (extract(year FROM datetime) || '-05-20')) AND extract(doy FROM date (extract(year FROM datetime) || '-09-16'))"
         gmp_start_datetime = datetime.strptime('5/20/%s' % start_datetime.year, '%m/%d/%Y')
@@ -965,7 +981,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             continue
 
         query_function = QUERY_FUNCTIONS[query_name]
-        data = query_function(output_fields, field_names, start_date, end_date, summarize_by, engine,
+        data = query_function(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine,
                               sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria)
         data.fillna(0, inplace=True)
         data = data.loc[data.total > 0]
