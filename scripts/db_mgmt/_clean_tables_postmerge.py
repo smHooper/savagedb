@@ -196,15 +196,15 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         print 'greenstudytp...',
         os.remove(greenstudytp_txt)
     gmp_txt = os.path.join(out_dir, 'gmp.csv')
-    if os.path.isfile(codenames_txt):
+    if os.path.isfile(gmp_txt):
         print 'gmp...',
         os.remove(gmp_txt)
     datadates_txt = os.path.join(out_dir, 'datadates.csv')
-    if os.path.isfile(codenames_txt):
+    if os.path.isfile(datadates_txt):
         print 'datadates...',
         os.remove(datadates_txt)
     employees_txt = os.path.join(out_dir, 'employees.csv')
-    if os.path.isfile(codenames_txt):
+    if os.path.isfile(employees_txt):
         print 'employees...',
         os.remove(employees_txt)
     print '\n\n'
