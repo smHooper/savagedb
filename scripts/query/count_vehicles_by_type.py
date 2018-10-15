@@ -57,7 +57,7 @@ POV_TABLES = ['accessibility',
               'employee_vehicles',
               'nps_approved',
               'photographers',
-              'right_of_way',
+              'inholders',
               'subsistence',
               'tek_campers']
 
@@ -102,8 +102,8 @@ SORT_ORDER = {'summary':   ['Long tour',
 
 HORIZONTAL_LINES = [91, 160]
 
-COLORS = {'summary':   {'Long tour':  '#603394',
-                        'Short tour': '#6148BD',
+COLORS = {'summary':   {'Long tour':  '#462970',
+                        'Short tour': '#6255A4',
                         'VTS':        '#5C7CB0',
                         'Other JV':   '#6DB1B3',
                         'Lodge bus':  '#A88455',
@@ -307,69 +307,6 @@ def get_hourly_sql(table_name, start_str, end_str, value_field, other_criteria='
 def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
     ########## Query non-training buses
-    '''bus_other_criteria = "is_training = ''false'' " \
-                         "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}''"\
-                        .format(start_date=start_date, end_date=end_date)
-
-    bus_names = {'VTS':         ['Shuttle', 'Camper'],
-                 'Other JV':    ['Other'],
-                 'Long tour':   ['Kantishna Experience', 'Eielson Excursion',
-                                 'Tundra Wilderness Tour', 'Windows Into Wilderness'],
-                 'Short tour':  ['Denali Natural History Tour'],
-                 'Lodge bus':   ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
-                                 'North Face/Camp Denali']
-                 }
-    kwargs = {'dissolve_names': bus_names,
-              'other_criteria': bus_other_criteria,
-              'field_names': field_names['buses'],
-              'date_part': summarize_by}
-
-    # Make sure the field names match what the crosstab query will produce. If any fields are missing,
-    #   crosstab() will throw an error. Only necessary for summarize_by == doy, month, or year because hour
-    #   and halfhour produce their own relevant columns in get_hourly_sql()
-
-    if 'hour' not in summarize_by:
-        filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
-            .format(date_part=summarize_by, table_name='buses',
-                    where_clause='WHERE bus_type IS NOT NULL AND ' + bus_other_criteria
-                    )
-        bus_output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
-        kwargs['output_fields'] = 'vehicle_type text, ' + (' int, '.join(bus_output_fields)) + ' int'
-    else:
-        kwargs['sql'] = get_hourly_sql('buses', start_date, end_date, 'bus_type',
-                                         other_criteria=bus_other_criteria,
-                                         query_type='crosstab', field_names=field_names['buses'])
-
-    buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)
-
-    ######### Query training buses
-    trn_other_criteria = "is_training " \
-                         "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}''" \
-                        .format(start_date=start_date, end_date=end_date)
-
-    kwargs['other_criteria'] = trn_other_criteria
-    kwargs['dissolve_names'] = {'Other JV': ['Shuttle', 'Camper', 'Kantishna Experience',
-                                             'Eielson Excursion', 'Tundra Wilderness Tour',
-                                             'Windows Into Wilderness', 'Denali Natural History Tour'],
-                                'Lodge bus': ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
-                                              'North Face/Camp Denali']
-                                }
-
-    # Get appropriate field names as with non-training buses
-    if 'hour' not in summarize_by:
-        filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
-            .format(date_part=summarize_by, table_name='buses',
-                    where_clause='WHERE bus_type IS NOT NULL AND ' + trn_other_criteria
-                    )
-        trn_output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
-        trn_fields_str = 'vehicle_type text, ' + (' int, '.join(trn_output_fields)) + ' int'
-        kwargs['output_fields'] = trn_output_fields
-
-    else:
-        kwargs['sql'] = get_hourly_sql('buses', start_date, end_date, 'bus_type',
-                                         other_criteria=kwargs['other_criteria'],
-                                         query_type='crosstab', field_names=field_names['buses'])
-    training_buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)'''
     buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria)
     buses.add(training_buses, fill_value=0)
 
@@ -494,47 +431,6 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     if is_subquery:
         return buses, training_buses
 
-    '''date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
-
-    # Query non-training buses
-    ########## Query non-training buses
-    bus_other_criteria = "is_training = ''false'' " \
-                         "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}''"\
-                        .format(start_date=start_date, end_date=end_date)
-
-    # Make sure the field names match what the crosstab query will produce. If any fields are missing,
-    #   crosstab() will throw an error. Only necessary for summarize_by == doy, month, or year because hour
-    #   and halfhour produce their own relevant columns in get_hourly_sql()
-    if 'hour' not in summarize_by:
-        filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
-            .format(date_part=summarize_by, table_name='buses',
-                    where_clause='WHERE bus_type IS NOT NULL AND ' + bus_other_criteria
-                    )
-        bus_output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
-
-    bus_fields_str = 'vehicle_type text, ' + (' int, '.join(bus_output_fields)) + ' int'
-    kwargs = {'other_criteria': "is_training = ''false'' "
-                                "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}''"
-                                .format(start_date=start_date, end_date=end_date),
-              'field_names':    field_names['buses'],
-              'date_part':      summarize_by,
-              'output_fields':  bus_fields_str
-              }
-    if 'hour' in summarize_by:
-        kwargs['sql'] = get_hourly_sql('buses', start_date, end_date, 'bus_type',
-                                         other_criteria=kwargs['other_criteria'],
-                                         query_type='crosstab', field_names=field_names['buses'], summarize_by=summarize_by)
-
-    buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)
-
-    # Query training buses
-    kwargs['other_criteria'] = "is_training " \
-                               "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}''" \
-        .format(start_date=start_date, end_date=end_date)
-    if 'hour' in summarize_by:
-        kwargs['sql'] = get_hourly_sql('buses', start_date, end_date, 'bus_type', other_criteria=kwargs['other_criteria'], query_type='crosstab', field_names=field_names['buses'], summarize_by=summarize_by)
-    training_buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)'''
-
     training_buses.index = training_buses.index + ' TRN'
 
     data = pd.concat([buses, training_buses], sort=False)
@@ -554,15 +450,18 @@ def query_total(output_fields, field_names, start_date, end_date, date_range, su
 
 def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
+    other_criteria = "datetime BETWEEN ''{start_date}'' AND ''{end_date}'' "\
+                        .format(start_date=start_date, end_date=end_date) \
+                        + other_criteria.replace("'", "''")
+
     if 'hour' in summarize_by:
         sql = get_hourly_sql('nps_vehicles', start_date, end_date, 'datetime', query_type='crosstab',
                              field_names=field_names['nps_vehicles'], summarize_by=summarize_by)
     else:
         sql = None
 
-    filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
-        .format(date_part=summarize_by, table_name='nps_vehicle',
-                where_clause='WHERE bus_type IS NOT NULL AND ' + other_criteria
+    filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM nps_vehicles {where_clause} '\
+        .format(date_part=summarize_by, where_clause='WHERE work_group IS NOT NULL AND ' + other_criteria
                 )\
         .replace("''", "'")
     output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
@@ -586,8 +485,8 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
                       }
 
     if 'hour' in summarize_by:
-        inholder_sql = get_hourly_sql('right_of_way', start_date, end_date, 'datetime', query_type='simple',
-                                      field_names=field_names['right_of_way'], summarize_by=summarize_by)
+        inholder_sql = get_hourly_sql('inholders', start_date, end_date, 'datetime', query_type='simple',
+                                      field_names=field_names['inholders'], summarize_by=summarize_by)
 
         nps_employee_sql = get_hourly_sql('employee_vehicles', start_date, end_date, 'datetime',
                                         query_type='simple', field_names=field_names['employee_vehicles'],
@@ -624,7 +523,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
             None, None, None, None, None, None, None, None, None
 
     sql_statements = [
-        (inholder_sql,        'right_of_way',      'Inholders',    ''),
+        (inholder_sql,        'inholders',      'Inholders',    ''),
         (nps_employee_sql,    'employee_vehicles', 'NPS employees',OTHER_CRITERIA['nps_employee']),
         (other_employee_sql,  'employee_vehicles', 'Other',        OTHER_CRITERIA['other_employee']),
         (propho_sql,          'photographers',     'Photographers', ''),
@@ -774,7 +673,7 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
         plt.subplots_adjust(right=0.73, bottom=.15) # make room for legend and x labels
 
     max_vehicle_limit = max(vehicle_limits) if vehicle_limits else 0
-    plt.ylim([0, max(max_vehicle_limit, all_data.values.max())])
+    #plt.ylim([0, max(max_vehicle_limit, all_data.values.max())])
     sns.despine()
 
     # Grouped bar charts are too small to read at the default width so widen if bars are grouped
@@ -848,7 +747,8 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_ve
         .format(summarize_by=summarize_by, start=start_date, end=end_date)
     query_descr = "Queries run include:\n%s" + "\n\t\t-".join([QUERY_DESCRIPTIONS[q] for q in queries])
 
-    #if plot_vehicle_limits
+    if plot_vehicle_limits:
+        "\nAdditionally, queries were limited to only observations that occurred between May 20 and Sep 15"
 
     msg = "For questions, please contact Sam Hooper, samuel_hooper@nps.gov\n" \
           "File descriptions:\n" \
@@ -879,6 +779,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
                        'pov':       query_pov,
+                       'nps':       query_nps,
                        'total':     query_total}
 
     TITLE_PREFIXES = {'summary':    'Vehicles',
@@ -944,11 +845,9 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     if out_dir:
         # if both out_csv and out_dir are given, still just use out_csv. If just out_dir, use an informative basename
         if not out_csv:
-            basename = 'vehicle_counts_by_{summarize_by}_{start}_{end}.csv' \
-                .format(summarize_by=summarize_by,
-                        start=start_datetime.strftime('%Y%m%d'),
-                        end=end_datetime.strftime('%Y%m%d')
-                        )
+            basename = 'vehicle_counts.csv'
+            if not os.path.isdir(out_dir):
+                os.mkdir(out_dir)
             out_csv = os.path.join(out_dir, basename)
     elif not out_csv:
         # If we got here, neither out_dir nor out_csv were given so raise an error
@@ -986,7 +885,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         data.fillna(0, inplace=True)
         data = data.loc[data.total > 0]
         data.drop('total', axis=1, inplace=True)
-        import pdb; pdb.set_trace()
+
         # Remove empty columns from edges of the data
         these_labels = x_labels.copy()
         if strip_data:
@@ -994,7 +893,14 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             these_labels = these_labels.drop(drop_inds) #drop the same labels
 
         # Write csv to disk
-        this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1], '_%s_by_%s.csv' % (query_name, summarize_by))
+        this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1],
+                                        '_{query_name}_by_{summarize_by}_{start_date}_{end_date}.csv'
+                                            .format(query_name=query_name,
+                                                    summarize_by=summarize_by,
+                                                    start_date=start_datetime.strftime('%Y%m%d'),
+                                                    end_date=end_datetime.strftime('%Y%m%d')
+                                                    )
+                                        )
         data.to_csv(this_csv_path)
 
         vehicle_limits = []
