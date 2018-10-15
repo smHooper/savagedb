@@ -52,14 +52,14 @@ def main(info_txt):
     # Add statements to alter all fields that should be integers
     for table, fields in INTEGER_FIELDS.iteritems():
         for field in fields:
-            sql += 'ALTER TABLE {table_name} IF EXISTS' \
+            sql += 'ALTER TABLE IF EXISTS {table_name}' \
                    ' ALTER COLUMN {field} SET DATA TYPE bigint' \
                    ' USING {field}::bigint; '.format(table_name=table, field=field)
 
     # Add statements to alter all fields that should be text (string)
     for table, fields in TEXT_FIELDS.iteritems():
         for field in fields:
-            sql += 'ALTER TABLE {table_name} IF EXISTS' \
+            sql += 'ALTER TABLE IF EXISTS {table_name}' \
                    ' ALTER COLUMN {field} SET DATA TYPE text' \
                    ' USING {field}::text; '.format(table_name=table, field=field)
 
@@ -69,7 +69,7 @@ def main(info_txt):
         conn.execute(sql)
 
         # Set all numeric fields in inholder_allotments to int
-        print 'Setting data types for integer fields inholder_allotments table\n'
+        print 'Setting data types for integer fields in inholder_allotments table\n'
         result = conn.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'inholder_allotments';")
 
         for row in result:
