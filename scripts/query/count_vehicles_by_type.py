@@ -209,10 +209,10 @@ def filter_output_fields(category_sql, engine, mapping_dict):
     matches = pd.merge(pd.DataFrame(pd.Series(mapping_dict), columns=['field_name']), actual_fields,
                        left_index=True, right_on=field_column_name, how='inner')
 
-    return matches.set_index(field_column_name).sort_index()
+    return matches.set_index(field_column_name).sort_index().squeeze() #type: pd.Series
 
 
-def get_output_field_names(date_range, summarize_by, return_dict=False, filter_sql=None, engine=None):
+def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=None):
 
     FORMAT_STRS = {'doy':       ('%j', '%b_%d_%y', int),
                    'month':     ('%m', '%b', int),
@@ -231,24 +231,17 @@ def get_output_field_names(date_range, summarize_by, return_dict=False, filter_s
     # For regular GROUP BY (i.e., simple) queries, return a dictionary where the keys are the columns
     #   the SQL query will produce and the values are the output column names. Also necessary for filtering
     #   the output field names if filter_sql is given
-    name_mapping = dict(zip(pd.Series(date_range.strftime(in_format)).apply(in_function),
-                            names)
-                        )
+    index = pd.Series(date_range.strftime(in_format)).apply(in_function)
+    #name_dict = dict(zip(index, names))
+    names = pd.Series(names, index=index)
 
     #keys = pd.to_datetime(names, format=out_format).strftime(in_format).to_series().apply(in_function)
 
     # If a filter sql query and a DB connection were given, return only names that exist for the given sql query
     if filter_sql and engine:
-        '''with engine.connect() as conn, conn.begin():
-            actual_columns = pd.read_sql(filter_sql, conn).values.flatten()
-            actual_names = [datetime.strftime(out_format, value).lower() for value in map(in_function, actual_columns)]
-            names = names[names.isin(actual_names)]'''
-        name_mapping = filter_output_fields(filter_sql, engine, name_mapping)
-        names = name_mapping.values.ravel()
-        if return_dict:
-            name_mapping = name_mapping.squeeze().to_dict()
+        names = filter_output_fields(filter_sql, engine, names)
 
-    return names if not return_dict else name_mapping
+    return names
 
 
 def get_x_labels(date_range, summarize_by):
@@ -342,7 +335,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
 
 
     # Query GOVs
-    simple_output_fields = get_output_field_names(date_range, summarize_by, return_dict=True)
+    simple_output_fields = get_output_field_names(date_range, summarize_by)
     where_clause = 'datetime BETWEEN \'{start_date}\' AND \'{end_date}\' ' \
                    'AND destination NOT LIKE \'Primrose%%\' '\
         .format(start_date=start_date, end_date=end_date) \
@@ -566,7 +559,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
     ]
 
     date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
-    output_fields = get_output_field_names(date_range, summarize_by, return_dict=True)
+    output_fields = get_output_field_names(date_range, summarize_by)
     all_data = []
     for sql, table_name, print_name, criteria in sql_statements:
         data = query.simple_query(engine, table_name, field_names=field_names[table_name],
@@ -674,9 +667,8 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
     x_tick_inds = bar_index if bar_type == 'bar' else date_index
     x_tick_interval = 1 if bar_type == 'bar' else max(1, int(round(n_dates/float(max_xticks))))
     if bar_type == 'bar':
-        x_labels = all_data.index # The vehicle types
+        x_labels = pd.Series(all_data.index, x_labels.index) # The vehicle types
     plt.xticks(x_tick_inds[::x_tick_interval], x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
-    import pdb; pdb.set_trace()
 
     # If adding horizonal lines, make sure their values are noted on the y axis. Otherwise, just
     #   use the default ticks
@@ -734,7 +726,7 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
             plt.scatter(x, counts, color=color, alpha=0.5, label='')
 
             if show_stats:
-                r, p = stats.pearsonr(x, x * slope + intercept)
+                r, p = stats.pearsonr(counts, x * slope + intercept)
                 stats_label = r' (slope = %.1f, $\it{r} = %.2f)$' % (slope, r)
                 data_stats.append({'slope': slope, 'r': r})
         else:
@@ -918,6 +910,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     output_fields = get_output_field_names(date_range, summarize_by)
 
     x_labels = get_x_labels(date_range, summarize_by)
+    x_labels.index = output_fields
 
     for query_name in queries:
         if query_name not in QUERY_FUNCTIONS:
@@ -948,6 +941,9 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         if len(data.columns) != len(these_labels):
             warnings.warn("Some dates/times between {start} and {end} did not contain any data".format(start=start_date, end=end_date))
+
+        # Make sure labels match up with the columns that
+        these_labels = these_labels.reindex(data.columns)
 
         # Write csv to disk
         this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1],
