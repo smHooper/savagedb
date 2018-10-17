@@ -2,10 +2,10 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents]
 
 Examples:
-    python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt "5/1/1997" "9/15/2017"--out_csv="C:\Users\shooper\Desktop\delete.csv" --plot_types="grouped bar" --summarize_by="year" --queries="pov" -s -g
+    python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
 
 
 Required parameters:
@@ -19,30 +19,33 @@ Required parameters:
 
 Options:
     -h, --help                  Show this screen.
-    --out_dir=<str>             path to the directory to store the output text file. If given, output text file
+    --out_dir=<str>             Path to the directory to store the output text file. If given, output text file
                                 will be saved to a file named ridership_<min_year>_<max_year>.csv will be written.
                                 If out_dir is not specified, out_csv must be given
-    --out_csv=<str>             path to output text file. If out_csv is not specified, out_dir must be given
-    --plot_types=<str>          indicates the type of plot to use. Options: 'line', 'grouped bar', or
+    --out_csv=<str>             Path to output text file. If out_csv is not specified, out_dir must be given
+    --plot_types=<str>          Indicates the type of plot(s) to use. Options: 'line', 'grouped bar', or
                                 'stacked bar' (the default)
-    --summarize_by=<str>        string indicating the unit of time to use for summarization. Valid options are
+    --summarize_by=<str>        String indicating the unit of time to use for summarization. Valid options are
                                 'day' or 'doy', 'month', or 'year'
-    --queries=<str>             comma-separated list of data categories to query and plot. Valid options are
+    --queries=<str>             Comma-separated list of data categories to query and plot. Valid options are
                                 'summary', 'buses', 'nps', and 'pov'. If none specified, all queries are run.
-    -s, --strip_data            indicates whether or not to remove the first and last sets of consecutive null
+    -s, --strip_data            Remove the first and last sets of consecutive null
                                 from data (similar to str.strip()) before plotting and writing CSVs to disk.
                                 Default is False.
-    -p, --plot_vehicle_limits   indicates whether to plot dashed lines indicating daily limits specified by the
-                                VMP (91 concessionaire buses and 160 total vehicles). This option is only sensible
-                                to use with the 'doy' or 'day' plot_type since these limits are by day. Default is
-                                False.
+    -p, --plot_vehicle_limits   Plot dashed lines indicating daily limits specified by the VMP (91 concessionaire buses
+                                and 160 total vehicles). This option is only sensible to use with the 'doy' or 'day'
+                                plot_type since these limits are by day. Default is False.
     -g, --use_gmp_dates         Limit query to GMP allocation period (5/20-9/15) in addition to start_date-end_date
+    -x, --show_stats            Add relevant stats to labels in the legend. Only valid for 'best fit' plot type.
+    -t, --plot_totals           Additionally show totals of all vehicle types. Not valid for 'total' plot type.
+    -c, --show_percents         Draw percent of totals per interval on bars (only relevant for bar chart plot_types)
 '''
 
 import os, sys
 import re
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+from scipy import stats
 import seaborn as sns
 import pandas as pd
 import numpy as np
@@ -137,7 +140,18 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                         'Inholders':     '#89648F',
                         'Tek campers':   '#BF7F3E',
                         'Other':         '#CDCB62'},
-          'nps':        { },
+          'nps':        {'Administration': '#723C7D',
+                         'Concessions': '#779F84',
+                         'Interpretation': '#875E4D',
+                         'Maintenance-BU': '#82142B',
+                         'Maintenance-Roads': '#B43234',
+                         'Maintenance-Support': '#CB7F2C',
+                         'Maintenance-Trails':  '#E8DF60',
+                         'Natural-Cultural Resources': '#4D766F',
+                         'Planning': '#3E5297',
+                         "Superintendent's Office": '#6790BB',
+                         'VRP Rangers': '#C289BC',
+                         'Other': '#8F8E8E'},
           'total':      {0: '#587C97'}
           }
 
@@ -151,23 +165,35 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d', summarize_by='d
                  'halfhour':    '30min'
                  }
 
-
+    # Even though we could pass a datetime object here in some cases, when called from functions other than main(),
+    #   we have the date str not datetime and we don't necessarily know the format. So just convert to datetime here
     date_range = pd.date_range(datetime.strptime(start_date, date_format),
                                datetime.strptime(end_date, date_format),
                                freq=FREQ_STRS[summarize_by]
                                )
+
     # For months and years, need to add 1
     if summarize_by == 'year':
+        start_year = datetime.strptime(start_date, date_format).year
+        if start_year == datetime.strptime(end_date, date_format).year:
+            date_range = pd.date_range(datetime.strptime(str(start_year), '%Y'),
+                                       datetime.strptime(str(start_year + 1), '%Y'),
+                                       freq='Y')
         date_range = pd.to_datetime(pd.concat([pd.Series(date_range - pd.offsets.YearBegin()),
                                                pd.Series(date_range + pd.offsets.YearBegin())])
                                     .unique()
                                     )
     elif summarize_by == 'month':
+        start_month = datetime.strptime(start_date, date_format).month
+        if start_month == datetime.strptime(end_date, date_format).month:
+            date_range = pd.date_range(datetime.strptime(str(start_month), '%m'),
+                                       datetime.strptime(str(start_month + 1), '%m'),
+                                       freq='M')
         date_range = pd.to_datetime(pd.concat([pd.Series(date_range - pd.offsets.MonthBegin()),
                                                pd.Series(date_range + pd.offsets.MonthBegin())])
                                     .unique()
                                     )
-    # For day, hour, halfhour, clip the last one because it rolls over in the next interval
+    # For day, hour, halfhour, clip the last one because it rolls over into the next interval
     else:
         date_range = date_range[:-1]
 
@@ -192,7 +218,7 @@ def get_output_field_names(date_range, summarize_by, return_dict=False, filter_s
                    'month':     ('%m', '%b', int),
                    'year':      ('%Y', '_%Y', int),
                    'hour':      ('%H', '_%H', int),
-                   'halfhour':  ('%Y-%m-%d %H-%M-%S', '_%H_%M',
+                   'halfhour':  ('%Y-%m-%d %H-%M-%S', '_%y_%m_%d_%H_%M',
                                  lambda x: pd.to_datetime(x, format='%Y-%m-%d %H-%M-%S')
                                  ) # just pd.to_datetime without a format doesn't keep minutes
                    }
@@ -304,6 +330,10 @@ def get_hourly_sql(table_name, start_str, end_str, value_field, other_criteria='
     return sql
 
 
+def check_date_range(table_name, start_date, end_date):
+    return
+
+
 def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
 
     ########## Query non-training buses
@@ -326,14 +356,14 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
 
 
     # POVs
-    povs = pd.DataFrame(np.zeros((1, buses.shape[1] - 1), dtype=int),
+    povs = pd.DataFrame(np.zeros((1, output_fields.shape[0]), dtype=int),
                         columns=output_fields,
                         index=['POV'])
     for table_name in POV_TABLES:
         if 'hour' in summarize_by:
             sql = get_hourly_sql(table_name, start_date, end_date, 'datetime',
-                                   other_criteria=where_clause, query_type='simple',
-                                   field_names=field_names[table_name])
+                                 other_criteria=where_clause, query_type='simple',
+                                 field_names=field_names[table_name])
         else:
             sql = None
         df = query.simple_query(engine, table_name, field_names=field_names[table_name],
@@ -341,6 +371,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
                                 output_fields=simple_output_fields, sql=sql)
         df.index = ['POV']
         povs = povs.add(df, fill_value=0)
+    povs.drop(povs.columns[(povs == 0).all(axis=0)], axis=1, inplace=True)
 
     data = pd.concat([buses, govs, povs], sort=False)
     if sort_order:
@@ -575,22 +606,38 @@ def strip_dataframe(data):
     return data, drop_inds
 
 
-def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=None, title=None, legend_title='', max_xticks=20, colors={}):
+def show_legend(legend_title, label_suffix=None):
+    ax = plt.gca()
+    handles, labels = ax.get_legend_handles_labels()
+    if label_suffix:
+        labels = [l + label_suffix[l] for l in labels]
+    legend = plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.04, 0),
+                        loc='lower left', title=legend_title, frameon=False)
+    legend._legend_box.align = 'left'
+    max_label_length = max(map(len, labels))
+    proportional_adjustment = (0.1 * max_label_length / 30.0)  # type: float
+    right_adjustment = 0.75 - proportional_adjustment
+    plt.subplots_adjust(right=right_adjustment, bottom=.15)  # make room for legend and x labels
 
+
+def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=None, title=None, legend_title='', max_xticks=20, colors={}, plot_totals=False, show_percents=False):
+
+    if plot_totals:
+        all_data.loc['Total'] = all_data.sum(axis=0)
 
     n_vehicles, n_dates = all_data.shape
-    spacing_factor = 3 if bar_type == 'stacked' else int(n_vehicles * 1.3)
+    spacing_factor = int(n_vehicles * 1.3) if bar_type == 'grouped' else 2
     bar_width = 1
 
     ax = plt.gca()
-    grouped_index = np.arange(0, n_dates * spacing_factor, spacing_factor)
-    stacked_index = np.arange(n_dates) * spacing_factor
-    bar_index = np.arange(n_vehicles) - n_vehicles / 2  # /2 centers bar for grouped bar chart
+    date_index = np.arange(n_dates) * spacing_factor
+    grouped_index = np.arange(n_vehicles) - n_vehicles / 2  # /2 centers bar for grouped bar chart
+    bar_index = np.arange(n_vehicles) * spacing_factor
 
-    # PLot horizontal lines showing max concessionaire buses and total vehicles per day
+    # PLot horizontal lines showing max concessionaire buses and total vehicles per day or year
     if vehicle_limits:
         for y_value in vehicle_limits:
-            ax.plot([-stacked_index.max() * 2, stacked_index.max() * 2],
+            ax.plot([-date_index.max() * 2, date_index.max() * 2],
                     [y_value, y_value], '--', alpha=0.3, color='0.3',
                     zorder=0)
 
@@ -599,16 +646,37 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
         # If a color for this vehicle type isn't given, set a random color
         color = colors[vehicle_type] if vehicle_type in colors else np.random.rand(3)
 
-        # If the bars are stacked, just pass x indices that are evenly spaced
-        #   If they're grouped, make sure they're offset
-        x_inds = stacked_index if bar_type == 'stacked' else grouped_index - bar_width * bar_index[i]
+        # If the bars are grouped, make sure they're offset. If they're stacked or just regular bars, just pass
+        #   x indices that are evenly spaced
+        if bar_type == 'stacked':
+            x_inds = date_index
+        elif bar_type == 'grouped':
+            x_inds = date_index - bar_width * grouped_index[i]
+        else: # bar_type == 'bar'
+            x_inds = [bar_index[i]]
 
         ax.bar(x_inds, data, bar_width, bottom=last_top, label=vehicle_type, zorder=i + 1, color=color)
+
+        if show_percents:
+            try:
+                percents = data / all_data.sum(axis=0) * 100
+            except ZeroDivisionError:
+                percents = np.zeros(len(data))
+            percent_y = last_top + data/2 # center them in each bar
+            #import pdb; pdb.set_trace()
+            for i in range(len(x_inds)):
+                ax.text(x_inds[i], percent_y[i], '%d%%' % percents.iloc[i], color='white', fontsize=8,
+                        horizontalalignment='center', verticalalignment='center',
+                        zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
+
         last_top += data if bar_type == 'stacked' else 0
 
-    x_tick_inds = stacked_index if bar_type == 'stacked' else grouped_index
-    x_tick_interval = max(1, int(round(n_dates/float(max_xticks))))
+    x_tick_inds = bar_index if bar_type == 'bar' else date_index
+    x_tick_interval = 1 if bar_type == 'bar' else max(1, int(round(n_dates/float(max_xticks))))
+    if bar_type == 'bar':
+        x_labels = all_data.index # The vehicle types
     plt.xticks(x_tick_inds[::x_tick_interval], x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
+    import pdb; pdb.set_trace()
 
     # If adding horizonal lines, make sure their values are noted on the y axis. Otherwise, just
     #   use the default ticks
@@ -616,10 +684,10 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
         plt.yticks(np.unique((list(ax.get_yticks()) + vehicle_limits)))
 
     # Set enough space on either end of the plot
-    if bar_type == 'stacked':
-        plt.xlim([-1, x_tick_inds.max() + 1])
+    if bar_type == 'grouped':
+        plt.xlim([-n_vehicles / 2, x_tick_inds.max() + n_vehicles / 2 + 1])
     else:
-        plt.xlim([-n_vehicles/2, x_tick_inds.max() + n_vehicles/2 + 1])
+        plt.xlim([-1, x_tick_inds.max() + 1])
 
     if not title:
         title = 'Vehicles past Savage River, %s - %s' % (x_labels.iloc[0], x_labels.iloc[-1])
@@ -635,45 +703,59 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
     figure.set_figwidth(width * width_scale)
 
     if n_vehicles > 1:
-        handles, labels = ax.get_legend_handles_labels()
-        legend = plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.04, 0),
-                   loc='lower left', title=legend_title, frameon=False)
-        legend._legend_box.align = 'left'
-        max_label_length = max(map(len, labels))
-        proportional_adjustment = (0.12 * max_label_length/30.0)  # type: float
-        right_adjustment = 0.75 - proportional_adjustment
-        print right_adjustment
-        plt.subplots_adjust(right=right_adjustment, bottom=.15) # make room for legend and x labels
+        show_legend(legend_title)
 
     plt.savefig(out_png.replace('.png', '_%s.png' % bar_type), dpi=300)
     figure.set_figwidth(width) # reset because clf() doesn't set this back to the default
     plt.clf() # clear the figure in case the function was called within a loop
 
 
-def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, legend_title=None, max_xticks=20, colors={}):
+def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, legend_title=None, max_xticks=20, colors={}, plot_type='line', show_stats=False, plot_totals=False):
+
+    if plot_totals:
+        all_data.loc['Total'] = all_data.sum(axis=0)
 
     n_vehicles, n_dates = all_data.shape
+    stats_labels = {}
+    data_stats = []
+
     for vehicle_type, counts in all_data.iterrows():
         # If a color for this vehicle type isn't given, set a random color
         color = colors[vehicle_type] if vehicle_type in colors else np.random.rand(3)
 
-        plt.plot(xrange(n_dates), counts, '-', color=color, label=vehicle_type)
+        stats_label = ''  # default to empty str
+        if plot_type == 'best fit':
+            x = np.arange(n_dates)
+            slope, intercept = np.polyfit(x, counts, 1)
+            x_inds = np.array([0, n_dates])
+            y_vals = x_inds * slope + intercept
+
+            plt.plot(x_inds, y_vals, '-', color=color, label=vehicle_type)
+            plt.scatter(x, counts, color=color, alpha=0.5, label='')
+
+            if show_stats:
+                r, p = stats.pearsonr(x, x * slope + intercept)
+                stats_label = r' (slope = %.1f, $\it{r} = %.2f)$' % (slope, r)
+                data_stats.append({'slope': slope, 'r': r})
+        else:
+            plt.plot(xrange(n_dates), counts, '-', color=color, label=vehicle_type)
+        stats_labels[vehicle_type] = stats_label
 
     x_tick_interval = max(1, int(round(n_dates / float(max_xticks))))
     plt.xticks(xrange(0, n_dates, x_tick_interval), x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
-
 
     if not title:
         title = 'Vehicles past Savage River, %s - %s' % (x_labels.iloc[0], x_labels.iloc[-1])
     plt.title(title)
 
     if n_vehicles > 1:
-        legend = plt.legend(bbox_to_anchor=(1.04, 0), loc='lower left', title=legend_title, frameon=False)
-        legend._legend_box.align = 'left'
-        plt.subplots_adjust(right=0.73, bottom=.15) # make room for legend and x labels
+        show_legend(legend_title, label_suffix=stats_labels)
 
     max_vehicle_limit = max(vehicle_limits) if vehicle_limits else 0
-    #plt.ylim([0, max(max_vehicle_limit, all_data.values.max())])
+    yticks, _ = plt.yticks()
+
+    y_tick_interval = yticks[1] - yticks[0]
+    plt.ylim([0 - y_tick_interval/2.0 , max(max_vehicle_limit, all_data.values.max()) + y_tick_interval/2.0])
     sns.despine()
 
     # Grouped bar charts are too small to read at the default width so widen if bars are grouped
@@ -683,57 +765,17 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
     width_scale = max(1, min(n_dates/float(max_xticks), 3))
     figure.set_figwidth(width * width_scale)
 
-    plt.savefig(out_png.replace('.png', '_line.png'), dpi=300)
+    this_png = out_png.replace('.png', '_%s.png' % plot_type.replace(' ', '_'))
+    plt.savefig(this_png, dpi=300)
     figure.set_figwidth(width) # reset because clf() doesn't set this back to the default
     plt.clf() # clear the figure in case the function was called within a loop
 
-
-def plot_best_fit(all_data, x_labels, out_png, vehicle_limits=None, title=None, legend_title=None, max_xticks=20, colors={}):
-
-    n_vehicles, n_dates = all_data.shape
-    for vehicle_type, counts in all_data.iterrows():
-        x = np.arange(n_dates)
-        slope, intercept = np.polyfit(x, counts, 1)
-
-        # If a color for this vehicle type isn't given, set a random color
-        color = colors[vehicle_type] if vehicle_type in colors else np.random.rand(3)
-
-        x_inds = np.array([0, n_dates])
-        y_vals = x_inds * slope + intercept
-
-        plt.plot(x_inds, y_vals, '-', color=color, label=vehicle_type)
-        plt.scatter(x, counts, color=color, alpha=0.5, label='')
-
-    x_tick_interval = max(1, int(round(n_dates / float(max_xticks))))
-    plt.xticks(xrange(0, n_dates, x_tick_interval), x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
+    if data_stats:
+        data_stats = pd.DataFrame(data_stats, index=all_data.index)
+        data_stats.to_csv(this_png.replace('.png', '_stats.csv'))
 
 
-    if not title:
-        title = 'Vehicles past Savage River, %s - %s' % (x_labels.iloc[0], x_labels.iloc[-1])
-    plt.title(title)
-
-    if n_vehicles > 1:
-        legend = plt.legend(bbox_to_anchor=(1.04, 0), loc='lower left', title=legend_title, frameon=False)
-        legend._legend_box.align = 'left'
-        plt.subplots_adjust(right=0.73, bottom=.15) # make room for legend and x labels
-
-    max_vehicle_limit = max(vehicle_limits) if vehicle_limits else 0
-    plt.ylim([0, max(max_vehicle_limit, all_data.values.max())])
-    sns.despine()
-
-    # Grouped bar charts are too small to read at the default width so widen if bars are grouped
-    figure = plt.gcf()
-    width = figure.get_figwidth()
-    # Make sure the width scale is between 1 and 3
-    width_scale = max(1, min(n_dates/float(max_xticks), 3))
-    figure.set_figwidth(width * width_scale)
-
-    plt.savefig(out_png.replace('.png', '_best_fit.png'), dpi=300)
-    figure.set_figwidth(width) # reset because clf() doesn't set this back to the default
-    plt.clf() # clear the figure in case the function was called within a loop
-
-
-def write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_vehicle_limits):
+def write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_vehicle_limits, strip_data, use_gmp_dates, show_stats, plot_totals):
 
     QUERY_DESCRIPTIONS = {'summary':    'all vehicles aggregated in broad categories',
                           'buses':      'buses by each type found in the "bus_type" column of the "buses" table',
@@ -745,36 +787,41 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_ve
 
     descr = "This folder contains queried data and derived plots from the Savage Box database. Data were summarize by {summarize_by} for dates between {start} and {end}. "\
         .format(summarize_by=summarize_by, start=start_date, end=end_date)
-    query_descr = "Queries run include:\n%s" + "\n\t\t-".join([QUERY_DESCRIPTIONS[q] for q in queries])
+    descr += "Queries run include:\n\t-" + "\n\t-".join([q + ": " + QUERY_DESCRIPTIONS[q] for q in queries])
 
+
+    options_desc = "\n\nAdditional options specified:\n\t-"
+    options = []
     if plot_vehicle_limits:
-        "\nAdditionally, queries were limited to only observations that occurred between May 20 and Sep 15"
+        options.append("queries were limited to only observations that occurred between May 20 and Sep 15")
+    if strip_data:
+        options.append("the first and last sets of consecutive null dates/times were removed")
+    if use_gmp_dates:
+        options.append("in addition to %s-%s, any records outside the GMP allocation period (5/20-9/15) "
+                       "were excluded from the query" % (start_date, end_date))
+    if show_stats:
+        options.append("relevant stats for the plot type were displayed in the legend")
+    if plot_totals:
+        options.append("totals were plotted for all vehicle types")
+    if options:
+        options_desc += "\n\t-".join(options)
+        descr += options_desc
 
-    msg = "For questions, please contact Sam Hooper, samuel_hooper@nps.gov\n" \
-          "File descriptions:\n" \
-          "\tall_usage.csv - raw bc user data per day per unit\n" \
-          "\t\tPertinent field descriptions:\n" \
-          "\t\t\t-n_people: number of individual people permitted for a BC unit\n" \
-          "\t\t\t-n_parties: number of parties permitted for a BC unit\n" \
-          "\t\t\t-quota: max number of individuals allowed to stay in a BC unit according the the BCMP\n" \
-          "\t\t\t-pct_occupied: n_people / quota\n" \
-          "\t\t\t-is_full: boolean value indicating if n_people is equal to quota\n" \
-          "\t\t\t-is_full_by_single_party: boolean indicating if the unit is full and there was only one party in the unit\n" \
-          "\n\tavg_use_per_day_2013_2017.csv - bc user data per unit per day averaged across all years for each day\n" \
-          "\t\tPertinent field descriptions:\n" \
-          "\t\t\t-avg_pct_occupied: pct_occupied averaged across all years for each day of the year\n" \
-          "\t\t\t-pct_time_full: percent of the time a BC unit is full on a given day of the year\n" \
-          "\t\t\t-pct_time_full_by_single_party: percent of the time a BC unit is full from only 1 party on a given day of the year\n" \
-          "\n\tuse_per_year_2013_2017.csv - same as above but all days are summarized per year. Additional fields showing sums are self explanatory.\n" \
-          "\n\tavg_use_per_day_2013_2017_unit15_<month_number>_<month_name>.png - plot of the three fields in avg_user_per_day_2013_2017.csv for BC unit 15 (plots separated by month for legibility)\n" \
-          "\n\tuse_per_year_2013_2017_unit<unit_number>.png - same as above but plotting data from user_per_year_2013_2017.csv per unit\n" \
-          "\n\nSCRIPT: %(script)s\n" \
-          "\nDATE PROCESSED: %(datestamp)s"
+    msg = descr + \
+          "\n\nFor questions, please contact Sam Hooper at samuel_hooper@nps.gov\n" \
+          "\nSCRIPT: {script}" \
+          "\nTIME PROCESSED: {datestamp}" \
+          "\nCOMMAND: {command}"\
+              .format(script=__file__,
+                      datestamp=datetime.now().strftime('%Y/%m/%d %H:%M:%S'),
+                      command=command)
 
-    return
+    readme_path = os.path.join(out_dir, '_0README.txt')
+    with open(readme_path, 'w') as readme:
+        readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -791,6 +838,9 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     sns.set_context('paper')
     sns.set_style('darkgrid')
 
+    sys.stdout.write("Log file for count_vehicles_by_type.py: %s\n" % datetime.now().strftime('%H:%M:%S %m/%d/%Y'))
+    sys.stdout.flush()
+
     # If nothing is passed, assume that all queries should be run
     if not queries:
         queries = ['summary']#'nps', 'buses', 'other']
@@ -800,7 +850,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     valid_query_strings = [q in QUERY_FUNCTIONS.keys() for q in queries]
     if not any(valid_query_strings):
         warnings.warn('No valid query type string found in queries: %s. All queries '
-                             'will be run.' % ', '.join(queries))
+                             'will be run.' % ', '.join(queries), RuntimeWarning)
 
     # Split plot types (passed as comma-separated string) into a list
     if plot_types:
@@ -868,15 +918,14 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     output_fields = get_output_field_names(date_range, summarize_by)
 
     x_labels = get_x_labels(date_range, summarize_by)
-    # Store all dfs in a dictionary by type so we can then make plots by looping through the dict
-    dfs = {}
-    for query_name in queries:
 
+    for query_name in queries:
         if query_name not in QUERY_FUNCTIONS:
             warnings.warn('Invalid query name found: "%s". Query names must be separated'
-                                 ' by a comma and be one of the following: %s' %
-                                 (query_name, ', '.join(QUERY_FUNCTIONS.keys()))
-                                 )
+                          ' by a comma and be one of the following: %s' %
+                          (query_name, ', '.join(QUERY_FUNCTIONS.keys())),
+                          RuntimeWarning)
+            queries.remove(q)
             continue
 
         query_function = QUERY_FUNCTIONS[query_name]
@@ -884,6 +933,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                               sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria)
         data.fillna(0, inplace=True)
         data = data.loc[data.total > 0]
+        #if not plot_totals:
         data.drop('total', axis=1, inplace=True)
 
         # Remove empty columns from edges of the data
@@ -891,6 +941,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
+
+        # If only 1 interval was found or given, drop the last label because it's extraneous
+        if len(data.columns) == 1:
+            these_labels = these_labels.iloc[[0]]
+
+        if len(data.columns) != len(these_labels):
+            warnings.warn("Some dates/times between {start} and {end} did not contain any data".format(start=start_date, end=end_date))
 
         # Write csv to disk
         this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1],
@@ -905,9 +962,17 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         vehicle_limits = []
         if plot_vehicle_limits:
-            if query_name == 'summary': vehicle_limits = [91, 160]
-            elif query_name == 'buses': vehicle_limits = [91]
-            elif query_name == 'total': vehicle_limits = [160]
+            if query_name == 'summary':
+                if summarize_by == 'doy':
+                    vehicle_limits = [91, 160]
+                elif summarize_by == 'year':
+                    vehicle_limits = [10512]
+            elif query_name == 'buses' and summarize_by == 'doy': vehicle_limits = [91]
+            elif query_name == 'total':
+                if summarize_by == 'doy':
+                    vehicle_limits = [160]
+                elif summarize_by == 'year':
+                    vehicle_limits = [10512]
             else: vehicle_limits = [] # doesn't make sense for other plots
 
         out_png = this_csv_path.replace('.csv', '.png')
@@ -915,18 +980,23 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         title = '{prefix} past Savage by {interval}, {start}-{end}'\
             .format(prefix=TITLE_PREFIXES[query_name], interval='day' if summarize_by == 'doy' else summarize_by,
                     start=these_labels.iloc[0], end=these_labels.iloc[-1])
+        if 'bar' in plot_types:
+            plot_bar(data, these_labels, out_png, bar_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
         if 'stacked bar' in plot_types:
-            plot_bar(data, these_labels, out_png, bar_type='stacked', vehicle_limits=vehicle_limits, title=title, colors=colors)
+            plot_bar(data, these_labels, out_png, bar_type='stacked', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
         if 'grouped bar' in plot_types:
-            plot_bar(data, these_labels, out_png, bar_type='grouped', vehicle_limits=vehicle_limits, title=title, colors=colors)
+            plot_bar(data, these_labels, out_png, bar_type='grouped', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
         if 'line' in plot_types:
-            plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors)
+            plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors, plot_totals=plot_totals)
         if 'best fit' in plot_types:
-            plot_best_fit(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors)
+            plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors,
+                      plot_type='best fit', show_stats=show_stats, plot_totals=plot_totals)
+
         '''else:
             raise ValueError('plot_type "%s" not understood. Must be either "stacked bar", "grouped bar", or "line"')'''
+    write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_vehicle_limits, strip_data, use_gmp_dates, show_stats, plot_totals)
 
-    # Write metadata
+    print '\nOutput files written to', out_dir
 
 
 if __name__ == '__main__':
