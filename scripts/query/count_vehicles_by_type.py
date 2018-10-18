@@ -2,7 +2,7 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null]
 
 Examples:
     python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
@@ -39,6 +39,8 @@ Options:
     -x, --show_stats            Add relevant stats to labels in the legend. Only valid for 'best fit' plot type.
     -t, --plot_totals           Additionally show totals of all vehicle types. Not valid for 'total' plot type.
     -c, --show_percents         Draw percent of totals per interval on bars (only relevant for bar chart plot_types)
+    -r, --remove_gaps           Plot bars without gaps between them
+    -d, --drop_null             Remove any column (date/time) without any data for the given query
 '''
 
 import os, sys
@@ -601,7 +603,7 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
     yticks, _ = plt.yticks()
 
     y_tick_interval = yticks[1] - yticks[0]
-    plt.ylim([0 - y_tick_interval/2.0 , max(max_vehicle_limit, all_data.values.max()) + y_tick_interval/2.0])
+    plt.ylim([0, max(max_vehicle_limit, all_data.values.max()) + y_tick_interval/2.0])
     sns.despine()
 
     # Grouped bar charts are too small to read at the default width so widen if bars are grouped
@@ -667,7 +669,7 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_ve
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -794,23 +796,23 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             all_data.append(data)
             start_index = index
         data = pd.concat(all_data, axis=1)
+
+        # Remove rows without any data
         data.fillna(0, inplace=True)
-        data['total'] = data.sum(axis=1)
-        data = data.loc[data.total > 0]
+        data = data.loc[data.sum(axis=1) > 0]
 
         these_labels = x_labels.copy()
 
         # If drop_null isn't true, make sure all dates are included, even if they don't have any data
         if not drop_null:
-            data = data.reindex(columns=output_fields.append(pd.Series(['total'])))\
-                        .fillna(0)
+            data = data.reindex(columns=output_fields).fillna(0)
         # Otherwise, if stip_data is true, remove empty columns from edges of the data
         elif strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
 
         #if not plot_totals:
-        data.drop('total', axis=1, inplace=True)
+        #data.drop('total', axis=1, inplace=True)
         data = data.reindex(columns=data.columns.sort_values())  # make sure they're in chronological order
 
         # If only 1 interval was found or given, drop the last label because it's extraneous
@@ -842,25 +844,27 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                     vehicle_limits = [91, 160]
                 elif summarize_by == 'year':
                     vehicle_limits = [10512]
-            elif query_name == 'buses' and summarize_by == 'doy': vehicle_limits = [91]
+            elif query_name == 'buses' and summarize_by == 'doy':
+                vehicle_limits = [91]
             elif query_name == 'total':
                 if summarize_by == 'doy':
                     vehicle_limits = [160]
                 elif summarize_by == 'year':
                     vehicle_limits = [10512]
-            else: vehicle_limits = [] # doesn't make sense for other plots
+            else:
+                vehicle_limits = [] # doesn't make sense for other plots
 
         out_png = this_csv_path.replace('.csv', '.png')
         colors = COLORS[query_name]
         title = '{prefix} past Savage by {interval}, {start}-{end}'\
-            .format(prefix=TITLE_PREFIXES[query_name], interval='day' if summarize_by == 'doy' else summarize_by,
+            .format(prefix=TITLE_PREFIXES[query_name], interval=summarize_by,
                     start=these_labels.iloc[0], end=these_labels.iloc[-1])
         if 'bar' in plot_types:
-            plot_bar(data, these_labels, out_png, bar_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
+            plot_bar(data, these_labels, out_png, bar_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
         if 'stacked bar' in plot_types:
-            plot_bar(data, these_labels, out_png, bar_type='stacked', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=True)
+            plot_bar(data, these_labels, out_png, bar_type='stacked', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
         if 'grouped bar' in plot_types:
-            plot_bar(data, these_labels, out_png, bar_type='grouped', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
+            plot_bar(data, these_labels, out_png, bar_type='grouped', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
         if 'line' in plot_types:
             plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors, plot_totals=plot_totals)
         if 'best fit' in plot_types:
