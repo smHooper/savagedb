@@ -154,11 +154,12 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                          'Other': '#8F8E8E'},
           'total':      {0: '#587C97'}
           }
+DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 
-def get_date_range(start_date, end_date, date_format='%Y-%m-%d', summarize_by='doy'):
+def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summarize_by='day'):
 
-    FREQ_STRS = {'doy':         'D',
+    FREQ_STRS = {'day':         'D',
                  'month':       'M',
                  'year':        'Y',
                  'hour':        'H',
@@ -200,13 +201,13 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d', summarize_by='d
     return date_range
 
 
-def filter_output_fields(category_sql, engine, mapping_dict):
+def filter_output_fields(category_sql, engine, output_fields):
 
     with engine.connect() as conn, conn.begin():
         actual_fields = pd.read_sql(category_sql, conn)
 
     field_column_name = actual_fields.columns[0]
-    matches = pd.merge(pd.DataFrame(pd.Series(mapping_dict), columns=['field_name']), actual_fields,
+    matches = pd.merge(pd.DataFrame(output_fields, columns=['field_name']), actual_fields,
                        left_index=True, right_on=field_column_name, how='inner')
 
     return matches.set_index(field_column_name).sort_index().squeeze() #type: pd.Series
@@ -214,25 +215,26 @@ def filter_output_fields(category_sql, engine, mapping_dict):
 
 def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=None):
 
-    FORMAT_STRS = {'doy':       ('%j', '%b_%d_%y', int),
+    '''FORMAT_STRS = {'doy':       ('%j', '%b_%d_%y', int),
                    'month':     ('%m', '%b', int),
                    'year':      ('%Y', '_%Y', int),
                    'hour':      ('%H', '_%H', int),
                    'halfhour':  ('%Y-%m-%d %H-%M-%S', '_%y_%m_%d_%H_%M',
                                  lambda x: pd.to_datetime(x, format='%Y-%m-%d %H-%M-%S')
                                  ) # just pd.to_datetime without a format doesn't keep minutes
+                   }'''
+    FORMAT_STRS = {'day':       '_%Y_%m_%d',
+                   'month':     '_%y_%b',
+                   'year':      '_%Y',
+                   'hour':      '_%Y_%m_%d_%H',
+                   'halfhour':  '_%Y_%m_%d_%H_%M'
                    }
 
-    # in_format is sort of misnomer -- it's the format that a crosstab query would produce. The out_format
-    #   is what those columns should be transformed to in the output dataframe
-    in_format, out_format, in_function = FORMAT_STRS[summarize_by]
-
+    # Format of columns to write CSVs to
+    out_format = FORMAT_STRS[summarize_by]
     names = date_range.strftime(out_format).str.lower()
-    # For regular GROUP BY (i.e., simple) queries, return a dictionary where the keys are the columns
-    #   the SQL query will produce and the values are the output column names. Also necessary for filtering
-    #   the output field names if filter_sql is given
-    index = pd.Series(date_range.strftime(in_format)).apply(in_function)
-    #name_dict = dict(zip(index, names))
+    # index is in the format that postgres will spit out for timestamps (i.e., the columns for query results)
+    index = date_range.strftime(DATETIME_FORMAT)
     names = pd.Series(names, index=index)
 
     #keys = pd.to_datetime(names, format=out_format).strftime(in_format).to_series().apply(in_function)
@@ -246,105 +248,32 @@ def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=Non
 
 def get_x_labels(date_range, summarize_by):
 
-    FORMAT_STRS = {'doy':       '%m/%d/%y',
+    FORMAT_STRS = {'day':       '%m/%d/%y',
                    'month':     '%b',
                    'year':      '%Y',
                    'hour':      '%H:%M',
                    'halfhour':  '%H:%M'
                    }
-    names = date_range.strftime(FORMAT_STRS[summarize_by]).unique().to_series()
+    names = date_range.strftime(FORMAT_STRS[summarize_by]).to_series()#.unique().to_series()
     names.index = np.arange(len(names))
 
     return names
 
 
-def get_hourly_sql(table_name, start_str, end_str, value_field, other_criteria='', query_type='crosstab', field_names='*', summary_stat='COUNT', summarize_by='halfhour'):
-
-    date_clause = "AND datetime BETWEEN ''{start_str}'' AND ''{end_str}'' " \
-        .format(start_str=start_str, end_str=end_str)
-
-    # Make sure other_criteria is prepended with AND unless the string is null or starts with 'OR'
-    #   First check whether it's necessary to modify the statement
-    modify_criteria = other_criteria.strip() and \
-                      not (other_criteria.lower().strip().startswith('and ') or
-                           other_criteria.lower().strip().startswith('or '))
-    if modify_criteria:
-        other_criteria = 'AND ' + other_criteria
-
-    where_clause = ('WHERE %s IS NOT NULL ' % value_field) + date_clause + other_criteria
-
-    # Specifies number of seconds per interval defined by the query
-    interval_seconds = '1800' if summarize_by == 'halfhour' else '3600'
-
-    if query_type == 'crosstab':
-        date_range = get_date_range(start_str, end_str, summarize_by=summarize_by)
-        output_fields = get_output_field_names(date_range, summarize_by)
-        output_fields_str = 'vehicle_type text, ' + (' int, '.join(output_fields)) + ' int'
-        sql = "SELECT * FROM crosstab( \n" \
-              "'SELECT \n" \
-              "     {value_field}, \n" \
-              "     to_timestamp(FLOOR(EXTRACT(epoch FROM datetime::TIMESTAMPTZ)/{seconds}) * {seconds}) AS {summarize_by}, \n" \
-              "     count(datetime) \n" \
-              "FROM (SELECT DISTINCT {field_names} FROM {table_name}) AS {table_name} \n" \
-              "{where_clause} \n" \
-              "GROUP BY {summarize_by}, {value_field}  ORDER BY 1', \n" \
-              "'SELECT generate_series( ''{start_str} 00:00''::TIMESTAMPTZ, \n" \
-              "                          ''{start_str} 23:59:59''::TIMESTAMPTZ, \n" \
-              "                          ''{interval}''::INTERVAL)'\n" \
-              ") AS ({output_fields_str});" \
-            .format(value_field=value_field,
-                    seconds=interval_seconds,
-                    summarize_by=summarize_by,
-                    table_name=table_name,
-                    field_names=field_names,
-                    where_clause=where_clause,
-                    start_str=start_str,
-                    interval='30 minute' if summarize_by == 'halfhour' else '1 hour',
-                    output_fields_str=output_fields_str
-                    )
-    else:
-
-        sql = 'SELECT \n' \
-              '   to_timestamp(FLOOR(EXTRACT(epoch FROM datetime::TIMESTAMPTZ)/{seconds}) * {seconds})::TIMESTAMP AS {summarize_by}, \n' \
-              '   {summary_stat}({value_field}) AS {table_name} \n' \
-              'FROM (SELECT DISTINCT {field_names} FROM {table_name}) AS {table_name} \n' \
-              '{where_clause} \n' \
-              'GROUP BY {summarize_by} ' \
-              'ORDER BY {summarize_by};' \
-            .format(seconds=interval_seconds,
-                    summarize_by=summarize_by,
-                    summary_stat=summary_stat,
-                    value_field=value_field,
-                    table_name=table_name,
-                    where_clause=where_clause.replace("''", "'"),
-                    field_names=field_names
-                    )
-
-    return sql
-
-
-def check_date_range(table_name, start_date, end_date):
-    return
-
-
-def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False):
 
     ########## Query non-training buses
     buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria)
     buses.add(training_buses, fill_value=0)
 
-
     # Query GOVs
     simple_output_fields = get_output_field_names(date_range, summarize_by)
-    where_clause = 'datetime BETWEEN \'{start_date}\' AND \'{end_date}\' ' \
-                   'AND destination NOT LIKE \'Primrose%%\' '\
+    where_clause = "datetime BETWEEN '{start_date}' AND '{end_date}' " \
+                   "AND destination NOT LIKE 'Primrose%%' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
-    if 'hour' in summarize_by:
-        sql = get_hourly_sql('nps_vehicles', start_date, end_date, 'datetime', other_criteria=where_clause, query_type='simple', field_names=field_names['nps_vehicles'])
-    else:
-        sql = None
-    govs = query.simple_query(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, date_part=summarize_by, output_fields=simple_output_fields, sql=sql)
+
+    govs = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=simple_output_fields)
     govs.index = ['GOV']
 
 
@@ -353,22 +282,18 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
                         columns=output_fields,
                         index=['POV'])
     for table_name in POV_TABLES:
-        if 'hour' in summarize_by:
-            sql = get_hourly_sql(table_name, start_date, end_date, 'datetime',
-                                 other_criteria=where_clause, query_type='simple',
-                                 field_names=field_names[table_name])
-        else:
-            sql = None
-        df = query.simple_query(engine, table_name, field_names=field_names[table_name],
-                                other_criteria=where_clause, date_part=summarize_by,
-                                output_fields=simple_output_fields, sql=sql)
+        df = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
+                                other_criteria=where_clause, summarize_by=summarize_by,
+                                output_fields=simple_output_fields)
         df.index = ['POV']
         povs = povs.add(df, fill_value=0)
     povs.drop(povs.columns[(povs == 0).all(axis=0)], axis=1, inplace=True)
 
     data = pd.concat([buses, govs, povs], sort=False)
+
     if sort_order:
         data = data.reindex(sort_order)
+
 
     return data
 
@@ -380,11 +305,11 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                          "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}'' "\
                         .format(start_date=start_date, end_date=end_date) \
                         + other_criteria.replace("'", "''")
-
-
     kwargs = {'other_criteria': bus_other_criteria,
               'field_names': field_names['buses'],
-              'date_part': summarize_by}
+              'summarize_by': summarize_by,
+              'filter_fields': True
+              }
 
     # If this function is being called within query_all_vehicles(), set the names to aggregate. If this function
     #   is being called as just a query of buses, don't aggregate at all so no need to set dissolve_names
@@ -399,24 +324,10 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                      }
         kwargs['dissolve_names'] = bus_names
 
-    # Make sure the field names match what the crosstab query will produce. If any fields are missing,
-    #   crosstab() will throw an error. Only necessary for summarize_by == doy, month, or year because hour
-    #   and halfhour produce their own relevant columns in get_hourly_sql()
-    if 'hour' not in summarize_by:
-        filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
-            .format(date_part=summarize_by, table_name='buses',
-                    where_clause='WHERE bus_type IS NOT NULL AND ' + bus_other_criteria
-                    )\
-            .replace("''", "'")
-        bus_output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
-        kwargs['output_fields'] = 'vehicle_type text, ' + (' int, '.join(bus_output_fields)) + ' int'
-    else:
-        kwargs['sql'] = get_hourly_sql('buses', start_date, end_date, 'bus_type',
-                                         other_criteria=bus_other_criteria,
-                                         query_type='crosstab', field_names=field_names['buses'],
-                                       summarize_by=summarize_by)
+    bus_output_fields = get_output_field_names(date_range, summarize_by)
+    kwargs['output_fields'] = bus_output_fields#'vehicle_type text, ' + (' int, '.join(bus_output_fields)) + ' int'
 
-    buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)
+    buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', **kwargs)
 
     ######### Query training buses
     trn_other_criteria = "is_training " \
@@ -435,22 +346,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                                     }
 
     # Get appropriate field names as with non-training buses
-    if 'hour' not in summarize_by:
-        filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM {table_name} {where_clause} '\
-            .format(date_part=summarize_by, table_name='buses',
-                    where_clause='WHERE bus_type IS NOT NULL AND ' + trn_other_criteria
-                    )\
-            .replace("''", "'")
-        trn_output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
-        trn_fields_str = 'vehicle_type text, ' + (' int, '.join(trn_output_fields)) + ' int'
-        kwargs['output_fields'] = trn_fields_str
-
-    else:
-        kwargs['sql'] = get_hourly_sql('buses', start_date, end_date, 'bus_type',
-                                         other_criteria=kwargs['other_criteria'],
-                                         query_type='crosstab', field_names=field_names['buses'],
-                                       summarize_by=summarize_by)
-    training_buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', **kwargs)
+    training_buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', **kwargs)
 
     if is_subquery:
         return buses, training_buses
@@ -478,19 +374,8 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
                         .format(start_date=start_date, end_date=end_date) \
                         + other_criteria.replace("'", "''")
 
-    if 'hour' in summarize_by:
-        sql = get_hourly_sql('nps_vehicles', start_date, end_date, 'datetime', query_type='crosstab',
-                             field_names=field_names['nps_vehicles'], summarize_by=summarize_by)
-    else:
-        sql = None
-
-    filter_sql = 'SELECT DISTINCT extract({date_part} FROM datetime) FROM nps_vehicles {where_clause} '\
-        .format(date_part=summarize_by, where_clause='WHERE work_group IS NOT NULL AND ' + other_criteria
-                )\
-        .replace("''", "'")
-    output_fields = get_output_field_names(date_range, summarize_by, filter_sql=filter_sql, engine=engine)
-    output_field_str = 'vehicle_type text, ' + (' int, '.join(output_fields)) + ' int'
-    data = query.crosstab_query(engine, 'nps_vehicles', 'work_group', 'datetime', other_criteria=other_criteria, date_part=summarize_by, output_fields=output_field_str, sql=sql)
+    output_fields = get_output_field_names(date_range, summarize_by)
+    data = query.crosstab_query_by_datetime(engine, 'nps_vehicles', start_date, end_date, 'work_group', field_names=field_names['nps_vehicles'], other_criteria=other_criteria, summarize_by=summarize_by, output_fields=output_fields, filter_fields=True)
 
     if sort_order:
         data = data.reindex(sort_order)
@@ -508,62 +393,24 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
                                         "approved_type <> 'Researcher' "
                       }
 
-    if 'hour' in summarize_by:
-        inholder_sql = get_hourly_sql('inholders', start_date, end_date, 'datetime', query_type='simple',
-                                      field_names=field_names['inholders'], summarize_by=summarize_by)
-
-        nps_employee_sql = get_hourly_sql('employee_vehicles', start_date, end_date, 'datetime',
-                                        query_type='simple', field_names=field_names['employee_vehicles'],
-                                        other_criteria=OTHER_CRITERIA['nps_employee'], summarize_by=summarize_by)
-
-        other_employee_sql = get_hourly_sql('employee_vehicles', start_date, end_date, 'datetime',
-                                        query_type='simple', field_names=field_names['employee_vehicles'],
-                                        other_criteria=OTHER_CRITERIA['other_employee'], summarize_by=summarize_by)
-
-        propho_sql = get_hourly_sql('photographers', start_date, end_date, 'datetime',
-                                      query_type='simple', field_names=field_names['photographers'], summarize_by=summarize_by)
-
-        researcher_sql = get_hourly_sql('nps_approved', start_date, end_date, 'datetime',
-                                          query_type='simple', field_names=field_names['nps_approved'],
-                                        other_criteria=OTHER_CRITERIA['researcher'], summarize_by=summarize_by)
-
-        other_approved_sql = get_hourly_sql('nps_approved', start_date, end_date, 'datetime',
-                                     query_type='simple', field_names=field_names['nps_approved'],
-                                     other_criteria=OTHER_CRITERIA['other_approved'], summarize_by=summarize_by)
-
-        accessibility_sql = get_hourly_sql('accessibility', start_date, end_date, 'datetime',
-                                     query_type='simple', field_names=field_names['accessibility'],summarize_by=summarize_by)
-
-        subsistence_sql = get_hourly_sql('subsistence', start_date, end_date, 'datetime',
-                                     query_type='simple', field_names=field_names['subsistence'], summarize_by=summarize_by)
-
-        tek_sql = get_hourly_sql('tek_campers', start_date, end_date, 'datetime',
-                                     query_type='simple', field_names=field_names['tek_campers'],summarize_by=summarize_by)
-
-
-    else:
-        inholder_sql, nps_employee_sql, other_employee_sql, propho_sql, researcher_sql,\
-            other_approved_sql, accessibility_sql, subsistence_sql, tek_sql =\
-            None, None, None, None, None, None, None, None, None
-
     sql_statements = [
-        (inholder_sql,        'inholders',      'Inholders',    ''),
-        (nps_employee_sql,    'employee_vehicles', 'NPS employees',OTHER_CRITERIA['nps_employee']),
-        (other_employee_sql,  'employee_vehicles', 'Other',        OTHER_CRITERIA['other_employee']),
-        (propho_sql,          'photographers',     'Photographers', ''),
-        (researcher_sql,      'nps_approved',      'Researchers',  OTHER_CRITERIA['researcher']),
-        (other_approved_sql,  'nps_approved',      'Other',        OTHER_CRITERIA['other_approved']),
-        (accessibility_sql,   'accessibility',     'Other',        ''),
-        (subsistence_sql,     'subsistence',       'Other',        ''),
-        (tek_sql,             'tek_campers',       'Tek campers',  '')
+        ('inholders',           'Inholders',        ''),
+        ('employee_vehicles',   'NPS employees',    OTHER_CRITERIA['nps_employee']),
+        ('employee_vehicles',   'Other',            OTHER_CRITERIA['other_employee']),
+        ('photographers',       'Photographers',    ''),
+        ('nps_approved',        'Researchers',      OTHER_CRITERIA['researcher']),
+        ('nps_approved',        'Other',            OTHER_CRITERIA['other_approved']),
+        ('accessibility',       'Other',            ''),
+        ('subsistence',         'Other',            ''),
+        ('tek_campers',         'Tek campers',      '')
     ]
 
     date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
     output_fields = get_output_field_names(date_range, summarize_by)
     all_data = []
-    for sql, table_name, print_name, criteria in sql_statements:
-        data = query.simple_query(engine, table_name, field_names=field_names[table_name],
-                                  date_part=summarize_by, output_fields=output_fields, sql=sql,
+    for table_name, print_name, criteria in sql_statements:
+        data = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
+                                  summarize_by=summarize_by, output_fields=output_fields,
                                   other_criteria="datetime BETWEEN '%s' AND '%s' " % (start_date, end_date) + criteria + other_criteria)
         data.index = [print_name]
         all_data.append(data)
@@ -596,7 +443,7 @@ def strip_dataframe(data):
     nans.drop(cols[drop_inds], axis=1, inplace=True)
     data[nans] = np.NaN
 
-    return data, drop_inds
+    return data, cols[drop_inds]
 
 
 def show_legend(legend_title, label_suffix=None):
@@ -613,13 +460,16 @@ def show_legend(legend_title, label_suffix=None):
     plt.subplots_adjust(right=right_adjustment, bottom=.15)  # make room for legend and x labels
 
 
-def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=None, title=None, legend_title='', max_xticks=20, colors={}, plot_totals=False, show_percents=False):
+def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=None, title=None, legend_title='', max_xticks=20, colors={}, plot_totals=False, show_percents=False, remove_gaps=False):
 
     if plot_totals:
         all_data.loc['Total'] = all_data.sum(axis=0)
 
     n_vehicles, n_dates = all_data.shape
-    spacing_factor = int(n_vehicles * 1.3) if bar_type == 'grouped' else 2
+    if remove_gaps:
+        spacing_factor = int(n_vehicles) if bar_type == 'grouped' else 1
+    else:
+        spacing_factor = int(n_vehicles * 1.3) if bar_type == 'grouped' else 2
     bar_width = 1
 
     ax = plt.gca()
@@ -656,7 +506,7 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
             except ZeroDivisionError:
                 percents = np.zeros(len(data))
             percent_y = last_top + data/2 # center them in each bar
-            #import pdb; pdb.set_trace()
+
             for i in range(len(x_inds)):
                 ax.text(x_inds[i], percent_y[i], '%d%%' % percents.iloc[i], color='white', fontsize=8,
                         horizontalalignment='center', verticalalignment='center',
@@ -665,10 +515,14 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
         last_top += data if bar_type == 'stacked' else 0
 
     x_tick_inds = bar_index if bar_type == 'bar' else date_index
-    x_tick_interval = 1 if bar_type == 'bar' else max(1, int(round(n_dates/float(max_xticks))))
-    if bar_type == 'bar':
-        x_labels = pd.Series(all_data.index, x_labels.index) # The vehicle types
-    plt.xticks(x_tick_inds[::x_tick_interval], x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
+
+    if len(x_labels) > 1:
+        x_tick_interval = 1 if bar_type == 'bar' else max(1, int(round(n_dates/float(max_xticks))))
+        if bar_type == 'bar':
+            x_labels = pd.Series(all_data.index, x_labels.index) # The vehicle types
+        plt.xticks(x_tick_inds[::x_tick_interval], x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
+    else:
+        plt.xticks([], []) # Don'
 
     # If adding horizonal lines, make sure their values are noted on the y axis. Otherwise, just
     #   use the default ticks
@@ -813,7 +667,7 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date, plot_ve
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -853,7 +707,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             warnings.warn('No valid plot type string found in plot_types: %s. No plots will be made.'
                           % ', '.join(plot_types))
 
-    if not ('day' in plot_types or 'doy' in plot_types) and plot_vehicle_limits:
+    if plot_vehicle_limits and summarize_by != 'day' and summarize_by != 'doy':
         warnings.warn("The '--plot_vehicle_limits' flag was passed but 'day'/'doy' was not given in plot_types, so the"
                       " vehicle limits won't make any sense. Try the command 'python count_vehicles_by_type --help'"
                       " information on valid parameters")
@@ -880,8 +734,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if end_delta > timedelta(0):
             end_datetime -= timedelta(abs(end_delta.days))
 
-    start_date = start_datetime.strftime('%Y-%m-%d')
-    end_date = end_datetime.strftime('%Y-%m-%d')
+    start_date = start_datetime.strftime(DATETIME_FORMAT)
+    end_date = end_datetime.strftime(DATETIME_FORMAT)
 
     # Make a generic csv path if necessary
     if out_dir:
@@ -902,8 +756,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     field_names = query.query_field_names(engine)
 
     # If summarizing by day, use day of year instead
-    if summarize_by == 'day':
-        summarize_by = 'doy'
+    #if summarize_by == 'day':
+    #    summarize_by = 'doy'
 
     # Create output field names as a string
     date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
@@ -922,18 +776,42 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             continue
 
         query_function = QUERY_FUNCTIONS[query_name]
-        data = query_function(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine,
-                              sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria)
-        data.fillna(0, inplace=True)
-        data = data.loc[data.total > 0]
-        #if not plot_totals:
-        data.drop('total', axis=1, inplace=True)
 
-        # Remove empty columns from edges of the data
+        # Process the query in chunks because PostgreSQL has a limit of 1600 columns in a query result,
+        #   which a user-defined query could exceed
+        n_dates = len(output_fields)
+        chunk_inds = np.arange(0, n_dates, max_queried_columns) + max_queried_columns
+        start_index = 0
+        all_data = []
+        for index in chunk_inds:
+            index = min(index, n_dates)
+            these_output_fields = output_fields.iloc[start_index : index]
+            this_date_range = date_range[start_index : index]
+
+            data = query_function(these_output_fields, field_names, output_fields.index[start_index], output_fields.index[index - 1], this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria)
+            if 'total' in data.columns:
+                data.drop('total', axis=1, inplace=True) # drop it here because we'll need to recreate it after concatenation
+            all_data.append(data)
+            start_index = index
+        data = pd.concat(all_data, axis=1)
+        data.fillna(0, inplace=True)
+        data['total'] = data.sum(axis=1)
+        data = data.loc[data.total > 0]
+
         these_labels = x_labels.copy()
-        if strip_data:
+
+        # If drop_null isn't true, make sure all dates are included, even if they don't have any data
+        if not drop_null:
+            data = data.reindex(columns=output_fields.append(pd.Series(['total'])))\
+                        .fillna(0)
+        # Otherwise, if stip_data is true, remove empty columns from edges of the data
+        elif strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
+
+        #if not plot_totals:
+        data.drop('total', axis=1, inplace=True)
+        data = data.reindex(columns=data.columns.sort_values())  # make sure they're in chronological order
 
         # If only 1 interval was found or given, drop the last label because it's extraneous
         if len(data.columns) == 1:
@@ -942,7 +820,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if len(data.columns) != len(these_labels):
             warnings.warn("Some dates/times between {start} and {end} did not contain any data".format(start=start_date, end=end_date))
 
-        # Make sure labels match up with the columns that
+        # Make sure labels match up with the output columns
         these_labels = these_labels.reindex(data.columns)
 
         # Write csv to disk
@@ -956,6 +834,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                                         )
         data.to_csv(this_csv_path)
 
+        # PLot stuff
         vehicle_limits = []
         if plot_vehicle_limits:
             if query_name == 'summary':
@@ -979,7 +858,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if 'bar' in plot_types:
             plot_bar(data, these_labels, out_png, bar_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
         if 'stacked bar' in plot_types:
-            plot_bar(data, these_labels, out_png, bar_type='stacked', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
+            plot_bar(data, these_labels, out_png, bar_type='stacked', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=True)
         if 'grouped bar' in plot_types:
             plot_bar(data, these_labels, out_png, bar_type='grouped', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents)
         if 'line' in plot_types:
@@ -1003,8 +882,5 @@ if __name__ == '__main__':
     # get rid of extra characters from doc string and 'help' entry
     args = {re.sub('[<>-]*', '', k): v for k, v in cl_args.iteritems()
             if k != '--help' and k != '-h'}
-
-    #args['strip_data'] = True if args['strip_data'] else False
-    #args['plot_vehicle_limits'] = True if args['plot_vehicle_limits'] else False
 
     sys.exit(main(**args))
