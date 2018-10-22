@@ -128,7 +128,6 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
             if field not in grouped.columns:
                 grouped[field] = ''
         grouped = grouped.loc[:, these_fields]
-        grouped['id'] = xrange(len(grouped))
         grouped.to_csv(os.path.join(search_dir, '%s.csv' % CODES[key]), index=False)
 
     os.remove(nonbus_txt)
@@ -149,7 +148,6 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     dest_codes.drop('explanation', axis=1, inplace=True)
     dest_codes.loc[dest_codes.codename == 'Stony', 'codename'] = 'Stony Overlook'
     dest_codes.rename(columns={'cid': 'id'}, inplace=True)
-    dest_codes.id = range(len(dest_codes))
     dest_codes.to_csv(dest_codes_txt, index=False)
 
     print 'bus_codes...\n\n'
@@ -160,14 +158,12 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     for letter, name in BUS_CODES.iteritems():
         bus_codes.loc[bus_codes.codeletter == letter, 'codename'] = name
     bus_codes.rename(columns={'cid': 'id'}, inplace=True)
-    bus_codes.id = range(len(bus_codes))
     bus_codes.to_csv(bus_codes_txt, index=False)
 
     print 'Renaming "bustraffic" to "buses"...\n'
     buses_txt = os.path.join(search_dir, 'bustraffic.csv')
     buses = pd.read_csv(buses_txt)
     buses.sort_values(['datetime'], inplace=True)
-    buses['id'] = xrange(len(buses))
     buses.to_csv(os.path.join(search_dir, 'buses.csv'), index=False)
     os.remove(buses_txt)
 
@@ -219,12 +215,12 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments.to_csv(os.path.join(search_dir, 'inholder_allotments.csv'))
     os.remove(row_txt)
 
-    print 'Adding ID field to all tables...\n'
+    print 'Deleting ID field from all tables...\n'
+    # Unique ID should be added in postgres
     for csv in glob(os.path.join(search_dir, '*.csv')):
         df = pd.read_csv(csv)
-        if 'id' not in df.columns:
-            df['id'] = 0
-        df.id = xrange(len(df))
+        if 'id' in df.columns:
+            df.drop('id', axis=1, inplace=True)
         df.to_csv(csv, index=False)
 
 

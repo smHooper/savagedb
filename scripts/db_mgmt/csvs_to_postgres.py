@@ -75,8 +75,8 @@ def main(search_dir, db_name=None, password=None, username='postgres', ip_addres
         table_name = basename.replace('.csv', '')
         with engine.connect() as conn, conn.begin():
             df.to_sql(table_name, conn, if_exists='append')
-            if primary_key in df.columns:
-                sql = 'ALTER TABLE {table_name} ADD PRIMARY KEY ({primary_key})'.format(
+            if primary_key not in df.columns:
+                sql = 'ALTER TABLE {table_name} ADD COLUMN {primary_key} SERIAL PRIMARY KEY'.format(
                     table_name=table_name, primary_key=primary_key)
                 conn.execute(sql)
 
