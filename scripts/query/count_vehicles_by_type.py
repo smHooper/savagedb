@@ -51,6 +51,7 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import seaborn as sns
 import pandas as pd
+from pandas.tseries import holiday
 import numpy as np
 import docopt
 import warnings
@@ -260,10 +261,50 @@ def get_x_labels(date_range, summarize_by):
     return names
 
 
-def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False):
+def get_gmp_date_clause(start_datetime, end_datetime):
+    """
+    Return an SQL statement that specifies GMP date criteria for each year between the start and
+    end dates specified. GMP date criteria are the Saturday before Memorial Day and
+    min(2nd thursday of September, September 15)
+    """
+
+    # Define a custom observance rule for the end date of the GMP period
+    def thursday_or_15th(dt):
+        """
+        If the datetime + 2 weeks is a Thursday, return the datetime.
+        Otherwise, return the 2nd thursday from the start of the month
+        """
+        start_of_month = dt - pd.offsets.MonthBegin()
+        if (dt + timedelta(weeks=2)).weekday() == 3:
+            return dt
+        else:
+            return start_of_month + pd.DateOffset(weekday=holiday.TH(2))
+
+    start_holiday = holiday.Holiday("GMP start", month=5, day=31, offset=[holiday.USMemorialDay.offset,
+                                                                          pd.DateOffset(weekday=holiday.SA(-1))]
+                                    )
+    end_holiday = holiday.Holiday("GMP end", month=9, day=15, observance=thursday_or_15th)
+
+    years = xrange(start_datetime.year,
+                   end_datetime.year + 1)
+    starts = start_holiday.dates(datetime(years[0], 1, 1), datetime(years[-1], 12, 31))
+    ends = end_holiday.dates(datetime(years[0], 1, 1), datetime(years[-1], 12, 31))
+
+    btw_stmts = []
+    for gmp_start, gmp_end in zip(starts, ends):
+        btw_stmts.append("(datetime BETWEEN '{start}' AND '{end}') "
+                         .format(start=gmp_start.strftime('%Y-%m-%d'),
+                                 end=gmp_end.strftime('%Y-%m-%d'))
+                         )
+    sql = ' AND (%s) ' % ('OR '.join(btw_stmts))
+
+    return sql, starts.min().to_pydatetime(), ends.max().to_pydatetime()
+
+
+def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False, get_totals=False):
 
     ########## Query buses
-    buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria)
+    buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria, get_totals=get_totals)
     buses.add(training_buses, fill_value=0)
 
     # Query GOVs
@@ -272,7 +313,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
                    "AND destination NOT LIKE 'Primrose%%' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
-    govs = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=simple_output_fields)
+    govs = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=simple_output_fields, get_totals=get_totals)
     govs.index = ['GOV']
 
     # POVs
@@ -282,7 +323,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     for table_name in POV_TABLES:
         df = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
                                 other_criteria=where_clause, summarize_by=summarize_by,
-                                output_fields=simple_output_fields)
+                                output_fields=simple_output_fields, get_totals=get_totals)
         df.index = ['POV']
         povs = povs.add(df, fill_value=0)
     povs.drop(povs.columns[(povs == 0).all(axis=0)], axis=1, inplace=True)
@@ -295,7 +336,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     return data
 
 
-def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria=''):
+def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria='', get_totals=False):
 
     ########## Query non-training buses
     bus_other_criteria = "is_training = ''false'' " \
@@ -324,7 +365,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     #bus_output_fields = get_output_field_names(date_range, summarize_by)
     kwargs['output_fields'] = output_fields
 
-    buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', **kwargs)
+    buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, **kwargs)
 
     ######### Query training buses
     trn_other_criteria = "is_training " \
@@ -343,7 +384,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                                     }
 
     # Get appropriate field names as with non-training buses
-    training_buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', **kwargs)
+    training_buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, **kwargs)
 
     if is_subquery:
         return buses, training_buses
@@ -357,7 +398,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     return data
 
 
-def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False):
 
     data = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria)
     totals = pd.DataFrame(data.sum(axis=0)).T
@@ -365,7 +406,7 @@ def query_total(output_fields, field_names, start_date, end_date, date_range, su
     return totals
 
 
-def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False):
 
     other_criteria = "datetime BETWEEN ''{start_date}'' AND ''{end_date}'' "\
                         .format(start_date=start_date, end_date=end_date) \
@@ -374,7 +415,8 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
     #output_fields = get_output_field_names(date_range, summarize_by)
     data = query.crosstab_query_by_datetime(engine, 'nps_vehicles', start_date, end_date, 'work_group',
                                             field_names=field_names['nps_vehicles'], other_criteria=other_criteria,
-                                            summarize_by=summarize_by, output_fields=output_fields, filter_fields=True)
+                                            summarize_by=summarize_by, output_fields=output_fields, filter_fields=True,
+                                            get_totals=get_totals)
 
     if sort_order:
         data = data.reindex(sort_order)
@@ -382,7 +424,7 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
     return data
 
 
-def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False):
 
     OTHER_CRITERIA = {'nps_employee':   "AND destination IN ('Toklat', \'Wonder Lake\') ",
                       'other_employee': "AND destination NOT IN ('Toklat', 'Wonder Lake') ",
@@ -411,7 +453,8 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
         data = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
                                               summarize_by=summarize_by, output_fields=output_fields,
                                               other_criteria="datetime BETWEEN '%s' AND '%s' " %
-                                                             (start_date, end_date) + criteria + other_criteria
+                                                             (start_date, end_date) + criteria + other_criteria,
+                                              get_totals=get_totals
                                               )
         data.index = [print_name]
         all_data.append(data)
@@ -425,7 +468,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
     return data
 
 
-def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
+def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False):
 
     #date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
     #output_fields = get_output_field_names(date_range, summarize_by)
@@ -747,19 +790,12 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     except:
         raise ValueError('start and end dates must be in format mm/dd/YYYY')
 
-    # If the --use_gmp_dates flag was passed, add additional criteria to makes sure dates are at least constrained to 5/20-9/15. Also make sure the date range is appropriately clipped.
+    # If the --use_gmp_dates flag was passed, add additional criteria to makes sure dates are at least constrained to the GMP allocation period. Also make sure the date range is appropriately clipped.
     gmp_date_criteria = ''
     if use_gmp_dates:
-        gmp_date_criteria = " AND extract(doy FROM datetime) BETWEEN extract(doy FROM date (extract(year FROM datetime) || '-05-20')) AND extract(doy FROM date (extract(year FROM datetime) || '-09-16'))"
-        gmp_start_datetime = datetime.strptime('5/20/%s' % start_datetime.year, '%m/%d/%Y')
-        gmp_end_datetime = datetime.strptime('9/15/%s' % end_datetime.year, '%m/%d/%Y')
-        start_delta = start_datetime - gmp_start_datetime
-        end_delta = end_datetime - gmp_end_datetime
-
-        if start_delta < timedelta(0):
-            start_datetime += timedelta(abs(start_delta.days))
-        if end_delta > timedelta(0):
-            end_datetime -= timedelta(abs(end_delta.days))
+        gmp_date_criteria, min_gmp, max_gmp = get_gmp_date_clause(start_datetime, end_datetime)
+        start_datetime = max(start_datetime, min_gmp)
+        end_datetime = min(end_datetime, max_gmp)
 
     start_date = start_datetime.strftime(DATETIME_FORMAT)
     end_date = end_datetime.strftime(DATETIME_FORMAT)
@@ -810,13 +846,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             index = min(index, n_dates)
             these_output_fields = output_fields.iloc[start_index : index]
             this_date_range = date_range[start_index : index]
-            # Max because for year, date range starts at year beginning
-            this_start_datetime = max(start_datetime, pd.to_datetime(output_fields.index[start_index])) # BETWEEN produces [start_date, end_date) set
-            this_end_datetime = min(end_datetime, datetime.strptime(output_fields.index[index - 1], DATETIME_FORMAT) + timedelta(days=1))
-            this_start_date = datetime.strftime(this_start_datetime, format=DATETIME_FORMAT)
-            this_end_date = datetime.strftime(this_end_datetime, format=DATETIME_FORMAT)
-
-            data = query_function(these_output_fields, field_names, this_start_date, this_end_date, this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria, get_totals=False)
+            data = query_function(these_output_fields, field_names, these_output_fields.index[0], these_output_fields.index[-1], this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria, get_totals=False)
             all_data.append(data)
             start_index = index
         data = pd.concat(all_data, axis=1)
@@ -849,8 +879,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         # Make sure labels match up with the output columns
         these_labels = these_labels.reindex(data.columns)
-        import pdb;
-        pdb.set_trace()
+
         # Write csv to disk
         this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1],
                                         '_{query_name}_by_{summarize_by}_{start_date}_{end_date}.csv'
