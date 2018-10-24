@@ -46,6 +46,7 @@ Options:
 import os, sys
 import re
 from datetime import datetime, timedelta
+from dateutil import relativedelta as rd
 import matplotlib.pyplot as plt
 from scipy import stats
 import seaborn as sns
@@ -102,7 +103,8 @@ SORT_ORDER = {'summary':   ['Long tour',
                             'Tek campers',
                             'Other'],
               'total':      [],
-              'nps':        []
+              'nps':        [],
+              'bikes':      []
               }
 
 HORIZONTAL_LINES = [91, 160]
@@ -154,6 +156,7 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                          "Superintendent's Office": '#6790BB',
                          'VRP Rangers': '#C289BC',
                          'Other': '#8F8E8E'},
+          'bikes':      {'cyclists': '#587C97'},
           'total':      {0: '#587C97'}
           }
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -162,7 +165,7 @@ DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summarize_by='day'):
 
     FREQ_STRS = {'day':         'D',
-                 'month':       'M',
+                 'month':       'MS',
                  'year':        'Y',
                  'hour':        'H',
                  'halfhour':    '30min'
@@ -187,15 +190,18 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                                     .unique()
                                     )
     elif summarize_by == 'month':
-        start_month = datetime.strptime(start_date, date_format).month
-        if start_month == datetime.strptime(end_date, date_format).month:
-            date_range = pd.date_range(datetime.strptime(str(start_month), '%m'),
-                                       datetime.strptime(str(start_month + 1), '%m'),
-                                       freq='M')
-        date_range = pd.to_datetime(pd.concat([pd.Series(date_range - pd.offsets.MonthBegin()),
-                                               pd.Series(date_range + pd.offsets.MonthBegin())])
-                                    .unique()
-                                    )
+        '''############# CLEAN THIS UP ##############'''
+        start_datetime = datetime.strptime(start_date, date_format).replace(day=1)
+        if start_datetime.month == datetime.strptime(end_date, date_format).month:
+            date_range = pd.date_range(start_datetime,
+                                       start_datetime + rd.relativedelta(months=1),
+                                       freq=pd.DateOffset(months=1))
+        else:
+            date_range = pd.date_range(start_datetime,
+                                       datetime.strptime(end_date, date_format),
+                                       freq=FREQ_STRS[summarize_by]
+                                       )
+
     # For day, hour, halfhour, clip the last one because it rolls over into the next interval
     else:
         date_range = date_range[:-1]
@@ -218,7 +224,7 @@ def filter_output_fields(category_sql, engine, output_fields):
 def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=None):
 
     FORMAT_STRS = {'day':       '_%Y_%m_%d',
-                   'month':     '_%y_%b',
+                   'month':     '_%Y_%m',
                    'year':      '_%Y',
                    'hour':      '_%Y_%m_%d_%H',
                    'halfhour':  '_%Y_%m_%d_%H_%M'
@@ -286,7 +292,6 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     if sort_order:
         data = data.reindex(sort_order)
 
-
     return data
 
 
@@ -316,8 +321,8 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                      }
         kwargs['dissolve_names'] = bus_names
 
-    bus_output_fields = get_output_field_names(date_range, summarize_by)
-    kwargs['output_fields'] = bus_output_fields#'vehicle_type text, ' + (' int, '.join(bus_output_fields)) + ' int'
+    #bus_output_fields = get_output_field_names(date_range, summarize_by)
+    kwargs['output_fields'] = output_fields
 
     buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', **kwargs)
 
@@ -366,7 +371,7 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
                         .format(start_date=start_date, end_date=end_date) \
                         + other_criteria.replace("'", "''")
 
-    output_fields = get_output_field_names(date_range, summarize_by)
+    #output_fields = get_output_field_names(date_range, summarize_by)
     data = query.crosstab_query_by_datetime(engine, 'nps_vehicles', start_date, end_date, 'work_group',
                                             field_names=field_names['nps_vehicles'], other_criteria=other_criteria,
                                             summarize_by=summarize_by, output_fields=output_fields, filter_fields=True)
@@ -399,8 +404,8 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
         ('tek_campers',         'Tek campers',      '')
     ]
 
-    date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
-    output_fields = get_output_field_names(date_range, summarize_by)
+    #date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
+    #output_fields = get_output_field_names(date_range, summarize_by)
     all_data = []
     for table_name, print_name, criteria in sql_statements:
         data = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
@@ -418,6 +423,20 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
         data = data.reindex(sort_order)
 
     return data
+
+
+def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria=''):
+
+    #date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
+    #output_fields = get_output_field_names(date_range, summarize_by)
+    data = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
+                                          summarize_by=summarize_by, output_fields=output_fields,
+                                          other_criteria="datetime BETWEEN '%s' AND '%s' " %
+                                                         (start_date, end_date) + other_criteria
+                                          )
+
+    return data
+
 
 
 def strip_dataframe(data):
@@ -491,8 +510,11 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
             x_inds = date_index
         elif bar_type == 'grouped':
             x_inds = date_index - bar_width * grouped_index[i]
-        else: # bar_type == 'bar'
-            x_inds = [bar_index[i]]
+        elif bar_type == 'bar':
+            if n_dates == 1:
+                x_inds = [bar_index[i]]
+            else:
+                x_inds = date_index
 
         ax.bar(x_inds, data, bar_width, bottom=last_top, label=vehicle_type, zorder=i + 1, color=color)
 
@@ -510,15 +532,15 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
 
         last_top += data if bar_type == 'stacked' else 0
 
-    x_tick_inds = bar_index if bar_type == 'bar' else date_index
+    x_tick_inds = bar_index if n_dates == 1 else date_index
 
     if len(x_labels) > 1:
-        x_tick_interval = 1 if bar_type == 'bar' else max(1, int(round(n_dates/float(max_xticks))))
-        if bar_type == 'bar':
+        x_tick_interval = 1 if n_dates == 1 else max(1, int(round(n_dates/float(max_xticks))))
+        if bar_type == 'bar' and n_dates == 1:
             x_labels = pd.Series(all_data.index, x_labels.index) # The vehicle types
         plt.xticks(x_tick_inds[::x_tick_interval], x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
     else:
-        plt.xticks([], []) # Don'
+        plt.xticks([], []) # Don't plot any labels
 
     # If adding horizonal lines, make sure their values are noted on the y axis. Otherwise, just
     #   use the default ticks
@@ -623,6 +645,7 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date):
                           'buses':      'buses by each type found in the "bus_type" column of the "buses" table',
                           'nps':        'NPS vehicles by work group',
                           'pov':        'all private vehicles by type',
+                          'bikes':      'All byciclists',
                           'total':      'total of all vehicles'}
 
     command = 'python ' + subprocess.list2cmdline(sys.argv)
@@ -675,12 +698,14 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                        'buses':     query_buses,
                        'pov':       query_pov,
                        'nps':       query_nps,
+                       'bikes':     query_bikes,
                        'total':     query_total}
 
     TITLE_PREFIXES = {'summary':    'Vehicles',
                       'buses':      'Buses',
                       'nps':        'NPS vehicles',
                       'pov':        'Private vehicles',
+                      'bikes':      'Bikes',
                       'total':      'Total vehicles'}
 
     sns.set_context('paper')
@@ -704,7 +729,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     if plot_types:
         plot_types = [t.strip().lower().replace('_', ' ') for t in plot_types.split(',')]
         # Check if any recognizable strings are in plot_types
-        valid_strings = [s in ['stacked bar', 'grouped bar', 'line', 'best fit', ''] for s in plot_types]
+        valid_strings = [s in ['stacked bar', 'grouped bar', 'line', 'best fit', 'bar', ''] for s in plot_types]
         if not any(valid_strings):
             warnings.warn('No valid plot type string found in plot_types: %s. No plots will be made.'
                           % ', '.join(plot_types))
@@ -718,7 +743,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     try:
         start_datetime = datetime.strptime(start_date, '%m/%d/%Y')
         end_datetime = datetime.strptime(end_date, '%m/%d/%Y') +\
-                       timedelta(days=1) # add 1 day because BETWEEN looks for dates before end date
+                       rd.relativedelta(days=1) # add 1 day because BETWEEN looks for dates before end date
     except:
         raise ValueError('start and end dates must be in format mm/dd/YYYY')
 
@@ -770,7 +795,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                           ' by a comma and be one of the following: %s' %
                           (query_name, ', '.join(QUERY_FUNCTIONS.keys())),
                           RuntimeWarning)
-            queries.remove(q)
+            queries.remove(query_name)
             continue
 
         query_function = QUERY_FUNCTIONS[query_name]
@@ -785,10 +810,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             index = min(index, n_dates)
             these_output_fields = output_fields.iloc[start_index : index]
             this_date_range = date_range[start_index : index]
+            # Max because for year, date range starts at year beginning
+            this_start_datetime = max(start_datetime, pd.to_datetime(output_fields.index[start_index])) # BETWEEN produces [start_date, end_date) set
+            this_end_datetime = min(end_datetime, datetime.strptime(output_fields.index[index - 1], DATETIME_FORMAT) + timedelta(days=1))
+            this_start_date = datetime.strftime(this_start_datetime, format=DATETIME_FORMAT)
+            this_end_date = datetime.strftime(this_end_datetime, format=DATETIME_FORMAT)
 
-            data = query_function(these_output_fields, field_names, output_fields.index[start_index], output_fields.index[index - 1], this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria)
-            if 'total' in data.columns:
-                data.drop('total', axis=1, inplace=True) # drop it here because we'll need to recreate it after concatenation
+            data = query_function(these_output_fields, field_names, this_start_date, this_end_date, this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria, get_totals=False)
             all_data.append(data)
             start_index = index
         data = pd.concat(all_data, axis=1)
@@ -799,13 +827,14 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         these_labels = x_labels.copy()
 
-        # If drop_null isn't true, make sure all dates are included, even if they don't have any data
-        if not drop_null:
-            data = data.reindex(columns=output_fields).fillna(0)
-        # Otherwise, if stip_data is true, remove empty columns from edges of the data
-        elif strip_data:
+        # If stip_data is true, remove empty columns from edges of the data
+        if strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
+
+        # Otherwise if drop_null isn't true, make sure all dates are included, even if they don't have any data
+        elif not drop_null:
+            data = data.reindex(columns=output_fields).fillna(0)
 
         #if not plot_totals:
         #data.drop('total', axis=1, inplace=True)
@@ -820,7 +849,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         # Make sure labels match up with the output columns
         these_labels = these_labels.reindex(data.columns)
-
+        import pdb;
+        pdb.set_trace()
         # Write csv to disk
         this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1],
                                         '_{query_name}_by_{summarize_by}_{start_date}_{end_date}.csv'
