@@ -91,50 +91,6 @@ def simple_query(engine, table_name, year=None, field_names='*', summary_field='
     return (counts, sql) if return_sql else counts
 
 
-def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summarize_by='day'):
-
-    FREQ_STRS = {'day':         'D',
-                 'month':       'M',
-                 'year':        'Y',
-                 'hour':        'H',
-                 'halfhour':    '30min'
-                 }
-
-    # Even though we could pass a datetime object here in some cases, when called from functions other than main(),
-    #   we have the date str not datetime and we don't necessarily know the format. So just convert to datetime here
-    date_range = pd.date_range(datetime.strptime(start_date, date_format),
-                               datetime.strptime(end_date, date_format),
-                               freq=FREQ_STRS[summarize_by]
-                               )
-
-    # For months and years, need to add 1
-    if summarize_by == 'year':
-        start_year = datetime.strptime(start_date, date_format).year
-        if start_year == datetime.strptime(end_date, date_format).year:
-            date_range = pd.date_range(datetime.strptime(str(start_year), '%Y'),
-                                       datetime.strptime(str(start_year + 1), '%Y'),
-                                       freq='Y')
-        date_range = pd.to_datetime(pd.concat([pd.Series(date_range - pd.offsets.YearBegin()),
-                                               pd.Series(date_range + pd.offsets.YearBegin())])
-                                    .unique()
-                                    )
-    elif summarize_by == 'month':
-        start_month = datetime.strptime(start_date, date_format).month
-        if start_month == datetime.strptime(end_date, date_format).month:
-            date_range = pd.date_range(datetime.strptime(str(start_month), '%m'),
-                                       datetime.strptime(str(start_month + 1), '%m'),
-                                       freq='M')
-        date_range = pd.to_datetime(pd.concat([pd.Series(date_range - pd.offsets.MonthBegin()),
-                                               pd.Series(date_range + pd.offsets.MonthBegin())])
-                                    .unique()
-                                    )
-    # For day, hour, halfhour, clip the last one because it rolls over into the next interval
-    else:
-        date_range = date_range[:-1]
-
-    return date_range
-
-
 def crosstab_query(engine, table_name, pivot_field, value_field, year=None, field_names='*', summary_stat='COUNT', dissolve_names={}, other_criteria='', date_part='month', output_fields='', sql=None, return_sql=False):
 
     # If year is given, set up the where clause to encompass the whole season
@@ -265,6 +221,7 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
     counts = counts.set_index(summarize_by).T
     if not pd.Series(output_fields).any() and summarize_by == 'month':
         output_fields = {5: 'May', 6: 'Jun', 7: 'Jul', 8: 'Aug', 9: 'Sep'}
+
     if counts.shape[1] > 0:
         counts.columns = counts.columns.strftime('%Y-%m-%d %H:%M:%S') # read_sql() reads them as datetime
         counts.rename(columns=output_fields, inplace=True)
@@ -277,7 +234,7 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
     return (counts, sql) if return_sql else counts
 
 
-def crosstab_query_by_datetime(engine, table_name, start_str, end_str, value_field, other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False):
+def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_field, value_field='datetime', other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False):
 
     date_clause = "AND datetime BETWEEN ''{start_str}'' AND ''{end_str}'' " \
         .format(start_str=start_str, end_str=end_str)
@@ -290,7 +247,7 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, value_fie
     if modify_criteria:
         other_criteria = 'AND ' + other_criteria
 
-    where_clause = ('WHERE %s IS NOT NULL ' % value_field) + date_clause + other_criteria
+    where_clause = ('WHERE %s IS NOT NULL ' % pivot_field) + date_clause + other_criteria
 
     # Set the statement to use for creating categories to pivot on, datestamps truncated to the specified time step
     if summarize_by == 'halfhour':
@@ -305,7 +262,7 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, value_fie
             .format(date_trunc_stmt=date_trunc_stmt, table_name=table_name, where_clause=where_clause)\
             .replace("''", "'")
         sql_output_fields = filter_output_fields(filter_sql, engine, output_fields)
-        #import pdb; pdb.set_trace()
+
         if not sql_output_fields.any():
             return pd.DataFrame(columns=output_fields)
 
@@ -319,15 +276,16 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, value_fie
     if not sql:
         sql = "SELECT * FROM crosstab( \n" \
               "'SELECT \n" \
-              "     {value_field}, \n" \
+              "     {pivot_field}, \n" \
               "     {date_trunc_statement} AS {summarize_by}, \n" \
-              "     {summary_stat}(datetime) \n" \
+              "     {summary_stat}({value_field}) \n" \
               "FROM (SELECT DISTINCT {field_names} FROM {table_name}) AS {table_name} \n" \
               "{where_clause} \n" \
-              "GROUP BY {summarize_by}, {value_field}  ORDER BY 1', \n" \
+              "GROUP BY {summarize_by}, {pivot_field}  ORDER BY 1', \n" \
               "'SELECT categories::TIMESTAMP FROM ({category_str}) AS t (categories) ORDER BY 1'\n" \
               ") AS ({output_fields_str});" \
-            .format(value_field=value_field,
+            .format(pivot_field=pivot_field,
+                    value_field=value_field,
                     date_trunc_statement=date_trunc_stmt,
                     summarize_by=summarize_by,
                     summary_stat=summary_stat,

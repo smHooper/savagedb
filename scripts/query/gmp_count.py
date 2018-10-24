@@ -30,6 +30,7 @@ import pandas as pd
 import docopt
 
 import query
+import count_vehicles_by_type as cvbt
 
 # table_name: print_name
 SIMPLE_COUNT_QUERIES = {'tek_campers',
@@ -56,8 +57,8 @@ PRINT_NAMES = {'tek_campers':                   'Tek campers',
                'Denali Natural History Tour pax': 'DNHT pax',
                'Kantishna Roadhouse':           'KRH buses',
                'Kantishna Roadhouse pax':       'KRH pax',
-               'North Face/Camp Denali':        'CD-NF buses',
-               'North Face/Camp Denali pax':    'CD-NF pax',
+               'Camp Denali/North Face Lodge':        'CD-NF buses',
+               'Camp Denali/North Face Lodge pax':    'CD-NF pax',
                'Researcher':                    'Researchers',
                'Concessionaire':                'JV',
                'Concessionaire (Primrose)':     'JV (Primrose)',
@@ -122,56 +123,84 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     # Get field names that don't contain unique IDs
     field_names = query.query_field_names(engine)
 
+
+
     yearly_data = []
     for year in years:
+        start_date = '%s-05-20 00:00:00' % year
+        end_date = '%s-09-16 00:00:00' % year
+        gmp_date_clause = " AND extract(doy FROM datetime) BETWEEN extract(doy FROM date('{start_date}')) AND extract(doy FROM date ('{end_date}'))".format(start_date=start_date, end_date=end_date)
+
+        date_range = cvbt.get_date_range(start_date, end_date, summarize_by='month')
+        output_fields = cvbt.get_output_field_names(date_range, 'month')
 
         # Query buses
-        bus_names = {'VTS': ['Shuttle'],#['Camper', 'Shuttle', 'Other'],#
-                     'Tour': ['Tundra Wilderness Tour']#['Kantishna Experience', 'Eielson Excursion', 'Tundra Wilderness Tour', 'Windows Into Wilderness']#['Tundra Wilderness Tour']#
+        bus_names = {'VTS': ['Shuttle', 'Camper', 'Other'],#
+                     'Tour': ['Kantishna Experience', 'Eielson Excursion', 'Tundra Wilderness Tour', 'Windows Into Wilderness']##,
                      }
-        kwargs = {'dissolve_names': bus_names,
-                  'other_criteria': 'is_training = \'\'false\'\'',
-                  'field_names': field_names['buses']}
-        bus_vehicles = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', year, **kwargs)
-        bus_passengers = query.crosstab_query(engine, 'buses', 'bus_type', 'n_passengers', year, summary_stat='SUM', **kwargs)
+
+        other_criteria = "is_training = ''false'' " + gmp_date_clause.replace("'", "''")
+        bus_vehicles = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
+                                                        other_criteria=other_criteria, dissolve_names=bus_names,
+                                                        field_names=field_names['buses'], summarize_by='month',
+                                                        output_fields=output_fields, filter_fields=True)
+
+        bus_passengers = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',                                                   other_criteria=other_criteria, dissolve_names=bus_names,
+                                                        field_names=field_names['buses'], summarize_by='month',
+                                                        output_fields=output_fields, filter_fields=True, summary_stat='SUM', value_field='n_passengers')
         bus_passengers.index = [ind + ' pax' for ind in bus_passengers.index]
 
+
+
         # Query training buses
-        training_names = {'JV training': [item for k, v in bus_names.iteritems() for item in v],
-                          'Lodge bus training': ['North Face/Camp Denali', 'Kantishna Roadhouse', 'Denali Backcountry Lodge']}
-        kwargs = {'field_names': field_names['buses'],
-                  'other_criteria': 'is_training',
-                  'dissolve_names': training_names}
-        training_buses = query.crosstab_query(engine, 'buses', 'bus_type', 'bus_type', year, **kwargs)#field_names=field_names['buses'], other_criteria='is_training', dissolve_names=training_names)
+        trn_names = {'JV training': [item for k, v in bus_names.iteritems() for item in v],
+                     'Lodge bus training': ['Camp Denali/North Face Lodge', 'Kantishna Roadhouse', 'Denali Backcountry Lodge']}
+        other_criteria = "is_training " + gmp_date_clause.replace("'", "''")
+        trn_buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
+                                                     other_criteria=other_criteria, dissolve_names=trn_names,
+                                                     field_names=field_names['buses'], summarize_by='month',
+                                                     output_fields=output_fields)
 
         # Query nps_approved
-        approved_vehicles = query.crosstab_query(engine, 'nps_approved', 'approved_type', 'approved_type', year, field_names=field_names['nps_approved'], other_criteria='destination <> \'\'Primrose/Mile 17\'\'')
+        approved_vehicles = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
+                                                             other_criteria="destination <> ''Primrose/Mile 17''",
+                                                             field_names=field_names['nps_approved'], summarize_by='month',
+                                                             output_fields=output_fields)
 
         # Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
-        approved_vehicles_primrose = query.crosstab_query(engine, 'nps_approved', 'approved_type', 'approved_type', year, field_names=field_names['nps_approved'], other_criteria='destination = \'\'Primrose/Mile 17\'\'')
-        approved_vehicles_primrose = approved_vehicles_primrose.reindex(['Concessionaire'])
-        approved_vehicles_primrose.index = ['Concessionaire (Primrose)']
-
+        other_criteria = "destination = ''Primrose/Mile 17'' AND approved_type = ''Concessionaire'' "
+        approved_vehicles_primrose = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
+                                                             other_criteria=other_criteria,
+                                                             field_names=field_names['nps_approved'], summarize_by='month',
+                                                             output_fields=output_fields)
+        approved_vehicles_primrose.index = ['JV (Primrose)']
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
+        other_criteria = "destination <> 'Primrose/Mile 17' " \
+                         "AND datetime BETWEEN '{start_date}' AND '{end_date}'" \
+            .format(start_date=start_date, end_date=end_date)
         for table_name in SIMPLE_COUNT_QUERIES:
-            simple_counts.append(query.simple_query(engine, table_name, year, field_names=field_names[table_name], other_criteria='destination <> \'Primrose/Mile 17\''))
+            counts = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields)
+            simple_counts.append(counts)
         simple_counts = pd.concat(simple_counts, sort=False)
 
         # Get tek and accessibility passengers and number of cyclists
-        accessibility_passengers = query.simple_query(engine, 'accessibility', year, field_names=field_names['accessibility'], summary_field='n_passengers', summary_stat='SUM', other_criteria='destination <> \'Primrose/Mile 17\'')
+        accessibility_passengers = query.simple_query_by_datetime(engine, 'accessibility', field_names=field_names['accessibility'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM')
+
         accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
-        tek_passengers = query.simple_query(engine, 'tek_campers', year, field_names=field_names['tek_campers'], summary_field='n_passengers', summary_stat='SUM')
+        tek_passengers = query.simple_query_by_datetime(engine, 'tek_campers', field_names=field_names['tek_campers'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM')
+
         tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
-        cyclists = query.simple_query(engine, 'cyclists', year, field_names=field_names['cyclists'],summary_field='n_passengers', summary_stat='SUM')
+        cyclists = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
+                                                        other_criteria=other_criteria, summarize_by='month',
+                                                        output_fields=output_fields, summary_field='n_passengers',
+                                                        summary_stat='SUM')
         cyclists.index = [PRINT_NAMES['cyclists']]
 
-        import pdb;
-        pdb.set_trace()
         all_data = pd.concat([bus_vehicles,
                              bus_passengers,
-                             training_buses,
+                             trn_buses,
                              approved_vehicles,
                              approved_vehicles_primrose,
                              simple_counts,
@@ -179,6 +208,9 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
                              tek_passengers,
                               cyclists],
                              sort=False)
+
+
+        all_data.columns = [datetime.strftime(datetime.strptime(c, '_%Y_%m'), '%b') if c != 'total' else c for c in all_data.columns]
 
         # Make sure all rows have print-worthy names and set the order of rows and cols
         def replace(x, d):
@@ -206,6 +238,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
             ((all_data.loc[:, (last_year, 'total')] - all_data.loc[:, (year, 'total')]) /
              all_data.loc[:, (year, 'total')] * 100)\
                 .round(1)
+    all_data = all_data.fillna(0)
+
     if not out_csv:
         out_basename = 'ridership_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'ridership_%s.csv' % years[0]
         out_csv = os.path.join(out_dir, out_basename)
