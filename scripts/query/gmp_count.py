@@ -123,14 +123,16 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     # Get field names that don't contain unique IDs
     field_names = query.query_field_names(engine)
 
-
+    # Initiate the log file
+    sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
+    sys.stdout.flush()
 
     yearly_data = []
     for year in years:
         start_date = '%s-05-20 00:00:00' % year
         end_date = '%s-09-16 00:00:00' % year
-        gmp_date_clause = " AND extract(doy FROM datetime) BETWEEN extract(doy FROM date('{start_date}')) AND extract(doy FROM date ('{end_date}'))".format(start_date=start_date, end_date=end_date)
 
+        gmp_date_clause, _, _ = cvbt.get_gmp_date_clause(datetime(year, 5, 1), datetime(year, 9, 16))
         date_range = cvbt.get_date_range(start_date, end_date, summarize_by='month')
         output_fields = cvbt.get_output_field_names(date_range, 'month')
 
@@ -163,23 +165,21 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
 
         # Query nps_approved
         approved_vehicles = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
-                                                             other_criteria="destination <> ''Primrose/Mile 17''",
+                                                             other_criteria="destination <> ''Primrose/Mile 17'' " + gmp_date_clause.replace("'", "''"),
                                                              field_names=field_names['nps_approved'], summarize_by='month',
                                                              output_fields=output_fields)
 
         # Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
         other_criteria = "destination = ''Primrose/Mile 17'' AND approved_type = ''Concessionaire'' "
         approved_vehicles_primrose = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
-                                                             other_criteria=other_criteria,
+                                                             other_criteria=other_criteria + gmp_date_clause.replace("'", "''"),
                                                              field_names=field_names['nps_approved'], summarize_by='month',
                                                              output_fields=output_fields)
         approved_vehicles_primrose.index = ['JV (Primrose)']
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
-        other_criteria = "destination <> 'Primrose/Mile 17' " \
-                         "AND datetime BETWEEN '{start_date}' AND '{end_date}'" \
-            .format(start_date=start_date, end_date=end_date)
+        other_criteria = "destination <> 'Primrose/Mile 17' " + gmp_date_clause
         for table_name in SIMPLE_COUNT_QUERIES:
             counts = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields)
             simple_counts.append(counts)
