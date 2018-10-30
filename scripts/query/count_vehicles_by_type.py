@@ -271,14 +271,15 @@ def get_gmp_date_clause(start_datetime, end_datetime):
     # Define a custom observance rule for the end date of the GMP period
     def thursday_or_15th(dt):
         """
-        If the datetime + 2 weeks is a Thursday, return the datetime.
-        Otherwise, return the 2nd thursday from the start of the month
+        If the 2nd thursday after Labor Day is before the 15th, return that.
+        Otheriwse, return the 15th
         """
-        start_of_month = dt - pd.offsets.MonthBegin()
-        if (dt + timedelta(weeks=2)).weekday() == 3:
-            return dt
-        else:
-            return start_of_month + pd.DateOffset(weekday=holiday.TH(2))
+        second_thursday = holiday.Holiday("2nd Thursday", month=9, day=1, offset=[holiday.USLaborDay.offset,
+                                                                                  pd.DateOffset(weekday=holiday.TH(2))])
+        this_second_thursday = second_thursday.dates(datetime(dt.year, 1, 1), datetime(dt.year, 12, 31))[0]
+        this_15th = datetime(dt.year, 9, 15)
+
+        return min(this_15th, this_second_thursday)
 
     start_holiday = holiday.Holiday("GMP start", month=5, day=31, offset=[holiday.USMemorialDay.offset,
                                                                           pd.DateOffset(weekday=holiday.SA(-1))]
@@ -700,7 +701,9 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date):
     options_desc = "\n\nAdditional options specified:\n\t-"
     options = []
     if '--plot_vehicle_limits' in command or ' -p' in command:
-        options.append("queries were limited to only observations that occurred between May 20 and Sep 15")
+        options.append("queries were limited to only observations that occurred between the start and end of "
+                       "the GMP allocation period (Saturday before Memorial Day and either the 2nd Thursday "
+                       "in September or September 15, whichever came first)")
     if '--strip_data' in command or ' -s' in command:
         options.append("the first and last sets of consecutive null dates/times were removed")
     if '--use_gmp_dates' in command or ' -g' in command:
@@ -754,7 +757,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     sns.set_context('paper')
     sns.set_style('darkgrid')
 
-    sys.stdout.write("Log file for count_vehicles_by_type.py: %s\n" % datetime.now().strftime('%H:%M:%S %m/%d/%Y'))
+    sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.flush()
 
     # If nothing is passed, assume that all queries should be run
@@ -777,8 +780,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             warnings.warn('No valid plot type string found in plot_types: %s. No plots will be made.'
                           % ', '.join(plot_types))
 
-    if plot_vehicle_limits and summarize_by != 'day' and summarize_by != 'doy':
-        warnings.warn("The '--plot_vehicle_limits' flag was passed but 'day'/'doy' was not given in plot_types, so the"
+    if plot_vehicle_limits and summarize_by not in ['day', 'year']:
+        warnings.warn("The '--plot_vehicle_limits' flag was passed but 'day' was not given in plot_types, so the"
                       " vehicle limits won't make any sense. Try the command 'python count_vehicles_by_type --help'"
                       " information on valid parameters")
 
@@ -895,14 +898,14 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         vehicle_limits = []
         if plot_vehicle_limits:
             if query_name == 'summary':
-                if summarize_by == 'doy':
+                if summarize_by == 'day':
                     vehicle_limits = [91, 160]
                 elif summarize_by == 'year':
                     vehicle_limits = [10512]
-            elif query_name == 'buses' and summarize_by == 'doy':
+            elif query_name == 'buses' and summarize_by == 'day':
                 vehicle_limits = [91]
             elif query_name == 'total':
-                if summarize_by == 'doy':
+                if summarize_by == 'day':
                     vehicle_limits = [160]
                 elif summarize_by == 'year':
                     vehicle_limits = [10512]

@@ -292,8 +292,6 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_fie
                     table_name=table_name,
                     field_names=field_names,
                     where_clause=where_clause,
-                    start_str=start_str,
-                    end_str=end_str,
                     category_str=category_str,#interval='30 minute' if summarize_by == 'halfhour' else '1 %s' % summarize_by,
                     output_fields_str=output_fields_str
                     )

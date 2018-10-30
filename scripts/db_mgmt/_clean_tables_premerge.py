@@ -9,7 +9,7 @@ import accessdb_to_csv
 
 BASEPATH = r"C:\Users\shooper\proj\savagedb\db\exported_tables"
 CODENAME_TXT = r'C:\Users\shooper\proj\savagedb\db\exported_tables\%s\codenames.csv'
-#CODENAME_TXT % 2016 = r"C:\Users\shooper\proj\savagedb\db\original\exported_tables\2016\codenames.csv"
+
 # Codes to replace in codenames.codeletter
 CODELETTERS = {'G': 'N',
                'Z': 'G',
