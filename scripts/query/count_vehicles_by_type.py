@@ -326,7 +326,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
 
     ########## Query buses
     buses, training_buses = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria, get_totals=get_totals, value_filter=value_filter)
-    buses.add(training_buses, fill_value=0)
+    buses = buses.add(training_buses, fill_value=0)
 
     # Query GOVs
     simple_output_fields = get_output_field_names(date_range, summarize_by)
@@ -338,16 +338,9 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     govs.index = ['GOV']
 
     # POVs
-    povs = pd.DataFrame(np.zeros((1, output_fields.shape[0]), dtype=int),
-                        columns=output_fields,
-                        index=['POV'])
-    for table_name in POV_TABLES:
-        df = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
-                                other_criteria=where_clause, summarize_by=summarize_by,
-                                output_fields=simple_output_fields, get_totals=get_totals)
-        df.index = ['POV']
-        povs = povs.add(df, fill_value=0)
-    povs.drop(povs.columns[(povs == 0).all(axis=0)], axis=1, inplace=True)
+    povs = query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter)
+    povs.loc['POV'] = povs.sum(axis=0)
+    povs.drop([i for i in povs.index if i != 'POV'], inplace=True)
 
     data = pd.concat([buses, govs, povs], sort=False)
 
@@ -387,7 +380,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                                    'Tundra Wilderness Tour', 'Windows Into Wilderness'],
                      'Short tour': ['Denali Natural History Tour'],
                      'Lodge bus': ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
-                                   'North Face/Camp Denali']
+                                   'Camp Denali/North Face Lodge']
                      }
         kwargs['dissolve_names'] = bus_names
 
@@ -406,9 +399,9 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     if is_subquery:
         kwargs['dissolve_names'] = {'Other JV': ['Shuttle', 'Camper', 'Kantishna Experience',
                                                  'Eielson Excursion', 'Tundra Wilderness Tour',
-                                                 'Windows Into Wilderness', 'Denali Natural History Tour'],
+                                                 'Windows Into Wilderness', 'Denali Natural History Tour', 'Other'],
                                     'Lodge bus': ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
-                                                  'North Face/Camp Denali']
+                                                  'Camp Denali/North Face Lodge']
                                     }
 
     # Get appropriate field names as with non-training buses
@@ -492,10 +485,12 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
                                                              (start_date, end_date) + criteria + other_criteria,
                                               get_totals=get_totals
                                               )
-        data.index = [print_name]
+
+        data.index = [table_name]
         all_data.append(data)
 
     data = pd.concat(all_data, sort=False)
+
     data = data.groupby(data.index).sum(axis=0)
 
     if sort_order:
@@ -577,7 +572,7 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
         for y_value in vehicle_limits:
             ax.plot([-date_index.max() * 2, date_index.max() * 2],
                     [y_value, y_value], '--', alpha=0.3, color='0.3',
-                    zorder=0)
+                    zorder=2)#'''
 
     last_top = np.zeros(n_dates)
     for i, (vehicle_type, data) in enumerate(all_data.iterrows()):
@@ -596,7 +591,7 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
             else:
                 x_inds = date_index
 
-        ax.bar(x_inds, data, bar_width, bottom=last_top, label=vehicle_type, zorder=i + 1, color=color)
+        ax.bar(x_inds, data, bar_width, bottom=last_top, label=vehicle_type, zorder=i + 3, color=color)
 
         if show_percents:
             try:
@@ -624,8 +619,8 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
 
     # If adding horizonal lines, make sure their values are noted on the y axis. Otherwise, just
     #   use the default ticks
-    if vehicle_limits:
-        plt.yticks(np.unique((list(ax.get_yticks()) + vehicle_limits)))
+    #if vehicle_limits:
+        #plt.yticks(np.unique((list(ax.get_yticks()) + vehicle_limits)))
 
     # Set enough space on either end of the plot
     if bar_type == 'grouped':
