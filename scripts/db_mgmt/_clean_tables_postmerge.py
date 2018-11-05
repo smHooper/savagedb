@@ -147,7 +147,20 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     dest_codes.drop_duplicates('codename', inplace=True)
     dest_codes.drop('explanation', axis=1, inplace=True)
     dest_codes.loc[dest_codes.codename == 'Stony', 'codename'] = 'Stony Overlook'
-    dest_codes.rename(columns={'cid': 'id'}, inplace=True)
+    dest_codes.rename(columns={'cid': 'id', 'codename': 'destination', 'codeletter': 'destination_code'}, inplace=True)
+    dest_codes.set_index('destination')
+    dest_codes['mile'] = {'Primrose/Mile 17': 17,
+                          'Teklanika': 27,
+                          'Polychrome': 45,
+                          'Toklat': 53,
+                          'Stony Overlook': 62,
+                          'Eielson': 66,
+                          'Wonder Lake': 84,
+                          'Kantishna': 91,
+                          'Other': 92}
+    dest_codes['destination'] = dest_codes.set_index
+    dest_codes.index = range(len(dest_codes))
+    dest_codes.reindex(columns=['id', 'destination', 'destination_code', 'mile'])
     dest_codes.to_csv(dest_codes_txt, index=False)
 
     print 'bus_codes...\n\n'
