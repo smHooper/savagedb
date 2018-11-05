@@ -572,7 +572,7 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
         for y_value in vehicle_limits:
             ax.plot([-date_index.max() * 2, date_index.max() * 2],
                     [y_value, y_value], '--', alpha=0.3, color='0.3',
-                    zorder=2)#'''
+                    zorder=2)# zorder = 2 because seaborn grid lines will plot on top if 0 or 1
 
     last_top = np.zeros(n_dates)
     for i, (vehicle_type, data) in enumerate(all_data.iterrows()):

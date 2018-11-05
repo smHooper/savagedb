@@ -27,6 +27,7 @@ import os, sys
 import re
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import docopt
 
 import query
@@ -117,6 +118,19 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     else:
         raise ValueError('years must be in the form "YYYY", "year1, year2, ...", or "year_start-year_end". Years given were %s' % years)
 
+    if not out_csv:
+        out_basename = 'ridership_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'ridership_%s.csv' % years[0]
+        out_csv = os.path.join(out_dir, out_basename)
+
+    try:
+        f = open(out_csv, 'w')
+        f.close()
+    except IOError as e:
+        if e.errno == os.errno.EACCES:
+            raise IOError('Permission to access the file %s was denied. This is likely because the file is currently open. Please close the file and re-run the script.' % out_csv)
+        # Not a permission error.
+        raise
+
     # read connection params from text. Need to keep them in a text file because password can't be stored in Github repo
     engine = query.connect_db(connection_txt)
 
@@ -175,7 +189,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
                                                              other_criteria=other_criteria + gmp_date_clause.replace("'", "''"),
                                                              field_names=field_names['nps_approved'], summarize_by='month',
                                                              output_fields=output_fields)
-        approved_vehicles_primrose.index = ['JV (Primrose)']
+        if len(approved_vehicles_primrose) > 0:
+            approved_vehicles_primrose.index = ['JV (Primrose)']
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
@@ -187,16 +202,19 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
 
         # Get tek and accessibility passengers and number of cyclists
         accessibility_passengers = query.simple_query_by_datetime(engine, 'accessibility', field_names=field_names['accessibility'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM')
+        if len(accessibility_passengers) > 0:
+            accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
 
-        accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
         tek_passengers = query.simple_query_by_datetime(engine, 'tek_campers', field_names=field_names['tek_campers'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM')
+        if len(tek_passengers) > 0:
+            tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
 
-        tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
         cyclists = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
                                                         other_criteria=other_criteria, summarize_by='month',
                                                         output_fields=output_fields, summary_field='n_passengers',
                                                         summary_stat='SUM')
-        cyclists.index = [PRINT_NAMES['cyclists']]
+        if len(cyclists) > 0:
+            cyclists.index = [PRINT_NAMES['cyclists']]
 
         all_data = pd.concat([bus_vehicles,
                              bus_passengers,
@@ -236,13 +254,12 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     for year in years[:-1]:
         all_data.loc[:, ('total_pct_change', 'from_%s' % year)] = \
             ((all_data.loc[:, (last_year, 'total')] - all_data.loc[:, (year, 'total')]) /
-             all_data.loc[:, (year, 'total')] * 100)\
+             all_data.loc[:, (year, 'total')] * 100) \
+                .replace([np.inf, -np.inf], np.nan)\
+                .fillna(0)\
                 .round(1)
-    all_data = all_data.fillna(0)
+    #all_data = all_data.fillna(0)
 
-    if not out_csv:
-        out_basename = 'ridership_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'ridership_%s.csv' % years[0]
-        out_csv = os.path.join(out_dir, out_basename)
     all_data.to_csv(out_csv)
 
     print '\nCSV written to: %s' % out_csv
