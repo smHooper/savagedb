@@ -264,7 +264,8 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_fie
         sql_output_fields = filter_output_fields(filter_sql, engine, output_fields)
 
         if not sql_output_fields.any():
-            return pd.DataFrame(columns=output_fields)
+            empty_df = pd.DataFrame(columns=output_fields)
+            return  empty_df, 'No SQL run because all fields were null' if return_sql else empty_df
 
 
     category_str = "VALUES (''" + ("''), (''".join(sql_output_fields.index)) + "'')"
