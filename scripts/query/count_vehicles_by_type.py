@@ -2,7 +2,7 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--summary_stat=<>] [--summary_field=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql]
 
 Examples:
     python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
@@ -33,6 +33,8 @@ Options:
     --category_filter=<str>     Comma-separated list of either regular expressions or strings found in SORT_ORDER of
                                 this script to filter the categories of values per query type. See SORT_ORDER values
                                 for a list of values per query.
+    --summary_stat=<str>        Summary statistic to aggregate values in SQL query. Default is 'COUNT'.
+    --summary_field=<str>       Field name in the tables to calculate values from in SQL queries. Default is 'datetime'
     -s, --strip_data            Remove the first and last sets of consecutive null
                                 from data (similar to str.strip()) before plotting and writing CSVs to disk.
                                 Default is False.
@@ -77,7 +79,7 @@ POV_TABLES = ['accessibility',
 SORT_ORDER = {'summary':   ['Long tour',
                             'Short tour',
                             'VTS',
-                            'Other JV',
+                            'Other JV bus',
                             'Lodge bus',
                             'GOV',
                             'POV'],
@@ -114,12 +116,10 @@ SORT_ORDER = {'summary':   ['Long tour',
               'bikes':      []
               }
 
-HORIZONTAL_LINES = [91, 160]
-
 COLORS = {'summary':   {'Long tour':  '#462970',
                         'Short tour': '#6255A4',
                         'VTS':        '#5C7CB0',
-                        'Other JV':   '#6DB1B3',
+                        'Other JV bus':   '#6DB1B3',
                         'Lodge bus':  '#A88455',
                         'GOV':        '#CCB974',
                         'POV':        '#C44E52'},
@@ -324,10 +324,10 @@ def filter_data_by_category(data, category_filter):
     return data
 
 
-def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False, get_totals=False, value_filter='', category_filter=''):
+def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False, get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime'):
 
     ########## Query buses
-    buses, training_buses, buses_sql = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria, get_totals=get_totals, value_filter=value_filter)
+    buses, training_buses, buses_sql = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria, get_totals=get_totals, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field)
     buses = buses.add(training_buses, fill_value=0)
 
     # Query GOVs
@@ -336,11 +336,11 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
                    "AND destination NOT LIKE 'Primrose%%' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
-    govs, gov_sql = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=simple_output_fields, get_totals=get_totals, return_sql=True)
+    govs, gov_sql = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=simple_output_fields, get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True)
     govs.index = ['GOV']
 
     # POVs
-    povs, pov_sql = query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter)
+    povs, pov_sql = query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field)
     povs.loc['POV'] = povs.sum(axis=0)
     povs.drop([i for i in povs.index if i != 'POV'], inplace=True)
 
@@ -355,7 +355,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     return data, buses_sql + [gov_sql] + pov_sql
 
 
-def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter=''):
+def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime'):
 
     if value_filter:
         values = ["'%s'" % v for v in value_filter.split(',')]
@@ -377,7 +377,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     #   is being called as just a query of buses, don't aggregate at all so no need to set dissolve_names
     if is_subquery:
         bus_names = {'VTS': ['Shuttle', 'Camper'],
-                     'Other JV': ['Other'],
+                     'Other JV bus': ['Other'],
                      'Long tour': ['Kantishna Experience', 'Eielson Excursion',
                                    'Tundra Wilderness Tour', 'Windows Into Wilderness'],
                      'Short tour': ['Denali Natural History Tour'],
@@ -388,7 +388,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
 
     kwargs['output_fields'] = output_fields
 
-    buses, buses_sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, return_sql=True, **kwargs)
+    buses, buses_sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, summary_stat=summary_stat, return_sql=True, summary_field=summary_field, **kwargs)
 
     ######### Query training buses
     trn_other_criteria = "is_training " \
@@ -399,7 +399,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     kwargs['other_criteria'] = trn_other_criteria
 
     if is_subquery:
-        kwargs['dissolve_names'] = {'Other JV': ['Shuttle', 'Camper', 'Kantishna Experience',
+        kwargs['dissolve_names'] = {'Other JV bus': ['Shuttle', 'Camper', 'Kantishna Experience',
                                                  'Eielson Excursion', 'Tundra Wilderness Tour',
                                                  'Windows Into Wilderness', 'Denali Natural History Tour', 'Other'],
                                     'Lodge bus': ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
@@ -407,7 +407,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                                     }
 
     # Get appropriate field names as with non-training buses
-    training_buses, trn_sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, return_sql=True, **kwargs)
+    training_buses, trn_sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, summary_stat=summary_stat, return_sql=True, summary_field=summary_field, **kwargs)
 
 
 
@@ -426,15 +426,15 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     return data, [buses_sql, trn_sql]
 
 
-def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter=''):
+def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime'):
 
-    data = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, category_filter=category_filter)
+    data = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field)
     totals = pd.DataFrame(data.sum(axis=0)).T
 
     return totals
 
 
-def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter=''):
+def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field=None):
 
     if value_filter:
         values = ["'%s'" % v for v in value_filter.split(',')]
@@ -448,7 +448,7 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
     data, sql = query.crosstab_query_by_datetime(engine, 'nps_vehicles', start_date, end_date, 'work_group',
                                             field_names=field_names['nps_vehicles'], other_criteria=other_criteria,
                                             summarize_by=summarize_by, output_fields=output_fields, filter_fields=True,
-                                            get_totals=get_totals, return_sql=True)
+                                            get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True)
 
     if sort_order:
         data = data.reindex(sort_order)
@@ -459,7 +459,7 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
     return data, [sql]
 
 
-def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter=''):
+def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime'):
 
     OTHER_CRITERIA = {'nps_employee':   "AND destination IN ('Toklat', 'Wonder Lake') ",
                       'other_employee': "AND destination NOT IN ('Toklat', 'Wonder Lake') ",
@@ -488,7 +488,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
                                               summarize_by=summarize_by, output_fields=output_fields,
                                               other_criteria="datetime BETWEEN '%s' AND '%s' " %
                                                              (start_date, end_date) + criteria + other_criteria,
-                                              get_totals=get_totals, return_sql=True
+                                              get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True
                                               )
 
         data.index = [table_name]
@@ -508,13 +508,13 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
     return data, sql_statements
 
 
-def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter=''):
+def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime'):
 
     data, sql = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
                                           summarize_by=summarize_by, output_fields=output_fields,
                                           other_criteria="datetime BETWEEN '%s' AND '%s' " %
                                                          (start_date, end_date) + other_criteria,
-                                               return_sql=True
+                                               summary_stat=summary_stat, summary_field=summary_field, return_sql=True
                                           )
 
     return data, [sql]
@@ -548,7 +548,8 @@ def show_legend(legend_title, label_suffix=None):
     handles, labels = ax.get_legend_handles_labels()
     if label_suffix:
         labels = [l + label_suffix[l] for l in labels]
-    legend = plt.legend(handles[::-1], labels[::-1], bbox_to_anchor=(1.04, 0),
+    n_labels = len(np.unique(labels)) - 1 # stackplots produce duplicate handles/labels
+    legend = plt.legend(handles[n_labels::-1], labels[n_labels::-1], bbox_to_anchor=(1.04, 0),
                         loc='lower left', title=legend_title, frameon=False)
     legend._legend_box.align = 'left'
     max_label_length = max(map(len, labels))
@@ -579,7 +580,7 @@ def plot_bar(all_data, x_labels, out_png, bar_type='stacked', vehicle_limits=Non
         for y_value in vehicle_limits:
             ax.plot([-date_index.max() * 2, date_index.max() * 2],
                     [y_value, y_value], '--', alpha=0.3, color='0.3',
-                    zorder=2)# zorder = 2 because seaborn grid lines will plot on top if 0 or 1
+                    zorder=100)# zorder = 2 because seaborn grid lines will plot on top if 0 or 1
 
     last_top = np.zeros(n_dates)
     for i, (vehicle_type, data) in enumerate(all_data.iterrows()):
@@ -665,6 +666,12 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
     stats_labels = {}
     data_stats = []
 
+    if vehicle_limits:
+        for y_value in vehicle_limits:
+            plt.plot([-n_dates * 2, n_dates * 2],
+                    [y_value, y_value], '--', alpha=0.3, color='0.3',
+                    zorder=100)
+
     for vehicle_type, counts in all_data.iterrows():
         # If a color for this vehicle type isn't given, set a random color
         color = colors[vehicle_type] if vehicle_type in colors else np.random.rand(3)
@@ -683,6 +690,9 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
                 r, p = stats.pearsonr(counts, x * slope + intercept)
                 stats_label = r' (slope = %.1f, $\it{r} = %.2f)$' % (slope, r)
                 data_stats.append({'slope': slope, 'r': r})
+        elif plot_type == 'stacked area':
+            colors = pd.Series(colors).reindex(all_data.index)
+            plt.stackplot(np.arange(n_dates), all_data, labels=all_data.index, colors=colors)
         else:
             plt.plot(xrange(n_dates), counts, '-', color=color, label=vehicle_type)
         stats_labels[vehicle_type] = stats_label
@@ -702,6 +712,11 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
 
     y_tick_interval = yticks[1] - yticks[0]
     plt.ylim([0, max(max_vehicle_limit, all_data.values.max()) + y_tick_interval/2.0])
+    if plot_type == 'stacked area':
+        plt.xlim([0, n_dates])
+        plt.ylim([0, max(max_vehicle_limit, all_data.sum(axis=0).max()) + y_tick_interval / 2.0])
+    else:
+        plt.ylim([0, max(max_vehicle_limit, all_data.values.max()) + y_tick_interval / 2.0])
     sns.despine()
 
     # Grouped bar charts are too small to read at the default width so widen if bars are grouped
@@ -721,7 +736,7 @@ def plot_line(all_data, x_labels, out_png, vehicle_limits=None, title=None, lege
         data_stats.to_csv(this_png.replace('.png', '_stats.csv'))
 
 
-def write_metadata(out_dir, queries, summarize_by, start_date, end_date, sql_values_filter, category_filter):
+def write_metadata(out_csv, queries, summarize_by, start_date, end_date, sql_values_filter, category_filter):
 
     QUERY_DESCRIPTIONS = {'summary':    'all vehicles aggregated in broad categories',
                           'buses':      'buses by each type found in the "bus_type" column of the "buses" table',
@@ -782,12 +797,12 @@ def write_metadata(out_dir, queries, summarize_by, start_date, end_date, sql_val
                       datestamp=datestamp,
                       command=command)
 
-    readme_path = os.path.join(out_dir, '_0README_%s.txt' % datetime.now().strftime('%Y%m%d_%H_%M_%S'))
+    readme_path = out_csv.replace('.csv', '_README.txt')
     with open(readme_path, 'w') as readme:
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False, summary_stat=None, summary_field=None):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -804,7 +819,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                       'total':      'Total vehicles'}
 
     sns.set_context('paper')
-    sns.set_style('darkgrid')
+    #sns.set_style('darkgrid')
 
     sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.flush()
@@ -824,7 +839,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     if plot_types:
         plot_types = [t.strip().lower().replace('_', ' ') for t in plot_types.split(',')]
         # Check if any recognizable strings are in plot_types
-        valid_strings = [s in ['stacked bar', 'grouped bar', 'line', 'best fit', 'bar', ''] for s in plot_types]
+        valid_strings = [s in ['stacked bar', 'grouped bar', 'line', 'best fit', 'bar', 'stacked area', ''] for s in plot_types]
         if not any(valid_strings):
             warnings.warn('No valid plot type string found in plot_types: %s. No plots will be made.'
                           % ', '.join(plot_types))
@@ -843,7 +858,6 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         # Don't need to split category filter because filter_data_by_category() handles the string
         warnings.warn("value filters of %s were given, but these might not be relevant to all queries specified"
                       " (%s)" % (category_filter, ','.join(queries)))
-
 
     # reformat dates for postgres (yyyy-mm-dd), assuming format mm/dd/yyyy
     try:
@@ -873,6 +887,17 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     elif not out_csv:
         # If we got here, neither out_dir nor out_csv were given so raise an error
         raise ValueError('Either out_csv or out_dir must be given')
+
+    valid_stats = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV']
+    if not summary_stat:
+        summary_stat = 'COUNT'
+    elif summary_stat.upper() not in valid_stats:
+        raise ValueError('Summary stat "{}" is not valid. It must be one of the following: {}'
+                         .format(summary_stat, ', '.join(valid_stats))
+                         )
+
+    if not summary_field:
+        summary_field = 'datetime'
 
     # read connection params from text. Need to keep them in a text file because password can't be stored in Github repo
     engine = query.connect_db(connection_txt)
@@ -912,7 +937,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             this_date_range = date_range[start_index : index]
             # If this is the last chunk, make sure the last date (used in SQL statements) is actually the last date of the range
             this_end_date = these_output_fields.index[-1] if i + 1 != len(chunk_inds) else end_date
-            data, sql_stmts = query_function(these_output_fields, field_names, these_output_fields.index[0], this_end_date, this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria, get_totals=False, value_filter=sql_values_filter, category_filter=category_filter)
+            data, sql_stmts = query_function(these_output_fields, field_names, these_output_fields.index[0], this_end_date, this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria, get_totals=False, value_filter=sql_values_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field)
             all_data.append(data)
             sql_statements.extend(sql_stmts)
             start_index = index
@@ -988,10 +1013,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if 'grouped bar' in plot_types:
             plot_bar(data, these_labels, out_png, bar_type='grouped', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
         if 'line' in plot_types:
-            plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors, plot_totals=plot_totals)
+            plot_line(data, these_labels, out_png, vehicle_limits=None, title=title, colors=colors, plot_totals=plot_totals)
         if 'best fit' in plot_types:
-            plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors,
+            plot_line(data, these_labels, out_png, vehicle_limits=None, title=title, colors=colors,
                       plot_type='best fit', show_stats=show_stats, plot_totals=plot_totals)
+        if 'stacked area' in plot_types:
+            plot_line(data, these_labels, out_png, vehicle_limits=vehicle_limits, title=title, colors=colors,
+                      plot_type='stacked area', show_stats=show_stats, plot_totals=plot_totals)
 
         if write_sql:
             out_sql_txt = this_csv_path.replace('.csv', '_sql.txt')
@@ -1001,7 +1029,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                         f.write(stmt + '\n\n%s\n\n' % break_str)
                 f.write('\n\n\n')
 
-    write_metadata(out_dir, queries, summarize_by, start_datetime.strftime('%m/%d/%y'), end_datetime.strftime('%m/%d/%y'), sql_values_filter, category_filter)
+        write_metadata(this_csv_path, queries, summarize_by, start_datetime.strftime('%m/%d/%y'), end_datetime.strftime('%m/%d/%y'), sql_values_filter, category_filter)
 
     print '\nOutput files written to', out_dir
 

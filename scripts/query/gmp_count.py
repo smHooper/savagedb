@@ -163,7 +163,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
 
         bus_passengers = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',                                                   other_criteria=other_criteria, dissolve_names=bus_names,
                                                         field_names=field_names['buses'], summarize_by='month',
-                                                        output_fields=output_fields, filter_fields=True, summary_stat='SUM', value_field='n_passengers')
+                                                        output_fields=output_fields, filter_fields=True, summary_stat='SUM', summary_field='n_passengers')
         bus_passengers.index = [ind + ' pax' for ind in bus_passengers.index]
 
 

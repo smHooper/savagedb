@@ -234,7 +234,7 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
     return (counts, sql) if return_sql else counts
 
 
-def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_field, value_field='datetime', other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False):
+def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_field, summary_field='datetime', other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False):
 
     date_clause = "AND datetime BETWEEN ''{start_str}'' AND ''{end_str}'' " \
         .format(start_str=start_str, end_str=end_str)
@@ -279,14 +279,14 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_fie
               "'SELECT \n" \
               "     {pivot_field}, \n" \
               "     {date_trunc_statement} AS {summarize_by}, \n" \
-              "     {summary_stat}({value_field}) \n" \
+              "     {summary_stat}({summary_field}) \n" \
               "FROM (SELECT DISTINCT {field_names} FROM {table_name}) AS {table_name} \n" \
               "{where_clause} \n" \
               "GROUP BY {summarize_by}, {pivot_field}  ORDER BY 1', \n" \
               "'SELECT categories::TIMESTAMP FROM ({category_str}) AS t (categories) ORDER BY 1'\n" \
               ") AS ({output_fields_str});" \
             .format(pivot_field=pivot_field,
-                    value_field=value_field,
+                    summary_field=summary_field,
                     date_trunc_statement=date_trunc_stmt,
                     summarize_by=summarize_by,
                     summary_stat=summary_stat,
