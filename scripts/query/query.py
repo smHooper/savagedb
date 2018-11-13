@@ -168,7 +168,7 @@ def filter_output_fields(filter_sql, engine, output_fields):
     return matches.set_index(field_column_name).sort_index().squeeze(axis=1) #type: pd.Series
 
 
-def simple_query_by_datetime(engine, table_name, year=None, field_names='*', summary_field='datetime', summary_stat='COUNT', other_criteria='', summarize_by='year', output_fields=None, get_totals=True, sql=None, return_sql=False):
+def simple_query_by_datetime(engine, table_name, year=None, field_names='*', summary_field='datetime', summary_stat='COUNT', other_criteria='', summarize_by='year', output_fields=None, get_totals=True, sql=None, return_sql=False, start_time=None, end_time=None):
 
     # If year is given, set up the where clause to encompass the whole season
     if year:
@@ -176,6 +176,16 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
             .format(year=str(year))
     else:
         where_clause = ''
+
+    time_clause = ""
+    if start_time and end_time:
+        try:
+            datetime.strptime(start_time, '%H:%M')
+            datetime.strptime(end_time, '%H:%M')
+        except:
+            raise ValueError("start_time and end_time must be in the format 'hh:mm'")
+        time_clause = "AND datetime::time BETWEEN '{start_time}' AND '{end_time}'"\
+            .format(start_time=start_time, end_time=end_time)
 
     # Make sure other_criteria is prepended with AND unless the string is null or starts with 'OR'
     #   First check whether it's necessary to modify the statement
@@ -187,7 +197,7 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
     if modify_criteria:
         other_criteria = 'AND ' + other_criteria if year else 'WHERE ' + other_criteria
 
-    where_clause += other_criteria
+    where_clause += other_criteria + time_clause
 
     # Set the statement to use for creating categories to pivot on, datestamps truncated to the specified time step
     if summarize_by == 'halfhour':
@@ -234,10 +244,20 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
     return (counts, sql) if return_sql else counts
 
 
-def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_field, summary_field='datetime', other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False):
+def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_field, summary_field='datetime', other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False, start_time=None, end_time=None):
 
     date_clause = "AND datetime BETWEEN ''{start_str}'' AND ''{end_str}'' " \
         .format(start_str=start_str, end_str=end_str)
+
+    time_clause = ""
+    if start_time and end_time:
+        try:
+            datetime.strptime(start_time, '%H:%M')
+            datetime.strptime(end_time, '%H:%M')
+        except:
+            raise ValueError("start_time and end_time must be in the format 'hh:mm'")
+        time_clause = " AND datetime::time BETWEEN ''{start_time}'' AND ''{end_time}''"\
+            .format(start_time=start_time, end_time=end_time)
 
     # Make sure other_criteria is prepended with AND unless the string is null or starts with 'OR'
     #   First check whether it's necessary to modify the statement
@@ -247,7 +267,7 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_fie
     if modify_criteria:
         other_criteria = 'AND ' + other_criteria
 
-    where_clause = ('WHERE %s IS NOT NULL ' % pivot_field) + date_clause + other_criteria
+    where_clause = ('WHERE %s IS NOT NULL ' % pivot_field) + date_clause + time_clause + other_criteria
 
     # Set the statement to use for creating categories to pivot on, datestamps truncated to the specified time step
     if summarize_by == 'halfhour':
