@@ -323,7 +323,6 @@ def get_gmp_dates(start_datetime, end_datetime):
     return starts, ends
 
 
-
 def filter_data_by_category(data, category_filter):
 
     # Check if the filter string has any special characters (except '_', '/' ,'-', ',') in it. If so,
@@ -448,10 +447,10 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
 
 def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
 
-    data = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
+    data, sql = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
     totals = pd.DataFrame(data.sum(axis=0)).T
 
-    return totals
+    return totals, sql
 
 
 def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field=None, start_time=None, end_time=None):
@@ -511,12 +510,11 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
                                               get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time
                                               )
 
-        data.index = [table_name]
+        data.index = [print_name]
         all_data.append(data)
         sql_statements.append(sql)
 
     data = pd.concat(all_data, sort=False)
-
     data = data.groupby(data.index).sum(axis=0)
 
     if sort_order:
@@ -534,11 +532,30 @@ def query_bikes(output_fields, field_names, start_date, end_date, date_range, su
                                           summarize_by=summarize_by, output_fields=output_fields,
                                           other_criteria="datetime BETWEEN '%s' AND '%s' " %
                                                          (start_date, end_date) + other_criteria,
-                                               summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time
+                                               summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time, get_totals=False
                                           )
 
     return data, [sql]
 
+
+def aggregate(data, summarize_by, aggregate_by, summary_stat, output_fields):
+
+    summary_functions = {'COUNT': np.sum,
+                         'SUM': np.sum,
+                         'AVG': np.mean,
+                         'MIN': np.min,
+                         'MAX': np.max,
+                         'STDDEV': np.std}
+    #agg_strs = pd.to_datetime(output_fields.index).strftime(FORMAT_STRS[aggregate_by])
+    agg_strs = pd.to_datetime(data.columns, format=FORMAT_STRS[summarize_by]).strftime(FORMAT_STRS[aggregate_by])
+    data_t = data.T
+    data_t['agg_str'] = agg_strs.values
+    data = data_t.groupby('agg_str').aggregate(summary_functions[summary_stat.upper()]).T
+    new_datetimes = pd.to_datetime(data.columns, format=FORMAT_STRS[aggregate_by])
+    new_labels = pd.Series(get_x_labels(new_datetimes, aggregate_by).sort_values().unique(),
+                           index=data.columns.sort_values())
+
+    return data, new_labels
 
 
 def strip_dataframe(data):
@@ -757,26 +774,6 @@ def plot_line(all_data, x_labels, out_img, vehicle_limits=None, title=None, lege
     if data_stats:
         data_stats = pd.DataFrame(data_stats, index=all_data.index)
         data_stats.to_csv(this_img.replace(extension, '_stats.csv'))
-
-
-def aggregate(data, summarize_by, aggregate_by, summary_stat, output_fields):
-
-    summary_functions = {'COUNT': np.sum,
-                         'SUM': np.sum,
-                         'AVG': np.mean,
-                         'MIN': np.min,
-                         'MAX': np.max,
-                         'STDDEV': np.std}
-    #agg_strs = pd.to_datetime(output_fields.index).strftime(FORMAT_STRS[aggregate_by])
-    agg_strs = pd.to_datetime(data.columns, format=FORMAT_STRS[summarize_by]).strftime(FORMAT_STRS[aggregate_by])
-    data_t = data.T
-    data_t['agg_str'] = agg_strs.values
-    data = data_t.groupby('agg_str').aggregate(summary_functions[summary_stat.upper()]).T
-    new_datetimes = pd.to_datetime(data.columns, format=FORMAT_STRS[aggregate_by])
-    new_labels = pd.Series(get_x_labels(new_datetimes, aggregate_by).sort_values().unique(),
-                           index=data.columns.sort_values())
-
-    return data, new_labels
 
 
 def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, agg_stat, aggregate_by, start_date, end_date, sql_values_filter, category_filter):
@@ -1045,6 +1042,12 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         these_labels = x_labels.copy()
 
+        if aggregate_by:
+            data_columns = data.columns
+            data = data.reindex(columns=output_fields) # Make sure all time steps are there so the agg func is accurate
+            data, these_labels = aggregate(data, summarize_by, aggregate_by, agg_stat, output_fields)#[output_fields.isin(data.columns)])
+            data = data.reindex(columns=data.columns) # Reset columns how they were
+
         # If stip_data is true, remove empty columns from edges of the data
         if strip_data:
             data, drop_inds = strip_dataframe(data)
@@ -1052,9 +1055,6 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         # Otherwise if drop_null isn't true, make sure all dates are included, even if they don't have any data
         elif not drop_null:
             data = data.reindex(columns=output_fields).fillna(0)
-
-        if aggregate_by:
-            data, these_labels = aggregate(data, summarize_by, aggregate_by, agg_stat, output_fields[output_fields.isin(data.columns)])
 
         #if not plot_totals:
         #data.drop('total', axis=1, inplace=True)

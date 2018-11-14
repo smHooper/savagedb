@@ -154,7 +154,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
                                      end=gmp_end.strftime('%Y-%m-%d'))
                              )
         gmp_date_clause = ' AND (%s) ' % ('OR '.join(btw_stmts))
-        
+
         #gmp_date_clause, _, _ = cvbt.get_gmp_date_clause(datetime(year, 5, 1), datetime(year, 9, 16))
         date_range = cvbt.get_date_range(start_date, end_date, summarize_by='month')
         output_fields = cvbt.get_output_field_names(date_range, 'month')
