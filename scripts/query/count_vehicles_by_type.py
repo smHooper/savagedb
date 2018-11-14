@@ -290,47 +290,6 @@ def get_x_labels(date_range, summarize_by):
     return names
 
 
-def get_gmp_date_clause(start_datetime, end_datetime):
-    """
-    Return an SQL statement that specifies GMP date criteria for each year between the start and
-    end dates specified. GMP date criteria are the Saturday before Memorial Day and
-    min(2nd thursday of September, September 15)
-    """
-
-    # Define a custom observance rule for the end date of the GMP period
-    def thursday_or_15th(dt):
-        """
-        If the 2nd thursday after Labor Day is before the 15th, return that.
-        Otheriwse, return the 15th
-        """
-        second_thursday = holiday.Holiday("2nd Thursday", month=9, day=1, offset=[holiday.USLaborDay.offset,
-                                                                                  pd.DateOffset(weekday=holiday.TH(2))])
-        this_second_thursday = second_thursday.dates(datetime(dt.year, 1, 1), datetime(dt.year, 12, 31))[0]
-        this_15th = datetime(dt.year, 9, 15)
-
-        return min(this_15th, this_second_thursday)
-
-    start_holiday = holiday.Holiday("GMP start", month=5, day=31, offset=[holiday.USMemorialDay.offset,
-                                                                          pd.DateOffset(weekday=holiday.SA(-1))]
-                                    )
-    end_holiday = holiday.Holiday("GMP end", month=9, day=15, observance=thursday_or_15th)
-
-    years = xrange(start_datetime.year,
-                   end_datetime.year + 1)
-    starts = start_holiday.dates(datetime(years[0], 1, 1), datetime(years[-1], 12, 31))
-    ends = end_holiday.dates(datetime(years[0], 1, 1), datetime(years[-1], 12, 31))
-
-    btw_stmts = []
-    for gmp_start, gmp_end in zip(starts, ends):
-        btw_stmts.append("(datetime BETWEEN '{start}' AND '{end}') "
-                         .format(start=gmp_start.strftime('%Y-%m-%d'),
-                                 end=gmp_end.strftime('%Y-%m-%d'))
-                         )
-    sql = ' AND (%s) ' % ('OR '.join(btw_stmts))
-
-    return sql, starts.min().to_pydatetime(), ends.max().to_pydatetime()
-
-
 def get_gmp_dates(start_datetime, end_datetime):
     """
     Return an SQL statement that specifies GMP date criteria for each year between the start and
