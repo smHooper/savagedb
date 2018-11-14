@@ -2,7 +2,7 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--summary_stat=<>] [--summary_field=<str>] [--time_range=<str>] [--plot_extension=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background]
 
 Examples:
     python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
@@ -23,18 +23,24 @@ Options:
                                 will be saved to a file named ridership_<min_year>_<max_year>.csv will be written.
                                 If out_dir is not specified, out_csv must be given
     --out_csv=<str>             Path to output text file. If out_csv is not specified, out_dir must be given
-    --plot_types=<str>          Indicates the type of plot(s) to use. Options: 'line', 'grouped bar', or
-                                'stacked bar' (the default)
+    --plot_types=<str>          Indicates the type of plot(s) to use. Valid options: 'line', 'bar', 'grouped bar',
+                                'stacked bar', 'best fit' (for line of best fit), and 'stacked area'
     --summarize_by=<str>        String indicating the unit of time to use for summarization. Valid options are
-                                'day' or 'doy', 'month', or 'year'
+                                'year', 'month', 'day', 'hour', and 'halfhour'
     --queries=<str>             Comma-separated list of data categories to query and plot. Valid options are
-                                'summary', 'buses', 'nps', and 'pov'. If none specified, all queries are run.
+                                'summary', 'buses', 'nps', 'pov', 'bike', and 'total'. If none specified, all queries
+                                are run.
     --sql_values_filter=<str>   Comma-separated list of values to return from the SQL query (if they exist)
     --category_filter=<str>     Comma-separated list of either regular expressions or strings found in SORT_ORDER of
                                 this script to filter the categories of values per query type. See SORT_ORDER values
                                 for a list of values per query.
-    --summary_stat=<str>        Summary statistic to aggregate values in SQL query. Default is 'COUNT'.
+    --summary_stat=<str>        Summary statistic to aggregate values in SQL query. Default is 'COUNT'
     --summary_field=<str>       Field name in the tables to calculate values from in SQL queries. Default is 'datetime'
+    --aggregate_by=<str>        Secondary time step to aggregate initially counted values by. For example, if
+                                summarize_by = 'day' and start_date-end_date spans multiple years, aggregate_by = 'year'
+                                would calculate the summary_stat for each year by day (e.g., mean count of vehicles per
+                                day for each year). Valid options are the same as the options for summarize_by plus
+                                'doy' (to calculate summary_stat for anniversary dates).
     --time_range=<str>          Times of day to query between specifed as hh:mm-hh:mm. Only records where the datetime
                                 field is between these two times will be summarised
     --plot_extension=<str>      File extension dictating which image format to save plots to. Options are ".png",
@@ -43,8 +49,8 @@ Options:
                                 from data (similar to str.strip()) before plotting and writing CSVs to disk.
                                 Default is False.
     -p, --plot_vehicle_limits   Plot dashed lines indicating daily limits specified by the VMP (91 concessionaire buses
-                                and 160 total vehicles) or GMP (10,512 total vehicles per year). Limits will be plotted
-                                according to the specifc query and plot types. Default is False.
+                                and 160 total vehicles) or yearly limits from the GMP (10,512 total vehicles per year).
+                                Limits will be plotted according to the specifc query and plot types. Default is False.
     -g, --use_gmp_dates         Limit query to GMP allocation period (5/20-9/15) in addition to start_date-end_date
     -x, --show_stats            Add relevant stats to labels in the legend. Only valid for 'best fit' plot type.
     -t, --plot_totals           Additionally show totals of all vehicle types. Not valid for 'total' plot type.
@@ -53,7 +59,7 @@ Options:
     -d, --drop_null             Remove any column (date/time) without any data for the given query
     -w, --write_sql             Write a text file per query with the exact SQL statements passed to the
                                 querying function
-    -b, --white_background      Use deault seaborn style (white background). If not specified, the 'dark grid'
+    -b, --white_background      Use the default Seaborn style (white background). If not specified, the 'dark grid'
                                 style will be used
 '''
 
@@ -172,8 +178,17 @@ COLORS = {'summary':   {'Long tour':  '#462970',
           'bikes':      {'cyclists': '#587C97'},
           'total':      {0: '#587C97'}
           }
+
 DATETIME_FORMAT = '%Y-%m-%d %H:%M:%S'
 
+FORMAT_STRS = {'day': '_%Y_%m_%d',
+               'month': '_%Y_%m',
+               'year': '_%Y',
+               'hour': '_%Y_%m_%d_%H',
+               'halfhour': '_%Y_%m_%d_%H_%M',
+               'anniversary day': '_%m_%d',
+               'anniversary month': '%b'
+               }
 
 def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summarize_by='day'):
 
@@ -234,14 +249,7 @@ def filter_output_fields(category_sql, engine, output_fields):
     return matches.set_index(field_column_name).sort_index().squeeze() #type: pd.Series
 
 
-def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=None):
-
-    FORMAT_STRS = {'day':       '_%Y_%m_%d',
-                   'month':     '_%Y_%m',
-                   'year':      '_%Y',
-                   'hour':      '_%Y_%m_%d_%H',
-                   'halfhour':  '_%Y_%m_%d_%H_%M'
-                   }
+def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=None, gmp_dates=None):
 
     # Format of columns to write CSVs to
     out_format = FORMAT_STRS[summarize_by]
@@ -256,18 +264,27 @@ def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=Non
     if filter_sql and engine:
         names = filter_output_fields(filter_sql, engine, names)
 
+    if gmp_dates:
+        gmp_dates = np.array(zip(*gmp_dates)).flatten()[1:-1]
+        if len(gmp_dates) > 1:
+            date_ranges = [pd.date_range(end + pd.DateOffset(days=1), start, freq=date_range.freq).to_series()[:-1] for end, start in zip(gmp_dates[::2], gmp_dates[1::2])]
+            exclude_dates = pd.concat(date_ranges).dt.strftime(DATETIME_FORMAT)
+            names = names.drop(exclude_dates)
+
     return names
 
 
 def get_x_labels(date_range, summarize_by):
 
-    FORMAT_STRS = {'day':       '%m/%d/%y',
-                   'month':     '%b',
-                   'year':      '%Y',
-                   'hour':      '%H:%M',
-                   'halfhour':  '%H:%M'
-                   }
-    names = date_range.strftime(FORMAT_STRS[summarize_by]).to_series()#.unique().to_series()
+    LABEL_FORMAT_STRS = {'day':       '%m/%d/%y',
+                         'month':     '%b %Y',
+                         'year':      '%Y',
+                         'hour':      '%H:%M',
+                         'halfhour':  '%H:%M',
+                         'anniversary day': '%m/%d',
+                         'anniversary month': '%b'
+                         }
+    names = date_range.strftime(LABEL_FORMAT_STRS[summarize_by]).to_series()#.unique().to_series()
     names.index = np.arange(len(names))
 
     return names
@@ -314,6 +331,40 @@ def get_gmp_date_clause(start_datetime, end_datetime):
     return sql, starts.min().to_pydatetime(), ends.max().to_pydatetime()
 
 
+def get_gmp_dates(start_datetime, end_datetime):
+    """
+    Return an SQL statement that specifies GMP date criteria for each year between the start and
+    end dates specified. GMP date criteria are the Saturday before Memorial Day and
+    min(2nd thursday of September, September 15)
+    """
+
+    # Define a custom observance rule for the end date of the GMP period
+    def thursday_or_15th(dt):
+        """
+        If the 2nd thursday after Labor Day is before the 15th, return that.
+        Otheriwse, return the 15th
+        """
+        second_thursday = holiday.Holiday("2nd Thursday", month=9, day=1, offset=[holiday.USLaborDay.offset,
+                                                                                  pd.DateOffset(weekday=holiday.TH(2))])
+        this_second_thursday = second_thursday.dates(datetime(dt.year, 1, 1), datetime(dt.year, 12, 31))[0]
+        this_15th = datetime(dt.year, 9, 15)
+
+        return min(this_15th, this_second_thursday)
+
+    start_holiday = holiday.Holiday("GMP start", month=5, day=31, offset=[holiday.USMemorialDay.offset,
+                                                                          pd.DateOffset(weekday=holiday.SA(-1))]
+                                    )
+    end_holiday = holiday.Holiday("GMP end", month=9, day=15, observance=thursday_or_15th)
+
+    years = xrange(start_datetime.year,
+                   end_datetime.year + 1)
+    starts = start_holiday.dates(datetime(years[0], 1, 1), datetime(years[-1], 12, 31))
+    ends = end_holiday.dates(datetime(years[0], 1, 1), datetime(years[-1], 12, 31))
+
+    return starts, ends
+
+
+
 def filter_data_by_category(data, category_filter):
 
     # Check if the filter string has any special characters (except '_', '/' ,'-', ',') in it. If so,
@@ -337,18 +388,22 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     buses = buses.add(training_buses, fill_value=0)
 
     # Query GOVs
-    simple_output_fields = get_output_field_names(date_range, summarize_by)
+    #simple_output_fields = get_output_field_names(date_range, summarize_by)
     where_clause = "datetime BETWEEN '{start_date}' AND '{end_date}' " \
                    "AND destination NOT LIKE 'Primrose%%' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
-    govs, gov_sql = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=simple_output_fields, get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
+    govs, gov_sql = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=output_fields, get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
     govs.index = ['GOV']
 
     # POVs
     povs, pov_sql = query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
-    povs.loc['POV'] = povs.sum(axis=0)
-    povs.drop([i for i in povs.index if i != 'POV'], inplace=True)
+
+    if len(povs.columns) > 0:
+        povs.loc['POV'] = povs.sum(axis=0)
+        povs.drop([i for i in povs.index if i != 'POV'], inplace=True)
+    else:
+        povs = pd.DataFrame(columns=buses.columns)
 
     data = pd.concat([buses, govs, povs], sort=False)
 
@@ -745,7 +800,27 @@ def plot_line(all_data, x_labels, out_img, vehicle_limits=None, title=None, lege
         data_stats.to_csv(this_img.replace(extension, '_stats.csv'))
 
 
-def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, start_date, end_date, sql_values_filter, category_filter):
+def aggregate(data, summarize_by, aggregate_by, summary_stat, output_fields):
+
+    summary_functions = {'COUNT': np.sum,
+                         'SUM': np.sum,
+                         'AVG': np.mean,
+                         'MIN': np.min,
+                         'MAX': np.max,
+                         'STDDEV': np.std}
+    #agg_strs = pd.to_datetime(output_fields.index).strftime(FORMAT_STRS[aggregate_by])
+    agg_strs = pd.to_datetime(data.columns, format=FORMAT_STRS[summarize_by]).strftime(FORMAT_STRS[aggregate_by])
+    data_t = data.T
+    data_t['agg_str'] = agg_strs.values
+    data = data_t.groupby('agg_str').aggregate(summary_functions[summary_stat.upper()]).T
+    new_datetimes = pd.to_datetime(data.columns, format=FORMAT_STRS[aggregate_by])
+    new_labels = pd.Series(get_x_labels(new_datetimes, aggregate_by).sort_values().unique(),
+                           index=data.columns.sort_values())
+
+    return data, new_labels
+
+
+def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, agg_stat, aggregate_by, start_date, end_date, sql_values_filter, category_filter):
 
     QUERY_DESCRIPTIONS = {'summary':    'all vehicles aggregated in broad categories',
                           'buses':      'buses by each type found in the "bus_type" column of the "buses" table',
@@ -753,13 +828,23 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
                           'pov':        'all private vehicles by type',
                           'bikes':      'All byciclists',
                           'total':      'total of all vehicles'}
+    summary_functions = {'COUNT': 'count',
+                         'SUM': 'sum',
+                         'AVG': 'average',
+                         'MIN': 'minumum',
+                         'MAX': 'maximum',
+                         'STDDEV': 'standard deviation'}
 
     command = 'python ' + subprocess.list2cmdline(sys.argv)
 
     descr = "This folder contains queried data and derived plots from the Savage Box database. Data were summarized " \
-            "by {summarize_by} by {summary_stat} of {summary_field} for dates between {start} and {end}. "\
-        .format(summarize_by=summarize_by, summary_stat=summary_stat, summary_field=summary_field, 
-                start=start_date, end=end_date)
+            "by {agg_stat}{summary_stat} of {summary_field} by {summarize_by} for dates between {start} and {end}. "\
+        .format(agg_stat='the %s of the %s per ' % (summary_functions[agg_stat.upper()], aggregate_by) if agg_stat else '',
+                summarize_by=summarize_by,
+                summary_stat=summary_functions[summary_stat.upper()],
+                summary_field=summary_field,
+                start=start_date,
+                end=end_date)
     descr += "Queries run include:\n\t-" + "\n\t-".join([q + ": " + QUERY_DESCRIPTIONS[q] for q in queries])
 
     options_desc = "\n\nAdditional options specified:\n\t-"
@@ -818,7 +903,7 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -862,8 +947,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                           % ', '.join(plot_types))
 
     if plot_vehicle_limits and summarize_by not in ['day', 'year']:
-        warnings.warn("The '--plot_vehicle_limits' flag was passed but 'day' was not given in plot_types, so the"
-                      " vehicle limits won't make any sense. Try the command 'python count_vehicles_by_type --help'"
+        warnings.warn("The '--plot_vehicle_limits' flag was passed but summarize_by given was not 'day' or 'year', so the"
+                      " vehicle limits won't make any sense. Try the command 'python count_vehicles_by_type.py --help'"
                       " information on valid parameters")
 
     if sql_values_filter:
@@ -901,10 +986,20 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
     # If the --use_gmp_dates flag was passed, add additional criteria to makes sure dates are at least constrained to the GMP allocation period. Also make sure the date range is appropriately clipped.
     gmp_date_criteria = ''
+    gmp_dates = []
     if use_gmp_dates:
-        gmp_date_criteria, min_gmp, max_gmp = get_gmp_date_clause(start_datetime, end_datetime)
-        start_datetime = max(start_datetime, min_gmp)
-        end_datetime = min(end_datetime, max_gmp)
+        #gmp_date_criteria, min_gmp, max_gmp = get_gmp_date_clause(start_datetime, end_datetime)
+        gmp_starts, gmp_ends = get_gmp_dates(start_datetime, end_datetime)
+        gmp_dates = [gmp_starts, gmp_ends]
+        btw_stmts = []
+        for gmp_start, gmp_end in zip(gmp_starts, gmp_ends):
+            btw_stmts.append("(datetime BETWEEN '{start}' AND '{end}') "
+                             .format(start=gmp_start.strftime('%Y-%m-%d'),
+                                     end=gmp_end.strftime('%Y-%m-%d'))
+                             )
+        gmp_date_criteria = ' AND (%s) ' % ('OR '.join(btw_stmts))
+        start_datetime = max(start_datetime, gmp_starts.min().to_pydatetime())
+        end_datetime = min(end_datetime, gmp_ends.max().to_pydatetime())
     start_date = start_datetime.strftime(DATETIME_FORMAT)
     end_date = end_datetime.strftime(DATETIME_FORMAT)
 
@@ -912,7 +1007,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     if out_dir:
         # if both out_csv and out_dir are given, still just use out_csv. If just out_dir, use an informative basename
         if not out_csv:
-            basename = 'vehicle_counts.csv'
+            basename = '.csv'
             if not os.path.isdir(out_dir):
                 os.mkdir(out_dir)
             out_csv = os.path.join(out_dir, basename)
@@ -920,6 +1015,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         # If we got here, neither out_dir nor out_csv were given so raise an error
         raise ValueError('Either out_csv or out_dir must be given')
 
+    # Check that summary_stat is a valid (postgres) SQL function
     valid_stats = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV']
     if not summary_stat:
         summary_stat = 'COUNT'
@@ -927,6 +1023,10 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         raise ValueError('Summary stat "{}" is not valid. It must be one of the following: {}'
                          .format(summary_stat, ', '.join(valid_stats))
                          )
+    agg_stat = ''
+    if aggregate_by:
+        agg_stat = summary_stat
+        summary_stat = 'COUNT'
 
     if not summary_field:
         summary_field = 'datetime'
@@ -939,9 +1039,9 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
     # Create output field names as a string
     date_range = get_date_range(start_date, end_date, summarize_by=summarize_by)
-    output_fields = get_output_field_names(date_range, summarize_by)
+    output_fields = get_output_field_names(date_range, summarize_by, gmp_dates=gmp_dates)
 
-    x_labels = get_x_labels(date_range, summarize_by)
+    x_labels = get_x_labels(pd.to_datetime(output_fields.index), summarize_by)
     x_labels.index = output_fields
 
     # Loop through queries and make each plot (if there were any given) per query
@@ -969,7 +1069,12 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             this_date_range = date_range[start_index : index]
             # If this is the last chunk, make sure the last date (used in SQL statements) is actually the last date of the range
             this_end_date = these_output_fields.index[-1] if i + 1 != len(chunk_inds) else end_date
-            data, sql_stmts = query_function(these_output_fields, field_names, these_output_fields.index[0], this_end_date, this_date_range, summarize_by, engine, sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria, get_totals=False, value_filter=sql_values_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
+            data, sql_stmts = query_function(these_output_fields, field_names, these_output_fields.index[0],
+                                             this_end_date, this_date_range, summarize_by, engine,
+                                             sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria,
+                                             get_totals=False, value_filter=sql_values_filter,
+                                             category_filter=category_filter, summary_stat=summary_stat,
+                                             summary_field=summary_field, start_time=start_time, end_time=end_time)
             all_data.append(data)
             sql_statements.extend(sql_stmts)
             start_index = index
@@ -985,10 +1090,12 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
-
         # Otherwise if drop_null isn't true, make sure all dates are included, even if they don't have any data
         elif not drop_null:
             data = data.reindex(columns=output_fields).fillna(0)
+
+        if aggregate_by:
+            data, these_labels = aggregate(data, summarize_by, aggregate_by, agg_stat, output_fields[output_fields.isin(data.columns)])
 
         #if not plot_totals:
         #data.drop('total', axis=1, inplace=True)
@@ -1002,17 +1109,20 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             warnings.warn("Some dates/times between {start} and {end} did not contain any data".format(start=start_date, end=end_date))
 
         # Make sure labels match up with the output columns
+        data.drop(data.columns[~data.columns.isin(these_labels.index)], axis=1, inplace=True)
         these_labels = these_labels.reindex(data.columns)
 
         # Write csv to disk
-        this_csv_path = out_csv.replace(os.path.splitext(out_csv)[-1],
-                                        '_{query_name}_by_{summarize_by}_{start_date}_{end_date}.csv'
-                                            .format(query_name=query_name,
-                                                    summarize_by=summarize_by,
-                                                    start_date=start_datetime.strftime('%Y%m%d'),
-                                                    end_date=end_datetime.strftime('%Y%m%d')
-                                                    )
-                                        )
+        this_csv_path = os.path.join(out_dir,
+                                     '{query_name}_{summary_stat}_by_{summarize_by}_{aggregate_by}{start_date}_{end_date}.csv'
+                                     .format(query_name=query_name,
+                                             summary_stat=agg_stat.lower() if aggregate_by else summary_stat.lower(),
+                                             summarize_by=summarize_by,
+                                             aggregate_by='per_' + aggregate_by.replace(' ','') + '_' if aggregate_by else '',
+                                             start_date=start_datetime.strftime('%Y%m%d'),
+                                             end_date=end_datetime.strftime('%Y%m%d')
+                                             )
+                                    )
         data.to_csv(this_csv_path)
 
         # PLot stuff
@@ -1053,6 +1163,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             plot_line(data, these_labels, out_img, vehicle_limits=vehicle_limits, title=title, colors=colors,
                       plot_type='stacked area', show_stats=show_stats, plot_totals=plot_totals)
 
+        # Write all SQL statements to a text file
         if write_sql:
             out_sql_txt = this_csv_path.replace('.csv', '_sql.txt')
             break_str = '#' * 100
@@ -1061,7 +1172,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                         f.write(stmt + '\n\n%s\n\n' % break_str)
                 f.write('\n\n\n')
 
-        write_metadata(this_csv_path, queries, summarize_by, summary_field, summary_stat,
+        write_metadata(this_csv_path, queries, summarize_by, summary_field, summary_stat, agg_stat, aggregate_by,
                        start_datetime.strftime('%m/%d/%y'), end_datetime.strftime('%m/%d/%y'),
                        sql_values_filter, category_filter)
 

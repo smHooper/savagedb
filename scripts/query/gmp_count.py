@@ -146,7 +146,16 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         start_date = '%s-05-20 00:00:00' % year
         end_date = '%s-09-16 00:00:00' % year
 
-        gmp_date_clause, _, _ = cvbt.get_gmp_date_clause(datetime(year, 5, 1), datetime(year, 9, 16))
+        gmp_starts, gmp_ends = cvbt.get_gmp_dates(datetime(year, 5, 1), datetime(year, 9, 16))
+        btw_stmts = []
+        for gmp_start, gmp_end in zip(gmp_starts, gmp_ends):
+            btw_stmts.append("(datetime BETWEEN '{start}' AND '{end}') "
+                             .format(start=gmp_start.strftime('%Y-%m-%d'),
+                                     end=gmp_end.strftime('%Y-%m-%d'))
+                             )
+        gmp_date_clause = ' AND (%s) ' % ('OR '.join(btw_stmts))
+        
+        #gmp_date_clause, _, _ = cvbt.get_gmp_date_clause(datetime(year, 5, 1), datetime(year, 9, 16))
         date_range = cvbt.get_date_range(start_date, end_date, summarize_by='month')
         output_fields = cvbt.get_output_field_names(date_range, 'month')
 
