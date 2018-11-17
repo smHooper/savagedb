@@ -30,7 +30,7 @@ ADD_YEAR_TO = ['row_max',
                'gmp',
                'greenstudy']
 # Column names to replace in each table
-REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_id',
+REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_number',
                                   'bustype':    'bus_type',
                                   'dest':       'destination',
                                   'lodg_o_n_':  'n_lodge_ovrnt',
@@ -248,7 +248,7 @@ def main(export_tables=False):
         bustraffic = pd.read_csv(bustraffic_txt)
         for column in ['bustype', 'training', 'dest']:
             bustraffic[column] = bustraffic[column].apply(make_upper)
-        for field in ['dataentry1', 'datacollector1', 'datacollector2', 'dataentry2']:
+        for field in ['dataentry', 'dataentry1', 'datacollector1', 'datacollector2', 'dataentry2']:
             if field in nonbus.columns:
                 nonbus.drop(field, axis=1, inplace=True)
         bustraffic['training'] = ~bustraffic.training.isnull()

@@ -49,7 +49,8 @@ NONBUS_FIELDS = {'W': ['driver_name',
                        'n_nights'],
                  'P': ['driver_name'],
                  'R': ['driver_name',
-                       'permit_number'],
+                       'permit_number',
+                       'permit_holder'],
                  'G': ['organization',
                        'trip_purpose',
                        'n_nights'],
@@ -183,6 +184,9 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     print 'Renaming "right_of_way" to "inholders"...\n'
     os.rename(os.path.join(search_dir, 'right_of_way.csv'), os.path.join(search_dir, 'inholders.csv'))
 
+    print 'Renaming "datadates" to "shift_info"...'
+    os.rename(os.path.join(search_dir, 'datadates.csv'), os.path.join(search_dir, 'shift_info.csv'))
+
     print 'Deleting unnecessary tables...',
     researcher_txt = os.path.join(out_dir, 'researcher.csv')
     if os.path.isfile(researcher_txt):
@@ -208,10 +212,6 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     if os.path.isfile(gmp_txt):
         print 'gmp...',
         os.remove(gmp_txt)
-    datadates_txt = os.path.join(out_dir, 'datadates.csv')
-    if os.path.isfile(datadates_txt):
-        print 'datadates...',
-        os.remove(datadates_txt)
     employees_txt = os.path.join(out_dir, 'employees.csv')
     if os.path.isfile(employees_txt):
         print 'employees...',
@@ -227,6 +227,9 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments.rename(columns={c: '_%s' % c for c in inholder_allotments.columns}, inplace=True)
     inholder_allotments.to_csv(os.path.join(search_dir, 'inholder_allotments.csv'))
     os.remove(row_txt)
+
+    print 'Adding "other_vehicles" table...\n'
+    pd.DataFrame(columns=CONSTANT_FIELDS).to_csv(os.path.join(search_dir, 'other_vehicles.csv'))
 
     print 'Deleting ID field from all tables...\n'
     # Unique ID should be added in postgres

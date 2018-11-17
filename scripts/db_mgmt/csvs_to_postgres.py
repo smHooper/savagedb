@@ -88,10 +88,14 @@ def main(search_dir, db_name=None, password=None, username='postgres', ip_addres
                           ' USING {date_col}::date; '.format(table_name=table_name, date_col=date_col)
                 for time_col in [c for c in df.columns if c.endswith('time')]:
                     sql += 'ALTER TABLE {table_name}' \
-                          ' ALTER COLUMN {time_col} SET DATA TYPE timestamp' \
-                          ' USING {time_col}::timestamp; '.format(table_name=table_name, time_col=time_col)
+                          ' ALTER COLUMN {time_col} SET DATA TYPE time' \
+                          ' USING {time_col}::time; '.format(table_name=table_name, time_col=time_col)
                 if sql: # will be an empty string if no tables are datetimes
                     conn.execute(sql)
+
+            # Drop the "index" column that gets automatically created when you add the primary key index
+            sql = "ALTER TABLE tt DROP COLUMN IF EXISTS {table_name};".format(table_name)
+            conn.execute(sql)
 
 
 if __name__ == '__main__':
