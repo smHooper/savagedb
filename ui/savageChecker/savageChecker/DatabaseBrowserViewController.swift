@@ -285,7 +285,12 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         let cell = tableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
         cell.isSelectedIcon.image = nil
-        self.selectedFiles.remove(at: indexPath.row)
+        print("Index row:\(indexPath.row)")
+        guard let indexToRemove = self.selectedFiles.index(of: cell.fileNameLabel.text!) else {
+            return IndexPath(row: 0, section: 0)
+        }
+        print("indexToRemove: \(indexToRemove)")
+        self.selectedFiles.remove(at: indexToRemove)
         
         return indexPath
     }

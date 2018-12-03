@@ -26,6 +26,8 @@
 #import "GTLRErrorObject.h"
 #import "GTLRObject.h"
 #import "GTLRQuery.h"
+#import <GTMSessionFetcher/GTMSessionFetcher.h>
+#import <GTMSessionFetcher/GTMSessionFetcherService.h>
 
 @class GTMSessionFetcher;
 @class GTMSessionFetcherService;

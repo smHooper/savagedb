@@ -556,6 +556,7 @@ class SessionViewController: BaseFormViewController {
         
         // MARK: - employee table
         let permitHolderColumn = Expression<String>("permitHolder")
+        // add permit_number
         let EmployeeTable = Table("employees")
         do {
             try db?.run(EmployeeTable.create(ifNotExists: true) { t in

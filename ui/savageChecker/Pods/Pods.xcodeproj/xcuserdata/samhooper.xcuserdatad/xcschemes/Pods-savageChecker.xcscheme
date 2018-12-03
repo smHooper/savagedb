@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B9B1E763100C34AF3FCFEE59B98EB86D"
+               BlueprintIdentifier = "C6ED80265FF154DA9D1BA90A30DF241B"
                BuildableName = "Pods_savageChecker.framework"
                BlueprintName = "Pods-savageChecker"
                ReferencedContainer = "container:Pods.xcodeproj">
@@ -45,7 +45,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B9B1E763100C34AF3FCFEE59B98EB86D"
+            BlueprintIdentifier = "C6ED80265FF154DA9D1BA90A30DF241B"
             BuildableName = "Pods_savageChecker.framework"
             BlueprintName = "Pods-savageChecker"
             ReferencedContainer = "container:Pods.xcodeproj">
