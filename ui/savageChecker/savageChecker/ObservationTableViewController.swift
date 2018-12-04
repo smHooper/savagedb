@@ -706,7 +706,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         } else {
             // present an alert
             let alertTitle = "No internet connection detected"
-            let alertMessage = "You cannot upload to Google Drive without an internet connection. Try again when you're internet connection is working."
+            let alertMessage = "You cannot upload to Google Drive without an internet connection. Try again when your internet connection is working."
             let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
             present(alertController, animated: true, completion: nil)
@@ -899,6 +899,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         let index = self.cellOrder[indexPath.row]
+        print("self.observationCells[index]: \(self.observationCells[index])")
+        print("index:\(index)")
+        print("indexPath.row: \(indexPath.row)")
         let thisObservation = (self.observationCells[index]?.observation)!
         let observationType = (self.observationCells[index]?.observationType)!
         /*let tableName = (self.icons[observationType]?.tableName)!
@@ -930,11 +933,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let thisCell = self.observationCells[index]!
             let id = thisCell.observation.id
             let observationType = thisCell.observationType
-            let tableName = (icons[observationType]?.tableName)!
+            let tableName = (self.icons[observationType]?.tableName)!
             let table = Table(tableName)
             
             let recordToRemove = table.where(idColumn == id.datatypeValue)
-            observationCells.removeValue(forKey: index)
+            self.observationCells.removeValue(forKey: index)
+            let thisPosition = self.cellOrder[index]
+            self.cellOrder.remove(at: index)
+            
+            // For any observation whose position is greater than the deleted cell, subtract 1
+            for (i, position) in self.cellOrder.enumerated() {
+                if position > thisPosition {
+                    self.cellOrder[i] -= 1
+                }
+            }
             
             do {
                 try db.run(recordToRemove.delete())
