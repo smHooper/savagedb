@@ -11,6 +11,7 @@ import GoogleSignIn
 import GoogleAPIClientForREST
 import os.log
 import QuartzCore
+import SQLite
 
 
 class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GIDSignInDelegate, DBBrowserViewControllerDelegate  {
@@ -229,7 +230,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
     
     // Submit uploads
     @objc func uploadButtonPressed() {
-        
+        // Create a folder name with a datestamp tag. If the folder already exists, the selected files will just get uploaded there
         let formatter = DateFormatter()
         formatter.timeStyle = .none//.short//
         formatter.dateStyle = .short
@@ -240,15 +241,67 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             .replacingOccurrences(of: "/", with: "-")
         let folderName = "savageChecker_data_\(timestamp)"
         
-        //let fileManager = FileManager.default
+        let sessionsTable = Table("sessions")
+        let uploadedColumn = Expression<Bool>("uploaded")
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        var successfulFiles = [String]()
+        var failedFiles = [String]()
+        var uploadError: Error?
+        var nFiles = 0
         for fileName in self.selectedFiles {
-            let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path//"background.png").path
-
+            let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
             uploadFile(folderName, filePath: fullPath, MIMEType: "application/x-sqlite3") { (fileID, error) in
                 print("Upload file ID: \(fileID); Error: \(error?.localizedDescription)")
+                uploadError = error
+                if error == nil {
+                    // Update the uploaded column in the session table
+                    if let db = try? Connection(fullPath) {
+                        // Update all records because there should be only 1
+                        if let resultCode = try? db.run(sessionsTable.update(uploadedColumn <- true)), resultCode > 0 {
+                            print("Updated upload field successful for \(fileName) to \(try? db.pluck(Table("sessions"))![uploadedColumn])")
+                        } else {
+                            print("Update of upload column failed for \(fileName)")
+                        }
+                    }
+                }
             }
+            // Check if there was an error outside the completion closure because appending to a var outside the closure doesn't work
+            if uploadError == nil {
+                successfulFiles.append(fileName)
+            } else {
+                failedFiles.append(fileName)
+            }
+            nFiles += 1
         }
+        let userName = (self.userNameLabel.text)?.split(separator: "@").first ?? ""
+        // Let the user know if the upload was successful
+        let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
+        if successfulFiles.count == nFiles {
+            alertController.title = "File upload successful"
+            alertController.message = "Your data were successfull uploaded to \(userName)'s Google Drive account."
+            // When the user presses "OK", dismiss the GDriveUpload controller
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+                self.dismiss(animated: true, completion: nil)
+            }))
+        } else if failedFiles.count == nFiles {
+            alertController.title = "File upload failed"
+            alertController.message = "All file uploads to \(userName)'s Google Drive account failed. Make sure you're connected to the internet and you used the correct Google account to log in, then try again."
+            // When the user presses "OK", dismiss the alert controller only
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+                alertController.dismiss(animated: true, completion: nil)
+            }))
+        } else {
+            let failedFileString = failedFiles.joined(separator: "\n")
+            alertController.title = "Only \(successfulFiles.count) of \(nFiles) files uploaded"
+            print(alertController.title)
+            alertController.message = "All files were uploaded successfully to \(userName)'s Google Drive account except: \n\n\(failedFileString)\n\n Make sure your internet connection is reliable and try again."
+            // When the user presses "OK", dismiss the alert controller only
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+                alertController.dismiss(animated: true, completion: nil)
+            }))
+        }
+        
+        present(alertController, animated: true, completion: nil)
     }
     
     @objc func selectFileButtonPressed() {

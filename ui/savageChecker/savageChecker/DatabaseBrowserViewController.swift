@@ -14,6 +14,7 @@ import os.log
 class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     var userData: UserData?
+    var db: Connection?
     var files = [String]()
     var selectedFiles = [String]()
     var fileTableView: UITableView!
@@ -242,6 +243,21 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             cell.backgroundColor = UIColor.clear
         }
         
+        // Set the DB icon depending on whether the file has been uploaded or not
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let thisDBPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileString).path
+        let uploadedColumn = Expression<Bool>("uploaded")
+        if let db = try? Connection(thisDBPath) {
+            guard let sessionInfo = try? db.pluck(Table("sessions")) else { return cell}
+            guard let isUploaded = sessionInfo?[uploadedColumn] else {return cell}
+            if isUploaded {
+                cell.icon.image = UIImage(named: "databaseFileUploadedIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
+            }
+        }
+
+        
+        
+        
         return cell
     }
     
@@ -331,7 +347,7 @@ protocol GDriveUploadViewControllerDelegate {
 //MARK: -
 class DatabaseBrowserTableViewCell: UITableViewCell {
     
-    let icon = UIImageView()
+    var icon = UIImageView()
     let fileNameLabel = UILabel()
     let isSelectedIcon = UIImageView()
     
