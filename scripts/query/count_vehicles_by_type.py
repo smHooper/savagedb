@@ -269,7 +269,7 @@ def get_output_field_names(date_range, summarize_by, filter_sql=None, engine=Non
         if len(gmp_dates) > 1:
             date_ranges = [pd.date_range(end + pd.DateOffset(days=1), start, freq=date_range.freq).to_series()[:-1] for end, start in zip(gmp_dates[::2], gmp_dates[1::2])]
             exclude_dates = pd.concat(date_ranges).dt.strftime(DATETIME_FORMAT)
-            names = names.drop(exclude_dates)
+            names = names.loc[~names.isin(exclude_dates)]#.drop(exclude_dates)
 
     return names
 
@@ -347,7 +347,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
 
     # Query GOVs
     #simple_output_fields = get_output_field_names(date_range, summarize_by)
-    where_clause = "datetime BETWEEN '{start_date}' AND '{end_date}' " \
+    where_clause = "datetime::date BETWEEN '{start_date}' AND '{end_date}' " \
                    "AND destination NOT LIKE 'Primrose%%' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
@@ -382,7 +382,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
 
     ########## Query non-training buses
     bus_other_criteria = "is_training = ''false'' " \
-                     "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}'' "\
+                     "AND datetime::date between ''{start_date}'' AND ''{end_date}'' "\
                      .format(start_date=start_date, end_date=end_date) \
                      + other_criteria.replace("'", "''")
 
@@ -411,7 +411,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
 
     ######### Query training buses
     trn_other_criteria = "is_training " \
-                         "AND datetime BETWEEN ''{start_date}'' AND ''{end_date}'' " \
+                         "AND datetime::date between ''{start_date}'' AND ''{end_date}'' " \
                         .format(start_date=start_date, end_date=end_date) \
                         + other_criteria.replace("'", "''")
 
@@ -459,7 +459,7 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
         values = ["'%s'" % v for v in value_filter.split(',')]
         other_criteria += " AND work_group IN (%s) " % ','.join(values)
 
-    other_criteria = "datetime BETWEEN ''{start_date}'' AND ''{end_date}'' "\
+    other_criteria = "datetime::date between ''{start_date}'' AND ''{end_date}'' "\
                         .format(start_date=start_date, end_date=end_date) \
                         + other_criteria.replace("'", "''")
 
@@ -505,7 +505,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
     for table_name, print_name, criteria in sql_queries:
         data, sql = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
                                               summarize_by=summarize_by, output_fields=output_fields,
-                                              other_criteria="datetime BETWEEN '%s' AND '%s' " %
+                                              other_criteria="datetime::date between '%s' AND '%s' " %
                                                              (start_date, end_date) + criteria + other_criteria,
                                               get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time
                                               )
@@ -530,7 +530,7 @@ def query_bikes(output_fields, field_names, start_date, end_date, date_range, su
 
     data, sql = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
                                           summarize_by=summarize_by, output_fields=output_fields,
-                                          other_criteria="datetime BETWEEN '%s' AND '%s' " %
+                                          other_criteria="datetime::date between '%s' AND '%s' " %
                                                          (start_date, end_date) + other_criteria,
                                                summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time, get_totals=False
                                           )
@@ -880,6 +880,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         sns.set_style('darkgrid')
 
     sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
+    sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
     # If nothing is passed, assume that all queries should be run
@@ -920,8 +921,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     # reformat dates for postgres (yyyy-mm-dd), assuming format mm/dd/yyyy
     try:
         start_datetime = datetime.strptime(start_date, '%m/%d/%Y')
-        end_datetime = datetime.strptime(end_date, '%m/%d/%Y') +\
-                       rd.relativedelta(days=1) # add 1 day because BETWEEN looks for dates before end date
+        end_datetime = datetime.strptime(end_date, '%m/%d/%Y')
     except:
         raise ValueError('start and end dates must be in format mm/dd/YYYY')
 
@@ -949,7 +949,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         gmp_dates = [gmp_starts, gmp_ends]
         btw_stmts = []
         for gmp_start, gmp_end in zip(gmp_starts, gmp_ends):
-            btw_stmts.append("(datetime BETWEEN '{start}' AND '{end}') "
+            btw_stmts.append("(datetime::date BETWEEN '{start}' AND '{end}') "
                              .format(start=gmp_start.strftime('%Y-%m-%d'),
                                      end=gmp_end.strftime('%Y-%m-%d'))
                              )
@@ -970,6 +970,16 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     elif not out_csv:
         # If we got here, neither out_dir nor out_csv were given so raise an error
         raise ValueError('Either out_csv or out_dir must be given')
+
+    # Try to open the file to make sure it's not already open and therefore locked
+    try:
+        f = open(out_csv, 'w')
+        f.close()
+    except IOError as e:
+        if e.errno == os.errno.EACCES:
+            raise IOError('Permission to access the output file %s was denied. This is likely because the file is currently open. Please close the file and re-run the script.' % out_csv)
+        # Not a permission error.
+        raise
 
     # Check that summary_stat is a valid (postgres) SQL function
     valid_stats = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV']

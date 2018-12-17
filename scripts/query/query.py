@@ -25,11 +25,11 @@ def connect_db(connection_txt):
 
 def query_field_names(engine):
     with engine.connect() as conn, conn.begin():
-        sql = 'SELECT ' \
-              ' table_name, ' \
-              ' column_name ' \
-              'FROM information_schema.columns ' \
-              'WHERE table_schema = \'public\''
+        sql = "SELECT " \
+              " table_name, " \
+              " column_name " \
+              "FROM information_schema.columns " \
+              "WHERE table_schema = 'public'"
         field_names = pd.read_sql(sql, conn)
     field_names = {table_name: ', '.join([f for f in df.column_name if f not in ['index', 'id']])
                    for table_name, df in field_names.groupby('table_name')}
@@ -41,7 +41,7 @@ def simple_query(engine, table_name, year=None, field_names='*', summary_field='
 
     # If year is given, set up the where clause to encompass the whole season
     if year:
-        where_clause = 'WHERE datetime BETWEEN \'{year}-05-20\' AND \'{year}-09-15\''\
+        where_clause = 'WHERE datetime::date BETWEEN \'{year}-05-20\' AND \'{year}-09-15\''\
             .format(year=str(year))
     else:
         where_clause = ''
@@ -172,7 +172,7 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
 
     # If year is given, set up the where clause to encompass the whole season
     if year:
-        where_clause = 'WHERE datetime BETWEEN \'{year}-05-20\' AND \'{year}-09-15\''\
+        where_clause = 'WHERE datetime::date BETWEEN \'{year}-05-20\' AND \'{year}-09-15\''\
             .format(year=str(year))
     else:
         where_clause = ''
