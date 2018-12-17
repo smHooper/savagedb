@@ -786,7 +786,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -801,7 +801,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1088,7 +1088,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1107,7 +1107,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1361,12 +1361,12 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Lodge",      placeholder: "Select the type of bus",              type: "dropDown"),
-                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
+                             (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
+                             (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
-                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1383,12 +1383,12 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Lodge",      placeholder: "Select the type of bus",              type: "dropDown"),
-                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
+                             (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
+                             (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
-                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight logde guests", type: "normal"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "normal"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1629,7 +1629,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers",   type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1653,7 +1653,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers",   type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -1908,7 +1908,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Approved category",  placeholder: "Select the type of vehicle",          type: "dropDown"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -1928,7 +1928,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Approved category",  placeholder: "Select the type of vehicle",          type: "dropDown"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2150,7 +2150,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Company/Organization name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
                              (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2170,7 +2170,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Company/Organization Name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
                              (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2378,7 +2378,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -2395,7 +2395,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -2588,7 +2588,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number",   placeholder: "Enter the permit holder's last name",   type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -2605,7 +2605,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Permit number",   placeholder: "Enter the permit holder's last name",   type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -2801,7 +2801,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
@@ -2816,7 +2816,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
@@ -3157,7 +3157,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -3173,7 +3173,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -3379,7 +3379,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -3397,7 +3397,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -3751,7 +3751,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
                              (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("roadLottery")
@@ -3764,7 +3764,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
                              (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("roadLottery")

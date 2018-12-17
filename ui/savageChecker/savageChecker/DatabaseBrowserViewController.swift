@@ -14,6 +14,7 @@ import os.log
 class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     
     var userData: UserData?
+    var db: Connection?
     var files = [String]()
     var selectedFiles = [String]()
     var fileTableView: UITableView!
@@ -164,6 +165,31 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     
     
     @objc func doneButtonPressed() {
+        
+        if self.selectedFiles.count == 0 {
+            // Alert the user and exit
+            let alertTitle = "No database selected"
+            let alertMessage = "You must select at least one database file."
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            
+            // When the user presses "OK", select the currentDB file and add it back to the selectedFiles array
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+                let currentDBFile = String(dbPath.split(separator: "/").last ?? "")
+                self.selectedFiles.append(currentDBFile)
+                for i in 0..<self.fileTableView.numberOfRows(inSection: 0){
+                    let indexPath = IndexPath(row: i, section: 0)
+                    let cell = self.fileTableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
+                    if cell.fileNameLabel.text ?? "" == currentDBFile {
+                        self.fileTableView.selectRow(at: indexPath, animated: false, scrollPosition: .none)
+                        break
+                    }
+                }
+            }))
+
+            present(alertController, animated: true, completion: nil)
+            return
+        }
+        
         guard let presentingController = self.delegate as? GoogleDriveUploadViewController else {
             os_log("The presenting controller was not a GoogleDriveUploadViewController", log: .default, type: .default)
             return
@@ -216,6 +242,21 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         } else {
             cell.backgroundColor = UIColor.clear
         }
+        
+        // Set the DB icon depending on whether the file has been uploaded or not
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let thisDBPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileString).path
+        let uploadedColumn = Expression<Bool>("uploaded")
+        if let db = try? Connection(thisDBPath) {
+            guard let sessionInfo = try? db.pluck(Table("sessions")) else { return cell}
+            guard let isUploaded = sessionInfo?[uploadedColumn] else {return cell}
+            if isUploaded {
+                cell.icon.image = UIImage(named: "databaseFileUploadedIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
+            }
+        }
+
+        
+        
         
         return cell
     }
@@ -285,7 +326,12 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         let cell = tableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
         cell.isSelectedIcon.image = nil
-        self.selectedFiles.remove(at: indexPath.row)
+        
+        // Find the index of the selectedFiles array to remove
+        guard let indexToRemove = self.selectedFiles.index(of: cell.fileNameLabel.text ?? "") else { // in swift 4.2 this has to be .firstIndex
+            return IndexPath(row: 0, section: 0)
+        }
+        self.selectedFiles.remove(at: indexToRemove)
         
         return indexPath
     }
@@ -301,7 +347,7 @@ protocol GDriveUploadViewControllerDelegate {
 //MARK: -
 class DatabaseBrowserTableViewCell: UITableViewCell {
     
-    let icon = UIImageView()
+    var icon = UIImageView()
     let fileNameLabel = UILabel()
     let isSelectedIcon = UIImageView()
     
