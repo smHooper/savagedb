@@ -37,7 +37,8 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_number',
                                   'pass_':      'n_passengers',
                                   'wlchair_':   'n_wheelchair',
                                   'training':   'is_training',
-                                  'datacollector': 'observer_name'},
+                                  'datacollector': 'observer_name',
+                                  'dataentry':  'entered_by'},
                    'datadates':  {'xdate':      'obs_date',
                                   'boxopen':    'open_time',
                                   'boxclose':   'close_time'},
@@ -46,14 +47,17 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_number',
                    'greenstudy': {'tpcode':     'trip_purpose',
                                   'wgcode':     'work_group',
                                   'nid':        'nps_vehicle_id'},
+                   'greenstudywg': {'gid': 'id',
+                                    'work_group_code': 'code',
+                                    'work_group': 'name'
+                                    },
                    'nonbus':     {'dest':       'destination',
                                   'people_':    'n_passengers',
                                   'redwhite':   'permitholder_code',
-                                  #'trip_purp':  'trip_purpose',
-                                  #'workgrp':    'work_group',
                                   'nid':        'id',
                                   'datacollector': 'observer_name',
-                                  'blue': 'approved_type'
+                                  'blue':       'approved_type',
+                                  'dataentry':  'entered_by'
                                   }
                    }
 WORK_GROUPS = {'B&U':               'Maintenance-BU',
@@ -62,7 +66,21 @@ WORK_GROUPS = {'B&U':               'Maintenance-BU',
                'Rangers':           'VRP Rangers',
                'Roads':             'Maintenance-Roads',
                'Support-Maintenance': 'Maintenance-Support',
-               'Trails':            'Maintenance-Trails'}
+               'Trails':            'Maintenance-Trails'
+               }
+WORK_GROUP_CODES = {'A':  'ADM',
+                    'C':  'CON',
+                    'I':  'INT',
+                    'BU': 'MBU',
+                    'MR': 'MRD',
+                    'MT': 'MTR',
+                    'MS': 'MST',
+                    'R':  'RES',
+                    'P':  'PLN',
+                    'G':  'VRP',
+                    'S':  'SUP',
+                    'O':  'OTH'
+                    }
 TRIP_PURPOSE = {'Special Projects (5yrs or less)': 'Special projects',
                 'Orientation Trip':                 'Orientation trip',
                 'Routine Work':                     'Routine work',
@@ -79,7 +97,7 @@ BUS_TYPES = {'D': 'Denali Natural History Tour',
              'B': 'Denali Backcountry Lodge',
              'K': 'Kantishna Roadhouse',
              'E': 'Kantishna Experience',
-             'O': 'Other',
+             'O': 'Other bus',
              'X': 'Eielson Excursion',
              'M': 'McKinley Gold Camp'}
 APPROVED_TYPES = {'R': 'Researcher',
@@ -99,14 +117,9 @@ DESTINATIONS = {'E': 'Eielson',
                 }
 
 # Look-up table for mapping output table names from codetypes
-'''_OUTPUT_TBLS = {'dest': 'destination_codes',
-               'bus': 'bus_codes',
-               'entry': 'nonbus_codes',
-               'blue': 'npsapproved_codes',
-               'W': 'rightofway_codes'
-                }'''
-_OUTPUT_TBLS = {'dest': 'destination_codes',
-                'bus': 'bus_codes'}
+OUTPUT_CODE_TBLS = {'dest': 'destination_codes',
+                    'bus': 'bus_codes',
+                    'blue': 'nps_approved_codes'}
 
 NONBUS_COLUMNS = {''}
 
@@ -115,18 +128,15 @@ def split_codenames(df, out_dir):
     ''' split codename table into groups and get rid of extra fields like subcode and codetype'''
 
     groupby = df.groupby('codetype')
-    '''out_dir = r"C:\Users\shooper\proj\savagedb\db\original\exported_tables\delete"
-    if not os.path.isdir(out_dir):
-        os.mkdir(out_dir)#'''
 
     # For each codetype, create a new table and write
     for group in groupby.groups.keys():
         # Codetypes that are actually
-        if group not in _OUTPUT_TBLS:
+        if group not in OUTPUT_CODE_TBLS:
             continue
         this_group = groupby.get_group(group).copy()
         this_group.drop(['codetype', 'subcode'], axis=1, inplace=True)
-        this_group.to_csv(os.path.join(out_dir, '%s.csv' % _OUTPUT_TBLS[group]), index=False)
+        this_group.to_csv(os.path.join(out_dir, '%s.csv' % OUTPUT_CODE_TBLS[group]), index=False)
 
 
 def replace_code(x):
@@ -189,9 +199,10 @@ def main(export_tables=False):
         codenames = pd.read_csv(codename_txt)
         codenames.codeletter = codenames.codeletter.apply(replace_code)
         join = pd.merge(codenames, codenames2016, how='left', on='cid', suffixes=['', '_2016'])
-        codenames.codename = join.codename_2016
-        codenames.explanation = join.explanation
-
+        # Only replace the code with 2016 values if it exists in 2016
+        codenames.loc[~join.codename_2016.isnull(), 'codename'] = join[~join.codeletter_2016.isnull()]
+        codenames.loc[~join.codename_2016.isnull(), 'explanation'] = join[~join.explanation_2016.isnull()]
+        codenames.to_csv(codename_txt, index=False)
         # Replace codes in the nonbus table
         nonbus_txt = codename_txt.replace('codenames.csv', 'nonbus.csv')
         nonbus = pd.read_csv(nonbus_txt)
@@ -216,19 +227,17 @@ def main(export_tables=False):
         this_dir = os.path.join(BASEPATH, year)
 
         # split destination, delete unnecessary code types and columns, and make codetypes more understandable
-        codenames.loc[codenames.explanation == 'North Face - Camp Denali'] = 'North Face/Camp Denali'
-        split_codenames(codenames, this_dir)
+        codenames = pd.read_csv(CODENAME_TXT % year)
+        codenames.loc[codenames.explanation == 'North Face - Camp Denali', 'explanation'] = 'Camp Denali/North Face Lodge'
         codenames = codenames.loc[codenames.codetype.isin(KEEP_CODENAMES)]
         for cn in KEEP_CODENAMES:
             codenames[codenames.codename == cn] = KEEP_CODENAMES[cn]
         #   delete codes with different codenames from 2016/17
-        codenames_txt = os.path.join(this_dir, 'codenames.csv')
-        codenames = pd.read_csv(codenames_txt)
         delete_codenames = ['Education', 'WINWIN', 'SHUTTLE', 'Other bus', 'CAMPER', 'Eielson VC', 'Fish Creek', 'Mile 17']
         delete_explanations = ['Denali natural history tour', 'Tundra wildlife tour']
         codenames = codenames.loc[~codenames.codename.isin(delete_codenames) &
                                   ~codenames.explanation.isin(delete_explanations)]
-        codenames.to_csv(codenames_txt, index=False)
+        split_codenames(codenames, this_dir)
 
         nonbus_txt = os.path.join(this_dir, 'nonbus.csv')
         nonbus = pd.read_csv(nonbus_txt)
@@ -240,15 +249,17 @@ def main(export_tables=False):
             if field in nonbus.columns:
                 nonbus.drop(field, axis=1, inplace=True)
         nonbus.rename(columns=REPLACE_COLUMNS['nonbus'], inplace=True)
+        nonbus.loc[~nonbus.destination.isin(DESTINATIONS), 'destination'] = 'Other'
         nonbus.replace({'destination': DESTINATIONS}, inplace=True)
         nonbus.replace({'approved_type': APPROVED_TYPES}, inplace=True)
+
 
 
         bustraffic_txt = os.path.join(this_dir, 'bustraffic.csv')
         bustraffic = pd.read_csv(bustraffic_txt)
         for column in ['bustype', 'training', 'dest']:
             bustraffic[column] = bustraffic[column].apply(make_upper)
-        for field in ['dataentry', 'dataentry1', 'datacollector1', 'datacollector2', 'dataentry2']:
+        for field in ['dataentry1', 'datacollector1', 'datacollector2', 'dataentry2']:
             if field in nonbus.columns:
                 nonbus.drop(field, axis=1, inplace=True)
         bustraffic['training'] = ~bustraffic.training.isnull()
@@ -281,7 +292,7 @@ def main(export_tables=False):
             greenstudy_txt = os.path.join(this_dir, 'greenstudy.csv')
             greenstudy = pd.read_csv(greenstudy_txt)
             greenstudytp = pd.read_csv(greenstudytp_txt)
-            greenstudywg.replace({'work_group': WORK_GROUPS}, inplace=True)
+            greenstudywg.replace({'work_group': WORK_GROUPS, 'work_group_code': WORK_GROUP_CODES}, inplace=True)
             greenstudytp.replace({'trip_purpose': TRIP_PURPOSE}, inplace=True)
 
             # add the nonbus ID to the gsid column for 2007 only because this was the only year where green study ID
@@ -328,6 +339,9 @@ def main(export_tables=False):
             if 'trip_purp' in nonbus.columns:
                 tp_code_dict = {code: name for _, (code, name) in greenstudytp[['gtpid', 'trip_purpose']].iterrows()}
                 nonbus['trip_purpose'] = nonbus.trip_purp.map(tp_code_dict).fillna(nonbus.trip_purp)
+
+            greenstudywg.rename(columns=REPLACE_COLUMNS['greenstudywg'], inplace=True)
+            greenstudywg.to_csv(greenstudywg_txt, index=False)
 
         nonbus.to_csv(nonbus_txt, index=False)
 

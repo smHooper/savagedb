@@ -9,7 +9,7 @@ pd.options.mode.chained_assignment = None
 
 TABLES_WITH_DATES = ['nonbus', 'bustraffic', 'datadates']
 
-CODES = {'W': 'right_of_way',
+NONBUS_CODES = {'W': 'right_of_way',
          'B': 'nps_approved',
          'N': 'nps_vehicles',
          'O': 'photographers',
@@ -22,16 +22,54 @@ CODES = {'W': 'right_of_way',
          'T': 'turned_around',
          'L': 'road_lottery'}
 
-BUS_CODES = {'D': 'Denali Natural History Tour',
+APPROVED_NAMES = {'R': 'Researcher',
+                  'E': 'Education',
+                  'J': 'Concessionaire',
+                  'O': 'Other'}
+
+APPROVED_CODES = {'R': 'RSC',
+                  'E': 'EDU',
+                  'J': 'CON',
+                  'O': 'OTH'}
+
+BUS_NAMES = {'D': 'Denali Natural History Tour',
              'T': 'Tundra Wilderness Tour',
              'K': 'Kantishna Roadhouse',
              'B': 'Denali Backcountry Lodge',
+             'N': 'Camp Denali/North Face Lodge',
              'O': 'Other',
              'E': 'Kantishna Experience',
              'M': 'McKinley Gold Camp',
-             'I': 'Windows Into Wilderness'}
+             'I': 'Windows Into Wilderness',
+             'X': 'Eielson Excursion',
+             'S': 'Shuttle',
+             'C': 'Camper'}
 
-CONSTANT_FIELDS = ['id', 'observer_name', 'datetime', 'n_passengers', 'comments', 'destination']
+BUS_CODES = {'D': 'DNH',
+             'T': 'TWT',
+             'K': 'KRH',
+             'B': 'DBL',
+             'N': 'CDN',
+             'O': 'OTH',
+             'E': 'KXP',
+             'M': 'MCG',
+             'I': 'WIW',
+             'X': 'EXC',
+             'S': 'SHU',
+             'C': 'CMP'}
+
+
+DESTINATION_CODES = {'M': 'PRM',
+                     'T': 'TEK',
+                     'P': 'PLY',
+                     'O': 'TOK',
+                     'S': 'STO',
+                     'E': 'ELS',
+                     'W': 'WLK',
+                     'K': 'KAN',
+                     'C': 'OTH'}
+
+CONSTANT_FIELDS = ['id', 'observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method']
 
 NONBUS_FIELDS = {'W': ['driver_name',
                        'permit_number',
@@ -45,6 +83,7 @@ NONBUS_FIELDS = {'W': ['driver_name',
                        'work_group',
                        'n_nights'],
                  'O': ['driver_name',
+                       'permit_holder',
                        'permit_number',
                        'n_nights'],
                  'P': ['driver_name'],
@@ -56,10 +95,11 @@ NONBUS_FIELDS = {'W': ['driver_name',
                        'n_nights'],
                  'V': [],
                  'C': [],
-                 'Y': ['driver_name'],
+                 'Y': ['driver_name', 'n_nights'],
                  'T': [],
                  'L': ['permit_number']
                  }
+
 
 
 
@@ -75,6 +115,26 @@ ROW_NAMES = {'Lisa&Steve Neff': 'Linda/Steve Neff',
              'Virginia Wood': 'Ginny Wood',
              'Ginny Woods': 'Ginny Wood',
              'Ray Kreig': 'Ray Krieg'}
+
+COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'driver_name', 'comments','entered_by', 'entry_method'],
+                'buses':            ['observer_name', 'datetime', 'bus_type', 'bus_number', 'is_training', 'destination', 'n_passengers', 'n_wheelchair', 'n_lodge_ovrnt', 'driver_name', 'comments','entered_by', 'entry_method'],
+                'bus_codes':        ['name', 'code'],
+                'cyclists':         ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments','entered_by', 'entry_method'],
+                'destination_codes': ['name', 'code', 'mile'],
+                'employee_vehicles': ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'destination', 'n_passengers', 'driver_name', 'comments','entered_by', 'entry_method'],
+                'inholders':        ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'nps_approved':     ['observer_name', 'datetime', 'approved_type', 'n_nights', 'destination', 'n_passengers', 'driver_name', 'comments', 'entered_by', 'entry_method'],
+                'nps_approved_codes': ['name', 'code'],
+                'nps_contractors':  ['observer_name', 'datetime', 'organization', 'trip_purpose', 'n_nights', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'nps_vehicles':     ['observer_name', 'datetime', 'work_group', 'trip_purpose', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'photographers':    ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'road_lottery':     ['id','observer_name', 'datetime', 'permit_number', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'shift_info':       ['open_time', 'close_time', 'buschecked', 'nonbuschecked'],
+                'subsistence':      ['observer_name', 'datetime', 'n_nights', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method', 'driver_name'],
+                'tek_campers':      ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'turned_around':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'nps_work_groups':  ['name', 'code']
+                }
 
 
 
@@ -129,7 +189,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
             if field not in grouped.columns:
                 grouped[field] = ''
         grouped = grouped.loc[:, these_fields]
-        grouped.to_csv(os.path.join(search_dir, '%s.csv' % CODES[key]), index=False)
+        grouped.to_csv(os.path.join(search_dir, '%s.csv' % NONBUS_CODES[key]), index=False)
 
     os.remove(nonbus_txt)
 
@@ -148,44 +208,61 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     dest_codes.drop_duplicates('codename', inplace=True)
     dest_codes.drop('explanation', axis=1, inplace=True)
     dest_codes.loc[dest_codes.codename == 'Stony', 'codename'] = 'Stony Overlook'
-    dest_codes.rename(columns={'cid': 'id', 'codename': 'destination', 'codeletter': 'destination_code'}, inplace=True)
-    dest_codes.set_index('destination')
-    dest_codes['mile'] = {'Primrose/Mile 17': 17,
-                          'Teklanika': 27,
-                          'Polychrome': 45,
-                          'Toklat': 53,
-                          'Stony Overlook': 62,
-                          'Eielson': 66,
-                          'Wonder Lake': 84,
-                          'Kantishna': 91,
-                          'Other': 92}
-    dest_codes['destination'] = dest_codes.set_index
+    dest_codes.rename(columns={'cid': 'id', 'codename': 'name', 'codeletter': 'code'}, inplace=True)
+    dest_codes.replace({'code': DESTINATION_CODES}, inplace=True)
+    dest_codes.set_index('name', inplace=True)
+    dest_codes['mile'] = pd.Series({'Primrose/Mile 17': 17,
+                                    'Teklanika': 27,
+                                    'Polychrome': 45,
+                                    'Toklat': 53,
+                                    'Stony Overlook': 62,
+                                    'Eielson': 66,
+                                    'Wonder Lake': 84,
+                                    'Kantishna': 91,
+                                    'Other': 92})
+    dest_codes['name'] = dest_codes.index
     dest_codes.index = range(len(dest_codes))
-    dest_codes.reindex(columns=['id', 'destination', 'destination_code', 'mile'])
+    dest_codes = dest_codes.reindex(columns=['id', 'name', 'code', 'mile'])
     dest_codes.to_csv(dest_codes_txt, index=False)
+
+    print 'nps_approved_codes...',
+    approved_codes_txt = os.path.join(search_dir, 'nps_approved_codes.csv')
+    approved_codes = pd.read_csv(approved_codes_txt)
+    approved_codes.drop_duplicates('codeletter', inplace=True)
+    approved_codes.drop('explanation', axis=1, inplace=True)
+    for letter, name in APPROVED_NAMES.iteritems():
+        approved_codes.loc[approved_codes.codeletter == letter, 'codename'] = name
+    approved_codes.rename(columns={'cid': 'id', 'codename': 'name', 'codeletter': 'code'}, inplace=True)
+    approved_codes.replace({'code': APPROVED_CODES}, inplace=True)
+    approved_codes.to_csv(approved_codes_txt, index=False)
 
     print 'bus_codes...\n\n'
     bus_codes_txt = os.path.join(out_dir, 'bus_codes.csv')
     bus_codes = pd.read_csv(bus_codes_txt)
     bus_codes.drop_duplicates('codeletter', inplace=True)
     bus_codes.drop('explanation', axis=1, inplace=True)
-    for letter, name in BUS_CODES.iteritems():
+    for letter, name in BUS_NAMES.iteritems():
         bus_codes.loc[bus_codes.codeletter == letter, 'codename'] = name
-    bus_codes.rename(columns={'cid': 'id'}, inplace=True)
+    bus_codes.rename(columns={'cid': 'id', 'codename':'name', 'codeletter':'code'}, inplace=True)
+    bus_codes.replace({'code': BUS_CODES}, inplace=True)
     bus_codes.to_csv(bus_codes_txt, index=False)
 
-    print 'Renaming "bustraffic" to "buses"...\n'
+    print 'Renaming "bustraffic" to "buses"...',
     buses_txt = os.path.join(search_dir, 'bustraffic.csv')
     buses = pd.read_csv(buses_txt)
     buses.sort_values(['datetime'], inplace=True)
     buses.to_csv(os.path.join(search_dir, 'buses.csv'), index=False)
     os.remove(buses_txt)
 
-    print 'Renaming "right_of_way" to "inholders"...\n'
+    print '"right_of_way" to "inholders"...',
     os.rename(os.path.join(search_dir, 'right_of_way.csv'), os.path.join(search_dir, 'inholders.csv'))
 
-    print 'Renaming "datadates" to "shift_info"...'
+    print '"datadates" to "shift_info"...',
     os.rename(os.path.join(search_dir, 'datadates.csv'), os.path.join(search_dir, 'shift_info.csv'))
+
+    print '"greenstudywg" to "nps_work_groups"...\n'
+    os.rename(os.path.join(search_dir, 'greenstudywg.csv'), os.path.join(search_dir, 'nps_work_groups.csv'))
+
 
     print 'Deleting unnecessary tables...',
     researcher_txt = os.path.join(out_dir, 'researcher.csv')
@@ -200,10 +277,6 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     if os.path.isfile(greenstudy_txt):
         print 'greenstudy...',
         os.remove(greenstudy_txt)
-    greenstudywg_txt = greenstudy_txt.replace('.csv', 'wg.csv')
-    if os.path.isfile(greenstudywg_txt):
-        print 'greenstudywg...',
-        os.remove(greenstudywg_txt)
     greenstudytp_txt = greenstudy_txt.replace('.csv', 'tp.csv')
     if os.path.isfile(greenstudytp_txt):
         print 'greenstudytp...',
@@ -212,6 +285,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     if os.path.isfile(gmp_txt):
         print 'gmp...',
         os.remove(gmp_txt)
+    gmpnames_txt = os.path.join(out_dir, 'gmpnames.csv')
+    if os.path.isfile(gmpnames_txt):
+        print 'gmpnames...',
+        os.remove(gmpnames_txt)
     employees_txt = os.path.join(out_dir, 'employees.csv')
     if os.path.isfile(employees_txt):
         print 'employees...',
@@ -225,20 +302,51 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments = inholder_allotments.pivot(index='permitholder', columns='year', values='totalallowed')
     inholder_allotments.rename_axis('permit_holder', axis=0, inplace=True)
     inholder_allotments.rename(columns={c: '_%s' % c for c in inholder_allotments.columns}, inplace=True)
+    inholder_allotments = inholder_allotments.fillna(0)
     inholder_allotments.to_csv(os.path.join(search_dir, 'inholder_allotments.csv'))
     os.remove(row_txt)
 
     print 'Adding "other_vehicles" table...\n'
-    pd.DataFrame(columns=CONSTANT_FIELDS).to_csv(os.path.join(search_dir, 'other_vehicles.csv'))
+    pd.DataFrame(columns=CONSTANT_FIELDS).to_csv(os.path.join(search_dir, 'other_vehicles.csv'), index=False)
 
-    print 'Deleting ID field from all tables...\n'
-    # Unique ID should be added in postgres
-    for csv in glob(os.path.join(search_dir, '*.csv')):
+    work_groups = pd.read_csv(os.path.join(search_dir, 'nps_work_groups.csv'))
+    wg_code_dict = dict(zip(work_groups.name, work_groups.code))
+    dest_code_dict = dict(zip(dest_codes.name, dest_codes.code))
+    bus_code_dict = dict(zip(bus_codes.name, bus_codes.code))
+    approved_code_dict = dict(zip(approved_codes.name, approved_codes.code))
+    replace_dict = {'destination':   dest_code_dict,
+                    'bus_type':      bus_code_dict,
+                    'approved_type': approved_code_dict,
+                    'work_group':    wg_code_dict
+                    }
+
+    # Add a null option to all code tables
+    for table_name in ['bus_codes', 'destination_codes', 'nps_approved_codes', 'nps_work_groups']:
+        csv = os.path.join(search_dir, '%s.csv' % table_name)
         df = pd.read_csv(csv)
-        if 'id' in df.columns:
-            df.drop('id', axis=1, inplace=True)
+        df.loc[len(df)] = pd.Series({'name': 'Null', 'code': 'NUL'})
         df.to_csv(csv, index=False)
 
+    print 'Adding unique IDs, filling default values, replacing long names for codes, and reording columns...\n'
+    for csv in glob(os.path.join(search_dir, '*.csv')):
+        df = pd.read_csv(csv)
+        #if 'id' in df.columns:
+            # df.drop('id', axis=1, inplace=True)
+        df['id'] = xrange(len(df))
+        if 'entry_method' in df.columns:
+            df['entry_method'] = 'migrated'
+
+        # Replace values in the table if any of these columns exist
+        df.replace(replace_dict,
+                   inplace=True)
+        for col in replace_dict:
+            if col in df.columns:
+                df.loc[df[col].isnull(), col] = 'NUL'
+
+        table_name = os.path.basename(csv).replace('.csv', '')
+        if table_name in COLUMN_ORDER:
+            df = df.reindex(columns=COLUMN_ORDER[table_name])
+        df.to_csv(csv, index=False)
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv[1:]))
