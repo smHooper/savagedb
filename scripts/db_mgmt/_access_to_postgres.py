@@ -9,6 +9,10 @@ import _clean_db_after_import
 
 
 ROOT_DIR = r'C:\Users\shooper\proj\savagedb\db'
+PRIMARY_KEYS = {'bus_codes': 'code',
+                'destination_codes': 'code',
+                'nps_approved_codes': 'code',
+                'nps_work_groups': 'code'}
 
 def main():
     # Export from Access
@@ -22,12 +26,12 @@ def main():
     merged_dir = os.path.join(ROOT_DIR, 'merged_tables')
     merge_year_csvs.main(exported_dir, merged_dir)
 
-    # Do the rest of the stuff that has to happen post-merge
+    # Do the rest of the stuff #that has to happen post-merge
     _clean_tables_postmerge.main(os.path.join(merged_dir, 'cleaned'))
 
     # Import csvs to DB
     connection_txt = os.path.join(os.path.join(ROOT_DIR, '..'), 'connection_info.txt')
-    csvs_to_postgres.main(os.path.join(os.path.join(merged_dir, 'cleaned')), connection_txt=connection_txt)
+    csvs_to_postgres.main(os.path.join(os.path.join(merged_dir, 'cleaned')), connection_txt=connection_txt)#, primary_key=PRIMARY_KEYS)
 
     # Clean up datatypes in DB
     _clean_db_after_import.main(connection_txt)
