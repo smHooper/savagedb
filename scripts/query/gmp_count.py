@@ -25,6 +25,7 @@ Options:
 
 import os, sys
 import re
+import subprocess
 from datetime import datetime
 import pandas as pd
 import numpy as np
@@ -119,15 +120,16 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         raise ValueError('years must be in the form "YYYY", "year1, year2, ...", or "year_start-year_end". Years given were %s' % years)
 
     if not out_csv:
-        out_basename = 'ridership_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'ridership_%s.csv' % years[0]
+        out_basename = 'gmp_vehicle_count_%s_%s.csv' % (years[0], years[-1]) if len(years) > 1 else 'gmp_vehicle_count_%s.csv' % years[0]
         out_csv = os.path.join(out_dir, out_basename)
 
+    # Try to open the file to make sure it's not already open and therefore locked
     try:
         f = open(out_csv, 'w')
         f.close()
     except IOError as e:
         if e.errno == os.errno.EACCES:
-            raise IOError('Permission to access the file %s was denied. This is likely because the file is currently open. Please close the file and re-run the script.' % out_csv)
+            raise IOError('Permission to access the output file %s was denied. This is likely because the file is currently open. Please close the file and re-run the script.' % out_csv)
         # Not a permission error.
         raise
 
@@ -139,9 +141,11 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
 
     # Initiate the log file
     sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
+    sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
     yearly_data = []
+    sql_statements = []
     for year in years:
         start_date = '%s-05-20 00:00:00' % year
         end_date = '%s-09-16 00:00:00' % year
@@ -149,7 +153,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         gmp_starts, gmp_ends = cvbt.get_gmp_dates(datetime(year, 5, 1), datetime(year, 9, 16))
         btw_stmts = []
         for gmp_start, gmp_end in zip(gmp_starts, gmp_ends):
-            btw_stmts.append("(datetime BETWEEN '{start}' AND '{end}') "
+            btw_stmts.append("(datetime::date BETWEEN '{start}' AND '{end}') "
                              .format(start=gmp_start.strftime('%Y-%m-%d'),
                                      end=gmp_end.strftime('%Y-%m-%d'))
                              )
@@ -163,65 +167,73 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         bus_names = {'VTS': ['Shuttle', 'Camper', 'Other'],#
                      'Tour': ['Kantishna Experience', 'Eielson Excursion', 'Tundra Wilderness Tour', 'Windows Into Wilderness']##,
                      }
-
         other_criteria = "is_training = ''false'' " + gmp_date_clause.replace("'", "''")
-        bus_vehicles = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
+        bus_vehicles, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
                                                         other_criteria=other_criteria, dissolve_names=bus_names,
                                                         field_names=field_names['buses'], summarize_by='month',
-                                                        output_fields=output_fields, filter_fields=True)
-
-        bus_passengers = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',                                                   other_criteria=other_criteria, dissolve_names=bus_names,
+                                                        output_fields=output_fields, filter_fields=True, return_sql=True)
+        sql_statements.append(sql)
+        bus_passengers, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',                                                   other_criteria=other_criteria, dissolve_names=bus_names,
                                                         field_names=field_names['buses'], summarize_by='month',
-                                                        output_fields=output_fields, filter_fields=True, summary_stat='SUM', summary_field='n_passengers')
+                                                        output_fields=output_fields, filter_fields=True, summary_stat='SUM', summary_field='n_passengers', return_sql=True)
+        sql_statements.append(sql)
         bus_passengers.index = [ind + ' pax' for ind in bus_passengers.index]
-
 
 
         # Query training buses
         trn_names = {'JV training': [item for k, v in bus_names.iteritems() for item in v],
                      'Lodge bus training': ['Camp Denali/North Face Lodge', 'Kantishna Roadhouse', 'Denali Backcountry Lodge']}
         other_criteria = "is_training " + gmp_date_clause.replace("'", "''")
-        trn_buses = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
+        trn_buses, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
                                                      other_criteria=other_criteria, dissolve_names=trn_names,
                                                      field_names=field_names['buses'], summarize_by='month',
-                                                     output_fields=output_fields)
+                                                     output_fields=output_fields, return_sql=True)
+        sql_statements.append(sql)
 
         # Query nps_approved
-        approved_vehicles = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
-                                                             other_criteria="destination <> ''Primrose/Mile 17'' " + gmp_date_clause.replace("'", "''"),
+        primrose_stmt = " AND destination <> 'Primrose/Mile 17' "
+        other_criteria = (gmp_date_clause + primrose_stmt).replace("'", "''")
+        approved_vehicles, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
+                                                             other_criteria=other_criteria,
                                                              field_names=field_names['nps_approved'], summarize_by='month',
-                                                             output_fields=output_fields)
+                                                             output_fields=output_fields, return_sql=True)
+        sql_statements.append(sql)
 
         # Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
         other_criteria = "destination = ''Primrose/Mile 17'' AND approved_type = ''Concessionaire'' "
-        approved_vehicles_primrose = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
+        approved_vehicles_primrose, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
                                                              other_criteria=other_criteria + gmp_date_clause.replace("'", "''"),
                                                              field_names=field_names['nps_approved'], summarize_by='month',
-                                                             output_fields=output_fields)
+                                                             output_fields=output_fields, return_sql=True)
+        sql_statements.append(sql)
         if len(approved_vehicles_primrose) > 0:
             approved_vehicles_primrose.index = ['JV (Primrose)']
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
-        other_criteria = "destination <> 'Primrose/Mile 17' " + gmp_date_clause
+        other_criteria = (gmp_date_clause + primrose_stmt).lstrip('AND ')
         for table_name in SIMPLE_COUNT_QUERIES:
-            counts = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields)
+            counts, sql = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, return_sql=True)
             simple_counts.append(counts)
+            sql_statements.append(sql)
         simple_counts = pd.concat(simple_counts, sort=False)
 
         # Get tek and accessibility passengers and number of cyclists
-        accessibility_passengers = query.simple_query_by_datetime(engine, 'accessibility', field_names=field_names['accessibility'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM')
+        accessibility_passengers, sql = query.simple_query_by_datetime(engine, 'accessibility', field_names=field_names['accessibility'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM', return_sql=True)
+        sql_statements.append(sql)
         if len(accessibility_passengers) > 0:
             accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
 
-        tek_passengers = query.simple_query_by_datetime(engine, 'tek_campers', field_names=field_names['tek_campers'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM')
+        tek_passengers, sql = query.simple_query_by_datetime(engine, 'tek_campers', field_names=field_names['tek_campers'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM', return_sql=True)
         if len(tek_passengers) > 0:
             tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
+        sql_statements.append(sql)
 
-        cyclists = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
+        cyclists, sql = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
                                                         other_criteria=other_criteria, summarize_by='month',
                                                         output_fields=output_fields, summary_field='n_passengers',
-                                                        summary_stat='SUM')
+                                                        summary_stat='SUM', return_sql=True)
+        sql_statements.append(sql)
         if len(cyclists) > 0:
             cyclists.index = [PRINT_NAMES['cyclists']]
 
@@ -270,6 +282,13 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
     #all_data = all_data.fillna(0)
 
     all_data.to_csv(out_csv)
+
+    out_sql_txt = out_csv.replace('.csv', '_sql.txt')
+    break_str = '#' * 100
+    with open(out_sql_txt, 'w') as f:
+        for stmt in sql_statements:
+            f.write(stmt + '\n\n%s\n\n' % break_str)
+        f.write('\n\n\n')
 
     print '\nCSV written to: %s' % out_csv
 
