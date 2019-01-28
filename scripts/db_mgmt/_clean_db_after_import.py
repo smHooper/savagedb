@@ -105,7 +105,7 @@ def main(info_txt):
                         .format(table_name=table, field=field, value=DEFAULT_VALUES[field])
 
     # Make changes to the DB
-    with engine.connect() as conn, conn.begin():
+    """with engine.connect() as conn, conn.begin():
         print 'Submitting the following commands: \n%s\n' % sql.replace('; ', ';\n')
         #conn.execute(sql)
 
@@ -121,9 +121,10 @@ def main(info_txt):
                              ' USING {field}::integer;'
                              'ALTER TABLE inholder_allotments'
                              ' ALTER COLUMN {field} SET DEFAULT 0'.format(field=field))'''
+                             """
 
     # Create unique constraints
-    sql_template = "ALTER TABLE {table_name} ADD CONSTRAINT {column_name}_unique UNIQUE {column_name}"
+    sql_template = "ALTER TABLE {table_name} ADD CONSTRAINT {table_name}_{column_name}_unique UNIQUE ({column_name})"
     sql_stmts = [sql_template.format(table_name=tname, column_name=cname)
                 for tname in UNIQUE_CONSTAINTS for cname in UNIQUE_CONSTAINTS[tname]]
     for sql in sql_stmts:
@@ -146,11 +147,12 @@ def main(info_txt):
               ' ON UPDATE CASCADE;'\
             .format(local_table=fkey_info.l_table, local_col=fkey_info.l_column,
                     foreign_table=fkey_info.f_table, foreign_col=fkey_info.f_column)
+
         try:
             with engine.connect() as conn, conn.begin():
                 conn.execute(sql)
         except sqlalchemy.exc.SQLAlchemyError as e:
-            warnings.warn('unable to set constraint with statement %s because %s' % (sql, e.message))
+            warnings.warn("unable to set constraint with statement '%s' because '%s'" % (sql, e.message))
 
         # Add tablefunc extension
         #   can't do this if I want the user specified in connection_info.txt to not be a superuser (because whoever
