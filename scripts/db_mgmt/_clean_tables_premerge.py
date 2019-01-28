@@ -101,6 +101,7 @@ BUS_TYPES = {'D': 'Denali Natural History Tour',
              'X': 'Eielson Excursion',
              'M': 'McKinley Gold Camp'}
 APPROVED_TYPES = {'R': 'Researcher',
+                  'B': 'Researcher', #there's one record where the code is B, but it's clearly a researcher
                   'E': 'Education',
                   'J': 'Concessionaire',
                   'O': 'Other'
@@ -113,7 +114,8 @@ DESTINATIONS = {'E': 'Eielson',
                 'S': 'Stony Overlook',
                 'T': 'Teklanika',
                 'W': 'Wonder Lake',
-                'X': 'Other'
+                'X': 'Other',
+                '0': 'Toklat'# there's one employee vehicle record with comment "TOKLAT" but dest = 0
                 }
 
 # Look-up table for mapping output table names from codetypes
