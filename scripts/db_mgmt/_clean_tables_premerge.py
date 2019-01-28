@@ -97,7 +97,7 @@ BUS_TYPES = {'D': 'Denali Natural History Tour',
              'B': 'Denali Backcountry Lodge',
              'K': 'Kantishna Roadhouse',
              'E': 'Kantishna Experience',
-             'O': 'Other bus',
+             'O': 'Other',
              'X': 'Eielson Excursion',
              'M': 'McKinley Gold Camp'}
 APPROVED_TYPES = {'R': 'Researcher',
@@ -186,7 +186,6 @@ def main(export_tables=False):
         codenames2016.to_csv(codenames_txt, index=False)
         bustraffic_txt = codenames_txt.replace('codenames', 'bustraffic')
         bustraffic = pd.read_csv(bustraffic_txt)
-        #import pdb; pdb.set_trace()
         bustraffic.loc[bustraffic.bustype == 'W', 'bustype'] = 'I'
         bustraffic.to_csv(bustraffic_txt, index=False)
 
