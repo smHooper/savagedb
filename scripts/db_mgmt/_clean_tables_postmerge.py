@@ -221,6 +221,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
                                     'Kantishna': 91,
                                     'Other': 92})
     dest_codes['name'] = dest_codes.index
+    dest_codes.sort_values(by='mile', inplace=True)
     dest_codes.index = range(len(dest_codes))
     dest_codes = dest_codes.reindex(columns=['id', 'name', 'code', 'mile'])
     dest_codes.to_csv(dest_codes_txt, index=False)
@@ -234,6 +235,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         approved_codes.loc[approved_codes.codeletter == letter, 'codename'] = name
     approved_codes.rename(columns={'cid': 'id', 'codename': 'name', 'codeletter': 'code'}, inplace=True)
     approved_codes.replace({'code': APPROVED_CODES}, inplace=True)
+    approved_codes.sort_values(by='name', inplace=True)
     approved_codes.to_csv(approved_codes_txt, index=False)
 
     print 'bus_codes...\n\n'
@@ -245,6 +247,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         bus_codes.loc[bus_codes.codeletter == letter, 'codename'] = name
     bus_codes.rename(columns={'cid': 'id', 'codename':'name', 'codeletter':'code'}, inplace=True)
     bus_codes.replace({'code': BUS_CODES}, inplace=True)
+    bus_codes.sort_values(by='name', inplace=True)
     bus_codes.to_csv(bus_codes_txt, index=False)
 
     print 'Renaming "bustraffic" to "buses"...',
