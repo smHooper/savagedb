@@ -3,7 +3,10 @@ Clean up tables to prep for merge_year_csvs.py
 '''
 
 import sys, os
+import re
+import fnmatch
 import pandas as pd
+
 import accessdb_to_csv
 
 
@@ -222,7 +225,8 @@ def main(export_tables=False):
             return x
 
     print '\n\nCleaning records for',
-    for yr in range(1997, 2018):
+    years = [int(d) for d in os.listdir(BASEPATH) if re.match('\d{4}', d)]
+    for yr in years:
         year = str(yr)
         print '...%s' % year,
         this_dir = os.path.join(BASEPATH, year)
