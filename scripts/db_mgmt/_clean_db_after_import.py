@@ -105,7 +105,7 @@ def main(info_txt):
                         .format(table_name=table, field=field, value=DEFAULT_VALUES[field])
 
     # Make changes to the DB
-    """with engine.connect() as conn, conn.begin():
+    with engine.connect() as conn, conn.begin():
         print 'Submitting the following commands: \n%s\n' % sql.replace('; ', ';\n')
         #conn.execute(sql)
 
@@ -121,7 +121,6 @@ def main(info_txt):
                              ' USING {field}::integer;'
                              'ALTER TABLE inholder_allotments'
                              ' ALTER COLUMN {field} SET DEFAULT 0'.format(field=field))'''
-                             """
 
     # Create unique constraints
     sql_template = "ALTER TABLE {table_name} ADD CONSTRAINT {table_name}_{column_name}_unique UNIQUE ({column_name})"

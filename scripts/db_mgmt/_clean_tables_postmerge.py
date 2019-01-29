@@ -254,6 +254,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     buses_txt = os.path.join(search_dir, 'bustraffic.csv')
     buses = pd.read_csv(buses_txt)
     buses.sort_values(['datetime'], inplace=True)
+    buses['entry_method'] = '' # fill this later circa line 341
     buses.to_csv(os.path.join(search_dir, 'buses.csv'), index=False)
     os.remove(buses_txt)
 
