@@ -395,13 +395,11 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     # If this function is being called within query_all_vehicles(), set the names to aggregate. If this function
     #   is being called as just a query of buses, don't aggregate at all so no need to set dissolve_names
     if is_subquery:
-        bus_names = {'VTS': ['Shuttle', 'Camper'],
-                     'Other JV bus': ['Other'],
-                     'Long tour': ['Kantishna Experience', 'Eielson Excursion',
-                                   'Tundra Wilderness Tour', 'Windows Into Wilderness'],
-                     'Short tour': ['Denali Natural History Tour'],
-                     'Lodge bus': ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
-                                   'Camp Denali/North Face Lodge']
+        bus_names = {'VTS': ['SHU', 'CMP'],
+                     'Other JV bus': ['OTH'],
+                     'Long tour': ['KXP', 'EXC', 'TWT', 'WIW'],
+                     'Short tour': ['DNH'],
+                     'Lodge bus': ['KRH', 'DBL', 'CDN']
                      }
         kwargs['dissolve_names'] = bus_names
 
@@ -418,11 +416,8 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     kwargs['other_criteria'] = trn_other_criteria
 
     if is_subquery:
-        kwargs['dissolve_names'] = {'Other JV bus': ['Shuttle', 'Camper', 'Kantishna Experience',
-                                                 'Eielson Excursion', 'Tundra Wilderness Tour',
-                                                 'Windows Into Wilderness', 'Denali Natural History Tour', 'Other'],
-                                    'Lodge bus': ['Kantishna Roadhouse', 'Denali Backcountry Lodge',
-                                                  'Camp Denali/North Face Lodge']
+        kwargs['dissolve_names'] = {'Other JV bus': ['SHU', 'CMP', 'KXP', 'EXC', 'TWT', 'WIW', 'DNH', 'OTH'],
+                                    'Lodge bus': ['KRH', 'DBL', 'CDN']
                                     }
 
     # Get appropriate field names as with non-training buses
@@ -474,19 +469,24 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
 
     if category_filter:
         data = filter_data_by_category(data, category_filter)
+    import pdb; pdb.set_trace()
 
     return data, [sql]
 
 
 def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
 
-    OTHER_CRITERIA = {'nps_employee':   "AND destination IN ('Toklat', 'Wonder Lake') ",
-                      'other_employee': "AND destination NOT IN ('Toklat', 'Wonder Lake') ",
-                      'researcher':     "AND destination NOT LIKE 'Primrose%%' AND "
-                                        "approved_type = 'Researcher' ",
-                      'other_approved': "AND destination NOT LIKE 'Primrose%%' AND "
-                                        "approved_type <> 'Researcher' "
+    OTHER_CRITERIA = {'nps_employee':   "AND destination IN ('TOK', 'WLK') ",
+                      'other_employee': "AND destination NOT IN ('TOK', 'WLK') ",
+                      'researcher':     "AND destination <> 'PRM' AND approved_type = 'RSC' ",
+                      'other_approved': "AND destination <> 'PRM' AND approved_type <> 'RSC' "
                       }
+
+    if value_filter:
+        values = ["'%s'" % v for v in value_filter.split(',')]
+        approved_values = " AND approved_type IN (%s) " % ','.join(values)
+        OTHER_CRITERIA['researcher'] += approved_values
+        OTHER_CRITERIA['other_approved'] += approved_values
 
     sql_queries = [
         ('inholders',           'Inholders',        ''),
@@ -522,6 +522,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
 
     if category_filter:
         data = filter_data_by_category(data, category_filter)
+    import pdb; pdb.set_trace()
 
     return data, sql_statements
 
