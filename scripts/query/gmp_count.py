@@ -164,8 +164,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         output_fields = cvbt.get_output_field_names(date_range, 'month')
 
         # Query buses
-        bus_names = {'VTS': ['Shuttle', 'Camper', 'Other'],#
-                     'Tour': ['Kantishna Experience', 'Eielson Excursion', 'Tundra Wilderness Tour', 'Windows Into Wilderness']##,
+        bus_names = {'VTS': ['SHU', 'CMP', 'OTH'],#
+                     'Tour': ['KXP', 'EXC', 'TWT', 'WIW']##,
                      }
         other_criteria = "is_training = ''false'' " + gmp_date_clause.replace("'", "''")
         bus_vehicles, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
@@ -173,16 +173,24 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
                                                         field_names=field_names['buses'], summarize_by='month',
                                                         output_fields=output_fields, filter_fields=True, return_sql=True)
         sql_statements.append(sql)
+        # Rename lodge bus codes to use actual name
+        bus_codes = query.get_lookup_table(engine, 'bus_codes')
+        del bus_codes['NUL'] # don't count buses without a type
+        bus_vehicles.rename(index=bus_codes, inplace=True)
+
+        # Query bus passengers
         bus_passengers, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',                                                   other_criteria=other_criteria, dissolve_names=bus_names,
                                                         field_names=field_names['buses'], summarize_by='month',
                                                         output_fields=output_fields, filter_fields=True, summary_stat='SUM', summary_field='n_passengers', return_sql=True)
         sql_statements.append(sql)
+        # Again, rename lodge bus codes to use actual names
+        bus_passengers.rename(index=bus_codes, inplace=True)
         bus_passengers.index = [ind + ' pax' for ind in bus_passengers.index]
 
 
         # Query training buses
         trn_names = {'JV training': [item for k, v in bus_names.iteritems() for item in v],
-                     'Lodge bus training': ['Camp Denali/North Face Lodge', 'Kantishna Roadhouse', 'Denali Backcountry Lodge']}
+                     'Lodge bus training': ['CDN', 'KRH', 'DBL']}
         other_criteria = "is_training " + gmp_date_clause.replace("'", "''")
         trn_buses, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
                                                      other_criteria=other_criteria, dissolve_names=trn_names,
@@ -191,16 +199,18 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         sql_statements.append(sql)
 
         # Query nps_approved
-        primrose_stmt = " AND destination <> 'Primrose/Mile 17' "
+        primrose_stmt = " AND destination <> 'PRM' "
         other_criteria = (gmp_date_clause + primrose_stmt).replace("'", "''")
         approved_vehicles, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
                                                              other_criteria=other_criteria,
                                                              field_names=field_names['nps_approved'], summarize_by='month',
                                                              output_fields=output_fields, return_sql=True)
+        approved_codes = query.get_lookup_table(engine, 'nps_approved_codes')
+        approved_vehicles.rename(index=approved_codes, inplace=True)
         sql_statements.append(sql)
 
         # Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
-        other_criteria = "destination = ''Primrose/Mile 17'' AND approved_type = ''Concessionaire'' "
+        other_criteria = "destination = ''PRM'' AND approved_type = ''CON'' "
         approved_vehicles_primrose, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
                                                              other_criteria=other_criteria + gmp_date_clause.replace("'", "''"),
                                                              field_names=field_names['nps_approved'], summarize_by='month',
@@ -208,6 +218,10 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         sql_statements.append(sql)
         if len(approved_vehicles_primrose) > 0:
             approved_vehicles_primrose.index = ['JV (Primrose)']
+
+        # Rename Nulls to other.
+        approved_vehicles.rename(index={'Null': 'Other'}, inplace=True)
+        approved_vehicles = approved_vehicles.groupby(by=approved_vehicles.index).sum()#consilidate 2 'Other'
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
