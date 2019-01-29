@@ -18,7 +18,7 @@ def main():
     # Export from Access
     print 'Retrieving data from original Access db files...\n'
     exported_dir = os.path.join(ROOT_DIR, 'exported_tables')
-    #accessdb_to_csv.main(exported_dir, search_dir=os.path.join(ROOT_DIR, 'original'))
+    accessdb_to_csv.main(exported_dir, search_dir=os.path.join(ROOT_DIR, 'original'))
 
     # Do everything possible before merging to clean tables
     print '\n\nCleaning data before merging all years...\n'

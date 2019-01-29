@@ -1,10 +1,10 @@
 import os
+import re
 import fnmatch
 import pandas as pd
 import sys
 
-START_YEAR = 1997
-END_YEAR = 2017
+
 DROP_DUPLICATES =  ['bluepermit_codes',
                     'bus_codes',
                     'codenames',
@@ -56,7 +56,7 @@ def main(root_dir, out_dir=None, drop_duplicates=True):
         tables.extend([csv for csv in fnmatch.filter(files, '*.csv')])
     tables = set(tables)
 
-    year_strs = [str(y) for y in range(START_YEAR, END_YEAR + 1)]
+    year_strs = [d for d in os.listdir(root_dir) if re.match('\d{4}', d)]
     print '\n'
     for csv in tables:
         print 'Merging %s...' % csv.replace('.csv','')
