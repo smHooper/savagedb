@@ -522,7 +522,6 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
 
     if category_filter:
         data = filter_data_by_category(data, category_filter)
-    import pdb; pdb.set_trace()
 
     return data, sql_statements
 
@@ -647,7 +646,7 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
             percent_y = last_top + data/2 # center them in each bar
 
             for i in range(len(x_inds)):
-                ax.text(x_inds[i], percent_y[i], '%d%%' % percents.iloc[i], color='white', fontsize=8,
+                ax.text(x_inds[i], percent_y[i], '%d%%' % round(percents.iloc[i]), color='white', fontsize=6,
                         horizontalalignment='center', verticalalignment='center',
                         zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
 
@@ -729,7 +728,7 @@ def plot_line(all_data, x_labels, out_img, vehicle_limits=None, title=None, lege
             if show_stats:
                 r, p = stats.pearsonr(counts, x * slope + intercept)
                 stats_label = r' (slope = %.1f, $\it{r} = %.2f)$' % (slope, r)
-                data_stats.append({'slope': slope, 'r': r})
+                data_stats.append({'slope': slope, 'intercept': intercept, 'r': r})
         elif plot_type == 'stacked area':
             colors = pd.Series(colors).reindex(all_data.index)
             plt.stackplot(np.arange(n_dates), all_data, labels=all_data.index, colors=colors)
