@@ -2,7 +2,7 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--sql_criteria=<str>] [--destinations=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--custom_plot_title=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background]
 
 Examples:
     python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
@@ -34,6 +34,10 @@ Options:
     --category_filter=<str>     Comma-separated list of either regular expressions or strings found in SORT_ORDER of
                                 this script to filter the categories of values per query type. See SORT_ORDER values
                                 for a list of values per query.
+    --sql_criteria=<str>        Raw SQL WHERE statement to select specific records, but without "WHERE"
+                                (e.g., "n_passengers > 40")
+    --destinations=<str>        Comma-separated list of destination codes (from destination_codes table) to limit
+                                results to particular destinations
     --summary_stat=<str>        Summary statistic to aggregate values in SQL query. Default is 'COUNT'
     --summary_field=<str>       Field name in the tables to calculate values from in SQL queries. Default is 'datetime'
     --aggregate_by=<str>        Secondary time step to aggregate initially counted values by. For example, if
@@ -45,6 +49,8 @@ Options:
                                 field is between these two times will be summarised
     --plot_extension=<str>      File extension dictating which image format to save plots to. Options are ".png",
                                 ".jpg", ".pdf", and any acceptable matplotlib image format. [default: .png]
+    --custom_plot_title=<str>   Title to use for all plots. If not specified, the title will be "Vehicle counts by
+                                <summarize_by>, <start>-<end>"
     -s, --strip_data            Remove the first and last sets of consecutive null
                                 from data (similar to str.strip()) before plotting and writing CSVs to disk.
                                 Default is False.
@@ -727,7 +733,7 @@ def plot_line(all_data, x_labels, out_img, vehicle_limits=None, title=None, lege
 
             if show_stats:
                 r, p = stats.pearsonr(counts, x * slope + intercept)
-                stats_label = r' (slope = %.1f, $\it{r} = %.2f)$' % (slope, r)
+                stats_label = r' (slope = %.1f, $\it{r} = %.2f)$' % (round(slope, 1), round(r, 2))
                 data_stats.append({'slope': slope, 'intercept': intercept, 'r': r})
         elif plot_type == 'stacked area':
             colors = pd.Series(colors).reindex(all_data.index)
@@ -859,7 +865,7 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None, sql_criteria='', destinations=None, custom_plot_title=None):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -917,6 +923,16 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         # Don't need to split category filter because filter_data_by_category() handles the string
         warnings.warn("value filters of %s were given, but these might not be relevant to all queries specified"
                       " (%s)" % (category_filter, ','.join(queries)))
+
+    if sql_criteria:
+        # Make sure the criteria doesn't start with WHERE
+        if sql_criteria.strip().lower().startswith('where'):
+            sql_criteria = sql_criteria.split('WHERE')[-1].split('where')[-1]
+        sql_criteria = " AND " + sql_criteria
+    destination_criteria = ''
+    if destinations:
+        destinations = ', '.join(["'%s'" % d.strip() for d in destinations.split(',')])
+        destination_criteria = " AND destination IN (%s) " % destinations
 
     # reformat dates for postgres (yyyy-mm-dd), assuming format mm/dd/yyyy
     try:
@@ -1035,9 +1051,10 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             this_date_range = date_range[start_index : index]
             # If this is the last chunk, make sure the last date (used in SQL statements) is actually the last date of the range
             this_end_date = these_output_fields.index[-1] if i + 1 != len(chunk_inds) else end_date
+            other_criteria = gmp_date_criteria + destination_criteria + sql_criteria
             data, sql_stmts = query_function(these_output_fields, field_names, these_output_fields.index[0],
                                              this_end_date, this_date_range, summarize_by, engine,
-                                             sort_order=SORT_ORDER[query_name], other_criteria=gmp_date_criteria,
+                                             sort_order=SORT_ORDER[query_name], other_criteria=other_criteria,
                                              get_totals=False, value_filter=sql_values_filter,
                                              category_filter=category_filter, summary_stat=summary_stat,
                                              summary_field=summary_field, start_time=start_time, end_time=end_time)
@@ -1114,9 +1131,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         out_img = this_csv_path.replace('.csv', '.' + plot_extension.lstrip('.'))
         colors = COLORS[query_name]
-        title = '{prefix} past Savage by {interval}, {start}-{end}'\
-            .format(prefix=TITLE_PREFIXES[query_name], interval=summarize_by,
-                    start=these_labels.iloc[0], end=these_labels.iloc[-1])
+        if not custom_plot_title:
+            title = '{prefix} past Savage by {interval}, {start}-{end}'\
+                .format(prefix=TITLE_PREFIXES[query_name], interval=summarize_by,
+                        start=these_labels.iloc[0], end=these_labels.iloc[-1])
+        else:
+            title = custom_plot_title
+
         if 'bar' in plot_types:
             plot_bar(data, these_labels, out_img, plot_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
         if 'stacked bar' in plot_types:
