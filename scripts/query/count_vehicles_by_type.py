@@ -192,6 +192,7 @@ FORMAT_STRS = {'day': '_%Y_%m_%d',
                'year': '_%Y',
                'hour': '_%Y_%m_%d_%H',
                'halfhour': '_%Y_%m_%d_%H_%M',
+               'minute': '_%Y_%m_%d_%H_%M',
                'anniversary day': '_%m_%d',
                'anniversary month': '%b'
                }
@@ -202,7 +203,8 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                  'month':       'MS',
                  'year':        'Y',
                  'hour':        'H',
-                 'halfhour':    '30min'
+                 'halfhour':    '30min',
+                 'minute':      'min'
                  }
 
     # Even though we could pass a datetime object here in some cases, when called from functions other than main(),
@@ -237,7 +239,7 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                                        )
 
     # For day, hour, halfhour, clip the last one because it rolls over into the next interval
-    else:
+    elif len(date_range) > 1:
         date_range = date_range[:-1]
 
     return date_range
@@ -287,6 +289,7 @@ def get_x_labels(date_range, summarize_by):
                          'year':      '%Y',
                          'hour':      '%H:%M',
                          'halfhour':  '%H:%M',
+                         'minute':    '%H:%M',
                          'anniversary day': '%m/%d',
                          'anniversary month': '%b'
                          }
@@ -948,10 +951,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         except:
             raise ValueError("time_range must be in the format start_time-end_time")
         try:
-            datetime.strptime(start_time, '%H:%M')
-            datetime.strptime(end_time, '%H:%M')
+            starttime_datetime = datetime.strptime(start_time, '%H:%M')
+            endtime_datetime = datetime.strptime(end_time, '%H:%M')
         except:
             raise TypeError("start time and end time must be in format hh:mm")
+
+        start_datetime += timedelta(hours=starttime_datetime.hour, minutes=starttime_datetime.minute)
+        end_datetime += timedelta(hours=endtime_datetime.hour, minutes=endtime_datetime.minute)
     else:
         start_time, end_time = None, None
 
@@ -1063,11 +1069,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             start_index = index
         data = pd.concat(all_data, axis=1)
 
+        # Make sure (at least initially) that there's a column for each time interval
+        these_labels = x_labels.copy()
+        data = data.reindex(columns=these_labels.index)
+
         # Remove rows without any data
         data.fillna(0, inplace=True)
         data = data.loc[data.sum(axis=1) > 0]
-
-        these_labels = x_labels.copy()
 
         if aggregate_by:
             data_columns = data.columns
@@ -1083,8 +1091,6 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         elif not drop_null:
             data = data.reindex(columns=output_fields).fillna(0)
 
-        #if not plot_totals:
-        #data.drop('total', axis=1, inplace=True)
         data = data.reindex(columns=data.columns.sort_values())  # make sure they're in chronological order
 
         # If only 1 interval was found or given, drop the last label because it's extraneous
