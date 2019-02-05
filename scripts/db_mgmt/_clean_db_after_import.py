@@ -38,6 +38,25 @@ VARCHAR_FIELDS = {'accessibility':      ['destination', 'driver_name', 'entered_
                   'nps_approved_codes': ['name', 'code'],
                   'nps_work_groups':    ['name', 'code']
                   }
+CHAR3_FIELDS = {'accessibility':      ['destination'],
+                'buses':              ['destination', 'bus_type'],
+                'cyclists':           ['destination'],
+                'employee_vehicles':  ['destination'],
+                'inholders':          ['destination', 'permit_holder'],
+                'nps_approved':       ['destination', 'approved_type'],
+                'nps_contractors':    ['destination'],
+                'nps_vehicles':       ['destination', 'work_group'],
+                'other_vehicles':     ['destination'],
+                'photographers':      ['destination'],
+                'road_lottery':       ['destination'],
+                'subsistence':        ['destination'],
+                'tek_campers':        ['destination'],
+                'turned_around':      ['destination'],
+                'bus_codes':          ['code'],
+                'destination_codes':  ['code'],
+                'nps_approved_codes': ['code'],
+                'nps_work_groups':    ['code']
+                }
 DEFAULT_VALUES = {'entry_method': "'manual'"}
 
 
@@ -60,7 +79,9 @@ FOREIGN_KEYS = pd.DataFrame([{'l_table': 'accessibility',    'l_column': 'destin
                              {'l_table': 'other_vehicles',   'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'photographers',    'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'subsistence',      'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
-                             {'l_table': 'tek_campers',      'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'}
+                             {'l_table': 'tek_campers',      'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
+                             {'l_table': 'other_vehicles',   'l_column': 'destination', 'f_table': 'destination_codes',
+                              'f_column': 'code'},
                             ])
 
 
@@ -103,6 +124,23 @@ def main(info_txt):
                 sql += 'ALTER TABLE IF EXISTS {table_name}' \
                        ' ALTER COLUMN {field} SET DEFAULT {value}; '\
                         .format(table_name=table, field=field, value=DEFAULT_VALUES[field])
+    for table, fields in CHAR3_FIELDS.iteritems():
+        for field in fields:
+            sql += 'ALTER TABLE IF EXISTS {table_name}' \
+                   ' ALTER COLUMN {field} SET DATA TYPE char(3)' \
+                   ' USING {field}::text; '.format(table_name=table, field=field)
+
+    # Add 'other_vehicle' table if it doesn't exist, which it probably doesn't
+    sql += "CREATE TABLE IF NOT EXISTS other_vehicles (" \
+           " observer_name text, " \
+           " datetime timestamp, " \
+           " destination char(3), " \
+           " n_passengers integer, " \
+           " comments varchar(255), " \
+           " entered_by varchar(255), " \
+           " entry_method varchar(255), " \
+           " id serial PRIMARY KEY " \
+           ")"
 
     # Make changes to the DB
     with engine.connect() as conn, conn.begin():
