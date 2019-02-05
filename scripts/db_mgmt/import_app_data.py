@@ -10,10 +10,22 @@ from datetime import datetime
 from sqlalchemy import create_engine
 
 sys.path.append(os.path.join(os.path.join(os.path.dirname(__file__), '..'), 'query'))
-from query import connect_db
+from query import connect_db, get_lookup_table
+from validate_app_data import LOOKUP_FIELDS
 
 # SQLite doesn't have a boolean datatype (they're stored as int) so
 BOOLEAN_FIELDS = {'buses': ['is_training']}
+
+
+def replace_lookup_values(data, engine, lookup_params):
+
+    lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_value,
+                                     lookup_params.lookup_index)
+    data.replace({lookup_params.data_field: lookup_values}, inplace=True)
+
+    return data
+
+
 
 def main(data_dir, sqlite_path, connection_txt, archive_dir=None):
 
@@ -41,6 +53,14 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=None):
                     if c in BOOLEAN_FIELDS[table_name]:
                         dtype = bool
                 df[c] = df[c].astype(dtype)
+
+        if 'destination' in df.columns:
+            destination_lookup_params = pd.Series({'data_table': table_name, 'data_field': 'destination',
+                                                   'lookup_table': 'destination_codes', 'lookup_index': 'code',
+                                                   'lookup_value': 'name'})
+            df = replace_lookup_values(df, postgres_engine, destination_lookup_params)
+        if table_name in LOOKUP_FIELDS.index:
+            df = replace_lookup_values(df, postgres_engine, LOOKUP_FIELDS.loc[table_name])
 
         if len(df):
             with postgres_engine.connect() as pg_conn, pg_conn.begin():

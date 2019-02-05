@@ -8,7 +8,7 @@ from datetime import datetime
 from sqlalchemy import create_engine
 
 sys.path.append(os.path.join(os.path.join(os.path.dirname(__file__), '..'), 'query'))
-from query import connect_db
+from query import connect_db, get_lookup_table
 
 
 
@@ -26,6 +26,29 @@ DUPLICATE_FIELDS_TBL = {'accessibility': [],
                         'subsistence': [],
                         'other_vehicles': [],
                         'tek_campers': []}
+
+LOOKUP_FIELDS = pd.DataFrame([['buses', 'bus_type', 'bus_codes', 'code', 'name'],
+                              ['nps_approved', 'approved_type', 'nps_approved_codes', 'code', 'name'],
+                              ['nps_vehicles', 'work_group', 'nps_work_groups', 'code', 'name'],
+                              ['inholders', 'permit_holder', 'inholder_allotments', 'inholder_code', 'permit_holder']
+                              ],
+                             columns=['data_table', 'data_field', 'lookup_table', 'lookup_index', 'lookup_value'])\
+                        .set_index('data_table')
+
+
+def get_missing_lookup(data, table_name, engine, lookup_params):
+    lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_index,
+                                     lookup_params.lookup_value) \
+        .values()  # returns dict, but only need list-like
+    missing_lookup = data.loc[~data[lookup_params.data_field].isin(lookup_values), lookup_params.data_field].unique()
+    n_missing = len(missing_lookup)
+    missing_info = pd.DataFrame({'data_value': missing_lookup,
+                                 'data_table': [table_name for _ in range(n_missing)],
+                                 'data_field': [lookup_params.data_field for _ in range(n_missing)],
+                                 'lookup_table': [lookup_params.lookup_table for _ in range(n_missing)],
+                                 'lookup_field': [lookup_params.lookup_value for _ in range(n_missing)]})
+
+    return missing_info
 
 
 def main(sqlite_path, connection_txt):
@@ -60,7 +83,11 @@ def main(sqlite_path, connection_txt):
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     subprocess.call(["attrib", "+H", output_dir])
-    
+
+
+    destination_values = get_lookup_table(postgres_engine, 'destination_codes').values
+
+    missing_lookup_dfs = []
     for table_name, df in data.iteritems():
 
         # Check that the table exists in the master DB. If not, skip it.
@@ -104,11 +131,29 @@ def main(sqlite_path, connection_txt):
         if len(pg_duplicates):
             df.loc[duplicates.index, 'found_in_db'] = duplicates.found_in_db
 
-        #import pdb; pdb.set_trace()
+        # If this table contains any lookup values, check to see if all data values exist in the corresponding
+        #  lookup table
+        if 'destination' in df.columns:
+            destination_lookup_params = pd.Series({'data_table': table_name, 'data_field': 'destination',
+                                                   'lookup_table': 'destination_codes', 'lookup_index': 'code',
+                                                   'lookup_value': 'name'})
+            missing_info = get_missing_lookup(df, table_name, postgres_engine, destination_lookup_params)
+            if len(missing_info) > 0:
+                missing_lookup_dfs.append(missing_info)
+
+        if table_name in LOOKUP_FIELDS.index:
+            missing_info = get_missing_lookup(df, table_name, postgres_engine, LOOKUP_FIELDS.loc[table_name])
+            if len(missing_info) > 0:
+                missing_lookup_dfs.append(missing_info)
 
         # Access expects datetimes in the format dd/mm/yy hh:mm:ss so reformat it
         df.datetime = df.datetime.dt.strftime('%m/%d/%Y %H:%M:%S')
         df.to_csv(flagged_path)
+
+    # If there were any missing lookup values, save the CSV
+    if len(missing_lookup_dfs) > 0:
+        missing_lookup = pd.concat(missing_lookup_dfs)
+        missing_lookup.to_csv(os.path.join(output_dir, 'missing_lookup_values_flagged.csv'), index=False)
 
 
 if __name__ == '__main__':
