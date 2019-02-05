@@ -111,7 +111,7 @@ ROW_NAMES = {'Lisa&Steve Neff': 'Linda/Steve Neff',
              'Rusty Lachalt': 'Rusty Lachelt',
              'Greg Lahaie': 'Greg LaHaie',
              'KAT': 'Kantishna Air Taxi',
-             'KRH': 'Kantishna Roadhouae',
+             'KRH': 'Kantishna Roadhouse',
              'Virginia Wood': 'Ginny Wood',
              'Ginny Woods': 'Ginny Wood',
              'Ray Kreig': 'Ray Krieg'}
@@ -338,11 +338,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
             # df.drop('id', axis=1, inplace=True)
         df['id'] = xrange(len(df))
         if 'entry_method' in df.columns:
-            df['entry_method'] = 'migrated'
+            df['entry_method'] = 'legacy'
 
         # Replace values in the table if any of these columns exist
-        df.replace(replace_dict,
-                   inplace=True)
+        df.replace(replace_dict, inplace=True)
         for col in replace_dict:
             if col in df.columns:
                 df.loc[df[col].isnull(), col] = 'NUL'
