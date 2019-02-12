@@ -10,13 +10,13 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "565582466.029875"
+            timestampString = "571630457.112958"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "705"
-            endingLineNumber = "705"
-            landmarkName = "setNavigationBar()"
-            landmarkType = "7">
+            startingLineNumber = "706"
+            endingLineNumber = "706"
+            landmarkName = "unknown"
+            landmarkType = "0">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -42,13 +42,13 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "565582466.030076"
+            timestampString = "571630457.113462"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1183"
-            endingLineNumber = "1183"
-            landmarkName = "autoFillTextFields()"
-            landmarkType = "7">
+            startingLineNumber = "1184"
+            endingLineNumber = "1184"
+            landmarkName = "unknown"
+            landmarkType = "0">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -58,13 +58,13 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "565582466.030161"
+            timestampString = "571630457.113809"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1202"
-            endingLineNumber = "1202"
-            landmarkName = "autoFillTextFields()"
-            landmarkType = "7">
+            startingLineNumber = "1203"
+            endingLineNumber = "1203"
+            landmarkName = "unknown"
+            landmarkType = "0">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
