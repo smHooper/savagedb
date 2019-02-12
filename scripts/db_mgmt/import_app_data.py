@@ -2,8 +2,7 @@ import sys
 import os
 import shutil
 import warnings
-import sqlite3
-import docopt
+import subprocess
 import pandas as pd
 from glob import glob
 from datetime import datetime
@@ -30,6 +29,7 @@ def replace_lookup_values(data, engine, lookup_params):
 def main(data_dir, sqlite_path, connection_txt, archive_dir=None):
 
     sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
+    sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
     postgres_engine = connect_db(connection_txt)
