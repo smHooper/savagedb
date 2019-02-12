@@ -54,6 +54,7 @@ def get_missing_lookup(data, table_name, engine, lookup_params):
 def main(sqlite_path, connection_txt):
 
     sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
+    sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
     sqlite_engine = create_engine("sqlite:///" + sqlite_path)
