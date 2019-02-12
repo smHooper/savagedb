@@ -248,6 +248,8 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     bus_codes.rename(columns={'cid': 'id', 'codename':'name', 'codeletter':'code'}, inplace=True)
     bus_codes.replace({'code': BUS_CODES}, inplace=True)
     bus_codes.sort_values(by='name', inplace=True)
+    bus_codes['is_lodge_bus'] = False
+    bus_codes.loc[bus_codes.code.isin(['CDN', 'DBL', 'KRH', 'MCG']), 'is_lodge_bus'] = True
     bus_codes.to_csv(bus_codes_txt, index=False)
 
     print 'Renaming "bustraffic" to "buses"...',
