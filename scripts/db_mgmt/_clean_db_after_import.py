@@ -119,7 +119,7 @@ def main(info_txt):
         for field in fields:
             sql += 'ALTER TABLE IF EXISTS {table_name}' \
                    ' ALTER COLUMN {field} SET DATA TYPE varchar(255)' \
-                   ' USING {field}::text; '.format(table_name=table, field=field)
+                   ' USING {field}::varchar(255); '.format(table_name=table, field=field)
             if field in DEFAULT_VALUES:
                 sql += 'ALTER TABLE IF EXISTS {table_name}' \
                        ' ALTER COLUMN {field} SET DEFAULT {value}; '\
@@ -128,7 +128,7 @@ def main(info_txt):
         for field in fields:
             sql += 'ALTER TABLE IF EXISTS {table_name}' \
                    ' ALTER COLUMN {field} SET DATA TYPE char(3)' \
-                   ' USING {field}::text; '.format(table_name=table, field=field)
+                   ' USING {field}::char(3); '.format(table_name=table, field=field)
 
     # Add 'other_vehicle' table if it doesn't exist, which it probably doesn't
     sql += "CREATE TABLE IF NOT EXISTS other_vehicles (" \
