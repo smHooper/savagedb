@@ -237,10 +237,10 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                                        datetime.strptime(end_date, date_format),
                                        freq=FREQ_STRS[summarize_by]
                                        )
-
-    # For day, hour, halfhour, clip the last one because it rolls over into the next interval
+            
+    '''# For day, hour, halfhour, clip the last one because it rolls over into the next interval
     elif len(date_range) > 1:
-        date_range = date_range[:-1]
+        date_range = date_range[:-1]'''
 
     return date_range
 
