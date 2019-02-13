@@ -50,6 +50,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let topSpacing = 40.0
     let sideSpacing: CGFloat = 8.0
     let textFieldSpacing: CGFloat = 30.0
+    let textFieldHeight: CGFloat = 50.0
     let navigationBarHeight: CGFloat = 44
     var deviceOrientation = 0
     var currentScrollViewOffset: CGFloat = 0
@@ -215,7 +216,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             textField.font = UIFont.systemFont(ofSize: 14.0)
             textField.layer.cornerRadius = 5
             //textField.frame.size.height = 28.5
-            textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: 40)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
+            textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: textFieldHeight)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
             textField.tag = i
             textField.delegate = self
             //textFields.append(textField)
@@ -238,7 +239,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
                 textFields[i]?.rightAnchor.constraint(equalTo: container.rightAnchor).isActive = true
                 textFields[i]?.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
-                textFields[i]?.heightAnchor.constraint(equalToConstant: 40).isActive = true
+                textFields[i]?.heightAnchor.constraint(equalToConstant: textFieldHeight).isActive = true
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
             
             case "dropDown":
@@ -262,7 +263,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
                 dropDownTextFields[i]!.rightAnchor.constraint(equalTo: container.rightAnchor).isActive = true
                 dropDownTextFields[i]!.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
-                dropDownTextFields[i]!.heightAnchor.constraint(equalToConstant: 40).isActive = true
+                dropDownTextFields[i]!.heightAnchor.constraint(equalToConstant: textFieldHeight).isActive = true
                 lastBottomAnchor = dropDownTextFields[i]!.bottomAnchor
                 
                 //Set the drop down menu's options
@@ -309,7 +310,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.translatesAutoresizingMaskIntoConstraints = false
                 textFields[i]?.leftAnchor.constraint(equalTo: (boolSwitches[i]?.rightAnchor)!, constant: self.sideSpacing * 2).isActive = true
                 textFields[i]?.topAnchor.constraint(equalTo: (boolSwitches[i]?.topAnchor)!).isActive = true
-                textFields[i]?.widthAnchor.constraint(equalToConstant: 40).isActive = true
+                textFields[i]?.widthAnchor.constraint(equalToConstant: textFieldHeight).isActive = true
                 textFields[i]?.heightAnchor.constraint(equalToConstant: textField.frame.height).isActive = true
                 
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
@@ -2376,7 +2377,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "normal"),
+                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2393,7 +2395,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "normal"),
+                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -2456,9 +2459,10 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             self.textFields[3]?.text = self.observation?.driverName
-            self.textFields[4]?.text = self.observation?.permitHolder
-            self.textFields[5]?.text = self.observation?.nPassengers
-            self.textFields[6]?.text = self.observation?.comments
+            self.textFields[4]?.text = self.observation?.destination
+            self.textFields[5]?.text = self.observation?.permitHolder
+            self.textFields[6]?.text = self.observation?.nPassengers
+            self.textFields[7]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
@@ -2502,15 +2506,17 @@ class EmployeeObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let driverName = self.textFields[3]?.text ?? ""
-        let permitHolder = self.textFields[4]?.text ?? ""
-        let nPassengers = self.textFields[5]?.text ?? ""
-        let comments = self.textFields[6]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let permitHolder = self.textFields[5]?.text ?? ""
+        let nPassengers = self.textFields[6]?.text ?? ""
+        let comments = self.textFields[7]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !driverName.isEmpty &&
+                !destination.isEmpty &&
                 !permitHolder.isEmpty &&
                 !nPassengers.isEmpty
         
@@ -2520,6 +2526,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.driverName = driverName
+            self.observation?.destination = destination
             self.observation?.permitHolder = permitHolder
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
@@ -2537,6 +2544,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                                             dateColumn <- (self.observation?.date)!,
                                                             timeColumn <- (self.observation?.time)!,
                                                             driverNameColumn <- (self.observation?.driverName)!,
+                                                            destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             permitHolderColumn <- (self.observation?.permitHolder)!,
                                                             commentsColumn <- (self.observation?.comments)!))
@@ -2556,6 +2564,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
                                         driverNameColumn <- (self.observation?.driverName)!,
+                                        destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         permitHolderColumn <- (self.observation?.permitHolder)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
