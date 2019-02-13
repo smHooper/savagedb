@@ -276,7 +276,7 @@ def simple_query_by_datetime(engine, table_name, year=None, field_names='*', sum
 
 def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_field, summary_field='datetime', other_criteria='', field_names='*', summary_stat='COUNT', summarize_by='year', output_fields=[], dissolve_names={}, return_sql=False, get_totals=True, sql = None, filter_fields=False, start_time=None, end_time=None):
 
-    date_clause = "AND datetime BETWEEN ''{start_str}'' AND ''{end_str}'' " \
+    date_clause = "AND datetime::date BETWEEN ''{start_str}'' AND ''{end_str}'' " \
         .format(start_str=start_str, end_str=end_str)
 
     time_clause = ""
