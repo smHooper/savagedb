@@ -237,7 +237,7 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                                        datetime.strptime(end_date, date_format),
                                        freq=FREQ_STRS[summarize_by]
                                        )
-            
+
     '''# For day, hour, halfhour, clip the last one because it rolls over into the next interval
     elif len(date_range) > 1:
         date_range = date_range[:-1]'''
@@ -1087,8 +1087,13 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
+        # If drop null is true, remove any columns that are all zeros
+        elif drop_null:
+            drop_mask = ~(data.fillna(0) == 0).all(axis=0) #should be all 0s but us .fillna(0) just in case
+            data = data.loc[:, drop_mask]
+            these_labels = these_labels[drop_mask]
         # Otherwise if drop_null isn't true, make sure all dates are included, even if they don't have any data
-        elif not drop_null:
+        else:
             data = data.reindex(columns=output_fields).fillna(0)
 
         data = data.reindex(columns=data.columns.sort_values())  # make sure they're in chronological order
