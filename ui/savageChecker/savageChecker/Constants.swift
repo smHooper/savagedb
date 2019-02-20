@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 
 //let dbPath = "\(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)/savageChecker.db"
 
@@ -42,3 +43,5 @@ let launchScreenQuotes = [
 ]
 
 let backgroundImages = [""]
+
+let navigationButtonSize: CGFloat = 30

@@ -9,16 +9,23 @@
 import UIKit
 import os.log
 import SQLite
+import GoogleSignIn
 
-class AddObservationViewController: UIViewController, UIGestureRecognizerDelegate, UIScrollViewDelegate {
+class AddObservationViewController: UIViewController, UIGestureRecognizerDelegate, UIScrollViewDelegate{//}, GIDSignInUIDelegate {
     
     let minSpacing = 50.0
     let menuPadding = 50.0
+    let navigationButtonSize: CGFloat = 35
     var buttons = [VehicleButtonControl]()
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var scrollView: UIScrollView!
     var navigationBar: CustomNavigationBar!
+    var blurEffectView: UIVisualEffectView!
+    
+    //MARK: data model properties
+    var db: Connection!
+    var userData: UserData?
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "Lodge Bus": "lodgeBusIcon",
@@ -38,9 +45,15 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        showQuote(seconds: 5.0)
+        
+        loadData()
+        
+        addBackground()
+        
         setNavigationBar()
         
-        // Add make buttons to arrange
+        // Make buttons to arrange
         for (offset: index, (key: labelText, value: iconName)) in self.icons.enumerated() {
             let thisButton = VehicleButtonControl()
             thisButton.setupButtonLayout(imageName: iconName, labelText: labelText, tag: index)
@@ -49,23 +62,102 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             self.buttons.append(thisButton)
         }
         
-        // Arrange them
+        // Arrange the buttons
         setupMenuLayout()
         
+        // Google sign-in
+        //GIDSignIn.sharedInstance().uiDelegate = self
+        
         // If someone taps outside the buttons, dismiss the menu
-        dismissWhenTappedAround()
+        //dismissWhenTappedAround()
         
         // Because scrollView and container are centered in setupMenuLayout(),
         //  scroll position is in the middle of the view when first loaded
         setScrollViewPositionToTop()
     }
     
-    
-    // Flash scroll indicators so user knows they can scroll. Should only flash if content goes off screen.
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        // Flash scroll indicators so user knows they can scroll. Should only flash if content goes off screen.
         self.scrollView.flashScrollIndicators()
+        
+        // Try to load the database, but if userData has not been created yet, open the ShiftInfo controller
+        loadData()
     }
+    
+    func showQuote(seconds: Double) {
+        
+        let borderSpacing: CGFloat = 16
+        let randomIndex = Int(arc4random_uniform(UInt32(launchScreenQuotes.count)))
+        let randomQuote = launchScreenQuotes[randomIndex]
+        
+        let screenBounds = UIScreen.main.bounds
+        
+        // Configure the message
+        let messageViewWidth = min(screenBounds.width, 450)
+        let font = UIFont.systemFont(ofSize: 18)
+        let messageHeight = randomQuote.height(withConstrainedWidth: messageViewWidth - borderSpacing * 2, font: font)
+        let messageFrame = CGRect(x: screenBounds.width/2 - messageViewWidth/2, y: screenBounds.height/2 - (messageHeight/2 + borderSpacing), width: messageViewWidth, height: messageHeight + borderSpacing * 2)
+        let messageView = UITextView(frame: messageFrame)
+        messageView.font = font
+        messageView.layer.cornerRadius = 25
+        messageView.layer.borderColor = UIColor.clear.cgColor
+        messageView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        messageView.textContainerInset = UIEdgeInsets(top: borderSpacing, left: borderSpacing, bottom: borderSpacing, right: borderSpacing)
+        messageView.text = randomQuote
+        let blurEffect = UIBlurEffect(style: .light)
+        let messageViewBackground = UIVisualEffectView(effect: blurEffect)
+        messageViewBackground.frame = messageFrame
+        messageViewBackground.layer.cornerRadius = messageView.layer.cornerRadius
+        messageViewBackground.layer.masksToBounds = true
+        messageView.addSubview(messageViewBackground)
+        //messageView.sendSubview(toBack: messageViewBackground)
+        
+        // Add the message view with the background
+        let screenView = UIImageView(frame: screenBounds)
+        screenView.image = UIImage(named: "viewControllerBackground")
+        screenView.contentMode = .scaleAspectFill
+        screenView.addSubview(messageViewBackground)
+        screenView.addSubview(messageView)
+        self.view.addSubview(screenView)
+        
+        // Set up the false background that's identical to the viewController's background so it looks like all of the view controller elements fade into view
+        let blurredBackground = UIImageView(frame: screenView.frame)//image:
+        blurredBackground.image = UIImage(named: "viewControllerBackgroundBlurred")
+        blurredBackground.alpha = 0.0
+        let translucentWhite = UIView(frame: screenView.frame)
+        translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        blurredBackground.addSubview(translucentWhite)
+        self.view.addSubview(blurredBackground)
+        
+        let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
+        
+        // Add acticity indicator so it looks like things are loading
+        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+        activityIndicator.center = CGPoint(x: self.view.center.x, y: messageView.frame.maxY + (self.view.frame.height - messageView.frame.maxY)/2)
+        self.view.addSubview(activityIndicator)
+        activityIndicator.startAnimating()
+        DispatchQueue.main.asyncAfter(deadline: .now() + quoteTimeSeconds + 0.5) {
+            activityIndicator.stopAnimating()
+            activityIndicator.isHidden = true
+        }
+        
+        // First, animate the messageView disappearing (it appears with crossfade automatically
+        UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
+            messageView.removeFromSuperview()
+            // Next, animate the blurred background appearing
+            UIView.animate(withDuration: 0.75, delay: 0.2, animations: {blurredBackground.alpha = 1.0}, completion: {_ in
+                screenView.removeFromSuperview()
+                // Finally, make the blurred background disappear. Because it's just a crossfade, it looks like the screen elements are the ones fading into view.
+                UIView.animate(withDuration: 0.5, animations: {blurredBackground.alpha = 0.0}, completion: {_ in
+                    blurredBackground.removeFromSuperview()
+                })
+            })
+        })
+        
+    }
+    
     
     
     // Redo the layout when rotated
@@ -75,18 +167,19 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         //super.viewDidLayoutSubviews()
         
         // Add the blur effect for the rotated view
-        let presentingController = self.presentingViewController as! BaseTableViewController
-        presentingController.blurEffectView.removeFromSuperview()
-        presentingController.addBlur()//*/
+        //let presentingController = self.presentingViewController as! BaseObservationViewController
+        //presentingController.blurEffectView.removeFromSuperview()
+        //presentingController.addBlur()//*/
         /*for button in self.buttons {
             button.removeFromSuperview()
         }
         
         addBlur()*/
+        addBackground()
         
         // Redo the menu
         setupMenuLayout()
-        self.view.backgroundColor = UIColor.clear
+        //self.view.backgroundColor = UIColor.clear
         
         setNavigationBar()
         
@@ -101,12 +194,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
         // Figure out how many buttons fit in one row
         let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
-        print(screenSize)
-        let isPortait = UIDevice.current.orientation.isPortrait
         let isLandscape = UIDevice.current.orientation.isLandscape
-        let isFlat = UIDevice.current.orientation.isFlat
-        let isValid = UIDevice.current.orientation.isValidInterfaceOrientation
-        
         let currentScreenFrame: CGRect = {
             if isLandscape {
                 return CGRect(x: 0, y: 0, width: max(screenSize.width, screenSize.height), height: min(screenSize.width, screenSize.height))
@@ -215,7 +303,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 44))
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 60))
         
         let navItem = UINavigationItem(title: "")
         //self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
@@ -226,7 +314,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         backButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
         backButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
         backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
-        let backButtonTitle = "Observation list"
+        /*let backButtonTitle = "Observation list"
         let buttonFont = UIFont.systemFont(ofSize: 18)
         let titleWidth = backButtonTitle.width(withConstrainedHeight: 200, font: buttonFont)
         let backLabel = UILabel(frame: CGRect(x: 0, y: 0, width: titleWidth + backButton.frame.width + 10, height: backButtonTitle.height(withConstrainedWidth: 200, font: buttonFont)))
@@ -234,16 +322,136 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         backLabel.text = backButtonTitle
         backLabel.textAlignment = .right
         backLabel.textColor = UIColor(red: 0, green: 122/255, blue: 1, alpha: 1)
-        backButton.addSubview(backLabel)
-        let backBarButton = UIBarButtonItem(customView: backButton)
-        navItem.leftBarButtonItem = backBarButton
+        backButton.addSubview(backLabel)*/
+        let observationListButton = UIBarButtonItem(customView: backButton)
+        //navItem.leftBarButtonItem = backBarButton
         
-        self.navigationBar.setItems([navItem], animated: false)
-        self.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        let shiftButton = UIBarButtonItem(title: "Shift info", style: .plain, target:nil, action: #selector(AddObservationViewController.editShiftInfoButtonPressed))
+        //navItem.rightBarButtonItem = shiftButton
+        
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 54))
+        self.view.addSubview(self.navigationBar)
+        self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
+        self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        self.navigationBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+        self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
+        self.navigationBar.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        
+        let navigationItem = UINavigationItem(title: "New observation")
+        /*let backButton = UIButton(type: .custom)
+        backButton.setImage(UIImage (named: "backButton"), for: .normal)
+        backButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
+        backButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        backButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        let backBarButton = UIBarButtonItem(customView: backButton)*/
+        
+        
+        let qrButton = UIButton(type: .custom)
+        qrButton.setImage(UIImage (named: "scanQRIcon"), for: .normal)
+        qrButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        qrButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        qrButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        qrButton.addTarget(self, action: #selector(qrButtonPressed), for: .touchUpInside)
+        let qrBarButton = UIBarButtonItem(customView: qrButton)
+        //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
+        
+        // Add a button for switching the active database file
+        let databaseButton = UIButton(type: .custom)
+        databaseButton.setImage(UIImage(named: "switchDatabaseIcon"), for: .normal)
+        databaseButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        databaseButton.translatesAutoresizingMaskIntoConstraints = false
+        databaseButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        databaseButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        databaseButton.imageView?.contentMode = .scaleAspectFit
+        databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
+        let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
+        
+        //let googleDriveBarButton = UIBarButtonItem(title: "D", style: .plain, target: self, action: #selector(googleDriveButtonPressed))
+        // Add a button for switching the active database file
+        let googleDriveButton = UIButton(type: .custom)
+        googleDriveButton.setImage(UIImage(named: "googleDriveIcon"), for: .normal)
+        googleDriveButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        googleDriveButton.translatesAutoresizingMaskIntoConstraints = false
+        googleDriveButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        googleDriveButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        googleDriveButton.imageView?.contentMode = .scaleAspectFit
+        googleDriveButton.addTarget(self, action: #selector(googleDriveButtonPressed), for: .touchUpInside)
+        let googleDriveBarButton = UIBarButtonItem(customView: googleDriveButton)
+        
+        
+        let fixedSpaceLeft = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
+        let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
+        fixedSpaceLeft.width = 50
+        fixedSpaceRight.width = 50
+        navigationItem.leftBarButtonItems = [selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
+        navigationItem.rightBarButtonItems = [shiftButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, observationListButton]
+        self.navigationBar.setItems([navigationItem], animated: false)
+        
+        
+        //self.navigationBar.setItems([navItem], animated: false)
+        /*self.navigationBar.setBackgroundImage(UIImage(), for: .default)
         self.navigationBar.shadowImage = UIImage()
-        self.navigationBar.isOpaque = false
+        self.navigationBar.isOpaque = false*/
         
         self.view.addSubview(self.navigationBar)
+    }
+    
+    
+    @objc func qrButtonPressed(){
+        let scannerController = ScannerViewController()
+        present(scannerController, animated: true)
+    }
+    
+    func prepareDatabaseBrowserViewController() -> DatabaseBrowserViewController {
+        let browserViewController = DatabaseBrowserViewController()
+        browserViewController.modalPresentationStyle = .formSheet
+        browserViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
+        
+        // Add blurred background from current view
+        let popoverFrame = browserViewController.getVisibleFrame()
+        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+        browserViewController.view.addSubview(backgroundView)
+        browserViewController.view.sendSubview(toBack: backgroundView)
+        
+        return browserViewController
+    }
+    
+    @objc func selectDatabaseButtonPressed() {
+        let browserViewController = prepareDatabaseBrowserViewController()
+        
+        present(browserViewController, animated: true, completion: nil)
+    }
+    
+    
+    @objc func googleDriveButtonPressed() {
+        
+        if Reachability.isConnectedToNetwork() {
+            let uploadViewController = GoogleDriveUploadViewController()
+            uploadViewController.modalPresentationStyle = .formSheet
+            uploadViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 400))
+            
+            // Add blurred background from current view
+            let popoverFrame = uploadViewController.getVisibleFrame()
+            let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+            uploadViewController.view.addSubview(backgroundView)
+            uploadViewController.view.sendSubview(toBack: backgroundView)
+            
+            // Configure the dbBrowserController now so that the blurred background is shows the tableView,
+            //  not the formsheet G Drive Upload controller
+            let dbBrowserViewController = prepareDatabaseBrowserViewController()
+            dbBrowserViewController.isLoadingDatabase = false
+            uploadViewController.dbBrowserViewController = dbBrowserViewController
+            
+            present(uploadViewController, animated: true, completion: {GIDSignIn.sharedInstance().signIn()})
+        } else {
+            // present an alert
+            let alertTitle = "No internet connection detected"
+            let alertMessage = "You cannot upload to Google Drive without an internet connection. Try again when your internet connection is working."
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+            present(alertController, animated: true, completion: nil)
+        }
     }
     
     
@@ -298,6 +506,89 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
     }
     
+    // Return a blurred image of all currently visible views
+    func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
+        
+        //add blur temporarily
+        addBlur()
+        
+        // Get image of all currently visible views
+        let backgroundView = UIImageView(image: self.view.takeSnapshot())
+        
+        // remove blurview
+        self.blurEffectView.removeFromSuperview()
+        
+        // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
+        backgroundView.contentMode = .scaleAspectFill
+        let currentFrame = self.view.frame
+        backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
+        
+        // Add translucent white
+        if whiteAlpha > 0 {
+            let translucentWhite = UIView(frame: backgroundView.frame)
+            translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
+            backgroundView.addSubview(translucentWhite)
+        }
+        
+        return backgroundView
+    }
+    
+    func prepareShiftInfoController() -> ShiftInfoViewController {
+        let shiftViewController = ShiftInfoViewController()
+        shiftViewController.modalPresentationStyle = .formSheet
+        shiftViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))//CGSize.init(width: 600, height: 600)
+        
+        // Add blurred background from current view
+        let popoverFrame = shiftViewController.getVisibleFrame()
+        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+        shiftViewController.view.addSubview(backgroundView)
+        shiftViewController.view.sendSubview(toBack: backgroundView)
+        
+        return shiftViewController
+    }
+    
+    func makeBlurView() -> UIVisualEffectView {
+        
+        let blurEffect = UIBlurEffect(style: .light)
+        let blurEffectView = UIVisualEffectView(effect: blurEffect)
+        //blurEffectView.frame = frame
+        //blurEffectView.layer.cornerRadius = messageView.layer.cornerRadius
+        //blurEffectView.layer.masksToBounds = true
+        
+        return blurEffectView
+    }
+    
+    func addBlur() {
+        // Only apply the blur if the user hasn't disabled transparency effects
+        if !UIAccessibilityIsReduceTransparencyEnabled() {
+            self.view.backgroundColor = .clear
+            
+            let blurEffect = UIBlurEffect(style: .regular)
+            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
+            
+            //always fill the view
+            self.blurEffectView.frame = self.view.frame//bounds
+            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            
+            self.view.addSubview(self.blurEffectView)
+            
+        } else {
+            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
+            self.view.backgroundColor = .black
+        }
+    }
+    
+    
+    func showShiftInfoForm() {
+        let shiftViewController = prepareShiftInfoController()
+        present(shiftViewController, animated: true, completion: nil)
+    }
+    
+    @objc func editShiftInfoButtonPressed() {
+        showShiftInfoForm()
+    }
+    
+    
     
     func dismissWhenTappedAround() {
         let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissMenu))
@@ -313,7 +604,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     
-    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+    /*func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
         
         // Check if the touch was on one of the buttons
         for button in self.buttons {
@@ -323,18 +614,29 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         }
         // If not, the touch should get passed to the gesture recognizer
         return true
-    }
+    }*/
     
     @objc func dismissMenu(){
-        let presentingController = self.presentingViewController as! BaseTableViewController
-        presentingController.loadData()
-        dismiss(animated: true, completion: nil)
-        animateRemoveMenu(duration: 0.25)
+        let tableViewController = BaseTableViewController()
+        tableViewController.loadData()
+        tableViewController.transitioningDelegate = self
+        tableViewController.modalPresentationStyle = .custom
+        self.presentTransition = RightToLeftTransition()
+        present(tableViewController, animated: true, completion: {tableViewController.presentTransition = nil})
     }
     
+    //MARK: Data model
+    func loadData() {
+        // First check if there's user data from a previous session
+        if let userData = loadUserData() {
+            dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
+            self.userData = userData
+        } else {
+            showShiftInfoForm()
+        }
+    }
     
-    // MARK: Private methods
-    private func loadSession() -> Session? {
+    func loadSession() -> Session? {
         // ************* check that the table exists first **********************
         var rows = [Row]()
         let db: Connection!
@@ -348,10 +650,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             db = try Connection(dbPath)
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            print(error.localizedDescription)
+            print("problem getting session rows: \(error.localizedDescription)")
         }
         if rows.count > 1 {
-            //fatalError("Multiple sessions found")
             os_log("Multiple sessions found", log: OSLog.default, type: .debug)
         }
         

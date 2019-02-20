@@ -293,13 +293,13 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             self.userData?.update(databaseFileName: selectedFileName)
             
             // Open the new datbase
-            let presentingController = self.presentingViewController as! BaseTableViewController
+            let presentingController = self.presentingViewController as! AddObservationViewController
             do {
                 presentingController.db = try Connection(dbPath)
             } catch let error {
                 fatalError(error.localizedDescription)
             }
-            presentingController.loadData()
+            presentingController.loadSession()
             dismiss(animated: true, completion: nil)
         } else {
             if let indexPathNotSelected = (tableView.indexPathsForSelectedRows?.contains(indexPath)) {

@@ -42,10 +42,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         let logFilePath = fileManager.fileExists(atPath: logDirectory.path, isDirectory:&isDir) ? logDirectory.appendingPathComponent(fileName).path : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
         freopen(logFilePath.cString(using: String.Encoding.ascii)!, "a+", stderr)
         
-        let sessionController = SessionViewController()
-        
+        //let sessionController = SessionViewController()
+        let menuController = AddObservationViewController()
+            
         self.window = UIWindow(frame: UIScreen.main.bounds)
-        self.window?.rootViewController = sessionController
+        self.window?.rootViewController = menuController//sessionController
         self.window?.makeKeyAndVisible()
         
         return true

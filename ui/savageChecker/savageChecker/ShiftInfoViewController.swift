@@ -1,22 +1,24 @@
 //
-//  SessionViewController.swift
+//  ShiftInfoViewController.swift
 //  savageChecker
 //
-//  Created by Sam Hooper on 5/10/18.
-//  Copyright © 2018 Sam Hooper. All rights reserved.
+//  Created by Sam Hooper on 2/12/19.
+//  Copyright © 2019 Sam Hooper. All rights reserved.
 //
+
 
 import UIKit
 import SQLite
 import os.log
 import QuartzCore
 
-class SessionViewController: BaseFormViewController {
+class ShiftInfoViewController: BaseFormViewController {
     
     //MARK: - Properties
-    var viewVehiclesButton: UIBarButtonItem!
+    var saveButton = UIButton(type: .system)
     var userData: UserData?
     var isNewSession: Bool?
+    var dataHasChanged = false
     //var presentTransition: UIViewControllerAnimatedTransitioning?
     //var dismissTransition: UIViewControllerAnimatedTransitioning?
     
@@ -50,86 +52,78 @@ class SessionViewController: BaseFormViewController {
     //MARK: - Layout
     override func viewDidLoad() {
         
+        self.topSpacing = 20.0
+        
         super.viewDidLoad()
         
         // Show animated quote the first time the view loads, but allow user to swipe to cancel
-        showQuote(seconds: 5.0)
-        /*let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cancelAnimation))
-        swipeLeft.direction = .right
-        self.view.addGestureRecognizer(swipeLeft)*/
-        loadData()
+        //showQuote(seconds: 5.0)
         
-    }
-    
-    func showQuote(seconds: Double) {
-        
-        let borderSpacing: CGFloat = 16
-        let randomIndex = Int(arc4random_uniform(UInt32(launchScreenQuotes.count)))
-        let randomQuote = launchScreenQuotes[randomIndex]
-        
-        let screenBounds = UIScreen.main.bounds
-        
-        // Configure the message
-        let messageViewWidth = min(screenBounds.width, 450)
-        let font = UIFont.systemFont(ofSize: 18)
-        let messageHeight = randomQuote.height(withConstrainedWidth: messageViewWidth - borderSpacing * 2, font: font)
-        let messageFrame = CGRect(x: screenBounds.width/2 - messageViewWidth/2, y: screenBounds.height/2 - (messageHeight/2 + borderSpacing), width: messageViewWidth, height: messageHeight + borderSpacing * 2)
-        let messageView = UITextView(frame: messageFrame)
-        messageView.font = font
-        messageView.layer.cornerRadius = 25
-        messageView.layer.borderColor = UIColor.clear.cgColor
-        messageView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
-        messageView.textContainerInset = UIEdgeInsets(top: borderSpacing, left: borderSpacing, bottom: borderSpacing, right: borderSpacing)
-        messageView.text = randomQuote
-        let blurEffect = UIBlurEffect(style: .light)
-        let messageViewBackground = UIVisualEffectView(effect: blurEffect)
-        messageViewBackground.frame = messageFrame
-        messageViewBackground.layer.cornerRadius = messageView.layer.cornerRadius
-        messageViewBackground.layer.masksToBounds = true
-        messageView.addSubview(messageViewBackground)
-        //messageView.sendSubview(toBack: messageViewBackground)
-        
-        // Add the message view with the background
-        let screenView = UIImageView(frame: screenBounds)
-        screenView.image = UIImage(named: "viewControllerBackground")
-        screenView.contentMode = .scaleAspectFill
-        screenView.addSubview(messageViewBackground)
-        screenView.addSubview(messageView)
-        self.view.addSubview(screenView)
-        
-        // Set up the false background that's identical to the viewController's background so it looks like all of the view controller elements fade into view
-        let blurredBackground = UIImageView(frame: screenView.frame)//image:
-        blurredBackground.image = UIImage(named: "viewControllerBackgroundBlurred")
-        blurredBackground.alpha = 0.0
-        let translucentWhite = UIView(frame: screenView.frame)
-        translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        blurredBackground.addSubview(translucentWhite)
-        self.view.addSubview(blurredBackground)
-        
-        let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
-        
-        // Add acticity indicator so it looks like things are loading
-        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
-        activityIndicator.center = CGPoint(x: self.view.center.x, y: messageView.frame.maxY + (self.view.frame.height - messageView.frame.maxY)/2)
-        self.view.addSubview(activityIndicator)
-        activityIndicator.startAnimating()
-        DispatchQueue.main.asyncAfter(deadline: .now() + quoteTimeSeconds + 0.5) {
-            activityIndicator.stopAnimating()
-            activityIndicator.isHidden = true
+        for subview in self.view.subviews {
+            if subview.tag == -1 {
+                subview.removeFromSuperview()
+            }
         }
+        self.scrollView.delegate = self
         
-        // First, animate the messageView disappearing (it appears with crossfade automatically
-        UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
-            messageView.removeFromSuperview()
-            // Next, animate the blurred background appearing
-            UIView.animate(withDuration: 0.75, delay: 0.2, animations: {blurredBackground.alpha = 1.0}, completion: {_ in
-                screenView.removeFromSuperview()
-                // Finally, make the blurred background disappear. Because it's just a crossfade, it looks like the screen elements are the ones fading into view.
-                UIView.animate(withDuration: 0.5, animations: {blurredBackground.alpha = 0.0}, completion: {_ in
-                    blurredBackground.removeFromSuperview()
-                })
-            })
-        })
+        // Add a title at the top
+        let titleLabel = UILabel()
+        titleLabel.text = "Shift Info"
+        titleLabel.textAlignment = .center
+        titleLabel.font = UIFont.boldSystemFont(ofSize: 20)
+        self.view.addSubview(titleLabel)
+        titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        titleLabel.topAnchor.constraint(equalTo: self.view.topAnchor, constant: self.sideSpacing * 3).isActive = true
+        
+        // Add the upload button
+        let controllerFrame = getVisibleFrame()
+        self.saveButton.setTitle("Save", for: .normal)
+        self.saveButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+        self.saveButton.addTarget(self, action: #selector(saveButtonPressed), for: .touchUpInside)
+        self.view.addSubview(self.saveButton)
+        self.saveButton.translatesAutoresizingMaskIntoConstraints = false
+        self.saveButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor, constant: controllerFrame.width/4).isActive = true
+        self.saveButton.bottomAnchor.constraint(equalTo: self.view.topAnchor, constant: self.preferredContentSize.height - self.sideSpacing * 2).isActive = true
+        self.saveButton.isEnabled = false
+        
+        // Add a cancel button at the bottom
+        let cancelButton = UIButton(type: .system)
+        cancelButton.setTitle("Cancel", for: .normal)
+        cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+        cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
+        self.view.addSubview(cancelButton)
+        cancelButton.translatesAutoresizingMaskIntoConstraints = false
+        cancelButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor, constant: -controllerFrame.width/4).isActive = true
+        cancelButton.centerYAnchor.constraint(equalTo: self.saveButton.centerYAnchor).isActive = true
+        
+        // Draw lines to separate buttons from text
+        //  Horizontal line
+        let lineColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.4)
+        let horizontalLine = UIView(frame: CGRect(x:0, y: 0, width: controllerFrame.width, height: 1))
+        self.view.addSubview(horizontalLine)
+        horizontalLine.backgroundColor = lineColor
+        horizontalLine.translatesAutoresizingMaskIntoConstraints = false
+        horizontalLine.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        horizontalLine.topAnchor.constraint(equalTo: cancelButton.topAnchor, constant: -self.sideSpacing).isActive = true
+        horizontalLine.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
+        horizontalLine.heightAnchor.constraint(equalToConstant: 1.0).isActive = true
+        
+        //  Vertical line
+        let verticalLine = UIView(frame: CGRect(x:0, y: 0, width: 1, height: 1))
+        self.view.addSubview(verticalLine)
+        verticalLine.backgroundColor = lineColor
+        verticalLine.translatesAutoresizingMaskIntoConstraints = false
+        verticalLine.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        verticalLine.topAnchor.constraint(equalTo: cancelButton.topAnchor, constant: -self.sideSpacing).isActive = true
+        verticalLine.widthAnchor.constraint(equalToConstant: 1.0).isActive = true
+        verticalLine.bottomAnchor.constraint(equalTo: cancelButton.bottomAnchor).isActive = true
+        
+        
+        /*let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cancelAnimation))
+         swipeLeft.direction = .right
+         self.view.addGestureRecognizer(swipeLeft)*/
+        loadData()
         
     }
     
@@ -140,7 +134,7 @@ class SessionViewController: BaseFormViewController {
             self.userData = userData
         }
         print(dbPath)
-
+        
         // Then check if the database at dbPath exists
         let url = URL(fileURLWithPath: dbPath)
         if FileManager.default.fileExists(atPath: url.path){
@@ -154,38 +148,46 @@ class SessionViewController: BaseFormViewController {
                 self.textFields[1]?.text = session.date
                 self.textFields[2]?.text = session.openTime
                 self.textFields[3]?.text = session.closeTime
-                self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+                //self.saveButton.isEnabled = true // Returning to view so make sure it's enabled
                 self.session = session
             }
-            // The user is returning to the session scene from another scene
+                // The user is returning to the session scene from another scene
             else if let session = self.session {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
                 self.textFields[2]?.text = session.openTime
                 self.textFields[3]?.text = session.closeTime
-                self.viewVehiclesButton.isEnabled = true // Returning to view so make sure it's enabled
+                //self.saveButton.isEnabled = true // Returning to view so make sure it's enabled
+            }
+            // The db doesn't have a sessions table because it hasn't been configured et
+            else {
+                createSession()
             }
         }
-        // The user is coming back the the session form for the first time since data were cleared
+        // The user is coming back to the session form for the first time since data were cleared
         else {
-            // date defaults to today
-            let now = Date()
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            self.textFields[1]?.text = formatter.string(from: now)
-            self.textFields[2]?.text = "6:30 AM"
-            self.textFields[3]?.text = "9:30 PM"
-            
-            // Disable navigation to vehicle list until all fields are filled
-            self.viewVehiclesButton.isEnabled = false
-            
-            // Create the userData instance for storing info
-            self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
-            
-            self.isNewSession = true
+            createSession()
         }
     }
     
+    
+    func createSession(){
+        // date defaults to today
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        self.textFields[1]?.text = formatter.string(from: now)
+        self.textFields[2]?.text = "6:30 AM"
+        self.textFields[3]?.text = "9:30 PM"
+        
+        // Disable navigation to vehicle list until all fields are filled
+        self.saveButton.isEnabled = false
+        
+        // Create the userData instance for storing info
+        self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
+        
+        self.isNewSession = true
+    }
     
     // Cancel animation (to be used with swipe gesture)
     @objc func cancelAnimation() {
@@ -200,40 +202,44 @@ class SessionViewController: BaseFormViewController {
         super.setNavigationBar()
         
         // Customize the nav bar
-        let navItem = UINavigationItem(title: "Shift Info")
-        self.viewVehiclesButton = UIBarButtonItem(title: "Add Observation", style: .plain, target: nil, action: #selector(SessionViewController.moveToAddObsMenu))
-        navItem.rightBarButtonItem = self.viewVehiclesButton
-        self.navigationBar.setItems([navItem], animated: false)
+        self.navigationBar.setBackgroundImage(UIImage(), for: .default)
+        self.navigationBar.shadowImage = UIImage()
+        self.navigationBar.isOpaque = false
     }
     
-    @objc func moveToAddObsMenu(){
-        
-        /*let vehicleTableViewContoller = BaseTableViewController()
-        vehicleTableViewContoller.modalPresentationStyle = .custom
-        vehicleTableViewContoller.transitioningDelegate = self
-        self.presentTransition = RightToLeftTransition()
-        present(vehicleTableViewContoller, animated: true, completion: {[weak self] in self?.presentTransition = nil})*/
-        let menuController = AddObservationViewController()
-        //menuController.transitioningDelegate = self
-        //self.presentTransition = RightToLeftTransition()
-        menuController.modalTransitionStyle = .crossDissolve
-        //menuController.modalTransitionStyle = .coverVertical
-        present(menuController, animated: true, completion: nil)//{[weak self] in self?.presentTransition = nil})
+    @objc func cancelButtonPressed() {
+        dismiss(animated: true, completion: nil)
     }
-    
-    
-    @objc func moveToVehicleList(){
-        
-        let vehicleTableViewContoller = BaseTableViewController()
-        vehicleTableViewContoller.modalPresentationStyle = .custom
-        vehicleTableViewContoller.transitioningDelegate = self
-        self.presentTransition = RightToLeftTransition()
-        present(vehicleTableViewContoller, animated: true, completion: {[weak self] in self?.presentTransition = nil})
-    }
-    
     
     //MARK: Data model methods
-    @objc override func updateData(){
+    
+    func validateInput() -> Bool {
+        let observerName = self.dropDownTextFields[0]?.text ?? ""
+        let date = self.textFields[1]?.text ?? ""
+        let openTime = self.textFields[2]?.text ?? ""
+        let closeTime = self.textFields[3]?.text ?? ""
+        if !observerName.isEmpty && !openTime.isEmpty && !closeTime.isEmpty && !date.isEmpty {
+            self.saveButton.isEnabled = true
+            return true
+        } else {
+            self.saveButton.isEnabled = false
+            return false
+        }
+        
+    }
+    
+    @objc override func updateData() {
+        if validateInput() {
+            self.saveButton.isEnabled = true
+        }
+        // All fields aren't full, so disable the save button
+        else {
+            self.saveButton.isEnabled = false
+        }
+    }
+    
+    @objc func saveButtonPressed(){
+        
         // Check that all text fields are filled in
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
@@ -270,7 +276,7 @@ class SessionViewController: BaseFormViewController {
                 // Update the UserData instance
                 //self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
             }
-            
+                
             // If the session is nil, this is a new session so create the DB
             else {
                 // initialize the session instance
@@ -319,9 +325,9 @@ class SessionViewController: BaseFormViewController {
                         self.connectToDB()
                     }))
                     alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-                    present(alertController, animated: true, completion: nil)
+                    self.present(alertController, animated: true, completion: nil)
                 }
-                // Otherwise, just create a new DB with the new path
+                    // Otherwise, just create a new DB with the new path
                 else {
                     dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(fileNameTag).db").path // Use new path
                     connectToDB()
@@ -329,18 +335,26 @@ class SessionViewController: BaseFormViewController {
             }
             
             // Enable the nav button
-            self.viewVehiclesButton.isEnabled = true
+            //self.saveButton.isEnabled = true
             
             // Save the UserData instance
             self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
         
-        // All fields aren't full, so disable the view vehicles button until all fields are filled in
-        else {
-            self.viewVehiclesButton.isEnabled = false
-        }
+        dismiss(animated: true, completion: nil)
+            // All fields aren't full, so disable the view vehicles button until all fields are filled in
+        /*else {
+            self.saveButton.isEnabled = false
+        }*/
     }
     
+    
+    //MARK: Scrollview delegate
+    func scrollViewDidScroll(scrollView: UIScrollView) {
+        if scrollView.contentOffset.x != 0 {
+            scrollView.contentOffset.x = 0
+        }
+    }
     
     //MARK: Private methods
     private func connectToDB() {
@@ -350,7 +364,7 @@ class SessionViewController: BaseFormViewController {
         let date = self.textFields[1]?.text ?? ""
         let openTime = self.textFields[2]?.text ?? ""
         let closeTime = self.textFields[3]?.text ?? ""
-
+        
         // Set up the database
         configureDatabase()
         
@@ -403,10 +417,10 @@ class SessionViewController: BaseFormViewController {
             //fatalError(error.localizedDescription)
             return nil
         }
-
+        
         /*if rows.count > 1 {
-            fatalError("Multiple sessions found")
-        }*/
+         fatalError("Multiple sessions found")
+         }*/
         var session: Session?
         for row in rows{
             session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
@@ -417,7 +431,7 @@ class SessionViewController: BaseFormViewController {
         
         return thisSession
     }
-
+    
     // Connect to DB and create all necessary tables
     func configureDatabase(){
         // Open a connection to the database
