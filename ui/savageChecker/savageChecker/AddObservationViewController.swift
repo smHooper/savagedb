@@ -308,26 +308,23 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let navItem = UINavigationItem(title: "")
         //self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
         
-        let backButton = UIButton(type: .custom)
-        backButton.setImage(UIImage (named: "backButton"), for: .normal)
-        backButton.frame = CGRect(x: 0.0, y: 0.0, width: 25, height: 25)
-        backButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
-        backButton.widthAnchor.constraint(equalToConstant: 25).isActive = true
-        backButton.heightAnchor.constraint(equalToConstant: 25).isActive = true
-        /*let backButtonTitle = "Observation list"
-        let buttonFont = UIFont.systemFont(ofSize: 18)
-        let titleWidth = backButtonTitle.width(withConstrainedHeight: 200, font: buttonFont)
-        let backLabel = UILabel(frame: CGRect(x: 0, y: 0, width: titleWidth + backButton.frame.width + 10, height: backButtonTitle.height(withConstrainedWidth: 200, font: buttonFont)))
-        backLabel.font = buttonFont
-        backLabel.text = backButtonTitle
-        backLabel.textAlignment = .right
-        backLabel.textColor = UIColor(red: 0, green: 122/255, blue: 1, alpha: 1)
-        backButton.addSubview(backLabel)*/
-        let observationListButton = UIBarButtonItem(customView: backButton)
-        //navItem.leftBarButtonItem = backBarButton
+        let obsListButton = UIButton(type: .custom)
+        obsListButton.setImage(UIImage (named: "observationListIcon"), for: .normal)
+        obsListButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        obsListButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
+        obsListButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        obsListButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        let observationListButton = UIBarButtonItem(customView: obsListButton)
         
-        let shiftButton = UIBarButtonItem(title: "Shift info", style: .plain, target:nil, action: #selector(AddObservationViewController.editShiftInfoButtonPressed))
+        //let shiftButton = UIBarButtonItem(title: "Shift info", style: .plain, target:nil, action: #selector(AddObservationViewController.editShiftInfoButtonPressed))
         //navItem.rightBarButtonItem = shiftButton
+        let shiftButton = UIButton(type: .custom)
+        shiftButton.setImage(UIImage(named: "shiftInfoIcon"), for: .normal)
+        shiftButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        shiftButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        shiftButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        shiftButton.addTarget(self, action: #selector(editShiftInfoButtonPressed), for: .touchUpInside)
+        let shiftBarButton = UIBarButtonItem(customView: shiftButton)
         
         self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 54))
         self.view.addSubview(self.navigationBar)
@@ -337,15 +334,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
         self.navigationBar.heightAnchor.constraint(equalToConstant: 54).isActive = true
         
-        let navigationItem = UINavigationItem(title: "New observation")
-        /*let backButton = UIButton(type: .custom)
-        backButton.setImage(UIImage (named: "backButton"), for: .normal)
-        backButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
-        backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
-        backButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        backButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        let backBarButton = UIBarButtonItem(customView: backButton)*/
-        
+        let navigationItem = UINavigationItem(title: "Make a new observation")
         
         let qrButton = UIButton(type: .custom)
         qrButton.setImage(UIImage (named: "scanQRIcon"), for: .normal)
@@ -354,7 +343,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         qrButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
         qrButton.addTarget(self, action: #selector(qrButtonPressed), for: .touchUpInside)
         let qrBarButton = UIBarButtonItem(customView: qrButton)
-        //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
         
         // Add a button for switching the active database file
         let databaseButton = UIButton(type: .custom)
@@ -385,7 +373,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         fixedSpaceLeft.width = 50
         fixedSpaceRight.width = 50
         navigationItem.leftBarButtonItems = [selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
-        navigationItem.rightBarButtonItems = [shiftButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, observationListButton]
+        navigationItem.rightBarButtonItems = [shiftBarButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, observationListButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
         

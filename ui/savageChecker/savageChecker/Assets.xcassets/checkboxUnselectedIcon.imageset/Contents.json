@@ -6,12 +6,11 @@
     },
     {
       "idiom" : "universal",
-      "filename" : "checkmarkEmpty@2x.png",
+      "filename" : "checkBoxUnselected.png",
       "scale" : "2x"
     },
     {
       "idiom" : "universal",
-      "filename" : "checkmarkEmpty@3x.png",
       "scale" : "3x"
     }
   ],

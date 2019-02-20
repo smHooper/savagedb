@@ -2900,7 +2900,9 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         } else {
             // Query the db to get the observation
             guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+                //fatalError("No ID passed from the tableViewController")
+                print("No ID passed from the tableViewController")
+                return
             }
             
             let record: Row
