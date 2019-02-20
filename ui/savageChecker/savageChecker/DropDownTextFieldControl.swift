@@ -19,7 +19,9 @@ protocol dropDownProtocol {
     var dropDownMenuPressed = false
     var dropDownID: Int? = 0//: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
     var dropView = DropDownView()
-    var height = NSLayoutConstraint()
+    var heightConstraint = NSLayoutConstraint()
+    
+    
     
     func dropDownPressed(string: String) {
         /*if (self.dropView.dropDownOptions.contains(string)){// && string != "Other"){
@@ -77,15 +79,15 @@ protocol dropDownProtocol {
             
             self.isOpen = true
             
-            NSLayoutConstraint.deactivate([self.height])
+            NSLayoutConstraint.deactivate([self.heightConstraint])
             
-            if self.dropView.tableView.contentSize.height > 150 {
-                self.height.constant = 150
+            if self.dropView.tableView.contentSize.height > self.dropView.height {
+                self.heightConstraint.constant = self.dropView.height
             } else {
-                self.height.constant = self.dropView.tableView.contentSize.height
+                self.heightConstraint.constant = self.dropView.tableView.contentSize.height
             }
             
-            NSLayoutConstraint.activate([self.height])
+            NSLayoutConstraint.activate([self.heightConstraint])
             
             UIView.animate(withDuration: 0.5, delay: 0, animations: {
                 self.dropView.layoutIfNeeded()
@@ -95,9 +97,9 @@ protocol dropDownProtocol {
         } else {
             self.isOpen = false
             
-            NSLayoutConstraint.deactivate([self.height])
-            self.height.constant = 0
-            NSLayoutConstraint.activate([self.height])
+            NSLayoutConstraint.deactivate([self.heightConstraint])
+            self.heightConstraint.constant = 0
+            NSLayoutConstraint.activate([self.heightConstraint])
             UIView.animate(withDuration: 0.5, delay: 0, animations: {
                 self.dropView.center.y -= self.dropView.frame.height / 2
                 self.dropView.layoutIfNeeded()
@@ -108,9 +110,9 @@ protocol dropDownProtocol {
     
     func dismissDropDown() {
         self.isOpen = false
-        NSLayoutConstraint.deactivate([self.height])
-        self.height.constant = 0
-        NSLayoutConstraint.activate([self.height])
+        NSLayoutConstraint.deactivate([self.heightConstraint])
+        self.heightConstraint.constant = 0
+        NSLayoutConstraint.activate([self.heightConstraint])
         UIView.animate(withDuration: 0.5, delay: 0, animations: {
             self.dropView.center.y -= self.dropView.frame.height / 2
             self.dropView.layoutIfNeeded()
@@ -131,6 +133,7 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
     var tableView = UITableView()
     var delegate: dropDownProtocol!
     var wasPressed = false
+    var height: CGFloat = 180
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -150,6 +153,7 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
         self.tableView.layer.borderWidth = 0.5
         self.tableView.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
         self.tableView.layer.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2).cgColor
+        self.tableView.rowHeight = self.height/3.3
         
     }
     
