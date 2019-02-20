@@ -22,6 +22,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     var textFields = [Int: UITextField]()
     var dropDownTextFields = [Int: DropDownTextField]()
     var boolSwitches = [Int: UISwitch]()
+    var checkBoxes = [Int: CheckBoxControl]()
     var labels = [UILabel]()
 
     
@@ -47,13 +48,14 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let container = UIView()
     //var formWidthConstraint = NSLayoutConstraint()
     //var formHeightConstraint = NSLayoutConstraint()
-    let topSpacing = 40.0
+    var topSpacing = 40.0
     let sideSpacing: CGFloat = 8.0
     let textFieldSpacing: CGFloat = 30.0
     let textFieldHeight: CGFloat = 50.0
     let navigationBarHeight: CGFloat = 44
     var deviceOrientation = 0
     var currentScrollViewOffset: CGFloat = 0
+    var labelFontSize: CGFloat = 20.0
     
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
@@ -66,13 +68,13 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         // Open connection to the DB
         do {
-            print(dbPath)
+            //print(dbPath)
             if URL(fileURLWithPath: dbPath).lastPathComponent != "savageChecker.db" {
                 db = try Connection(dbPath)
             }
         } catch let error {
-            fatalError(error.localizedDescription)
-            //print(error.lo)
+            //fatalError(error.localizedDescription)
+            print(error.localizedDescription)
         }
         
         self.deviceOrientation = UIDevice.current.orientation.rawValue
@@ -163,19 +165,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: CGFloat(self.topSpacing) + self.navigationBarHeight + UIApplication.shared.statusBarFrame.height).isActive = true
         self.scrollView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.sideSpacing).isActive = true
         self.scrollView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
-        //self.formWidthConstraint = self.scrollView.widthAnchor.constraint(equalToConstant: self.view.frame.width - CGFloat(self.sideSpacing * 2))// - safeArea.left - safeArea.right)
-        //self.formHeightConstraint = self.scrollView.heightAnchor.constraint(equalToConstant: self.view.frame.height)
-        
-        //self.formXConstraint.identifier = "formX"
-        //self.formYConstraint.identifier = "formY"
-        //self.formWidthConstraint.identifier = "formWidth"
-        //self.formHeightConstraint.identifier = "formHeight"
-        //self.formWidthConstraint.isActive = true
-        //self.formHeightConstraint.isActive = true
-        //self.formXConstraint.isActive = true
-        //self.formYConstraint.isActive = true
-        //self.scrollView.bottomAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.bottomAnchor).isActive = true
-        
         
         self.scrollView.addSubview(container)
         
@@ -184,7 +173,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
         container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
         container.widthAnchor.constraint(equalTo: scrollView.widthAnchor).isActive = true
-        //container.heightAnchor.constraint(equalTo: scrollView.heightAnchor).isActive = true
         
         var containerHeight = CGFloat(0.0)
         var lastBottomAnchor = container.topAnchor
@@ -192,16 +180,18 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             // Combine the label and the textField in a vertical stack view
             let label = UILabel()
             let thisLabelText = textFieldIds[i].label
-            let font = UIFont.systemFont(ofSize: 17.0)
+            let font = UIFont.systemFont(ofSize: self.labelFontSize)
             let labelWidth = thisLabelText.width(withConstrainedHeight: 28.5, font: font)
             label.text = thisLabelText
             label.font = font
             labels.append(label)
             container.addSubview(labels[i])
             labels[i].translatesAutoresizingMaskIntoConstraints = false
+
             labels[i].leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
             if lastBottomAnchor == container.topAnchor {
                 labels[i].topAnchor.constraint(equalTo: lastBottomAnchor).isActive = true
+                
             } else {
                 labels[i].topAnchor.constraint(equalTo: lastBottomAnchor, constant: self.textFieldSpacing).isActive = true
             }
@@ -213,7 +203,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             textField.layer.borderColor = UIColor.clear.cgColor//.lightGray.cgColor
             textField.layer.borderWidth = 0.01//0.25
             textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-            textField.font = UIFont.systemFont(ofSize: 14.0)
+            textField.font = UIFont.systemFont(ofSize: 16.0)
             textField.layer.cornerRadius = 5
             //textField.frame.size.height = 28.5
             textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: textFieldHeight)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
@@ -279,7 +269,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.dropView.leftAnchor.constraint(equalTo: dropDownTextFields[i]!.leftAnchor).isActive = true
                 dropDownTextFields[i]!.dropView.rightAnchor.constraint(equalTo: dropDownTextFields[i]!.rightAnchor).isActive = true
                 dropDownTextFields[i]!.dropView.topAnchor.constraint(equalTo: dropDownTextFields[i]!.bottomAnchor).isActive = true
-                dropDownTextFields[i]!.height = dropDownTextFields[i]!.dropView.heightAnchor.constraint(equalToConstant: 0)
+                dropDownTextFields[i]!.heightConstraint = dropDownTextFields[i]!.dropView.heightAnchor.constraint(equalToConstant: 0)
                 
                 // Add listener for notification from DropDownTextField.dropDownPressed()
                 dropDownTextFields[i]?.dropDownID = i//textFieldIds[i].label
@@ -315,6 +305,39 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
             
+            case "checkBox":
+                checkBoxes[i] = CheckBoxControl()
+                checkBoxes[i]?.tag = i
+                
+                // Arrange the checkBox and the label
+                container.addSubview(checkBoxes[i]!)
+                checkBoxes[i]?.leftAnchor.constraint(equalTo: container.leftAnchor).isActive = true
+                checkBoxes[i]?.translatesAutoresizingMaskIntoConstraints = false
+                if lastBottomAnchor == container.topAnchor {
+                    checkBoxes[i]?.topAnchor.constraint(equalTo: lastBottomAnchor).isActive = true
+                } else {
+                    checkBoxes[i]?.topAnchor.constraint(equalTo: lastBottomAnchor, constant: self.textFieldSpacing).isActive = true
+                }
+                checkBoxes[i]?.heightAnchor.constraint(equalToConstant: self.textFieldHeight).isActive = true
+                checkBoxes[i]?.widthAnchor.constraint(equalToConstant: self.textFieldHeight).isActive = true
+                checkBoxes[i]?.addTarget(self, action: #selector(checkBoxTapped(sender:)), for: .touchUpInside)
+                
+                // For some reason, I can't just remove label constaints, so just get rid of the label and make a new one.
+                labels[i].removeFromSuperview()
+                labels.remove(at: i)
+                let label = UILabel()
+                let thisLabelText = textFieldIds[i].label
+                let font = UIFont.systemFont(ofSize: self.labelFontSize)
+                label.text = thisLabelText
+                label.font = font
+                labels.append(label)
+                container.addSubview(labels[i])
+                labels[i].translatesAutoresizingMaskIntoConstraints = false
+                
+                labels[i].leftAnchor.constraint(equalTo: checkBoxes[i]!.rightAnchor, constant: self.sideSpacing * 2).isActive = true
+                labels[i].centerYAnchor.constraint(equalTo: checkBoxes[i]!.centerYAnchor).isActive = true
+                lastBottomAnchor = checkBoxes[i]!.bottomAnchor
+                
             default:
                 os_log("Text field type not understood", log: OSLog.default, type: .debug)
             }
@@ -1088,7 +1111,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
                              (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -1107,7 +1130,7 @@ class BusObservationViewController: BaseObservationViewController {
                              (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
                              (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -1194,9 +1217,9 @@ class BusObservationViewController: BaseObservationViewController {
             self.textFields[4]?.text = self.observation?.busNumber
             self.dropDownTextFields[5]?.text = self.observation?.destination
             if (self.observation?.isTraining)! {
-                self.textFields[6]?.text = "Yes"
+                self.checkBoxes[6]?.isSelected = true
             } else {
-                self.textFields[6]?.text = "No"
+                self.checkBoxes[6]?.isSelected = false
             }
             self.textFields[7]?.text = self.observation?.nPassengers
             self.textFields[8]?.text = self.observation?.comments
@@ -1262,7 +1285,7 @@ class BusObservationViewController: BaseObservationViewController {
         let busType = self.dropDownTextFields[3]?.text ?? ""
         let busNumber = self.textFields[4]?.text ?? ""
         let destination = self.dropDownTextFields[5]?.text ?? ""
-        let isTraining = self.textFields[6]?.text ?? ""
+        //let isTraining = self.textFields[6]?.text ?? ""
         let nPassengers = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
         
@@ -1283,11 +1306,16 @@ class BusObservationViewController: BaseObservationViewController {
             self.observation?.busType = busType
             self.observation?.busNumber = busNumber
             self.observation?.destination = destination
-            if isTraining == "Yes" {
-                self.observation?.isTraining = true
+            if let isTrainingCheckBox = self.checkBoxes[6] {
+                self.observation?.isTraining = isTrainingCheckBox.isSelected
             } else {
                 self.observation?.isTraining = false
             }
+            /*if isTraining == "Yes" {
+                self.observation?.isTraining = true
+            } else {
+                self.observation?.isTraining = false
+            }*/
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
             
@@ -1365,7 +1393,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -1387,7 +1415,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "normal"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -1465,9 +1493,9 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             self.textFields[4]?.text = self.observation?.busNumber
             self.dropDownTextFields[5]?.text = self.observation?.destination
             if (self.observation?.isTraining)! {
-                self.textFields[6]?.text = "Yes"
+                self.checkBoxes[6]?.isSelected = true
             } else {
-                self.textFields[6]?.text = "No"
+                self.checkBoxes[6]?.isSelected = false
             }
             self.textFields[7]?.text = self.observation?.nPassengers
             self.textFields[8]?.text  = self.observation?.nOvernightPassengers
@@ -1516,7 +1544,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         let busType = self.dropDownTextFields[3]?.text ?? ""
         let busNumber = self.textFields[4]?.text ?? ""
         let destination = self.dropDownTextFields[5]?.text ?? ""
-        let isTraining = self.textFields[6]?.text ?? ""
+        //let isTraining = self.textFields[6]?.text ?? ""
         let nPassengers = self.textFields[7]?.text ?? ""
         let nOvernightPassengers = self.textFields[8]?.text ?? ""
         let comments = self.textFields[9]?.text ?? ""
@@ -1540,11 +1568,16 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             self.observation?.busType = busType
             self.observation?.busNumber = busNumber
             self.observation?.destination = destination
-            if isTraining == "Yes" {
-                self.observation?.isTraining = true
+            if let isTrainingCheckBox = self.checkBoxes[6] {
+                self.observation?.isTraining = isTrainingCheckBox.isSelected
             } else {
                 self.observation?.isTraining = false
             }
+            /*if isTraining == "Yes" {
+                self.observation?.isTraining = true
+            } else {
+                self.observation?.isTraining = false
+            }*/
             self.observation?.nPassengers = nPassengers
             self.observation?.nOvernightPassengers = nOvernightPassengers
             self.observation?.comments = comments
@@ -2809,7 +2842,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2824,7 +2857,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                                    type: "boolSwitch"),
+                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2859,7 +2892,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
-            self.textFields[3]?.text = "No"
+            //self.textFields[3]?.text = "No"
             
             self.saveButton.isEnabled = false
             
@@ -2890,9 +2923,9 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             if (self.observation?.hasTekPass)! {
-                self.textFields[3]?.text = "Yes"
+                self.checkBoxes[3]?.isSelected = true
             } else {
-                self.textFields[3]?.text = "No"
+                self.checkBoxes[3]?.isSelected = false
             }
             self.textFields[4]?.text = self.observation?.nPassengers
             self.textFields[5]?.text = self.observation?.comments
@@ -2937,7 +2970,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
-        let hasTekPass = self.textFields[3]?.text ?? ""
+        //let hasTekPass = self.textFields[3]?.text ?? ""
         let nPassengers = self.textFields[4]?.text ?? ""
         let comments = self.textFields[5]?.text ?? ""
         
@@ -2952,11 +2985,16 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.observation?.observerName = observerName
             self.observation?.date = date
             self.observation?.time = time
-            if hasTekPass == "Yes" {
-                self.observation?.hasTekPass = true
+            if let hasPassCheckBox = self.checkBoxes[3] {
+                self.observation?.hasTekPass = hasPassCheckBox.isSelected
             } else {
                 self.observation?.hasTekPass = false
             }
+            /*if hasTekPass == "Yes" {
+                self.observation?.hasTekPass = true
+            } else {
+                self.observation?.hasTekPass = false
+            }*/
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
             

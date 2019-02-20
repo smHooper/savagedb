@@ -153,6 +153,18 @@ extension UIViewController {
         return userData
     }
     
+    @objc func checkBoxTapped(sender: UIButton) {
+        UIView.animate(withDuration: 0.1, delay: 0.1, options: .curveEaseInOut, animations: {
+            sender.transform = CGAffineTransform(scaleX: 0.1, y: 0.1)
+            
+        }) { (success) in
+            UIView.animate(withDuration: 0.1, delay: 0.1, options: .curveEaseInOut, animations: {
+                sender.isSelected = !sender.isSelected
+                sender.transform = .identity
+            }, completion: nil)
+        }
+    }
+    
     
 }
 
