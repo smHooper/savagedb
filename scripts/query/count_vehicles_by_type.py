@@ -237,7 +237,7 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                                        datetime.strptime(end_date, date_format),
                                        freq=FREQ_STRS[summarize_by]
                                        )
-            
+
     '''# For day, hour, halfhour, clip the last one because it rolls over into the next interval
     elif len(date_range) > 1:
         date_range = date_range[:-1]'''
@@ -357,7 +357,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     # Query GOVs
     #simple_output_fields = get_output_field_names(date_range, summarize_by)
     where_clause = "datetime::date BETWEEN '{start_date}' AND '{end_date}' " \
-                   "AND destination NOT LIKE 'Primrose%%' "\
+                   "AND destination <> 'PRM' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
     govs, gov_sql = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=output_fields, get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
@@ -372,6 +372,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     else:
         povs = pd.DataFrame(columns=buses.columns)
 
+
     data = pd.concat([buses, govs, povs], sort=False)
 
     if sort_order:
@@ -380,6 +381,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     if category_filter:
         data = filter_data_by_category(data, category_filter)
 
+    import pdb;
     return data, buses_sql + [gov_sql] + pov_sql
 
 
@@ -547,7 +549,7 @@ def query_bikes(output_fields, field_names, start_date, end_date, date_range, su
     return data, [sql]
 
 
-def aggregate(data, summarize_by, aggregate_by, summary_stat, output_fields):
+def aggregate(data, summarize_by, aggregate_by, summary_stat, x_labels):
 
     summary_functions = {'COUNT': np.sum,
                          'SUM': np.sum,
@@ -555,14 +557,18 @@ def aggregate(data, summarize_by, aggregate_by, summary_stat, output_fields):
                          'MIN': np.min,
                          'MAX': np.max,
                          'STDDEV': np.std}
-    #agg_strs = pd.to_datetime(output_fields.index).strftime(FORMAT_STRS[aggregate_by])
-    agg_strs = pd.to_datetime(data.columns, format=FORMAT_STRS[summarize_by]).strftime(FORMAT_STRS[aggregate_by])
-    data_t = data.T
-    data_t['agg_str'] = agg_strs.values
-    data = data_t.groupby('agg_str').aggregate(summary_functions[summary_stat.upper()]).T
-    new_datetimes = pd.to_datetime(data.columns, format=FORMAT_STRS[aggregate_by])
-    new_labels = pd.Series(get_x_labels(new_datetimes, aggregate_by).sort_values().unique(),
-                           index=data.columns.sort_values())
+
+    # Aggregate by the summary function
+    original_cols = data.columns
+    new_labels = pd.Series(pd.to_datetime(original_cols, format=FORMAT_STRS[summarize_by]).strftime(FORMAT_STRS[aggregate_by]), index=original_cols)
+    data_t = data.T # transform data to aggregate by date
+    data_t['agg_str'] = new_labels.values
+    data = data_t.groupby('agg_str').aggregate(summary_functions[summary_stat.upper()]).T # flip data back
+
+    # Reorder columns and get new X labels
+    new_labels.drop_duplicates(inplace=True)
+    data = data.reindex(columns=new_labels.sort_index())\
+        .rename(pd.Series(new_labels.index, index=new_labels), axis=1)
 
     return data, new_labels
 
@@ -993,16 +999,6 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         # If we got here, neither out_dir nor out_csv were given so raise an error
         raise ValueError('Either out_csv or out_dir must be given')
 
-    # Try to open the file to make sure it's not already open and therefore locked
-    try:
-        f = open(out_csv, 'w')
-        f.close()
-    except IOError as e:
-        if e.errno == os.errno.EACCES:
-            raise IOError('Permission to access the output file %s was denied. This is likely because the file is currently open. Please close the file and re-run the script.' % out_csv)
-        # Not a permission error.
-        raise
-
     # Check that summary_stat is a valid (postgres) SQL function
     valid_stats = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'STDDEV']
     if not summary_stat:
@@ -1015,6 +1011,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
     if aggregate_by:
         agg_stat = summary_stat
         summary_stat = 'COUNT'
+        if not drop_null:
+            strip_data = True
 
     if not summary_field:
         summary_field = 'datetime'
@@ -1080,17 +1078,22 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if aggregate_by:
             data_columns = data.columns
             data = data.reindex(columns=output_fields) # Make sure all time steps are there so the agg func is accurate
-            data, these_labels = aggregate(data, summarize_by, aggregate_by, agg_stat, output_fields)#[output_fields.isin(data.columns)])
-            data = data.reindex(columns=data.columns) # Reset columns how they were
+            data, these_labels = aggregate(data, summarize_by, aggregate_by, agg_stat, x_labels)
 
         # If stip_data is true, remove empty columns from edges of the data
         if strip_data:
             data, drop_inds = strip_dataframe(data)
             these_labels = these_labels.drop(drop_inds) #drop the same labels
+        # If drop null is true, remove any columns that are all zeros
+        elif drop_null:
+            drop_mask = ~(data.fillna(0) == 0).all(axis=0) #should be all 0s but us .fillna(0) just in case
+            data = data.loc[:, drop_mask]
+            these_labels = these_labels[drop_mask]
         # Otherwise if drop_null isn't true, make sure all dates are included, even if they don't have any data
-        elif not drop_null:
+        else:
             data = data.reindex(columns=output_fields).fillna(0)
 
+        #import pdb; pdb.set_trace()
         data = data.reindex(columns=data.columns.sort_values())  # make sure they're in chronological order
 
         # If only 1 interval was found or given, drop the last label because it's extraneous
@@ -1105,17 +1108,24 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         these_labels = these_labels.reindex(data.columns)
 
         # Write csv to disk
-        this_csv_path = os.path.join(out_dir,
-                                     '{query_name}_{summary_stat}_by_{summarize_by}_{aggregate_by}{start_date}_{end_date}.csv'
-                                     .format(query_name=query_name,
-                                             summary_stat=agg_stat.lower() if aggregate_by else summary_stat.lower(),
-                                             summarize_by=summarize_by,
-                                             aggregate_by='per_' + aggregate_by.replace(' ','') + '_' if aggregate_by else '',
-                                             start_date=start_datetime.strftime('%Y%m%d'),
-                                             end_date=end_datetime.strftime('%Y%m%d')
-                                             )
-                                    )
-        data.to_csv(this_csv_path)
+        try:
+            this_csv_path = os.path.join(out_dir,
+                                         '{query_name}_{summary_stat}_by_{summarize_by}_{aggregate_by}{start_date}_{end_date}.csv'
+                                         .format(query_name=query_name,
+                                                 summary_stat=agg_stat.lower() if aggregate_by else summary_stat.lower(),
+                                                 summarize_by=summarize_by,
+                                                 aggregate_by='per_' + aggregate_by.replace(' ','') + '_' if aggregate_by else '',
+                                                 start_date=start_datetime.strftime('%Y%m%d'),
+                                                 end_date=end_datetime.strftime('%Y%m%d')
+                                                 )
+                                        )
+            data.to_csv(this_csv_path)
+        except IOError as e:
+            if e.errno == os.errno.EACCES:
+                raise IOError(
+                    'Permission to access the output file %s was denied. This is likely because the file is currently open. Please close the file and re-run the script.' % out_csv)
+            # Not a permission error.
+            raise
 
         # PLot stuff
         vehicle_limits = []
