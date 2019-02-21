@@ -15,8 +15,8 @@ class CheckBoxControl: UIButton {
     override init(frame: CGRect) {
         super.init(frame: frame)
         
-        self.setImage(UIImage(named:"checkboxEmptyIcon"), for: .normal)
-        self.setImage(UIImage(named:"checkboxSelectedIcon"), for: .selected)
+        self.setImage(UIImage(named:"checkBoxUnselectedIcon"), for: .normal)
+        self.setImage(UIImage(named:"checkBoxSelectedIcon"), for: .selected)
         self.contentHorizontalAlignment = .fill
         self.contentVerticalAlignment = .fill
     }

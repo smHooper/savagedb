@@ -734,7 +734,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     // Return a blurred image of all currently visible views
     func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
         
-        //add blur temporarily
+        //add blur temporarily so the snapshot will be blurred
         addBlur()
         
         // Get image of all currently visible views
