@@ -256,6 +256,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 dropDownTextFields[i]!.heightAnchor.constraint(equalToConstant: textFieldHeight).isActive = true
                 lastBottomAnchor = dropDownTextFields[i]!.bottomAnchor
                 
+                //setDropdownBackground(textField: dropDownTextFields[i]!)
+                
                 //Set the drop down menu's options
                 guard let dropDownOptions = dropDownMenuOptions[textFieldIds[i].label] else {
                     print("Either self.dropDownMenuOptions not set or \(textFieldIds[i].label) is not a key: \(self.dropDownMenuOptions)")
@@ -431,17 +433,22 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         case "number":
             textField.selectAll(nil)
         case "dropDown":
+            
             let field = textField as! DropDownTextField
             guard let text = textField.text else {
                 return
             }
+            
             textField.resignFirstResponder()
             
+            //setDropdownBackground(textField: textField as! DropDownTextField)
+            
             // Interp staff thought that other should be the actual entry rather than having people type something in
-            /*// Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
-            if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
+            // Hide keyboard if "Other" wasn't selected and the dropdown has not yet been pressed
+            /*if field.dropView.dropDownOptions.contains(text) || !field.dropDownWasPressed{
                 textField.resignFirstResponder()
             } else {
+                textField.becomeFirstResponder()
             }*/
         case "time", "date":
             setupDatetimePicker(textField)
@@ -476,7 +483,46 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
-    // Get notifications from keyboard so view can moved up if text field is obscured by it
+    func getTextFieldCoordinates(textFieldId: Int) {
+        
+        
+    }
+    
+    // Setup dropdown background view
+    func setDropdownBackground(textField: DropDownTextField) {
+        // Make sure the background is clear
+        textField.dropView.tableView.backgroundColor = UIColor.clear
+        textField.dropView.tableView.layer.backgroundColor = UIColor.clear.cgColor
+        
+        //let location = textField.view
+        let frame = CGRect(x: self.sideSpacing, y: textField.frame.height, width: textField.frame.width, height: textField.dropView.height)
+        
+        /*let blurEffect = UIBlurEffect(style: .light)
+        let blurEffectView = UIVisualEffectView(effect: blurEffect)
+        
+        //always fill the view
+        blurEffectView.frame = self.view.frame//bounds
+        blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        self.view.addSubview(blurEffectView)*/
+        
+        let backgroundView = UIImageView(image: self.view.takeSnapshot())
+        backgroundView.contentMode = .scaleAspectFill
+        let currentFrame = self.view.frame
+        backgroundView.frame = frame//CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
+        print(textFieldIds[textField.tag])
+        print(backgroundView.frame)
+        /*blurEffectView.removeFromSuperview()
+        
+        let translucentWhite = UIView(frame: backgroundView.frame)
+        translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
+        backgroundView.addSubview(translucentWhite)*/
+        
+        textField.dropView.tableView.backgroundView = backgroundView
+    }
+    
+    
+    // Get notifications from keyboard so view can be moved up if text field is obscured by it
     func registerForKeyboardNotifications(){
         //Adding notifies on keyboard appearing
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWasShown(notification:)), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
@@ -1026,6 +1072,99 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
     }
     
+    // Check if the last two records in this table are identical
+    func lastRecordDuplicated() -> Bool {
+        
+        // Check if the observation was made within 5 minutes of the last observation
+        
+        // Get all columns names
+        let tableName: String
+        if let tname = self.observationsTable.asSQL().components(separatedBy: " ").last {
+            // .asSQL() produces simple SQL SELECT stmt, but need to get rid of ""
+            tableName = tname.replacingOccurrences(of: "\"", with: "")
+        } else {
+            return false
+        }
+        
+        var columnNameString = ""
+        if let statement = try? db.prepare(self.observationsTable.asSQL()){
+            for (index, colName) in statement.columnNames.enumerated() {
+                if colName != "id" && colName != "time" {
+                    columnNameString += "\(colName), "
+                }
+            }
+            // Trim off the last ", "
+            columnNameString = String(columnNameString[..<columnNameString.index(columnNameString.endIndex, offsetBy: -2)])
+        } else {
+            return false
+        }
+        
+        // Run SQL to check if the last to records are identical
+        let sql = "SELECT * FROM \(tableName) WHERE id IN (SELECT id FROM \(tableName) ORDER BY id DESC LIMIT 2) GROUP BY \(columnNameString)"
+        var uniqueRowCount = 0
+        if let statement = try? db.prepare(sql) {
+            for row in statement {
+                uniqueRowCount += 1
+            }
+        }
+        
+        if uniqueRowCount == 1 {
+            // The last 2 were identical
+            return true
+        } else if uniqueRowCount == 2 {
+            // Both rows were unique
+            return false
+        } else {
+            // This should never happen, but just in case return false
+            return false
+        }
+        
+    }
+    
+    
+    func showDuplicatedAlert(isNewObservation: Bool) {
+        let alertTitle = "Identical record alert"
+        let alertMessage = "This observation is identical to the last observation you entered for this type of vehicle. Was this intentional? To save the observation as is, press Yes (you can always edit it afterward, id necessary). To remove the observation and start over, press No."
+        let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+        
+        alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in
+            self.dismissController()})) //keep record and dismiss the controller
+        
+        // If this is an update to a new observation, we don't want the user to be able to delete it. Just limit options to saving and cancelling
+        if isNewObservation {
+            alertController.addAction(UIAlertAction(title: "No", style: .destructive, handler: {action in
+                self.deleteLastRecord(controller: alertController); // delete record
+            self.dismissController() // dismiss controller
+            }))
+        }
+        
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {action in
+            self.deleteLastRecord(controller: alertController)})) // just delete record but allow user to make changes to data
+        present(alertController, animated: true, completion: nil)
+    }
+    
+    
+    func deleteLastRecord(controller: UIAlertController) {
+        
+        let deleteErrorController = UIAlertController(title: "Delete error", message: "There was a problem while deleting this observation. You will have to delete it manually", preferredStyle: .alert)
+        
+        if let maxId = try? db.scalar(self.observationsTable.select(idColumn.max)) {
+            let lastRecord = self.observationsTable.filter(idColumn == maxId!)
+            if let deletedId = try? db.run(lastRecord.delete()) {
+                print("deleted \(deletedId)")
+            } else {
+                controller.dismiss(animated: false, completion: nil)
+                present(deleteErrorController, animated: true, completion:nil)
+            }
+        } else {
+            controller.dismiss(animated: false, completion: nil)
+            present(deleteErrorController, animated: true, completion:nil)
+        }
+        
+        
+        
+    }
+    
     // Add record to DB
     func insertRecord() {
         // Can just get text values from the observation because it has to be updated before saveButton is enabled
@@ -1242,19 +1381,26 @@ class BusObservationViewController: BaseObservationViewController {
         } else {
             updateRecord()
         }
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
-            }
-        } catch {
-            print(error.localizedDescription)
-        }
-        observation?.id = Int(max)
         
-        dismissController()
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+        
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+            observation?.id = Int(max)
+            
+            dismissController()
+        }
     }
     
     
@@ -1342,6 +1488,7 @@ class BusObservationViewController: BaseObservationViewController {
             print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
         }
+        
     }
     
     override func updateRecord() {
@@ -1519,19 +1666,26 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         } else {
             updateRecord()
         }
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
-            }
-        } catch {
-            print(error.localizedDescription)
-        }
-        observation?.id = Int(max)
         
-        dismissController()
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
+            }
+            observation?.id = Int(max)
+            
+            dismissController()
+        }
     }
     
     
@@ -1810,6 +1964,17 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         // Add a new record
         if self.isAddingNewObservation {
             insertRecord()
+            
+            // Update an existing record
+        } else {
+            updateRecord()
+        }
+        
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
             // Assign the right ID to the observation
             var max: Int64!
             do {
@@ -1821,13 +1986,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 print(error.localizedDescription)
             }
             observation?.id = Int(max)
-        // Update an existing record
-        } else {
-            updateRecord()
+            
+            dismissController()
         }
-        
-        dismissController()
     }
+
     
     //MARK: - Private methods
     @objc override func updateData(){
@@ -2056,24 +2219,31 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         // Add a new record
         if self.isAddingNewObservation {
             insertRecord()
-        
+            
+            // Update an existing record
         } else {
             updateRecord()
         }
         
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-                        max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
             }
-        } catch {
-            print(error.localizedDescription)
+            observation?.id = Int(max)
+            
+            dismissController()
         }
-        observation?.id = Int(max)
-        
-        dismissController()
     }
     
     //MARK: - Private methods
@@ -2291,19 +2461,25 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             updateRecord()
         }
         
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-                        max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
             }
-        } catch {
-            print(error.localizedDescription)
+            observation?.id = Int(max)
+            
+            dismissController()
         }
-        observation?.id = Int(max)
-        
-        dismissController()
     }
     
     
@@ -2515,19 +2691,25 @@ class EmployeeObservationViewController: BaseObservationViewController {
             updateRecord()
         }
         
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-                        max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
             }
-        } catch {
-            print(error.localizedDescription)
+            observation?.id = Int(max)
+            
+            dismissController()
         }
-        observation?.id = Int(max)
-        
-        dismissController()
     }
     
     
@@ -2731,19 +2913,25 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             updateRecord()
         }
         
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
             }
-        } catch {
-            print(error.localizedDescription)
+            observation?.id = Int(max)
+            
+            dismissController()
         }
-        observation?.id = Int(max)
-        
-        dismissController()
     }
 
     
@@ -3311,19 +3499,25 @@ class PhotographerObservationViewController: BaseObservationViewController {
             updateRecord()
         }
         
-        // Assign the right ID to the observation
-        var max: Int64!
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64!
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                }
+            } catch {
+                print(error.localizedDescription)
             }
-        } catch {
-            print(error.localizedDescription)
+            observation?.id = Int(max)
+            
+            dismissController()
         }
-        observation?.id = Int(max)
-        
-        dismissController()
     }
     
     //MARK: - DB methods
