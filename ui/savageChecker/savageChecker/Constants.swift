@@ -44,4 +44,5 @@ let launchScreenQuotes = [
 
 let backgroundImages = [""]
 
-let navigationButtonSize: CGFloat = 30
+let navigationButtonSize: CGFloat = 35
+let navigationBarSize: CGFloat = 54

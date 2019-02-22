@@ -303,54 +303,47 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 60))
-        
-        let navItem = UINavigationItem(title: "")
-        //self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
-        
-        let obsListButton = UIButton(type: .custom)
-        obsListButton.setImage(UIImage (named: "observationListIcon"), for: .normal)
-        obsListButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
-        obsListButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
-        obsListButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        obsListButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        let observationListButton = UIBarButtonItem(customView: obsListButton)
-        
-        //let shiftButton = UIBarButtonItem(title: "Shift info", style: .plain, target:nil, action: #selector(AddObservationViewController.editShiftInfoButtonPressed))
-        //navItem.rightBarButtonItem = shiftButton
-        let shiftButton = UIButton(type: .custom)
-        shiftButton.setImage(UIImage(named: "shiftInfoIcon"), for: .normal)
-        shiftButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
-        shiftButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        shiftButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        shiftButton.addTarget(self, action: #selector(editShiftInfoButtonPressed), for: .touchUpInside)
-        let shiftBarButton = UIBarButtonItem(customView: shiftButton)
-        
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 54))
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: navigationBarSize))
         self.view.addSubview(self.navigationBar)
         self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
         self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
         self.navigationBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
         self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
-        self.navigationBar.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        self.navigationBar.heightAnchor.constraint(equalToConstant: navigationBarSize).isActive = true
         
-        let navigationItem = UINavigationItem(title: "Make a new observation")
+        let obsListButton = UIButton(type: .custom)
+        obsListButton.setImage(UIImage (named: "observationListIcon"), for: .normal)
+        obsListButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        obsListButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
+        obsListButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        obsListButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        let observationListButton = UIBarButtonItem(customView: obsListButton)
+        
+        let shiftButton = UIButton(type: .custom)
+        shiftButton.setImage(UIImage(named: "shiftInfoIcon"), for: .normal)
+        shiftButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        shiftButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        shiftButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        shiftButton.addTarget(self, action: #selector(editShiftInfoButtonPressed), for: .touchUpInside)
+        let shiftBarButton = UIBarButtonItem(customView: shiftButton)
+        
+        let navigationItem = UINavigationItem(title: "Enter a new observation")
         
         let qrButton = UIButton(type: .custom)
         qrButton.setImage(UIImage (named: "scanQRIcon"), for: .normal)
-        qrButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
-        qrButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        qrButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        qrButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        qrButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        qrButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         qrButton.addTarget(self, action: #selector(qrButtonPressed), for: .touchUpInside)
         let qrBarButton = UIBarButtonItem(customView: qrButton)
         
         // Add a button for switching the active database file
         let databaseButton = UIButton(type: .custom)
         databaseButton.setImage(UIImage(named: "switchDatabaseIcon"), for: .normal)
-        databaseButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        databaseButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         databaseButton.translatesAutoresizingMaskIntoConstraints = false
-        databaseButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        databaseButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        databaseButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        databaseButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         databaseButton.imageView?.contentMode = .scaleAspectFit
         databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
         let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
@@ -359,10 +352,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Add a button for switching the active database file
         let googleDriveButton = UIButton(type: .custom)
         googleDriveButton.setImage(UIImage(named: "googleDriveIcon"), for: .normal)
-        googleDriveButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        googleDriveButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         googleDriveButton.translatesAutoresizingMaskIntoConstraints = false
-        googleDriveButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        googleDriveButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        googleDriveButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        googleDriveButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         googleDriveButton.imageView?.contentMode = .scaleAspectFit
         googleDriveButton.addTarget(self, action: #selector(googleDriveButtonPressed), for: .touchUpInside)
         let googleDriveBarButton = UIBarButtonItem(customView: googleDriveButton)
@@ -375,12 +368,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         navigationItem.leftBarButtonItems = [selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
         navigationItem.rightBarButtonItems = [shiftBarButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, observationListButton]
         self.navigationBar.setItems([navigationItem], animated: false)
-        
-        
-        //self.navigationBar.setItems([navItem], animated: false)
-        /*self.navigationBar.setBackgroundImage(UIImage(), for: .default)
-        self.navigationBar.shadowImage = UIImage()
-        self.navigationBar.isOpaque = false*/
         
         self.view.addSubview(self.navigationBar)
     }

@@ -52,7 +52,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let sideSpacing: CGFloat = 8.0
     let textFieldSpacing: CGFloat = 30.0
     let textFieldHeight: CGFloat = 50.0
-    let navigationBarHeight: CGFloat = 44
+    //let navigationBarHeight: CGFloat = 44
     var deviceOrientation = 0
     var currentScrollViewOffset: CGFloat = 0
     var labelFontSize: CGFloat = 20.0
@@ -146,7 +146,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.scrollView.setNeedsUpdateConstraints()
         self.scrollView.layoutIfNeeded()
         self.view.layoutIfNeeded()
-        self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: currentScreenFrame.width, height: self.navigationBarHeight)
+        self.navigationBar.frame = CGRect(x:0, y: UIApplication.shared.statusBarFrame.size.height, width: currentScreenFrame.width, height: navigationBarSize)
         
     }
     
@@ -162,7 +162,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.view.addSubview(self.scrollView)
         self.scrollView.translatesAutoresizingMaskIntoConstraints = false
         self.scrollView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: self.sideSpacing).isActive = true
-        self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: CGFloat(self.topSpacing) + self.navigationBarHeight + UIApplication.shared.statusBarFrame.height).isActive = true
+        self.scrollView.topAnchor.constraint(equalTo: self.view.topAnchor, constant: CGFloat(self.topSpacing) + navigationBarSize + UIApplication.shared.statusBarFrame.height).isActive = true
         self.scrollView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.sideSpacing).isActive = true
         self.scrollView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
         
@@ -357,7 +357,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         // Now set the height contraint
         
         let contentWidth = self.view.frame.width - (self.sideSpacing * 2)
-        let contentHeight = containerHeight + UIApplication.shared.statusBarFrame.height + self.navigationBarHeight + CGFloat(self.topSpacing)
+        let contentHeight = containerHeight + UIApplication.shared.statusBarFrame.height + navigationBarSize + CGFloat(self.topSpacing)
         container.heightAnchor.constraint(equalToConstant: contentHeight).isActive = true
         self.scrollView.contentSize = CGSize(width: contentWidth, height: contentHeight)//CGSize(width: container.frame.size.width, height: containerHeight)
     }
@@ -772,14 +772,14 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }*/
         
         let screenSize: CGRect = UIScreen.main.bounds
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: self.navigationBarHeight))
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: navigationBarSize))
         self.view.addSubview(self.navigationBar)
         
         self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
         self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
         self.navigationBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
         self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
-        self.navigationBar.heightAnchor.constraint(equalToConstant: self.navigationBarHeight).isActive = true
+        self.navigationBar.heightAnchor.constraint(equalToConstant: navigationBarSize).isActive = true
         // Customize buttons and title in all subclasses
     }
     

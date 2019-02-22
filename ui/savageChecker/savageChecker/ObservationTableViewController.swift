@@ -509,10 +509,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let navigationItem = UINavigationItem(title: self.title!)
         let backButton = UIButton(type: .custom)
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
-        backButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        backButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         backButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
-        backButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        backButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        backButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        backButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         let backBarButton = UIBarButtonItem(customView: backButton)
         
         // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
@@ -529,19 +529,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Add button for adding a new observation
         let addButton = UIButton(type: .custom)
         addButton.setImage(UIImage(named: "addIcon"), for: .normal)
-        addButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        addButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         addButton.translatesAutoresizingMaskIntoConstraints = false
-        addButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        addButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         addButton.imageView?.contentMode = .scaleAspectFit
         addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
         let addObservationButton = UIBarButtonItem(customView: addButton)
         
         let qrButton = UIButton(type: .custom)
         qrButton.setImage(UIImage (named: "scanQRIcon"), for: .normal)
-        qrButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
-        qrButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        qrButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        qrButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        qrButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        qrButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         qrButton.addTarget(self, action: #selector(qrButtonPressed), for: .touchUpInside)
         let qrBarButton = UIBarButtonItem(customView: qrButton)
         //let QRButton = UIBarButtonItem(title: "QR", style: .plain, target: self, action: #selector(qrButtonPressed))
@@ -549,10 +549,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Add a button for switching the active database file
         let databaseButton = UIButton(type: .custom)
         databaseButton.setImage(UIImage(named: "switchDatabaseIcon"), for: .normal)
-        databaseButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        databaseButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         databaseButton.translatesAutoresizingMaskIntoConstraints = false
-        databaseButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        databaseButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        databaseButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        databaseButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         databaseButton.imageView?.contentMode = .scaleAspectFit
         databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
         let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
@@ -561,10 +561,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Add a button for switching the active database file
         let googleDriveButton = UIButton(type: .custom)
         googleDriveButton.setImage(UIImage(named: "googleDriveIcon"), for: .normal)
-        googleDriveButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        googleDriveButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         googleDriveButton.translatesAutoresizingMaskIntoConstraints = false
-        googleDriveButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        googleDriveButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        googleDriveButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        googleDriveButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         googleDriveButton.imageView?.contentMode = .scaleAspectFit
         googleDriveButton.addTarget(self, action: #selector(googleDriveButtonPressed), for: .touchUpInside)
         let googleDriveBarButton = UIBarButtonItem(customView: googleDriveButton)
@@ -573,10 +573,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         // Add the archive button
         let archiveButton = UIButton(type: .custom)
         archiveButton.setImage(UIImage(named: "archiveIcon"), for: .normal)
-        archiveButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        archiveButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         archiveButton.translatesAutoresizingMaskIntoConstraints = false
-        archiveButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        archiveButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        archiveButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        archiveButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         archiveButton.imageView?.contentMode = .scaleAspectFit
         archiveButton.addTarget(self, action: #selector(archiveButtonPressed), for: .touchUpInside)//button:)), for: .touchUpInside)
         //archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
@@ -596,10 +596,10 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func makeEditButton(imageName: String) -> UIButton {
         let editButton = UIButton(type: .custom)
         editButton.setImage(UIImage(named: imageName), for: .normal)
-        editButton.frame = CGRect(x: 0.0, y: 0.0, width: self.navigationButtonSize, height: self.navigationButtonSize)
+        editButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         editButton.translatesAutoresizingMaskIntoConstraints = false
-        editButton.widthAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
-        editButton.heightAnchor.constraint(equalToConstant: self.navigationButtonSize).isActive = true
+        editButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        editButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         editButton.imageView?.contentMode = .scaleAspectFit
         //editButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 100)
         editButton.addTarget(self, action: #selector(handleEditing), for: .touchUpInside)
