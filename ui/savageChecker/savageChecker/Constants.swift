@@ -46,3 +46,19 @@ let backgroundImages = [""]
 
 let navigationButtonSize: CGFloat = 35
 let navigationBarSize: CGFloat = 54
+var statusBarHeight: CGFloat = 20
+
+let observationViewControllers = ["Bus": BusObservationViewController(),
+                                  "Lodge Bus": LodgeBusObservationViewController(),
+                                  "NPS Vehicle": NPSVehicleObservationViewController(),
+                                  "NPS Approved": NPSApprovedObservationViewController(),
+                                  "NPS Contractor": NPSContractorObservationViewController(),
+                                  "Employee": EmployeeObservationViewController(),
+                                  "Right of Way": RightOfWayObservationViewController(),
+                                  "Tek Camper": TeklanikaCamperObservationViewController(),
+                                  "Bicycle": CyclistObservationViewController(),
+                                  "Propho": PhotographerObservationViewController(),
+                                  "Accessibility": AccessibilityObservationViewController(),
+                                  "Subsistence": SubsistenceObservationViewController(),
+                                  "Road Lottery": RoadLotteryObservationViewController(),
+                                  "Other": OtherObservationViewController()]

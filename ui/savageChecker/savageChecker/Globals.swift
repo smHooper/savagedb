@@ -22,21 +22,8 @@ var npsVehicleWorkGroups = [String: [String]]() // Dictionary of string arrays
 var npsApprovedCategories = [String]()
 var npsContractorTripPurposes = [String]()
 
-let observationViewControllers = ["Bus": BusObservationViewController(),
-                                  "Lodge Bus": LodgeBusObservationViewController(),
-                                  "NPS Vehicle": NPSVehicleObservationViewController(),
-                                  "NPS Approved": NPSApprovedObservationViewController(),
-                                  "NPS Contractor": NPSContractorObservationViewController(),
-                                  "Employee": EmployeeObservationViewController(),
-                                  "Right of Way": RightOfWayObservationViewController(),
-                                  "Tek Camper": TeklanikaCamperObservationViewController(),
-                                  "Bicycle": CyclistObservationViewController(),
-                                  "Propho": PhotographerObservationViewController(),
-                                  "Accessibility": AccessibilityObservationViewController(),
-                                  "Subsistence": SubsistenceObservationViewController(),
-                                  "Road Lottery": RoadLotteryObservationViewController(),
-                                  "Other": OtherObservationViewController()]
 
-var statusBarHeight: CGFloat = 20
+
+
 
 
