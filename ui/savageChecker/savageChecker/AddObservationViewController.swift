@@ -26,6 +26,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     //MARK: data model properties
     var db: Connection!
     var userData: UserData?
+    var userDataLoaded = false
     
     var icons: DictionaryLiteral = ["Bus": "busIcon",
                                     "Lodge Bus": "lodgeBusIcon",
@@ -45,9 +46,8 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        showQuote(seconds: 5.0)
-        
-        loadData()
+        // Try to load the database, but if userData has not been created yet, open the ShiftInfo controller
+        //loadData()
         
         addBackground()
         
@@ -65,28 +65,33 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         // Arrange the buttons
         setupMenuLayout()
         
-        // Google sign-in
-        //GIDSignIn.sharedInstance().uiDelegate = self
-        
-        // If someone taps outside the buttons, dismiss the menu
-        //dismissWhenTappedAround()
-        
         // Because scrollView and container are centered in setupMenuLayout(),
         //  scroll position is in the middle of the view when first loaded
         setScrollViewPositionToTop()
+        
+        // Change this to use some var or notification to check if I should show quote or just loadData()
+        showQuote(seconds: 5.0)
     }
     
 
     override func viewDidAppear(_ animated: Bool) {
+        
         super.viewDidAppear(animated)
+        
         // Flash scroll indicators so user knows they can scroll. Should only flash if content goes off screen.
         self.scrollView.flashScrollIndicators()
         
-        // Try to load the database, but if userData has not been created yet, open the ShiftInfo controller
-        loadData()
+        // If userData isn't nil, then it's already been loaded in viewDidLoad()
+        if !userDataLoaded {
+            loadData()
+        }
     }
     
     func showQuote(seconds: Double) {
+        
+        // Will get loaded after animation is finished, but this must be set before viewDidAppear() is called,
+        //  which happens before the animation is done
+        self.userDataLoaded = true
         
         let borderSpacing: CGFloat = 16
         let randomIndex = Int(arc4random_uniform(UInt32(launchScreenQuotes.count)))
@@ -152,6 +157,8 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                 // Finally, make the blurred background disappear. Because it's just a crossfade, it looks like the screen elements are the ones fading into view.
                 UIView.animate(withDuration: 0.5, animations: {blurredBackground.alpha = 0.0}, completion: {_ in
                     blurredBackground.removeFromSuperview()
+                    self.loadData()
+                    self.scrollView.flashScrollIndicators()
                 })
             })
         })
@@ -277,6 +284,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         container.bottomAnchor.constraint(equalTo: lastBottomAnchor).isActive = true
         contentHeight = (self.buttons[0].height + self.minSpacing) * Double(nRows) - self.minSpacing
         self.scrollView.contentSize = CGSize(width: menuWidth, height: contentHeight)
+        
     }
 
     
@@ -606,7 +614,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         if let userData = loadUserData() {
             dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
             self.userData = userData
+            self.userDataLoaded = true
         } else {
+            self.userDataLoaded = false
             showShiftInfoForm()
         }
     }
