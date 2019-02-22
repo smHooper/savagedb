@@ -937,24 +937,21 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let table = Table(tableName)
             
             let recordToRemove = table.where(idColumn == id.datatypeValue)
-            self.observationCells.removeValue(forKey: index)
-            let thisPosition = self.cellOrder[index]
-            self.cellOrder.remove(at: index)
-            
-            // For any observation whose position is greater than the deleted cell, subtract 1
-            for (i, position) in self.cellOrder.enumerated() {
-                if position > thisPosition {
-                    self.cellOrder[i] -= 1
-                }
+            if let success = try? db.run(recordToRemove.delete()) {
+                loadObservations()
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            } else {
+                // alert the user that the delete failed
             }
-            
-            do {
+            /*do {
                 try db.run(recordToRemove.delete())
             } catch let error{
                 print(error.localizedDescription)
             }
             
-            tableView.deleteRows(at: [indexPath], with: .fade)
+            loadObservations()
+            
+            tableView.deleteRows(at: [indexPath], with: .fade)*/
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }
