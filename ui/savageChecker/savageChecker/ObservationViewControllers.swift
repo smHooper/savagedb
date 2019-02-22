@@ -1124,7 +1124,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     func showDuplicatedAlert(isNewObservation: Bool) {
         let alertTitle = "Identical record alert"
-        let alertMessage = "This observation is identical to the last observation you entered for this type of vehicle. Was this intentional? To save the observation as is, press Yes (you can always edit it afterward, id necessary). To remove the observation and start over, press No."
+        let alertMessage = "This observation is identical to the last observation you entered for this type of vehicle. Was this intentional? To save the observation as is, press Yes (you can always edit it afterward, if necessary)."
         let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
         
         alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in
@@ -1134,8 +1134,9 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         if isNewObservation {
             alertController.addAction(UIAlertAction(title: "No", style: .destructive, handler: {action in
                 self.deleteLastRecord(controller: alertController); // delete record
-            self.dismissController() // dismiss controller
+                self.dismissController() // dismiss controller
             }))
+            alertController.message! += " To remove the observation and start over, press No."
         }
         
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {action in
