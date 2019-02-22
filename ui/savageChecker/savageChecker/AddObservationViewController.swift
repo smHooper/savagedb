@@ -518,20 +518,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         return backgroundView
     }
     
-    func prepareShiftInfoController() -> ShiftInfoViewController {
-        let shiftViewController = ShiftInfoViewController()
-        shiftViewController.modalPresentationStyle = .formSheet
-        shiftViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))//CGSize.init(width: 600, height: 600)
-        
-        // Add blurred background from current view
-        let popoverFrame = shiftViewController.getVisibleFrame()
-        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
-        shiftViewController.view.addSubview(backgroundView)
-        shiftViewController.view.sendSubview(toBack: backgroundView)
-        
-        return shiftViewController
-    }
-    
     func makeBlurView() -> UIVisualEffectView {
         
         let blurEffect = UIBlurEffect(style: .light)
@@ -565,14 +551,23 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     
     
     func showShiftInfoForm() {
-        let shiftViewController = prepareShiftInfoController()
+        let shiftViewController = ShiftInfoViewController()
+        shiftViewController.modalPresentationStyle = .formSheet
+        shiftViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))//CGSize.init(width: 600, height: 600)
+        
+        // Add blurred background from current view
+        let popoverFrame = shiftViewController.getVisibleFrame()
+        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+        shiftViewController.view.addSubview(backgroundView)
+        shiftViewController.view.sendSubview(toBack: backgroundView)
+        
         present(shiftViewController, animated: true, completion: nil)
     }
+    
     
     @objc func editShiftInfoButtonPressed() {
         showShiftInfoForm()
     }
-    
     
     
     func dismissWhenTappedAround() {

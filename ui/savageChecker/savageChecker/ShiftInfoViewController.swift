@@ -17,10 +17,8 @@ class ShiftInfoViewController: BaseFormViewController {
     //MARK: - Properties
     var saveButton = UIButton(type: .system)
     var userData: UserData?
-    var isNewSession: Bool?
+    var isNewSession: Bool? = false
     var dataHasChanged = false
-    //var presentTransition: UIViewControllerAnimatedTransitioning?
-    //var dismissTransition: UIViewControllerAnimatedTransitioning?
     
     //MARK: DB properties
     let sessionsTable = Table("sessions")
@@ -83,19 +81,10 @@ class ShiftInfoViewController: BaseFormViewController {
         self.saveButton.addTarget(self, action: #selector(saveButtonPressed), for: .touchUpInside)
         self.view.addSubview(self.saveButton)
         self.saveButton.translatesAutoresizingMaskIntoConstraints = false
-        self.saveButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor, constant: controllerFrame.width/4).isActive = true
         self.saveButton.bottomAnchor.constraint(equalTo: self.view.topAnchor, constant: self.preferredContentSize.height - self.sideSpacing * 2).isActive = true
         self.saveButton.isEnabled = false
         
-        // Add a cancel button at the bottom
-        let cancelButton = UIButton(type: .system)
-        cancelButton.setTitle("Cancel", for: .normal)
-        cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
-        cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
-        self.view.addSubview(cancelButton)
-        cancelButton.translatesAutoresizingMaskIntoConstraints = false
-        cancelButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor, constant: -controllerFrame.width/4).isActive = true
-        cancelButton.centerYAnchor.constraint(equalTo: self.saveButton.centerYAnchor).isActive = true
+
         
         // Draw lines to separate buttons from text
         //  Horizontal line
@@ -105,25 +94,41 @@ class ShiftInfoViewController: BaseFormViewController {
         horizontalLine.backgroundColor = lineColor
         horizontalLine.translatesAutoresizingMaskIntoConstraints = false
         horizontalLine.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        horizontalLine.topAnchor.constraint(equalTo: cancelButton.topAnchor, constant: -self.sideSpacing).isActive = true
+        horizontalLine.topAnchor.constraint(equalTo: saveButton.topAnchor, constant: -self.sideSpacing).isActive = true
         horizontalLine.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
         horizontalLine.heightAnchor.constraint(equalToConstant: 1.0).isActive = true
         
-        //  Vertical line
-        let verticalLine = UIView(frame: CGRect(x:0, y: 0, width: 1, height: 1))
-        self.view.addSubview(verticalLine)
-        verticalLine.backgroundColor = lineColor
-        verticalLine.translatesAutoresizingMaskIntoConstraints = false
-        verticalLine.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
-        verticalLine.topAnchor.constraint(equalTo: cancelButton.topAnchor, constant: -self.sideSpacing).isActive = true
-        verticalLine.widthAnchor.constraint(equalToConstant: 1.0).isActive = true
-        verticalLine.bottomAnchor.constraint(equalTo: cancelButton.bottomAnchor).isActive = true
-        
-        
-        /*let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cancelAnimation))
-         swipeLeft.direction = .right
-         self.view.addGestureRecognizer(swipeLeft)*/
         loadData()
+        
+        // Use a different layout depending on whether this is a new shift
+        if let isNew = self.isNewSession, isNew == true {
+            // Set the save button in the middle
+            self.saveButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+            
+        } else {
+            // Set the save button on the right side
+            self.saveButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor, constant: controllerFrame.width/4).isActive = true
+            
+            //  Vertical line
+            let verticalLine = UIView(frame: CGRect(x:0, y: 0, width: 1, height: 1))
+            self.view.addSubview(verticalLine)
+            verticalLine.backgroundColor = lineColor
+            verticalLine.translatesAutoresizingMaskIntoConstraints = false
+            verticalLine.centerXAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+            verticalLine.topAnchor.constraint(equalTo: saveButton.topAnchor, constant: -self.sideSpacing).isActive = true
+            verticalLine.widthAnchor.constraint(equalToConstant: 1.0).isActive = true
+            verticalLine.bottomAnchor.constraint(equalTo: saveButton.bottomAnchor).isActive = true
+            
+            // Add a cancel button at the bottom on the left side
+            let cancelButton = UIButton(type: .system)
+            cancelButton.setTitle("Cancel", for: .normal)
+            cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+            cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
+            self.view.addSubview(cancelButton)
+            cancelButton.translatesAutoresizingMaskIntoConstraints = false
+            cancelButton.centerXAnchor.constraint(equalTo: self.view.centerXAnchor, constant: -controllerFrame.width/4).isActive = true
+            cancelButton.centerYAnchor.constraint(equalTo: self.saveButton.centerYAnchor).isActive = true
+        }
         
     }
     
@@ -159,7 +164,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 self.textFields[3]?.text = session.closeTime
                 //self.saveButton.isEnabled = true // Returning to view so make sure it's enabled
             }
-            // The db doesn't have a sessions table because it hasn't been configured et
+            // The db doesn't have a sessions table because it hasn't been configured yet
             else {
                 createSession()
             }
