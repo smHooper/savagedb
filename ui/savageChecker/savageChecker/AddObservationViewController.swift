@@ -22,6 +22,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var scrollView: UIScrollView!
     var navigationBar: CustomNavigationBar!
     var blurEffectView: UIVisualEffectView!
+    var messageView: UITextView!
+    var messageViewBackground: UIVisualEffectView!
+    var blurredBackground: UIImageView!
     
     //MARK: data model properties
     var db: Connection!
@@ -69,6 +72,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         //  scroll position is in the middle of the view when first loaded
         setScrollViewPositionToTop()
         
+        let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(cancelAnimation))
+        swipeLeft.direction = .left
+        self.view.addGestureRecognizer(swipeLeft)
+        
         // Change this to use some var or notification to check if I should show quote or just loadData()
         showQuote(seconds: 5.0)
     }
@@ -105,43 +112,43 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let font = UIFont.systemFont(ofSize: 18)
         let messageHeight = randomQuote.height(withConstrainedWidth: messageViewWidth - borderSpacing * 2, font: font)
         let messageFrame = CGRect(x: screenBounds.width/2 - messageViewWidth/2, y: screenBounds.height/2 - (messageHeight/2 + borderSpacing), width: messageViewWidth, height: messageHeight + borderSpacing * 2)
-        let messageView = UITextView(frame: messageFrame)
-        messageView.font = font
-        messageView.layer.cornerRadius = 25
-        messageView.layer.borderColor = UIColor.clear.cgColor
-        messageView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
-        messageView.textContainerInset = UIEdgeInsets(top: borderSpacing, left: borderSpacing, bottom: borderSpacing, right: borderSpacing)
-        messageView.text = randomQuote
+        self.messageView = UITextView(frame: messageFrame)
+        self.messageView.font = font
+        self.messageView.layer.cornerRadius = 25
+        self.messageView.layer.borderColor = UIColor.clear.cgColor
+        self.messageView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        self.messageView.textContainerInset = UIEdgeInsets(top: borderSpacing, left: borderSpacing, bottom: borderSpacing, right: borderSpacing)
+        self.messageView.text = randomQuote
         let blurEffect = UIBlurEffect(style: .light)
-        let messageViewBackground = UIVisualEffectView(effect: blurEffect)
-        messageViewBackground.frame = messageFrame
-        messageViewBackground.layer.cornerRadius = messageView.layer.cornerRadius
-        messageViewBackground.layer.masksToBounds = true
-        messageView.addSubview(messageViewBackground)
-        //messageView.sendSubview(toBack: messageViewBackground)
+        self.messageViewBackground = UIVisualEffectView(effect: blurEffect)
+        self.messageViewBackground.frame = messageFrame
+        self.messageViewBackground.layer.cornerRadius = self.messageView.layer.cornerRadius
+        self.messageViewBackground.layer.masksToBounds = true
+        self.messageView.addSubview(self.messageViewBackground)
+        //self.messageView.sendSubview(toBack: self.messageViewBackground)
         
         // Add the message view with the background
         let screenView = UIImageView(frame: screenBounds)
         screenView.image = UIImage(named: "viewControllerBackground")
         screenView.contentMode = .scaleAspectFill
-        screenView.addSubview(messageViewBackground)
-        screenView.addSubview(messageView)
+        screenView.addSubview(self.messageViewBackground)
+        screenView.addSubview(self.messageView)
         self.view.addSubview(screenView)
         
         // Set up the false background that's identical to the viewController's background so it looks like all of the view controller elements fade into view
-        let blurredBackground = UIImageView(frame: screenView.frame)//image:
-        blurredBackground.image = UIImage(named: "viewControllerBackgroundBlurred")
-        blurredBackground.alpha = 0.0
+        self.blurredBackground = UIImageView(frame: screenView.frame)//image:
+        self.blurredBackground.image = UIImage(named: "viewControllerBackgroundBlurred")
+        self.blurredBackground.alpha = 0.0
         let translucentWhite = UIView(frame: screenView.frame)
         translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
-        blurredBackground.addSubview(translucentWhite)
-        self.view.addSubview(blurredBackground)
+        self.blurredBackground.addSubview(translucentWhite)
+        self.view.addSubview(self.blurredBackground)
         
         let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
         
         // Add acticity indicator so it looks like things are loading
         let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
-        activityIndicator.center = CGPoint(x: self.view.center.x, y: messageView.frame.maxY + (self.view.frame.height - messageView.frame.maxY)/2)
+        activityIndicator.center = CGPoint(x: self.view.center.x, y: self.messageView.frame.maxY + (self.view.frame.height - self.messageView.frame.maxY)/2)
         self.view.addSubview(activityIndicator)
         activityIndicator.startAnimating()
         DispatchQueue.main.asyncAfter(deadline: .now() + quoteTimeSeconds + 0.5) {
@@ -150,14 +157,14 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         }
         
         // First, animate the messageView disappearing (it appears with crossfade automatically
-        UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { messageView.alpha = 0.0; messageViewBackground.alpha = 0.0}, completion: {_ in
-            messageView.removeFromSuperview()
+        UIView.animate(withDuration: 0.75, delay: quoteTimeSeconds, animations: { self.messageView.alpha = 0.0; self.messageViewBackground.alpha = 0.0}, completion: {_ in
+            self.messageView.removeFromSuperview()
             // Next, animate the blurred background appearing
-            UIView.animate(withDuration: 0.75, delay: 0.2, animations: {blurredBackground.alpha = 1.0}, completion: {_ in
+            UIView.animate(withDuration: 0.75, delay: 0.2, animations: {self.blurredBackground.alpha = 1.0}, completion: {_ in
                 screenView.removeFromSuperview()
                 // Finally, make the blurred background disappear. Because it's just a crossfade, it looks like the screen elements are the ones fading into view.
-                UIView.animate(withDuration: 0.5, animations: {blurredBackground.alpha = 0.0}, completion: {_ in
-                    blurredBackground.removeFromSuperview()
+                UIView.animate(withDuration: 0.5, animations: {self.blurredBackground.alpha = 0.0}, completion: {_ in
+                    self.blurredBackground.removeFromSuperview()
                     self.loadData()
                     self.scrollView.flashScrollIndicators()
                 })
@@ -166,33 +173,27 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
     }
     
+    // Cancel animation (to be used with swipe gesture)
+    @objc func cancelAnimation() {
+        self.messageView.layer.removeAllAnimations()
+        self.messageViewBackground.layer.removeAllAnimations()
+        self.blurredBackground.layer.removeAllAnimations()
+        
+    }
     
     
     // Redo the layout when rotated
     //override func viewDidLayoutSubviews() {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        //super.viewDidLayoutSubviews()
         
-        // Add the blur effect for the rotated view
-        //let presentingController = self.presentingViewController as! BaseObservationViewController
-        //presentingController.blurEffectView.removeFromSuperview()
-        //presentingController.addBlur()//*/
-        /*for button in self.buttons {
-            button.removeFromSuperview()
-        }
-        
-        addBlur()*/
         addBackground()
         
-        // Redo the menu
+        // Redo the menu and nav bar
         setupMenuLayout()
-        //self.view.backgroundColor = UIColor.clear
-        
         setNavigationBar()
         
         // Reset the scrollView position to 0 if necessary
-        //self.scrollView.setContentOffset(CGPoint(x: 0, y: -self.scrollView.adjustedContentInset.top), animated: false)
         setScrollViewPositionToTop()
     }
     
