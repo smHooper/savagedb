@@ -534,7 +534,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         addButton.imageView?.contentMode = .scaleAspectFit
-        addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
+        addButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let addObservationButton = UIBarButtonItem(customView: addButton)
         
         let qrButton = UIButton(type: .custom)
@@ -571,7 +571,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         //let saveButton = UIBarButtonItem(barButtonSystemItem: .save, target: nil, action: #selector(archiveButtonPressed(button:)))
         // Add the archive button
-        let archiveButton = UIButton(type: .custom)
+        /*let archiveButton = UIButton(type: .custom)
         archiveButton.setImage(UIImage(named: "archiveIcon"), for: .normal)
         archiveButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         archiveButton.translatesAutoresizingMaskIntoConstraints = false
@@ -580,13 +580,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         archiveButton.imageView?.contentMode = .scaleAspectFit
         archiveButton.addTarget(self, action: #selector(archiveButtonPressed), for: .touchUpInside)//button:)), for: .touchUpInside)
         //archiveButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 100, bottom: 0, right: 0)
-        let archiveBarButton = UIBarButtonItem(customView: archiveButton)
+        let archiveBarButton = UIBarButtonItem(customView: archiveButton)*/
         
         let fixedSpaceLeft = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         fixedSpaceLeft.width = 50
         fixedSpaceRight.width = 50
-        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, archiveBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
+        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
         navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, self.editBarButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
@@ -646,7 +646,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         }
         
         // Reload session info so it reflects the active DB
-        if let presentingContoller = self.presentingViewController as? SessionViewController {
+        if let presentingContoller = self.presentingViewController as? AddObservationViewController {
             presentingContoller.loadData()
         }
         

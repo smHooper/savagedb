@@ -78,11 +78,12 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
         super.viewDidAppear(animated)
         
-        // Flash scroll indicators so user knows they can scroll. Should only flash if content goes off screen.
-        self.scrollView.flashScrollIndicators()
-        
         // If userData isn't nil, then it's already been loaded in viewDidLoad()
         if !userDataLoaded {
+            
+            // Flash scroll indicators so user knows they can scroll. Should only flash if content goes off screen.
+            self.scrollView.flashScrollIndicators()
+            
             loadData()
         }
     }
