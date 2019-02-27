@@ -498,13 +498,13 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: 54))
+        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: navigationBarSize))
         self.view.addSubview(self.navigationBar)
         self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
         self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
         self.navigationBar.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
         self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
-        self.navigationBar.heightAnchor.constraint(equalToConstant: 54).isActive = true
+        self.navigationBar.heightAnchor.constraint(equalToConstant: navigationBarSize).isActive = true
         
         let navigationItem = UINavigationItem(title: self.title!)
         let backButton = UIButton(type: .custom)
@@ -533,7 +533,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addButton.translatesAutoresizingMaskIntoConstraints = false
         addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        addButton.imageView?.contentMode = .scaleAspectFit
         addButton.addTarget(self, action: #selector(backButtonPressed), for: .touchUpInside)
         let addObservationButton = UIBarButtonItem(customView: addButton)
         
@@ -553,7 +552,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         databaseButton.translatesAutoresizingMaskIntoConstraints = false
         databaseButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         databaseButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        databaseButton.imageView?.contentMode = .scaleAspectFit
         databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
         let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
         
@@ -565,7 +563,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         googleDriveButton.translatesAutoresizingMaskIntoConstraints = false
         googleDriveButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         googleDriveButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        googleDriveButton.imageView?.contentMode = .scaleAspectFit
         googleDriveButton.addTarget(self, action: #selector(googleDriveButtonPressed), for: .touchUpInside)
         let googleDriveBarButton = UIBarButtonItem(customView: googleDriveButton)
         
@@ -830,7 +827,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     
-    //MARK: - TableView methods
+    //MARK: - TableView delegate methods
     // return the number of sections
     func numberOfSections(in tableView: UITableView) -> Int{
         return 1

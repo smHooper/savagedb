@@ -119,17 +119,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
-    // Get the dropDown options for a given controller/field combo
-    func parseJSON(controllerLabel: String, fieldName: String) -> [String] {
-        let fields = dropDownJSON[controllerLabel]
-        var options = [String]()
-        for item in fields[fieldName]["options"].arrayValue {
-            options.append(item.stringValue)
-        }
-        return options
-    }
-    
-    
     func resetLayout() {
         
         //let safeArea = self.view.safeAreaInsets

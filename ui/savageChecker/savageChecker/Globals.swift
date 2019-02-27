@@ -22,8 +22,9 @@ var npsVehicleWorkGroups = [String: [String]]() // Dictionary of string arrays
 var npsApprovedCategories = [String]()
 var npsContractorTripPurposes = [String]()
 
-
-
+var showQuoteAtStartup = true
+var showHelpTips = false
+// var sendDateEntryAlert = true //instantiated in ObservationViewControllers.swift
 
 
 

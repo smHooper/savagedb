@@ -202,15 +202,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     private func setupMenuLayout(){
         
         // Figure out how many buttons fit in one row
-        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
-        let isLandscape = UIDevice.current.orientation.isLandscape
-        let currentScreenFrame: CGRect = {
-            if isLandscape {
-                return CGRect(x: 0, y: 0, width: max(screenSize.width, screenSize.height), height: min(screenSize.width, screenSize.height))
-            } else {
-                return CGRect(x: 0, y: 0, width: min(screenSize.width, screenSize.height), height: max(screenSize.width, screenSize.height))
-            }
-        }()
+        let currentScreenFrame = getCurrentScreenFrame()
         let viewWidth = currentScreenFrame.width
         let menuWidth = Double(viewWidth) - self.menuPadding * 2
         let nPerRow = floor((menuWidth + self.minSpacing) / (VehicleButtonControl.width + self.minSpacing))
@@ -324,7 +316,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let obsListButton = UIButton(type: .custom)
         obsListButton.setImage(UIImage (named: "observationListIcon"), for: .normal)
         obsListButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
-        obsListButton.addTarget(self, action: #selector(dismissMenu), for: .touchUpInside)
+        obsListButton.addTarget(self, action: #selector(moveToTableView), for: .touchUpInside)
         obsListButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         obsListButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         let observationListButton = UIBarButtonItem(customView: obsListButton)
@@ -354,7 +346,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         databaseButton.translatesAutoresizingMaskIntoConstraints = false
         databaseButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         databaseButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        databaseButton.imageView?.contentMode = .scaleAspectFit
         databaseButton.addTarget(self, action: #selector(selectDatabaseButtonPressed), for: .touchUpInside)
         let selectDatabaseButton = UIBarButtonItem(customView: databaseButton)
         
@@ -366,16 +357,23 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         googleDriveButton.translatesAutoresizingMaskIntoConstraints = false
         googleDriveButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         googleDriveButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        googleDriveButton.imageView?.contentMode = .scaleAspectFit
         googleDriveButton.addTarget(self, action: #selector(googleDriveButtonPressed), for: .touchUpInside)
         let googleDriveBarButton = UIBarButtonItem(customView: googleDriveButton)
         
+        let settingsButton = UIButton(type: .custom)
+        settingsButton.setImage(UIImage(named: "settingsIcon"), for: .normal)
+        settingsButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        settingsButton.translatesAutoresizingMaskIntoConstraints = false
+        settingsButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        settingsButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        settingsButton.addTarget(self, action: #selector(settingsButtonPressed), for: .touchUpInside)
+        let settingsBarButton = UIBarButtonItem(customView: settingsButton)
         
         let fixedSpaceLeft = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         fixedSpaceLeft.width = 50
         fixedSpaceRight.width = 50
-        navigationItem.leftBarButtonItems = [selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
+        navigationItem.leftBarButtonItems = [settingsBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
         navigationItem.rightBarButtonItems = [shiftBarButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, observationListButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
@@ -439,6 +437,12 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         }
     }
     
+    @objc func settingsButtonPressed() {
+        
+        let settingsController = SettingsViewController()
+        present(settingsController, animated: true, completion: nil)
+        
+    }
     
     func getImage(from view:UIView) -> UIImage? {
         defer {
@@ -571,7 +575,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     
     
     func dismissWhenTappedAround() {
-        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(dismissMenu))
+        let tap: UITapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(moveToTableView))
         self.view.addGestureRecognizer(tap)
     }
     
@@ -596,7 +600,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         return true
     }*/
     
-    @objc func dismissMenu(){
+    @objc func moveToTableView(){
         let tableViewController = BaseTableViewController()
         tableViewController.loadData()
         tableViewController.transitioningDelegate = self

@@ -28,7 +28,7 @@ extension String {
 
 extension UIViewController {
     
-    func addBackground() {
+    func addBackground(showWhiteView: Bool = true) {
         /*let startingBackGroundView = UIImageView(image: UIImage(named: "viewControllerBackground"))
         startingBackGroundView.frame = self.view.frame
         startingBackGroundView.contentMode = .scaleAspectFill
@@ -63,8 +63,8 @@ extension UIViewController {
         translucentView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
         
         let backgroundView = UIView()//frame: self.view.frame)
-        backgroundView.backgroundColor = UIColor.red
-        backgroundView.addSubview(translucentView)
+        //backgroundView.backgroundColor = UIColor.red
+        if showWhiteView {backgroundView.addSubview(translucentView)}
         backgroundView.addSubview(backgroundImageView)
         backgroundView.sendSubview(toBack: backgroundImageView)
         backgroundView.tag = -1
@@ -77,11 +77,13 @@ extension UIViewController {
         backgroundView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
         backgroundView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
         
-        translucentView.translatesAutoresizingMaskIntoConstraints = false
-        translucentView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
-        translucentView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
-        translucentView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
-        translucentView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        if showWhiteView {
+            translucentView.translatesAutoresizingMaskIntoConstraints = false
+            translucentView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+            translucentView.rightAnchor.constraint(equalTo: self.view.rightAnchor).isActive = true
+            translucentView.topAnchor.constraint(equalTo: self.view.topAnchor).isActive = true
+            translucentView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        }
         
         backgroundImageView.translatesAutoresizingMaskIntoConstraints = false
         backgroundImageView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
@@ -165,6 +167,30 @@ extension UIViewController {
         }
     }
     
+    // Get the dropDown options for a given controller/field combo
+    func parseJSON(controllerLabel: String, fieldName: String) -> [String] {
+        let fields = dropDownJSON[controllerLabel]
+        var options = [String]()
+        for item in fields[fieldName]["options"].arrayValue {
+            options.append(item.stringValue)
+        }
+        return options
+    }
+    
+    // Get the current screen size
+    func getCurrentScreenFrame() -> CGRect {
+        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
+        let isLandscape = UIDevice.current.orientation.isLandscape
+        let currentScreenFrame: CGRect = {
+            if isLandscape {
+                return CGRect(x: 0, y: 0, width: max(screenSize.width, screenSize.height), height: min(screenSize.width, screenSize.height))
+            } else {
+                return CGRect(x: 0, y: 0, width: min(screenSize.width, screenSize.height), height: max(screenSize.width, screenSize.height))
+            }
+        }()
+        
+        return currentScreenFrame
+    }
     
 }
 

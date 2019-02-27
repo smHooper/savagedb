@@ -21,8 +21,6 @@ protocol dropDownProtocol {
     var dropView = DropDownView()
     var heightConstraint = NSLayoutConstraint()
     
-    
-    
     func dropDownPressed(string: String) {
         /*if (self.dropView.dropDownOptions.contains(string)){// && string != "Other"){
             self.resignFirstResponder()
@@ -66,6 +64,7 @@ protocol dropDownProtocol {
         self.dropView.delegate = self
         self.dropView.translatesAutoresizingMaskIntoConstraints = false
     }
+    
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -151,8 +150,9 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
         self.tableView.bottomAnchor.constraint(equalTo: self.bottomAnchor).isActive = true
         
         self.tableView.layer.borderWidth = 0.5
-        self.tableView.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
-        self.tableView.layer.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2).cgColor
+        //self.tableView.layer.borderColor = UIColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1).cgColor
+        //self.tableView.layer.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2).cgColor
+        self.tableView.layer.borderColor = UIColor.clear.cgColor
         self.tableView.rowHeight = self.height/3.3
         
     }
@@ -172,7 +172,8 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = UITableViewCell()
         cell.textLabel?.text = dropDownOptions[indexPath.row]
-        cell.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
+        //cell.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 1)
+        cell.backgroundColor = UIColor.clear
         cell.layer.borderWidth = 0.25
         cell.layer.borderColor = UIColor(red: 0.8, green: 0.8, blue: 0.8, alpha: 1).cgColor
         cell.textLabel?.textAlignment = .center
