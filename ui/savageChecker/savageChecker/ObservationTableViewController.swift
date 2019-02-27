@@ -772,17 +772,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
     }
     
-    func makeBlurView() -> UIVisualEffectView {
-        
-        let blurEffect = UIBlurEffect(style: .light)
-        let blurEffectView = UIVisualEffectView(effect: blurEffect)
-        //blurEffectView.frame = frame
-        //blurEffectView.layer.cornerRadius = messageView.layer.cornerRadius
-        //blurEffectView.layer.masksToBounds = true
-        
-        return blurEffectView
-    }
-    
     func addBlur() {
         // Only apply the blur if the user hasn't disabled transparency effects
         if !UIAccessibilityIsReduceTransparencyEnabled() {
@@ -790,12 +779,15 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             
             let blurEffect = UIBlurEffect(style: .regular)
             self.blurEffectView = UIVisualEffectView(effect: blurEffect)
+            let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
+            let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
             
             //always fill the view
             self.blurEffectView.frame = self.view.frame//bounds
             self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             
             self.view.addSubview(self.blurEffectView)
+            self.view.addSubview(vibrancyView)
             
         } else {
             // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
