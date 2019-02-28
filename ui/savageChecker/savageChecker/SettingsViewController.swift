@@ -330,6 +330,11 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         } else if tableView == self.dropdownTableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "dropdown", for: indexPath) as! DropdownSettingsTableViewCell
             cell.label.text = self.dropdownOptions[indexPath.row]
+            
+            let selectedBackgroundView = UIView()
+            selectedBackgroundView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+            cell.selectedBackgroundView = selectedBackgroundView
+            
             return cell
         } else {
             return UITableViewCell()
@@ -434,15 +439,39 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         }
     }
     
+    
+    // Enable editing
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+        }
+    }
+    
+    
     // Reload dropdown options and reset the height of the tableView
-    func reloadChildViewData() {
-        self.dropdownTableView.reloadData()
+    func reloadChildViewData(withInsert: IndexPath? = nil) {
         
         let contentSize = CGFloat(self.dropdownOptions.count) * self.dropdownTableView.rowHeight//can't use tableView.contentSize because it's always to small
+        
+        // If adding a new row, animate the insert
+        if let indexPath = withInsert {
+
+            self.dropdownTableView.insertRows(at: [indexPath], with: .bottom)
+            
+            // Scroll to the positin of the row and flash it's background color
+            self.dropdownTableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+            let deadlineTime = DispatchTime.now() + .seconds(1)
+            DispatchQueue.main.asyncAfter(deadline: deadlineTime) {
+                self.dropdownTableView.deselectRow(at: indexPath, animated: true)
+            }
+        
+        // Otherwise just reload
+        } else {
+            self.dropdownTableView.reloadData()
+        }
+        
+        // Reset the height of the tableView and animate it (if there were changes
         self.childTableHeightConstraint.constant = min(self.childView.frame.height - 40 - navigationButtonSize, contentSize)
-        
         UIView.animate(withDuration: 0.15, delay: 0, animations: {self.childView.layoutIfNeeded()}, completion: nil)
-        
         
     }
     
@@ -452,8 +481,14 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         if dropDownJSON[context][field]["sorted"].bool ?? false {
             self.dropdownOptions.sort()
         }
+        
         dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
-        self.reloadChildViewData()
+        let position = self.dropdownOptions.index(of: value)
+        if let rowIndex = position {
+            reloadChildViewData(withInsert: IndexPath(row: rowIndex, section: 0))
+        } else {
+            // TODO: alert the user that the insertion failed
+        }
         
         // Set global vars
         switch field {
@@ -478,8 +513,9 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         fullJSON["fields"] = dropDownJSON
         let success = writeJSONConfigFile(json: fullJSON)
         if !success {
-            //alert user that changes weren't saved
+            //TODO: alert user that changes weren't saved
         }
+
     }
     
     
@@ -501,7 +537,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             try jsonString.write(to: jsonURL, atomically: false, encoding: .utf8)
         }
         catch {
-            //Alert user
             os_log("Failed to write JSON string in settings controller", log: .default, type: .debug)
             return false
         }
@@ -530,7 +565,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             if let newValue = textField.text, newValue != "" {
                 self.updateJSONData(value: newValue, context: settingsRowContext, field: settingsRowLabel)
             } else {
-                // alert user that they have to enter a real value
+                // TODO: alert user that they have to enter a real value
             }
 
         }))
