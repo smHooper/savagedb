@@ -77,7 +77,9 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.view.addGestureRecognizer(swipeLeft)
         
         // Change this to use some var or notification to check if I should show quote or just loadData()
-        showQuote(seconds: 5.0)
+        if showQuoteAtStartup {
+            showQuote(seconds: 5.0)
+        }
     }
     
 
