@@ -54,22 +54,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
     
     
     func parseDropDownOptionJSON(){
-        var jsonURL = URL(fileURLWithPath: "")
-        // Look for config file in Documents folder.
-        let fileManager = FileManager.default
-        if let documentsDirectory = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
-            let url = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageCheckerConfig.json")
-            
-            if fileManager.fileExists(atPath: url.path) {
-                jsonURL = url
-            }
-            // If it's not there, use the default config file in Resources
-            else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
-                jsonURL = url
-            } else {
-                os_log("Could not configure dropDown menus in AppDelegate.parseDropDownOptions()", log: OSLog.default, type: .debug)
-            }
+        
+        guard let jsonURL = getConfigURL() else {
+            os_log("Could not get json URL in app delegate", log: .default, type: .debug)
+            return
         }
+        
         
         // Read in the .json as one long text string
         let jsonString: String

@@ -14,11 +14,21 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     
     // MARK: properties
     var navigationBar: CustomNavigationBar!
+    var addButton = UIButton()
+    var editButton = UIButton()
+    var childViewLabel = UILabel()
     var mainTableView: UITableView!
     var dropdownTableView: UITableView!
     var dropdownOptions = [String]()
     var dropdownTableVisible = false
-    var dropdownTableWidthConstraint = NSLayoutConstraint()
+    var currentMainIndexPath: IndexPath! //if childView is already open, indicates to just reload data
+    var childView = UIView()
+    var mainView = UIView()
+    var childViewWidthConstraint = NSLayoutConstraint()
+    var mainViewWidthConstraint = NSLayoutConstraint()
+    var childTableHeightConstraint = NSLayoutConstraint()
+    let dividingLine = UIView(frame: CGRect(x:0, y: 0, width: 1, height: 1))
+    var backgroundImage: UIImage!
     
     var currentSettings = ["Date alert on": sendDateEntryAlert,
                            "Show quote":    showQuoteAtStartup,
@@ -26,11 +36,13 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     
     // MARK: tableview properties
     var sectionOrder = ["General", "Dropdown options"]
+    
     struct SettingsTableViewRow {
         let label: String
         let type: String
         let context: String
     }
+    
     var settings = ["General": [SettingsTableViewRow(label: "Date alert on",    type: "checkBox", context: ""),
                                 SettingsTableViewRow(label: "Show quote",       type: "checkBox", context: ""),
                                 SettingsTableViewRow(label: "Show help tips",   type: "checkBox", context: "")
@@ -39,8 +51,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                                           SettingsTableViewRow(label: "Destination",    type: "list", context: "global"),
                                           SettingsTableViewRow(label: "Bus type",       type: "list", context: "Bus"),
                                           SettingsTableViewRow(label: "Lodge",          type: "list", context: "Lodge Bus"),
-                                          SettingsTableViewRow(label: "Work group",     type: "list", context: "NPS Vehicle"),
-                                          SettingsTableViewRow(label: "Approved type",  type: "list", context: "NPS Approved")
+                                          SettingsTableViewRow(label: "Work division",     type: "list", context: "NPS Vehicle"),
+                                          SettingsTableViewRow(label: "Approved category",  type: "list", context: "NPS Approved")
                                         ]
                    ]
     
@@ -51,46 +63,152 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         
         addBackground(showWhiteView: false)
         setNavigationBar()
+        self.backgroundImage = self.view.takeSnapshot()
         
-        let displayWidth: CGFloat = self.view.frame.width/2
-        let displayHeight: CGFloat = self.view.frame.height
+        let currentScreenFrame = getCurrentScreenFrame()
         
-        self.mainTableView = UITableView(frame: CGRect(x: 0, y: statusBarHeight + navigationBarSize, width: displayWidth/2, height: displayHeight - (statusBarHeight + navigationBarSize)))//,
+        let displayWidth: CGFloat = currentScreenFrame.width/2
+        let displayHeight: CGFloat = currentScreenFrame.height
+        
+        self.mainTableView = UITableView(frame: CGRect(x: 0, y: statusBarHeight + navigationBarSize, width: displayWidth/3, height: displayHeight - (statusBarHeight + navigationBarSize)))//,
                                          //style: .grouped)
         self.mainTableView.register(MainSettingsTableViewCell.self, forCellReuseIdentifier: "checkBox")
         self.mainTableView.register(MainSettingsTableViewCell.self, forCellReuseIdentifier: "list")
-        //Auto-set the UITableViewCell's height (requires iOS8+)
-        self.mainTableView.rowHeight = 85
+        self.mainTableView.rowHeight = 85 //Auto-set the UITableViewCell's height (requires iOS8+)
         self.mainTableView.dataSource = self
         self.mainTableView.delegate = self
-        self.view.addSubview(mainTableView)
         self.mainTableView.backgroundColor = UIColor.clear
         self.mainTableView.sectionHeaderHeight = self.mainTableView.rowHeight// * 0.8
+        self.view.addSubview(self.mainView)
+        let mainViewBackground = getMainViewBackground()
+        self.mainView.addSubview(mainViewBackground)
+        self.mainView.addSubview(self.mainTableView)
+
+        // Set initial main tableview constaints
+        self.mainView.translatesAutoresizingMaskIntoConstraints = false
+        self.mainView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
+        self.mainView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        self.mainView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
+        self.mainViewWidthConstraint = self.mainView.widthAnchor.constraint(equalToConstant: currentScreenFrame.width/3)
+        self.mainViewWidthConstraint.isActive = true
+        self.mainTableView.translatesAutoresizingMaskIntoConstraints = false
+        self.mainTableView.topAnchor.constraint(equalTo: self.mainView.topAnchor).isActive = true
+        self.mainTableView.bottomAnchor.constraint(equalTo: self.mainView.bottomAnchor).isActive = true
+        self.mainTableView.leftAnchor.constraint(equalTo: self.mainView.leftAnchor).isActive = true
+        self.mainTableView.rightAnchor.constraint(equalTo: self.mainView.rightAnchor).isActive = true
+        /*mainViewBackground.translatesAutoresizingMaskIntoConstraints = false
+        mainViewBackground.topAnchor.constraint(equalTo: self.mainView.topAnchor).isActive = true
+        mainViewBackground.bottomAnchor.constraint(equalTo: self.mainView.bottomAnchor).isActive = true
+        mainViewBackground.leftAnchor.constraint(equalTo: self.mainView.leftAnchor).isActive = true
+        mainViewBackground.rightAnchor.constraint(equalTo: self.mainView.rightAnchor).isActive = true
+        mainViewBackground.contentMode = .scaleAspectFit
+        mainViewBackground.clipsToBounds = true*/
         
-        //self.mainTableView.sectionIndexBackgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        // Set background
         
-        self.dropdownTableView = UITableView(frame: CGRect(x: 0, y: statusBarHeight + navigationBarSize, width: 0, height: displayHeight - (statusBarHeight + navigationBarSize)))
+        //let mainViewBackground = getMainViewBackground()
+        mainViewBackground.frame = self.view.frame
+        /*print(mainViewBackground.bounds)
+        let scaleX = self.view.frame.width / mainViewBackground.frame.width
+        let scaleY = self.view.frame.height / mainViewBackground.frame.height
+        let scale = max(scaleX, scaleY)
+        let tableFrame = self.mainTableView.frame
+        mainViewBackground.clipsToBounds = true
+        let screenFrame = getCurrentScreenFrame()
+        mainViewBackground.frame = CGRect(x: 0, y: screenFrame.height - tableFrame.height, width: tableFrame.width, height: tableFrame.height)
+        print(mainViewBackground.frame)
+        mainViewBackground.contentMode = .scaleAspectFit*/
+        self.mainTableView.backgroundView = mainViewBackground
+        
+        self.view.addSubview(self.dividingLine)
+        self.dividingLine.backgroundColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.4)
+        self.dividingLine.translatesAutoresizingMaskIntoConstraints = false
+        self.dividingLine.leftAnchor.constraint(equalTo: self.mainTableView.rightAnchor).isActive = true
+        self.dividingLine.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
+        self.dividingLine.widthAnchor.constraint(equalToConstant: 2.0).isActive = true
+        self.dividingLine.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        
+        self.childView = UIView(frame: CGRect(x: displayWidth/3, y: statusBarHeight + navigationBarSize, width: 0, height: displayHeight - (statusBarHeight + navigationBarSize)))
+        self.view.addSubview(childView)
+        self.childView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        self.childView.translatesAutoresizingMaskIntoConstraints = false
+        self.childView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
+        self.childView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
+        self.childView.leftAnchor.constraint(equalTo: self.dividingLine.rightAnchor).isActive = true
+        // Set the width constraint as a property so we can reset it
+        self.childViewWidthConstraint = self.childView.widthAnchor.constraint(equalToConstant: 0)
+        self.childViewWidthConstraint.isActive = true
+        
+        self.dropdownTableView = UITableView(frame: CGRect(x: 0, y: 0, width: 0, height: displayHeight - (statusBarHeight + navigationBarSize)))
+        self.dropdownTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
         self.dropdownTableView.register(DropdownSettingsTableViewCell.self, forCellReuseIdentifier: "dropdown")
         self.dropdownTableView.rowHeight = 60
         self.dropdownTableView.dataSource = self
         self.dropdownTableView.delegate = self
-        self.view.addSubview(dropdownTableView)
-        self.dropdownTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        self.childView.addSubview(dropdownTableView)
+        //self.dropdownTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
         
-        // Set initial main tableview constaints
-        self.mainTableView.translatesAutoresizingMaskIntoConstraints = false
-        self.mainTableView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
-        self.mainTableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
-        self.mainTableView.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
-        self.mainTableView.rightAnchor.constraint(equalTo: self.view.centerXAnchor).isActive = true
+        // Add buttons
+        self.addButton = UIButton(type: .custom)
+        self.childView.addSubview(self.addButton)
+        addButton.setImage(UIImage(named: "addIcon"), for: .normal)
+        addButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        addButton.translatesAutoresizingMaskIntoConstraints = false
+        addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        addButton.topAnchor.constraint(equalTo: self.childView.topAnchor, constant: 20).isActive = true
+        addButton.rightAnchor.constraint(equalTo: self.childView.rightAnchor, constant: -20).isActive = true
+        addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
+        addButton.isHidden = true
+        
+        self.editButton = UIButton(type: .custom)
+        self.editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
+        self.editButton.setImage(UIImage(named: "checkIcon"), for: .selected)
+        self.childView.addSubview(self.editButton)
+        self.editButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        self.editButton.translatesAutoresizingMaskIntoConstraints = false
+        self.editButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        self.editButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        self.editButton.topAnchor.constraint(equalTo: addButton.topAnchor).isActive = true
+        self.editButton.leftAnchor.constraint(equalTo: self.childView.leftAnchor, constant: 20).isActive = true
+        editButton.isHidden = true
+        
+        self.childView.addSubview(self.childViewLabel)
+        self.childViewLabel.translatesAutoresizingMaskIntoConstraints = false
+        self.childViewLabel.centerXAnchor.constraint(equalTo: self.childView.centerXAnchor).isActive = true
+        self.childViewLabel.topAnchor.constraint(equalTo: addButton.topAnchor).isActive = true
+        self.childViewLabel.font = UIFont.boldSystemFont(ofSize: 20)
+        childViewLabel.isHidden = true
         
         self.dropdownTableView.translatesAutoresizingMaskIntoConstraints = false
-        self.dropdownTableView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
-        self.dropdownTableView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
-        self.dropdownTableView.leftAnchor.constraint(equalTo: self.mainTableView.leftAnchor).isActive = true
-        //self.dropdownTableView.widthAnchor.constraint(equalToConstant: 0).isActive = true
-        self.dropdownTableWidthConstraint = self.dropdownTableView.widthAnchor.constraint(equalToConstant: 0)
-        self.dropdownTableWidthConstraint.isActive = true
+        self.dropdownTableView.topAnchor.constraint(equalTo: addButton.bottomAnchor, constant: 10).isActive = true
+        self.dropdownTableView.leftAnchor.constraint(equalTo: self.editButton.leftAnchor).isActive = true
+        self.dropdownTableView.rightAnchor.constraint(equalTo: addButton.rightAnchor).isActive = true
+        self.dropdownTableView.layer.cornerRadius = 10
+        // Set the height consttraint as a property so we can reset it
+        self.childTableHeightConstraint = self.dropdownTableView.heightAnchor.constraint(equalToConstant: 0)
+        self.childTableHeightConstraint.isActive = true
+        
+        // Make edit buttons for childView
+        
+        
+    }
+    
+    func getMainViewBackground() -> UIView {
+        
+        let imageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))//self.backgroundImage)//
+        let blurEffect = UIBlurEffect(style: .light)
+        let blurView = UIVisualEffectView(effect: blurEffect)
+        let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
+        let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
+        
+        let view = UIView()
+        view.addSubview(imageView)
+        view.addSubview(blurView)
+        view.addSubview(vibrancyView)
+        //view.autoresizingMask = [.flexibleHeight, .flexibleWidth]
+        
+        return view
         
     }
     
@@ -98,13 +216,17 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         
-        addBackground(showWhiteView: false)
-        setNavigationBar()
+        //addBackground(showWhiteView: false)
+        //setNavigationBar()
         
         let currentScreenFrame = getCurrentScreenFrame()
+        self.mainViewWidthConstraint.constant = currentScreenFrame.width/3
         if self.dropdownTableVisible {
-            self.dropdownTableView.widthAnchor.constraint(equalToConstant: currentScreenFrame.width/2).isActive = true
+            self.childViewWidthConstraint.constant = currentScreenFrame.width - self.mainViewWidthConstraint.constant
         }
+        
+        self.view.setNeedsLayout()
+        self.view.layoutIfNeeded()
     }
     
     
@@ -138,7 +260,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     @objc func backButtonPressed() {
         dismiss(animated: true, completion: nil)
     }
-    
     
     
     // MARK: - TableView delegate methods
@@ -200,11 +321,15 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             cell.delegate = self
             cell.checkBoxButton.tag = indexPath.row
             
+            let selectedBackgroundView = UIView()
+            selectedBackgroundView.backgroundColor = UIColor.clear
+            cell.selectedBackgroundView = selectedBackgroundView
+            
             return cell
             
-        } else if tableView == self.dropdownTableView{
+        } else if tableView == self.dropdownTableView {
             let cell = tableView.dequeueReusableCell(withIdentifier: "dropdown", for: indexPath) as! DropdownSettingsTableViewCell
-            cell.label.text = dropdownOptions[indexPath.row]
+            cell.label.text = self.dropdownOptions[indexPath.row]
             return cell
         } else {
             return UITableViewCell()
@@ -213,39 +338,74 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     }
     
     
-    // Handle selections
+    // If multiple selections are not allowed, make sure the previous cell is deselected when another one is selected
+    func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
+        if tableView == self.mainTableView {
+            if let previousIndexPath = tableView.indexPathForSelectedRow {
+                self.currentMainIndexPath = previousIndexPath
+                let previousCell = tableView.cellForRow(at: previousIndexPath) as! MainSettingsTableViewCell
+                previousCell.backgroundColor = previousCell.bgColor
+                tableView.deselectRow(at: previousIndexPath, animated: true)
+            }
+        }
+        
+        return indexPath
+    }
+    
+    
+    // Animate showing and hiding the childView
     func changeDropdownOptionsTableViewWidth(){
         
         if self.dropdownTableVisible {
+            // Deactivate temporarily so changing constant doesn't change frame size
+            NSLayoutConstraint.deactivate([self.childViewWidthConstraint])
+            self.childViewWidthConstraint.constant = 0
+            NSLayoutConstraint.activate([self.childViewWidthConstraint])
             
-            NSLayoutConstraint.deactivate([self.dropdownTableWidthConstraint])
-            self.dropdownTableWidthConstraint.constant = 0
-            NSLayoutConstraint.activate([self.dropdownTableWidthConstraint])
-            
+            // Animate collapsing table view
             UIView.animate(withDuration: 0.5, delay: 0, animations: {
-                self.dropdownTableView.center.x -= self.dropdownTableView.frame.width / 2
-                self.dropdownTableView.layoutIfNeeded()
-            }, completion: nil)
+                self.childView.center.x -= self.childView.frame.width / 2
+                self.childView.layoutIfNeeded()
+            }, completion: {_ in
+                self.addButton.isHidden = true
+                self.editButton.isHidden = true
+                self.childViewLabel.isHidden = true
+            })
             
-            self.dropdownTableVisible = false
+            self.dropdownTableVisible = false // reset visibility property
+            self.addButton.isHidden = true
+            self.editButton.isHidden = true
+            self.childViewLabel.isHidden = true
             
-        } else {
-            
+        } else if !self.dropdownTableVisible {
+            // Set width
             let currentScreenFrame = getCurrentScreenFrame()
-            self.dropdownTableWidthConstraint.constant = currentScreenFrame.width/2
-            UIView.animate(withDuration: 0.5, delay: 0, animations: {
-                self.dropdownTableView.layoutIfNeeded()
-                self.dropdownTableView.center.x += self.dropdownTableView.frame.width / 2
-            }, completion: nil)
+            self.childViewWidthConstraint.constant = currentScreenFrame.width * 2/3
             
-            self.dropdownTableVisible = true
+            // Animate expanding table view
+            //  Reload data (when finished) since they were set to a different list of dropdown options
+            UIView.animate(withDuration: 0.5, delay: 0, animations: {
+                self.childView.layoutIfNeeded()
+                self.childView.center.x += self.childView.frame.width / 2
+            }, completion: {_ in
+                self.reloadChildViewData()
+                self.addButton.isHidden = false
+                self.editButton.isHidden = false
+                self.childViewLabel.isHidden = false
+            })
+            
+            self.dropdownTableVisible = true//reset visiibility property
         }
         
-        self.dropdownTableView.reloadData()
     }
     
+    // Handle selections
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView == self.mainTableView {
+            
+            let cell = tableView.cellForRow(at: indexPath) as! MainSettingsTableViewCell
+            cell.backgroundColor = UIColor.clear
+            
             // Should only be one type of row that's selectable, so no need to check
             let settingsRow = self.settings["Dropdown options"]?[indexPath.row]
             if let row = settingsRow {
@@ -254,9 +414,128 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                 os_log("the indexPath.row in tableView(didSelectRowAt) in SettingsViewController couldn't be found in self.settings", log: OSLog.default, type: .debug)
                 return
             }
-
-            changeDropdownOptionsTableViewWidth()
+            
+            if indexPath != self.currentMainIndexPath && self.dropdownTableVisible {
+                //differnt cell was selected and the dropdown menu is already visible
+                reloadChildViewData()
+                self.childViewLabel.text = "\(cell.label.text ?? "") options"
+            } else if indexPath == self.currentMainIndexPath {
+                // an already selected cell was selected, so hide the childView and deselect the cell
+                changeDropdownOptionsTableViewWidth()
+                tableView.deselectRow(at: indexPath, animated: true)
+                cell.backgroundColor = cell.bgColor
+                self.currentMainIndexPath = nil // reset it so if the user presses the same cell multiple times in a row, the bg color changes
+            } else {
+                // a completely new selection
+                self.childViewLabel.text = "\(cell.label.text ?? "") options"
+                changeDropdownOptionsTableViewWidth()
+            }
+            
         }
+    }
+    
+    // Reload dropdown options and reset the height of the tableView
+    func reloadChildViewData() {
+        self.dropdownTableView.reloadData()
+        
+        let contentSize = CGFloat(self.dropdownOptions.count) * self.dropdownTableView.rowHeight//can't use tableView.contentSize because it's always to small
+        self.childTableHeightConstraint.constant = min(self.childView.frame.height - 40 - navigationButtonSize, contentSize)
+        
+        UIView.animate(withDuration: 0.15, delay: 0, animations: {self.childView.layoutIfNeeded()}, completion: nil)
+        
+        
+    }
+    
+    
+    func updateJSONData(value: String, context: String, field: String) {
+        self.dropdownOptions.append(value.capitalized(with: nil)) // Make sure
+        if dropDownJSON[context][field]["sorted"].bool ?? false {
+            self.dropdownOptions.sort()
+        }
+        dropDownJSON[context][field]["Options"].arrayObject = self.dropdownOptions
+        self.reloadChildViewData()
+        
+        // Set global vars
+        switch field {
+        case "Observer name":
+            observers = self.dropdownOptions
+        case "Destination":
+            destinations = self.dropdownOptions
+        case "Bus type":
+            busTypes = self.dropdownOptions
+        case "Lodge":
+            lodges = self.dropdownOptions
+        case "Work division":
+            npsVehicleWorkDivisions = self.dropdownOptions
+        case "Approved category":
+            npsApprovedCategories = self.dropdownOptions
+        default:
+            print("settingsRowLabel not understood")
+        }
+        
+        // Write the JSON file
+        var fullJSON = JSON()
+        fullJSON["fields"] = dropDownJSON
+        writeJSONConfigFile(json: dropDownJSON)
+    }
+    
+    
+    func writeJSONConfigFile(json: JSON) {
+        guard let jsonURL = getConfigURL() else {
+            os_log("Could not get json URL in Settings Controller", log: .default, type: .debug)
+            return
+        }
+        
+        guard let jsonString = json.rawString(String.Encoding.utf8, options: JSONSerialization.WritingOptions.prettyPrinted) else {
+            os_log("Could not get json string in Settings Controller", log: .default, type: .debug)
+            return
+        }
+        
+        // write the file
+        do {
+            try jsonString.write(to: jsonURL, atomically: false, encoding: .utf8)
+        }
+        catch {
+            os_log("Failed to write JSON string in settings controller", log: .default, type: .debug)
+        }
+    }
+    
+    
+    // Insert a new row
+    @objc func addButtonPressed() {
+        
+        var settingsRowLabel = ""
+        var settingsRowContext = ""
+        if let indexPath = self.mainTableView.indexPathForSelectedRow, let settingsRow = self.settings["Dropdown options"]?[indexPath.row] {
+            //let currentCell = self.mainTableView.cellForRow(at:indexPath) as! MainSettingsTableViewCell
+            settingsRowLabel = settingsRow.label
+            settingsRowContext = settingsRow.context
+        } else {
+            print("no selection in mainTableView")
+        }
+        //Show an alert controller with a text field to add the new value
+        let alertController = UIAlertController(title: "New \(settingsRowLabel) option", message: "Add a new option for the \(settingsRowLabel) dropdown menu ", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Save", style: .default, handler: { alert -> Void in
+            let textField = alertController.textFields![0] as UITextField
+            if let newValue = textField.text, newValue != "" {
+                self.updateJSONData(value: newValue, context: settingsRowContext, field: settingsRowLabel)
+            } else {
+                // alert user that they have to enter a real value
+            }
+/*"Observer name",  type: "list", context: "global"),
+ SettingsTableViewRow(label: "Destination",    type: "list", context: "global"),
+ SettingsTableViewRow(label: "Bus type",       type: "list", context: "Bus"),
+ SettingsTableViewRow(label: "Lodge",          type: "list", context: "Lodge Bus"),
+ SettingsTableViewRow(label: "Work division",     type: "list", context: "NPS Vehicle"),
+ SettingsTableViewRow(label: "Approved category",*/
+        }))
+        alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        alertController.addTextField(configurationHandler: {(textField : UITextField!) -> Void in
+            textField.placeholder = ""
+            textField.autocapitalizationType = settingsRowLabel == "Observer name" ? .words : .sentences
+        })
+        self.present(alertController, animated: true, completion: nil)
+        
     }
     
     
@@ -284,9 +563,11 @@ protocol checkBoxCellProtocol {
 
 
 // MARK: -
-fileprivate let spacing: CGFloat = 16
+
 class MainSettingsTableViewCell: UITableViewCell {
     
+    let bgColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+    let spacing: CGFloat = 16
     let label = UILabel()
     let checkBoxButton = CheckBoxControl()
     let moreContentIndicator = UIImageView(image: UIImage(named: "moreSettingsIcon"))
@@ -321,7 +602,7 @@ class MainSettingsTableViewCell: UITableViewCell {
             self.moreContentIndicator.heightAnchor.constraint(equalToConstant: 15).isActive = true
         }
         
-        self.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+        self.backgroundColor = bgColor
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -345,10 +626,11 @@ class DropdownSettingsTableViewCell: UITableViewCell {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
         
         self.contentView.addSubview(self.label)
+        self.label.translatesAutoresizingMaskIntoConstraints = false
         self.label.centerYAnchor.constraint(equalTo: self.contentView.centerYAnchor).isActive = true
         self.label.centerXAnchor.constraint(equalTo: self.contentView.centerXAnchor).isActive = true
         
-        self.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.2)
+        self.backgroundColor = UIColor.clear//UIColor(red: 1, green: 1, blue: 1, alpha: 0.2)
     }
     
     required init?(coder aDecoder: NSCoder) {
