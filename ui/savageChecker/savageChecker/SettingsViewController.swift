@@ -28,6 +28,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     var mainViewWidthConstraint = NSLayoutConstraint()
     var childTableHeightConstraint = NSLayoutConstraint()
     let dividingLine = UIView(frame: CGRect(x:0, y: 0, width: 1, height: 1))
+    let childViewButtonSpacing: CGFloat = 20
     var backgroundImage: UIImage!
     
     var currentSettings = ["Date alert on": sendDateEntryAlert,
@@ -57,7 +58,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                    ]
     
     
-    // MARK - Layout
+    // MARK: - Layout
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -156,7 +158,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         addButton.translatesAutoresizingMaskIntoConstraints = false
         addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        addButton.topAnchor.constraint(equalTo: self.childView.topAnchor, constant: 20).isActive = true
+        addButton.topAnchor.constraint(equalTo: self.childView.topAnchor, constant: self.childViewButtonSpacing).isActive = true
         addButton.rightAnchor.constraint(equalTo: self.childView.rightAnchor, constant: -20).isActive = true
         addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
         addButton.isHidden = true
@@ -171,6 +173,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         self.editButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         self.editButton.topAnchor.constraint(equalTo: addButton.topAnchor).isActive = true
         self.editButton.leftAnchor.constraint(equalTo: self.childView.leftAnchor, constant: 20).isActive = true
+        self.editButton.addTarget(self, action: #selector(editButtonPressed), for: .touchUpInside)
         editButton.isHidden = true
         
         self.childView.addSubview(self.childViewLabel)
@@ -181,7 +184,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         childViewLabel.isHidden = true
         
         self.dropdownTableView.translatesAutoresizingMaskIntoConstraints = false
-        self.dropdownTableView.topAnchor.constraint(equalTo: addButton.bottomAnchor, constant: 10).isActive = true
+        self.dropdownTableView.topAnchor.constraint(equalTo: addButton.bottomAnchor, constant: self.childViewButtonSpacing).isActive = true
         self.dropdownTableView.leftAnchor.constraint(equalTo: self.editButton.leftAnchor).isActive = true
         self.dropdownTableView.rightAnchor.constraint(equalTo: addButton.rightAnchor).isActive = true
         self.dropdownTableView.layer.cornerRadius = 10
@@ -346,8 +349,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     // If multiple selections are not allowed, make sure the previous cell is deselected when another one is selected
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
         if tableView == self.mainTableView {
+            self.currentMainIndexPath = tableView.indexPathForSelectedRow
             if let previousIndexPath = tableView.indexPathForSelectedRow {
-                self.currentMainIndexPath = previousIndexPath
                 let previousCell = tableView.cellForRow(at: previousIndexPath) as! MainSettingsTableViewCell
                 previousCell.backgroundColor = previousCell.bgColor
                 tableView.deselectRow(at: previousIndexPath, animated: true)
@@ -381,6 +384,10 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             self.addButton.isHidden = true
             self.editButton.isHidden = true
             self.childViewLabel.isHidden = true
+            
+            self.editButton.isSelected = false
+            self.dropdownTableView.isEditing = false
+            self.dropdownTableView.setEditing(false, animated: true)
             
         } else if !self.dropdownTableVisible {
             // Set width
@@ -443,7 +450,25 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     // Enable editing
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
+            if tableView == self.dropdownTableView {
+                self.dropdownOptions.remove(at: indexPath.row)
+                tableView.deleteRows(at: [indexPath], with: .bottom)
+            }
         }
+    }
+    
+    
+    // Disable swipe delete and editing for main table
+    //   Swipe deletes are disabled because it's too easy to accidentally do this and the rows are too short to easily disable it
+    func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCellEditingStyle {
+        
+        // Only return edit mode if editing has been turned on and this is the dropdown options table
+        if tableView.isEditing && tableView == self.dropdownTableView {
+            return .delete
+        }
+        
+        // Otherwise, cancel editing
+        return .none
     }
     
     
@@ -470,24 +495,30 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         }
         
         // Reset the height of the tableView and animate it (if there were changes
-        self.childTableHeightConstraint.constant = min(self.childView.frame.height - 40 - navigationButtonSize, contentSize)
+        self.childTableHeightConstraint.constant = min(self.childView.frame.height - childViewButtonSpacing * 2 - navigationButtonSize, contentSize)
         UIView.animate(withDuration: 0.15, delay: 0, animations: {self.childView.layoutIfNeeded()}, completion: nil)
         
     }
     
     
-    func updateJSONData(value: String, context: String, field: String) {
-        self.dropdownOptions.append(value) // Make sure
-        if dropDownJSON[context][field]["sorted"].bool ?? false {
-            self.dropdownOptions.sort()
-        }
+    func updateJSONData(value: String? = nil, context: String, field: String) {
         
-        dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
-        let position = self.dropdownOptions.index(of: value)
-        if let rowIndex = position {
-            reloadChildViewData(withInsert: IndexPath(row: rowIndex, section: 0))
+        // Check if values for inserting were passed
+        if let value = value {
+            self.dropdownOptions.append(value) // Make sure
+            if dropDownJSON[context][field]["sorted"].bool ?? false {
+                self.dropdownOptions.sort()
+            }
+            
+            dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
+            let position = self.dropdownOptions.index(of: value)
+            if let rowIndex = position {
+                reloadChildViewData(withInsert: IndexPath(row: rowIndex, section: 0))
+            } else {
+                // TODO: alert the user that the insertion failed
+            }
         } else {
-            // TODO: alert the user that the insertion failed
+            dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
         }
         
         // Set global vars
@@ -580,6 +611,28 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     }
     
     
+    // Enable/disable editing mode
+    @objc func editButtonPressed() {
+        // The editButton.isSelected property should correspond to enabling editing mode
+        //   The selected/deselected image for the button should automatically change on touch
+        
+        // Only save the changes and reload the data (change table height) when turning editing mode off
+        if self.editButton.isSelected {
+            // editing mode is already on, so turn it off
+            self.editButton.isSelected = false
+            reloadChildViewData()
+            
+            if let indexPath = self.mainTableView.indexPathForSelectedRow, let settingsRow = self.settings["Dropdown options"]?[indexPath.row] {
+                updateJSONData(context: settingsRow.context, field: settingsRow.label)
+            }
+        } else {
+            self.editButton.isSelected = true
+        }
+        self.dropdownTableView.isEditing = self.editButton.isSelected
+        self.dropdownTableView.setEditing(self.editButton.isSelected, animated: true)
+    }
+    
+    
     // MARK: - checkbox Cell delegate
     func checkBoxTapped(checkBox: CheckBoxControl) {
         self.checkBoxTapped(sender: checkBox)
@@ -594,9 +647,22 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         default:
             print("check box label/tag not understood. Label:\(checkBoxLabel), tag:\(checkBox.tag) ")
         }
+        
+        // Hide the childView if it's visible and deselect the dropdown row
+        if self.dropdownTableVisible {
+            changeDropdownOptionsTableViewWidth()
+            if let selectedPath = self.mainTableView.indexPathForSelectedRow {// self.currentMainIndexPath {
+                self.mainTableView.deselectRow(at: selectedPath, animated: true)
+                let selectedCell = self.mainTableView.cellForRow(at: selectedPath) as! MainSettingsTableViewCell
+                selectedCell.backgroundColor = selectedCell.bgColor
+            } else {
+                print("could not get selected path")
+            }
+        }
     }
 }
 
+// MARK: -
 
 protocol checkBoxCellProtocol {
     func checkBoxTapped(checkBox: CheckBoxControl)
