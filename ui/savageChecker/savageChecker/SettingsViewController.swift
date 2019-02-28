@@ -448,11 +448,11 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     
     
     func updateJSONData(value: String, context: String, field: String) {
-        self.dropdownOptions.append(value.capitalized(with: nil)) // Make sure
+        self.dropdownOptions.append(value) // Make sure
         if dropDownJSON[context][field]["sorted"].bool ?? false {
             self.dropdownOptions.sort()
         }
-        dropDownJSON[context][field]["Options"].arrayObject = self.dropdownOptions
+        dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
         self.reloadChildViewData()
         
         // Set global vars
@@ -476,28 +476,38 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         // Write the JSON file
         var fullJSON = JSON()
         fullJSON["fields"] = dropDownJSON
-        writeJSONConfigFile(json: dropDownJSON)
+        let success = writeJSONConfigFile(json: fullJSON)
+        if !success {
+            //alert user that changes weren't saved
+        }
     }
     
     
-    func writeJSONConfigFile(json: JSON) {
-        guard let jsonURL = getConfigURL() else {
+    func writeJSONConfigFile(json: JSON) -> Bool {
+        
+        guard let jsonURL = getConfigURL(requireExistingFile: false) else {
             os_log("Could not get json URL in Settings Controller", log: .default, type: .debug)
-            return
+            return false
         }
         
         guard let jsonString = json.rawString(String.Encoding.utf8, options: JSONSerialization.WritingOptions.prettyPrinted) else {
             os_log("Could not get json string in Settings Controller", log: .default, type: .debug)
-            return
+            return false
         }
         
+        print(jsonURL)
         // write the file
         do {
             try jsonString.write(to: jsonURL, atomically: false, encoding: .utf8)
         }
         catch {
+            //Alert user
             os_log("Failed to write JSON string in settings controller", log: .default, type: .debug)
+            return false
         }
+        
+        // If we got here, the write was successful
+        return true
     }
     
     
@@ -522,16 +532,12 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             } else {
                 // alert user that they have to enter a real value
             }
-/*"Observer name",  type: "list", context: "global"),
- SettingsTableViewRow(label: "Destination",    type: "list", context: "global"),
- SettingsTableViewRow(label: "Bus type",       type: "list", context: "Bus"),
- SettingsTableViewRow(label: "Lodge",          type: "list", context: "Lodge Bus"),
- SettingsTableViewRow(label: "Work division",     type: "list", context: "NPS Vehicle"),
- SettingsTableViewRow(label: "Approved category",*/
+
         }))
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alertController.addTextField(configurationHandler: {(textField : UITextField!) -> Void in
             textField.placeholder = ""
+            print(settingsRowLabel)
             textField.autocapitalizationType = settingsRowLabel == "Observer name" ? .words : .sentences
         })
         self.present(alertController, animated: true, completion: nil)

@@ -28,21 +28,25 @@ var showHelpTips = false
 // var sendDateEntryAlert = true //instantiated in ObservationViewControllers.swift
 
 
-func getConfigURL() -> URL?{
+func getConfigURL(requireExistingFile: Bool = true) -> URL?{
     var jsonURL = URL(fileURLWithPath: "")
     // Look for config file in Documents folder.
     let fileManager = FileManager.default
     if let documentsDirectory = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false).absoluteString {
         let url = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("savageCheckerConfig.json")
         
-        if fileManager.fileExists(atPath: url.path) {
-            jsonURL = url
-        }
-            // If it's not there, use the default config file in Resources
-        else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
-            jsonURL = url
+        if requireExistingFile {
+                if fileManager.fileExists(atPath: url.path) {
+                    jsonURL = url
+                }
+                // If it's not there, use the default config file in Resources
+                else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
+                    jsonURL = url
+                } else {
+                    os_log("Could not configure get JSON file url", log: OSLog.default, type: .debug)
+                }
         } else {
-            os_log("Could not configure get JSON file url", log: OSLog.default, type: .debug)
+            return url
         }
     }
     
