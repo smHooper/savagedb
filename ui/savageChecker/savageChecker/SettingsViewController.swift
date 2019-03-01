@@ -476,14 +476,16 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     func reloadChildViewData(withInsert: IndexPath? = nil) {
         
         let contentSize = CGFloat(self.dropdownOptions.count) * self.dropdownTableView.rowHeight//can't use tableView.contentSize because it's always to small
-        
+        let childViewTableHeight = self.childView.frame.height - childViewButtonSpacing * 2 - navigationButtonSize
         // If adding a new row, animate the insert
         if let indexPath = withInsert {
 
             self.dropdownTableView.insertRows(at: [indexPath], with: .bottom)
             
-            // Scroll to the positin of the row and flash it's background color
-            self.dropdownTableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle)
+            // Scroll to the positin of the row if the row is out of view
+            if contentSize > childViewTableHeight { self.dropdownTableView.selectRow(at: indexPath, animated: true, scrollPosition: .middle) }
+            
+            // flash the cell's background color
             let deadlineTime = DispatchTime.now() + .seconds(1)
             DispatchQueue.main.asyncAfter(deadline: deadlineTime) {
                 self.dropdownTableView.deselectRow(at: indexPath, animated: true)
@@ -495,7 +497,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         }
         
         // Reset the height of the tableView and animate it (if there were changes
-        self.childTableHeightConstraint.constant = min(self.childView.frame.height - childViewButtonSpacing * 2 - navigationButtonSize, contentSize)
+        self.childTableHeightConstraint.constant = min(childViewTableHeight, contentSize)
         UIView.animate(withDuration: 0.15, delay: 0, animations: {self.childView.layoutIfNeeded()}, completion: nil)
         
     }
@@ -505,7 +507,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         
         // Check if values for inserting were passed
         if let value = value {
-            self.dropdownOptions.append(value) // Make sure
+            self.dropdownOptions.append(value)
             if dropDownJSON[context][field]["sorted"].bool ?? false {
                 self.dropdownOptions.sort()
             }
@@ -515,7 +517,15 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             if let rowIndex = position {
                 reloadChildViewData(withInsert: IndexPath(row: rowIndex, section: 0))
             } else {
-                // TODO: alert the user that the insertion failed
+                // Alert user, although this should never fail
+                let alertController = UIAlertController(title: "Insertion failed",
+                                                        message: """
+                                                                 The insertion failed for an unknown reason. Maybe try again later or edit
+                                                                 the configuration JSON file manually from a desktop computer.
+                                                                 """,
+                                                        preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                self.present(alertController, animated: true, completion: nil)
             }
         } else {
             dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
@@ -544,7 +554,16 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         fullJSON["fields"] = dropDownJSON
         let success = writeJSONConfigFile(json: fullJSON)
         if !success {
-            //TODO: alert user that changes weren't saved
+            // Alert user
+            let alertController = UIAlertController(title: "Failed to save config file",
+                                                    message: """
+                                                             The app could not save changes to the configuration file. Your changes to settings will only remain
+                                                             while the app is open, but if you turn the iPad off or restart the app all settings will revert to
+                                                             how they were before. Try editing the configuration file from a desktop computer when you can.
+                                                             """,
+                                                    preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+            self.present(alertController, animated: true, completion: nil)
         }
 
     }
@@ -590,13 +609,26 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             print("no selection in mainTableView")
         }
         //Show an alert controller with a text field to add the new value
-        let alertController = UIAlertController(title: "New \(settingsRowLabel) option", message: "Add a new option for the \(settingsRowLabel) dropdown menu ", preferredStyle: .alert)
+        let alertController = UIAlertController(title: "New \(settingsRowLabel) option", message: "Add a new option for the \(settingsRowLabel) dropdown menu: ", preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "Save", style: .default, handler: { alert -> Void in
             let textField = alertController.textFields![0] as UITextField
             if let newValue = textField.text, newValue != "" {
-                self.updateJSONData(value: newValue, context: settingsRowContext, field: settingsRowLabel)
+                if self.dropdownOptions.contains(newValue) {
+                    // Alert user
+                    let existsAlertController = UIAlertController(title: "Value already exists",
+                                                                  message: "The value you entered already exists in the options for \(settingsRowLabel).",
+                                                                  preferredStyle: .alert)
+                    existsAlertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {_ in self.present(alertController, animated: true)}))
+                    self.present(existsAlertController, animated: true, completion: nil)
+                } else {self.updateJSONData(value: newValue, context: settingsRowContext, field: settingsRowLabel)
+                }
             } else {
-                // TODO: alert user that they have to enter a real value
+                // Alert user
+                let invalidAlertController = UIAlertController(title: "Invalid entry",
+                                                              message: "You must enter a value or press 'Cancel' to dismiss this menu.",
+                    preferredStyle: .alert)
+                invalidAlertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {_ in self.present(alertController, animated: true)}))
+                self.present(invalidAlertController, animated: true, completion: nil)
             }
 
         }))
