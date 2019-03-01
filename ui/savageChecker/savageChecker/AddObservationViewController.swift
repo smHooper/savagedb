@@ -49,9 +49,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        // Try to load the database, but if userData has not been created yet, open the ShiftInfo controller
-        //loadData()
-        
         addBackground()
         
         setNavigationBar()
@@ -76,10 +73,15 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         swipeLeft.direction = .left
         self.view.addGestureRecognizer(swipeLeft)
         
-        // Change this to use some var or notification to check if I should show quote or just loadData()
+        // Check if the quote should be shown
         if showQuoteAtStartup {
             showQuote(seconds: 5.0)
+        // If not, do the things that would be done on completion of animating the quote view disappearing
+        } else {
+            loadData()
+            self.scrollView.flashScrollIndicators()
         }
+        
     }
     
 
@@ -581,19 +583,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                        animations: {presentingController.blurEffectView.alpha = 0.0},//{self.blurEffectView.alpha = 0.0},//
                        completion: {(value: Bool) in presentingController.blurEffectView.removeFromSuperview()})//self.blurEffectView.removeFromSuperview()})//
     }
-    
-    
-    /*func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        
-        // Check if the touch was on one of the buttons
-        for button in self.buttons {
-            if touch.view == button {
-                return false
-            }
-        }
-        // If not, the touch should get passed to the gesture recognizer
-        return true
-    }*/
+
     
     @objc func moveToTableView(){
         let tableViewController = BaseTableViewController()
@@ -611,6 +601,21 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
             self.userData = userData
             self.userDataLoaded = true
+            
+            // Check if the database for this userData file extists. If it was deleted, show the shift info form
+            if !FileManager.default.fileExists(atPath: dbPath) {
+               showShiftInfoForm()
+            // If the dbPath does exist, check that the dbPath is for today. Since loadData() is only called in viewDidAppear() if userData don't exist
+            //  it shouldn't cause any problems when opening a database other than today's
+            } else {
+                let today = getFileNameTag()
+                let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("savageChecker_\(today).db").path
+                let activePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
+                if todaysPath != activePath {
+                    showShiftInfoForm()
+                }
+            }
+            
         } else {
             self.userDataLoaded = false
             showShiftInfoForm()

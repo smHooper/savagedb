@@ -12,7 +12,7 @@ import os.log
 class UserData: NSObject, NSCoding {
     
     //MARK: Properties
-    let creationTime: Date
+    let creationDate: String
     var lastModifiedTime: Date
     var activeDatabase: String
     
@@ -22,26 +22,26 @@ class UserData: NSObject, NSCoding {
     
     //MARK: Types
     struct PropertyKey {
-        static let creationTime = "creationTime"
+        static let creationDate = "creationDate"
         static let lastModifiedTime = "lastModifiedTime"
         static let activeDatabase = "activeDatabase"
     }
     
-    init?(creationTime: Date, lastModifiedTime: Date, activeDatabase: String){
+    init?(creationDate: String, lastModifiedTime: Date, activeDatabase: String){
         
         // Check that all required attributes are non-mepty
         guard !activeDatabase.isEmpty else {
             return nil
         }
         
-        self.creationTime = creationTime
+        self.creationDate = creationDate
         self.lastModifiedTime = lastModifiedTime
         self.activeDatabase = activeDatabase
     }
     
     //MARK: NSCoding
     func encode(with aCoder: NSCoder) {
-        aCoder.encode(self.creationTime, forKey: PropertyKey.creationTime)
+        aCoder.encode(self.creationDate, forKey: PropertyKey.creationDate)
         aCoder.encode(self.lastModifiedTime, forKey: PropertyKey.lastModifiedTime)
         aCoder.encode(self.activeDatabase, forKey: PropertyKey.activeDatabase)
     }
@@ -50,7 +50,7 @@ class UserData: NSObject, NSCoding {
     required convenience init?(coder aDecoder: NSCoder) {
         
         // Initialize required properties.
-        guard let creationTime = aDecoder.decodeObject(forKey: PropertyKey.creationTime) as? Date else {
+        guard let creationDate = aDecoder.decodeObject(forKey: PropertyKey.creationDate) as? String else {
             os_log("Unable to decode the name for a UserData object.", log: OSLog.default, type: .debug)
             return nil
         }
@@ -63,7 +63,7 @@ class UserData: NSObject, NSCoding {
             return nil
         }
 
-        self.init(creationTime: creationTime, lastModifiedTime: lastModifiedTime, activeDatabase: activeDatabase)
+        self.init(creationDate: creationDate, lastModifiedTime: lastModifiedTime, activeDatabase: activeDatabase)
     }
     
     

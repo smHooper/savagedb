@@ -155,6 +155,19 @@ extension UIViewController {
         return userData
     }
     
+    
+    // Get the datestamp for the dbPath
+    func getFileNameTag() -> String {
+        let formatter = DateFormatter()
+        let now = Date()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .none
+        let dateString = formatter.string(from: now).replacingOccurrences(of: "/", with: "-")//.replacingOccurrences(of: "1", with: "2")
+        
+        return dateString
+    }
+    
+    
     @objc func checkBoxTapped(sender: UIButton) {
         UIView.animate(withDuration: 0.1, delay: 0.1, options: .curveEaseInOut, animations: {
             sender.transform = CGAffineTransform(scaleX: 0.1, y: 0.1)

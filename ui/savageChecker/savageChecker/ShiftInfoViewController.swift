@@ -98,6 +98,11 @@ class ShiftInfoViewController: BaseFormViewController {
         horizontalLine.widthAnchor.constraint(equalTo: self.view.widthAnchor).isActive = true
         horizontalLine.heightAnchor.constraint(equalToConstant: 1.0).isActive = true
         
+        // Set the dbPath with a unique tag that includes the observer's name and a timestamp
+        let dateString = getFileNameTag()
+        let fileName = "savageChecker_\(dateString).db"
+        dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(fileName).path
+        
         loadData()
         
         // Use a different layout depending on whether this is a new shift
@@ -132,51 +137,67 @@ class ShiftInfoViewController: BaseFormViewController {
         
     }
     
+    
     func loadData() {
-        // First check if there's user data from a previous session
-        if let userData = loadUserData() {
-            dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
-            self.userData = userData
-        }
-        print(dbPath)
         
-        // Then check if the database at dbPath exists
-        let url = URL(fileURLWithPath: dbPath)
-        if FileManager.default.fileExists(atPath: url.path){
-            // The user is opening the app again after closing it or returning from another scene
-            do {self.db = try Connection(dbPath)}
-            catch {
-                os_log("Connecting to DB in SessionViewController.loadData() failed", log: OSLog.default, type: .debug)
-                print(error)}
+ 
+        // Check if a database exists for today's date
+        let today = getFileNameTag()
+        let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("savageChecker_\(today).db").path
+        if FileManager.default.fileExists(atPath: todaysPath){
+            // If a file exists, but so does user data, always use the activePath from userData
+            if let userData = loadUserData() {
+                // Check if the active path's exists
+                let activePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
+                if FileManager.default.fileExists(atPath: activePath) {
+                    dbPath = activePath
+                    self.userData = userData
+                // If it doesn't, use todays path
+                } else {
+                    dbPath = todaysPath
+                    self.userData = nil
+                }
+            } else {
+                // The userData file was deleted at some point, but the database for today wasn't
+                dbPath = todaysPath // Use today's path
+                createUserData()
+            }
+            
+            // Try to connect to the DB
+            self.db = try? Connection(dbPath)
+            if self.db == nil {
+                os_log("Connecting to DB in ShiftInfoViewController.loadData() circa line 169 failed", log: OSLog.default, type: .debug)
+                print("Connection failed in ShiftInfoViewController.loadData() with dbPath \(dbPath)")
+            }
+
             if let session = loadSession() {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
                 self.textFields[2]?.text = session.openTime
                 self.textFields[3]?.text = session.closeTime
-                //self.saveButton.isEnabled = true // Returning to view so make sure it's enabled
                 self.session = session
+                self.saveButton.isEnabled = true
             }
-                // The user is returning to the session scene from another scene
+            // The user is returning to the shift info page from another page
             else if let session = self.session {
                 self.dropDownTextFields[0]?.text = session.observerName
                 self.textFields[1]?.text = session.date
                 self.textFields[2]?.text = session.openTime
                 self.textFields[3]?.text = session.closeTime
-                //self.saveButton.isEnabled = true // Returning to view so make sure it's enabled
+                self.saveButton.isEnabled = true
             }
             // The db doesn't have a sessions table because it hasn't been configured yet
             else {
-                createSession()
+                createUserData()
             }
-        }
-        // The user is coming back to the session form for the first time since data were cleared
-        else {
-            createSession()
+        // If a database doesn't exist, create the userData and session instance
+        } else {
+            createUserData()
         }
     }
     
     
-    func createSession(){
+    func createUserData(){
         // date defaults to today
         let now = Date()
         let formatter = DateFormatter()
@@ -189,15 +210,10 @@ class ShiftInfoViewController: BaseFormViewController {
         self.saveButton.isEnabled = false
         
         // Create the userData instance for storing info
-        self.userData = UserData(creationTime: Date(), lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
+        let dateStamp = getFileNameTag()
+        self.userData = UserData(creationDate: dateStamp, lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
         
         self.isNewSession = true
-    }
-    
-    // Cancel animation (to be used with swipe gesture)
-    @objc func cancelAnimation() {
-        print("swipeLeft")
-        self.view.layer.removeAllAnimations()
     }
     
     
@@ -278,8 +294,6 @@ class ShiftInfoViewController: BaseFormViewController {
                 let thisId = Int(max)
                 self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
                 
-                // Update the UserData instance
-                //self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
             }
                 
             // If the session is nil, this is a new session so create the DB
@@ -288,15 +302,6 @@ class ShiftInfoViewController: BaseFormViewController {
                 self.session = Session(id: -1, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
                 
                 // Set the dbPath with a unique tag that includes the observer's name and a timestamp
-                let formatter = DateFormatter()
-                formatter.timeStyle = .short
-                formatter.dateStyle = .none
-                let now = Date()
-                let currentTimeString = formatter.string(from: now).replacingOccurrences(of: " ", with: "_").replacingOccurrences(of: ":", with: "-")
-                let dateString = "\(date.replacingOccurrences(of: "/", with: "-"))"
-                let observerNameString = observerName.replacingOccurrences(of: " ", with: "_")
-                let fileNameTag = "\(observerNameString)_\(dateString)_\(currentTimeString)"
-                
                 guard let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) else {
                     os_log("Could not find documents directory", log: OSLog.default, type: .debug)
                     return
@@ -304,23 +309,25 @@ class ShiftInfoViewController: BaseFormViewController {
                 
                 // If observer name was the field just modified, check to see if there's an existing DB from today with this user's name.
                 //  If so, ask user if they wan't to edit the existing DB or create a new one
-                var existingDBFile: String? = nil
+                let dateString = getFileNameTag()
+                /*var existingDBFile: String? = nil
                 if self.currentTextField == 0 {
                     let databaseFiles = findFiles()
                     for dbFile in databaseFiles.sorted() {
-                        if dbFile.contains(observerNameString) && dbFile.contains(dateString) {
+                        let thisFileName = dbFile.split(separator: "/").last ?? ""
+                        if thisFileName == "savageChecker_\(dateString).db" {
                             existingDBFile = dbFile
                             break
                         }
                     }
                 }
-                // If existingDBFile isn't nil, then it was set because there's an existing DB with the observer's name
+                // If existingDBFile isn't nil, then it was set because there's an existing DB with today's date
                 if let existingDBFile = existingDBFile {
                     let alertTitle = "Existing database found"
                     let alertMessage = "A database named \(existingDBFile) already exists for this observer from today. Do you want to create a new database file or add/modify observations in the existing one?"
                     let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
                     alertController.addAction(UIAlertAction(title: "Create new file", style: .default, handler: {handler in
-                        dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(fileNameTag).db").path // Use new path
+                        dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(dateString).db").path // Use new path
                         self.connectToDB()
                     }))
                     alertController.addAction(UIAlertAction(title: "Use existing file", style: .default, handler: {handler in
@@ -333,24 +340,17 @@ class ShiftInfoViewController: BaseFormViewController {
                     self.present(alertController, animated: true, completion: nil)
                 }
                     // Otherwise, just create a new DB with the new path
-                else {
-                    dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(fileNameTag).db").path // Use new path
-                    connectToDB()
-                }
+                else {*/
+                dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(dateString).db").path // Use new path
+                connectToDB()
+                //}
             }
-            
-            // Enable the nav button
-            //self.saveButton.isEnabled = true
             
             // Save the UserData instance
             self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
         
         dismiss(animated: true, completion: nil)
-            // All fields aren't full, so disable the view vehicles button until all fields are filled in
-        /*else {
-            self.saveButton.isEnabled = false
-        }*/
     }
     
     
