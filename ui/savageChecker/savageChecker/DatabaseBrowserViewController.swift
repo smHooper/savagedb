@@ -293,13 +293,15 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             self.userData?.update(databaseFileName: selectedFileName)
             
             // Open the new datbase
-            let presentingController = self.presentingViewController as! AddObservationViewController
-            do {
-                presentingController.db = try Connection(dbPath)
-            } catch let error {
-                fatalError(error.localizedDescription)
+            if let presentingController = self.presentingViewController as? AddObservationViewController {
+                presentingController.db = try? Connection(dbPath)
+                presentingController.loadSession()
+            } else {
+                let presentingController = self.presentingViewController as! BaseTableViewController
+                presentingController.db = try? Connection(dbPath)
+                presentingController.loadData()
             }
-            presentingController.loadSession()
+            
             dismiss(animated: true, completion: nil)
         } else {
             if let indexPathNotSelected = (tableView.indexPathsForSelectedRows?.contains(indexPath)) {
@@ -308,6 +310,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         }
 
     }
+    
     
     // If multiple selections are not allowed, make sure the previous cell is deselected when another one is selected
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
