@@ -153,19 +153,21 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         // Add buttons
         self.addButton = UIButton(type: .custom)
         self.childView.addSubview(self.addButton)
-        addButton.setImage(UIImage(named: "addIcon"), for: .normal)
-        addButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
-        addButton.translatesAutoresizingMaskIntoConstraints = false
-        addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
-        addButton.topAnchor.constraint(equalTo: self.childView.topAnchor, constant: self.childViewButtonSpacing).isActive = true
-        addButton.rightAnchor.constraint(equalTo: self.childView.rightAnchor, constant: -20).isActive = true
-        addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
-        addButton.isHidden = true
+        self.addButton.setImage(UIImage(named: "addIcon"), for: .normal)
+        self.addButton.imageEdgeInsets = UIEdgeInsetsMake(2.5, 2.5, 2.5, 2.5)
+        self.addButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
+        self.addButton.translatesAutoresizingMaskIntoConstraints = false
+        self.addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        self.addButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
+        self.addButton.topAnchor.constraint(equalTo: self.childView.topAnchor, constant: self.childViewButtonSpacing).isActive = true
+        self.addButton.rightAnchor.constraint(equalTo: self.childView.rightAnchor, constant: -20).isActive = true
+        self.addButton.addTarget(self, action: #selector(addButtonPressed), for: .touchUpInside)
+        self.addButton.isHidden = true
         
         self.editButton = UIButton(type: .custom)
         self.editButton.setImage(UIImage(named: "deleteIcon"), for: .normal)
         self.editButton.setImage(UIImage(named: "checkIcon"), for: .selected)
+        self.editButton.imageEdgeInsets = self.addButton.imageEdgeInsets
         self.childView.addSubview(self.editButton)
         self.editButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         self.editButton.translatesAutoresizingMaskIntoConstraints = false
