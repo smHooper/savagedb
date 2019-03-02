@@ -10,13 +10,13 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "571630457.112958"
+            timestampString = "573160378.89693"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "706"
-            endingLineNumber = "706"
-            landmarkName = "unknown"
-            landmarkType = "0">
+            startingLineNumber = "757"
+            endingLineNumber = "757"
+            landmarkName = "setNavigationBar()"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -26,7 +26,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "savageChecker/ObservationTableViewController.swift"
-            timestampString = "558040966.06924"
+            timestampString = "573099302.215011"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "747"
@@ -41,30 +41,14 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "571630457.113462"
+            filePath = "savageChecker/DatabaseBrowserViewController.swift"
+            timestampString = "573179668.370262"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1184"
-            endingLineNumber = "1184"
-            landmarkName = "unknown"
-            landmarkType = "0">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "savageChecker/ObservationViewControllers.swift"
-            timestampString = "571630457.113809"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1203"
-            endingLineNumber = "1203"
-            landmarkName = "unknown"
-            landmarkType = "0">
+            startingLineNumber = "337"
+            endingLineNumber = "337"
+            landmarkName = "tableView(_:willDeselectRowAt:)"
+            landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
       <BreakpointProxy
@@ -73,13 +57,45 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "savageChecker/DatabaseBrowserViewController.swift"
-            timestampString = "565582466.030243"
+            filePath = "savageChecker/ObservationViewControllers.swift"
+            timestampString = "573160378.897074"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "334"
-            endingLineNumber = "334"
-            landmarkName = "tableView(_:willDeselectRowAt:)"
+            startingLineNumber = "495"
+            endingLineNumber = "495"
+            landmarkName = "setDropdownBackground(textField:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "savageChecker/AddObservationViewController.swift"
+            timestampString = "573179668.370376"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "98"
+            endingLineNumber = "98"
+            landmarkName = "viewDidAppear(_:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "savageChecker/Extensions.swift"
+            timestampString = "573179668.370456"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "153"
+            endingLineNumber = "153"
+            landmarkName = "loadUserData()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

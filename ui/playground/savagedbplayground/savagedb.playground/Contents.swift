@@ -2,8 +2,6 @@
 
 import UIKit
 
-var str = "Hello, playground"
-
 var icons: DictionaryLiteral = ["JV Bus": "busIcon",
                                 "Lodge Bus": "busIcon",
                                 "NPS Vehicle": "busIcon",
@@ -59,6 +57,8 @@ for i in 0...3 {
     print(i)
 }
 
+var name = "something, "
+print(name[..<name.index(name.endIndex, offsetBy: -2)])
 
 
 

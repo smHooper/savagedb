@@ -650,7 +650,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             formatter.dateStyle = .short
             formatter.timeStyle = .none
         default:
-            fatalError("textfield \(textFieldId) passed to setupDatetimePicker was of type \(fieldType)")
+            print("textfield \(textFieldId) passed to setupDatetimePicker was of type \(fieldType)")
         }
         
         let datetimeString = formatter.string(from: date)
