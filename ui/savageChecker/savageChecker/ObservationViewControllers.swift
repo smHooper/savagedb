@@ -900,9 +900,32 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
     }
     
-    // Dummy function to be overriden in all subclasses
+    
+    /*
+ var textFields = [Int: UITextField]()
+ var dropDownTextFields = [Int: DropDownTextField]()
+ var boolSwitches = [Int: UISwitch]()
+ var checkBoxes = [Int: CheckBoxControl]()
+ */
+    
     func parseQRString() {
-        print("This needs to be overridden in the subclass. QR code string: \(self.qrString)")
+        
+        if let json = try? JSON(data: self.qrString.data(using: .utf8, allowLossyConversion: false)!) {
+            for (i, fieldInfo) in self.textFieldIds.enumerated() {
+                let controlName = fieldInfo.label
+                let value = json[controlName].string ?? ""
+                switch fieldInfo.type {
+                case "normal":
+                    self.textFields[i]?.text = value
+                case "dropdown":
+                    self.dropDownTextFields[i]?.text = value
+                default:
+                    let _ = 1
+                }
+            }
+        } else {
+            os_log("Could not parse self.qrString", log: .default, type: .debug)
+        }
     }
     
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of text fields
@@ -913,7 +936,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }*/
         
         if !self.qrString.isEmpty {
-            
+            parseQRString()
         }
         // This is a completely new observation
         else if self.isAddingNewObservation {
@@ -1277,7 +1300,7 @@ class BusObservationViewController: BaseObservationViewController {
     }
     
     
-    override func parseQRString() {
+    /*override func parseQRString() {
         var qrValues = [String]()
         for value in self.qrString.components(separatedBy: ",") {
             qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
@@ -1290,7 +1313,7 @@ class BusObservationViewController: BaseObservationViewController {
         }
         self.dropDownTextFields[3]!.text = qrValues[0] // busType
         self.dropDownTextFields[5]!.text = self.destinationLookup[qrValues[0]] ?? "" // Try to fill destination
-    }
+    }*/
     
     
     override func autoFillTextFields() {
@@ -1571,14 +1594,14 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     }
     
     
-    override func parseQRString() {
+    /*override func parseQRString() {
         var qrValues = [String]()
         for value in self.qrString.components(separatedBy: ",") {
             qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
         }
         
         self.dropDownTextFields[3]!.text = qrValues[0] // lodge
-    }
+    }*/
     
     
     override func autoFillTextFields() {
@@ -1601,6 +1624,9 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[5]?.text = "Kantishna"
             self.textFields[6]?.text = "No"
             self.saveButton.isEnabled = false
+            
+            parseQRString()
+            
             // The observation already exists and is open for viewing/editing
         } else {
             // Query the db to get the observation
@@ -2133,14 +2159,14 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     }
     
     
-    override func parseQRString() {
+    /*override func parseQRString() {
         var qrValues = [String]()
         for value in self.qrString.components(separatedBy: ",") {
             qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
         }
         
         self.dropDownTextFields[3]!.text = qrValues[0] // approvedType
-    }
+    }*/
     
     
     override func autoFillTextFields() {
@@ -2164,6 +2190,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = currentTime
             self.textFields[7]?.text = "0"
             self.saveButton.isEnabled = false
+            
+            parseQRString()
             
         // The observation already exists and is open for viewing/editing
         } else {
@@ -2401,6 +2429,8 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.textFields[7]?.text = "0"
             self.saveButton.isEnabled = false
             
+            parseQRString()
+            
             // The observation already exists and is open for viewing/editing
         } else {
             // Query the db to get the observation
@@ -2571,7 +2601,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
-                             (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Permit number",   placeholder: "Enter the permit number",           type: "normal"),
+                             (label: "Permit holder's name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2589,7 +2620,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
-                             (label: "Permit number/holder's last name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
+                             (label: "Permit number",   placeholder: "Enter the permit number",           type: "normal"),
+                             (label: "Permit holder's name",   placeholder: "Enter the permit holder's last name",   type: "normal"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -2631,6 +2663,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = formatter.string(from: now)
             
             self.saveButton.isEnabled = false
+            
+            parseQRString()
             
             // The observation already exists and is open for viewing/editing
         } else {
@@ -2854,6 +2888,8 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
             self.saveButton.isEnabled = false
+            
+            parseQRString()
             
             // The observation already exists and is open for viewing/editing
         } else {
@@ -3430,6 +3466,8 @@ class PhotographerObservationViewController: BaseObservationViewController {
             
             self.saveButton.isEnabled = false
             
+            parseQRString()
+            
             // The observation already exists and is open for viewing/editing
         } else {
             // Query the db to get the observation
@@ -3662,6 +3700,8 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[5]?.text = "N/A"
             
             self.saveButton.isEnabled = false
+            
+            parseQRString()
             
         // The observation already exists and is open for viewing/editing
         } else {

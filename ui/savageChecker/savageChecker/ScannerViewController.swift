@@ -158,23 +158,27 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
     
     func found(code: String) {
         // parse code from format label: comma-separated string
-        let label = code.components(separatedBy: ":").first!
-        let values = code.components(separatedBy: ":").last!
-        
-        if let viewController = observationViewControllers[label] {
-            viewController.qrString = values
-            viewController.isAddingNewObservation = true
-            viewController.session = loadSession()
-            viewController.title = "New \(label) Observation"
-            present(viewController, animated: true)
-        } else {
-            let alertTitle = "QR Code read error"
-            let typesString = Array(observationViewControllers.keys).joined(separator: "\n")
-            let alertMessage = "The vehicle type '\(label)' from the QR Code string '\(code)' did not match one of these types: \n\n\(typesString)\n"
-            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "Cancel scan", style: .cancel, handler: {handler in self.dismiss(animated: true, completion: nil)}))
-            alertController.addAction(UIAlertAction(title: "Try again", style: .default, handler: {handler in self.captureSession.startRunning()}))
-            present(alertController, animated: true, completion: nil)
+        if let data = code.data(using: .utf8) {
+            // Try to read it as a JSON struct (from JSONParser)
+            let jsonObject: JSON!
+            jsonObject = try! JSON(data: data)
+            if jsonObject != nil {
+                let vehicleType = jsonObject["vehicle_type"].string ?? ""
+                if let viewController = observationViewControllers[vehicleType] {
+                    viewController.qrString = code
+                    viewController.isAddingNewObservation = true
+                    viewController.session = loadSession()
+                    viewController.title = "New \(vehicleType) Observation"
+                } else {
+                    let alertTitle = "QR Code read error"
+                    let typesString = Array(observationViewControllers.keys).joined(separator: "\n")
+                    let alertMessage = "The vehicle type '\(vehicleType)' from the QR Code string '\(code)' did not match one of these types: \n\n\(typesString)\n"
+                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "Cancel scan", style: .cancel, handler: {handler in self.dismiss(animated: true, completion: nil)}))
+                    alertController.addAction(UIAlertAction(title: "Try again", style: .default, handler: {handler in self.captureSession.startRunning()}))
+                    present(alertController, animated: true, completion: nil)
+                }
+            }
         }
     }
     
