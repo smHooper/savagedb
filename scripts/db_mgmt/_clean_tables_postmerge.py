@@ -115,6 +115,26 @@ ROW_NAMES = {'Lisa&Steve Neff': 'Linda/Steve Neff',
              'Virginia Wood': 'Ginny Wood',
              'Ginny Woods': 'Ginny Wood',
              'Ray Kreig': 'Ray Krieg'}
+ROW_CODES = {'Camp Denali/North Face Lodge': 'CDN',
+             'Celia Hunter': 'CHU',
+             'Denali Backcountry Lodge': 'DBL',
+             'Don Phillips': 'DPH',
+             'Gene Desjarlais': 'GDE',
+             'Ginny Wood':  'GWO',
+             'Greg LaHaie': 'GLA',
+             'Jeff Barney': 'JBA',
+             'Kantishna Air Taxi': 'KAT',
+             'Kantishna Roadhouse': 'KRH',
+             'Linda Crabb': 'LCR',
+             'Linda/Steve Neff': 'LSN',
+             'Michael Conlin': 'MCO',
+             'Mike MarkAnthony': 'MMA',
+             'Paul Shearer': 'PSH',
+             'Rainy Creek LLC': 'RCL',
+             'Ray Krieg': 'RKR',
+             'Romany Wood': 'RWO',
+             'Rusty Lachelt': 'RLA'
+             }
 
 COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'driver_name', 'comments','entered_by', 'entry_method'],
                 'buses':            ['observer_name', 'datetime', 'bus_type', 'bus_number', 'is_training', 'destination', 'n_passengers', 'n_wheelchair', 'n_lodge_ovrnt', 'driver_name', 'comments','entered_by', 'entry_method'],
@@ -129,7 +149,7 @@ COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'destination',
                 'nps_vehicles':     ['observer_name', 'datetime', 'work_group', 'trip_purpose', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'photographers':    ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'road_lottery':     ['id','observer_name', 'datetime', 'permit_number', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
-                'shift_info':       ['open_time', 'close_time', 'buschecked', 'nonbuschecked'],
+                'shift_info':       ['obs_date', 'open_time', 'close_time', 'buschecked', 'nonbuschecked'],
                 'subsistence':      ['observer_name', 'datetime', 'n_nights', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method', 'driver_name'],
                 'tek_campers':      ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'turned_around':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
@@ -261,7 +281,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     os.remove(buses_txt)
 
     print '"right_of_way" to "inholders"...',
-    os.rename(os.path.join(search_dir, 'right_of_way.csv'), os.path.join(search_dir, 'inholders.csv'))
+    row_txt = os.path.join(search_dir, 'right_of_way.csv')
+    inholders = pd.read_csv(row_txt)
+    inholders['permit_holder'] = 'NUL'
+    inholders.to_csv(os.path.join(search_dir, 'inholders.csv'), index=False)
 
     print '"datadates" to "shift_info"...',
     os.rename(os.path.join(search_dir, 'datadates.csv'), os.path.join(search_dir, 'shift_info.csv'))
@@ -306,8 +329,11 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     inholder_allotments = pd.read_csv(row_txt)
     inholder_allotments.replace({'permitholder': ROW_NAMES}, inplace=True)
     inholder_allotments = inholder_allotments.pivot(index='permitholder', columns='year', values='totalallowed')
-    inholder_allotments.rename_axis('permit_holder', axis=0, inplace=True)
+    inholder_allotments.rename_axis('inholder_name', axis=0, inplace=True)
     inholder_allotments.rename(columns={c: '_%s' % c for c in inholder_allotments.columns}, inplace=True)
+    inholder_allotments['inholder_code'] = pd.Series(ROW_CODES)  # Add codes column
+    inholder_allotments.reindex(columns=(['inholder_code'] + [c for c in inholder_allotments.columns if c.startswith('_')]))
+    inholder_allotments.loc['Null', 'inholder_code'] = 'NUL'
     inholder_allotments = inholder_allotments.fillna(0)
     inholder_allotments.to_csv(os.path.join(search_dir, 'inholder_allotments.csv'))
     os.remove(row_txt)

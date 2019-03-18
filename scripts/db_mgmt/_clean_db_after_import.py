@@ -23,7 +23,7 @@ VARCHAR_FIELDS = {'accessibility':      ['destination', 'driver_name', 'entered_
                   'buses':              ['destination', 'driver_name', 'entered_by', 'entry_method', 'bus_type'],
                   'cyclists':           ['destination', 'entered_by', 'entry_method'],
                   'employee_vehicles':  ['destination', 'driver_name', 'entered_by', 'entry_method'],
-                  'inholders':          ['destination', 'driver_name', 'entered_by', 'entry_method', 'permit_holder'],
+                  'inholders':          ['destination', 'driver_name', 'entered_by', 'entry_method', 'permit_number'],
                   'nps_approved':       ['destination', 'driver_name', 'entered_by', 'entry_method', 'approved_type'],
                   'nps_contractors':    ['destination', 'organization', 'entered_by', 'entry_method', 'trip_purpose'],
                   'nps_vehicles':       ['destination', 'driver_name', 'entered_by', 'entry_method', 'trip_purpose', 'work_group'],
@@ -42,7 +42,7 @@ CHAR3_FIELDS = {'accessibility':      ['destination'],
                 'buses':              ['destination', 'bus_type'],
                 'cyclists':           ['destination'],
                 'employee_vehicles':  ['destination'],
-                'inholders':          ['destination', 'permit_holder'],
+                'inholders':          ['destination', 'inholder_code'],
                 'nps_approved':       ['destination', 'approved_type'],
                 'nps_contractors':    ['destination'],
                 'nps_vehicles':       ['destination', 'work_group'],
@@ -62,6 +62,8 @@ DEFAULT_VALUES = {'entry_method': "'manual'"}
 
 UNIQUE_CONSTAINTS = {'bus_codes': ['code'],
                      'destination_codes': ['code'],
+                     'inholder_allotments': ['inholder_code'],
+                     'inholder_allotments': ['inholder_name'],
                      'nps_approved_codes': ['code'],
                      'nps_work_groups': ['code']
                      }
@@ -71,6 +73,7 @@ FOREIGN_KEYS = pd.DataFrame([{'l_table': 'accessibility',    'l_column': 'destin
                              {'l_table': 'buses',            'l_column': 'bus_type',    'f_table': 'bus_codes',         'f_column': 'code'},
                              {'l_table': 'employee_vehicles','l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'inholders',        'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
+                             {'l_table': 'inholders',        'l_column': 'permit_holder', 'f_table': 'inholder_allotments', 'f_column': 'inholder_code'},
                              {'l_table': 'nps_approved',     'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'nps_approved',     'l_column': 'approved_type','f_table':'nps_approved_codes','f_column': 'code'},
                              {'l_table': 'nps_contractors',  'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
@@ -79,9 +82,7 @@ FOREIGN_KEYS = pd.DataFrame([{'l_table': 'accessibility',    'l_column': 'destin
                              {'l_table': 'other_vehicles',   'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'photographers',    'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'subsistence',      'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
-                             {'l_table': 'tek_campers',      'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
-                             {'l_table': 'other_vehicles',   'l_column': 'destination', 'f_table': 'destination_codes',
-                              'f_column': 'code'},
+                             {'l_table': 'tek_campers',      'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'}
                             ])
 
 
@@ -142,10 +143,70 @@ def main(info_txt):
            " id serial PRIMARY KEY " \
            ")"
 
+    #CREATE TABLE IF NOT EXISTS road_permits (permit_number varchar(20), permit_type varchar(255), date_in date, date_out date, driver_name varchar(255), address text, vehicle_make varchar(255), vehicle_model varchar(255), vehicle_year int, vehicle_color varchar(255), license_plate_number varchar(20), license_plate_state varchar(20) destination varchar(255), inholder_code char(3), approved_type varchar(255), parking_locations text, time_entered timestamp, entered_by varchar(255), entered_by_phone varchar(20), entered_by_schedule varchar(255), entered_by_email varchar(255), last_edited_by varchar(255), time_last_edited timestamp, notes text, date_range_notes text, file_path text, select_permit boolean, id serial PRIMARY KEY);
+
+    # Add operators so Access handles Booleans properly
+    sql += 'CREATE OR REPLACE FUNCTION inttobool(integer, boolean) RETURNS boolean' \
+           'AS $$' \
+           'SELECT CASE WHEN $1=0 and NOT $2 OR ($1<>0 and $2) THEN true ELSE false END' \
+           '$$' \
+           'LANGUAGE sql;'
+
+    sql += 'CREATE OR REPLACE FUNCTION inttobool(boolean, integer) RETURNS boolean' \
+           'AS $$' \
+           'SELECT inttobool($2, $1);' \
+           '$$' \
+           'LANGUAGE sql;'
+
+    sql += 'CREATE OR REPLACE FUNCTION notinttobool(boolean, integer) RETURNS boolean' \
+           'AS ' \
+           '$$' \
+           'SELECT NOT inttobool($2,$1);' \
+           '$$' \
+           'LANGUAGE sql;'
+
+    sql += 'CREATE OR REPLACE FUNCTION notinttobool(integer, boolean) RETURNS boolean' \
+           'AS $$' \
+           'SELECT NOT inttobool($1,$2);' \
+           '$$' \
+           'LANGUAGE sql;' \
+           'CREATE OPERATOR = (' \
+           'PROCEDURE = inttobool,' \
+           'LEFTARG = boolean,' \
+           'RIGHTARG = integer,' \
+           'COMMUTATOR = =,' \
+           'NEGATOR = <>' \
+           ');'
+
+    sql += 'CREATE OPERATOR <> (' \
+           'PROCEDURE = notinttobool,' \
+           'LEFTARG = integer,' \
+           'RIGHTARG = boolean,' \
+           'COMMUTATOR = <>,' \
+           'NEGATOR = =' \
+           ');'
+
+    sql += 'CREATE OPERATOR = (' \
+           'PROCEDURE = inttobool,' \
+           'LEFTARG = integer,' \
+           'RIGHTARG = boolean,' \
+           'COMMUTATOR = =,' \
+           'NEGATOR = <>' \
+           ');'
+
+    sql += 'CREATE OPERATOR <> (' \
+           'PROCEDURE = notinttobool,' \
+           'LEFTARG = boolean,' \
+           'RIGHTARG = integer,' \
+           'COMMUTATOR = <>,' \
+           'NEGATOR = =' \
+           ');'
+
+
     # Make changes to the DB
     with engine.connect() as conn, conn.begin():
         print 'Submitting the following commands: \n%s\n' % sql.replace('; ', ';\n')
-        #conn.execute(sql)
+        conn.execute(sql)
 
         # Set all numeric fields in inholder_allotments to int
         print 'Setting data types for integer fields in inholder_allotments table\n'
@@ -154,11 +215,19 @@ def main(info_txt):
         for row in result:
             field = row['column_name']
             if field != 'permit_holder':
-                '''conn.execute('ALTER TABLE inholder_allotments'
+                conn.execute('ALTER TABLE inholder_allotments'
                              ' ALTER COLUMN {field} SET DATA TYPE integer'
                              ' USING {field}::integer;'
                              'ALTER TABLE inholder_allotments'
-                             ' ALTER COLUMN {field} SET DEFAULT 0'.format(field=field))'''
+                             ' ALTER COLUMN {field} SET DEFAULT 0'.format(field=field))#'''
+
+        # Make manual edits
+        try:
+            conn.execute("UPDATE buses SET bus_type = 'DBL' WHERE bus_type = 'DNH' AND destination = 'KAN';"
+                         "UPDATE buses SET destination = 'PRM' WHERE bus_type = 'DNH' AND AND destination = 'WLK';"
+                         "UPDATE buses SET bus_type = 'CDN' WHERE (bus_number SIMILAR TO 'n\d{3}') and bus_type = 'NUL';")
+        except:
+            pass
 
     # Create unique constraints
     sql_template = "ALTER TABLE {table_name} ADD CONSTRAINT {table_name}_{column_name}_unique UNIQUE ({column_name})"
@@ -170,6 +239,10 @@ def main(info_txt):
                 conn.execute(sql)
             except sqlalchemy.exc.SQLAlchemyError as e:
                 warnings.warn('unable to set constraint with statement %s because %s' % (sql, e.message))
+
+
+
+
 
     # Add foreign key constraints. Need to open and close with each iteration because if one fails, the rest do to until
     #   connection is closed.
