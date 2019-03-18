@@ -128,6 +128,7 @@ SORT_ORDER = {'summary':   ['Long tour',
                             'NPS employees',
                             'Inholders',
                             'Tek campers',
+                            'NPS contractors',
                             'Other'],
               'total':      [],
               'nps':        [],
@@ -168,6 +169,7 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                         'NPS employees': '#639562',
                         'Inholders':     '#89648F',
                         'Tek campers':   '#BF7F3E',
+                        'NPS contractors': '#ADADAD',
                         'Other':         '#CDCB62'},
           'nps':        {'Administration': '#723C7D',
                          'Concessions': '#779F84',
@@ -372,7 +374,6 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     else:
         povs = pd.DataFrame(columns=buses.columns)
 
-
     data = pd.concat([buses, govs, povs], sort=False)
 
     if sort_order:
@@ -508,7 +509,8 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
         ('nps_approved',        'Other',            OTHER_CRITERIA['other_approved']),
         ('accessibility',       'Other',            ''),
         ('subsistence',         'Other',            ''),
-        ('tek_campers',         'Tek campers',      '')
+        ('tek_campers',         'Tek campers',      ''),
+        ('nps_contractors',     'NPS contractors',  '')
     ]
 
     all_data = []
