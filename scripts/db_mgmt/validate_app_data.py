@@ -65,6 +65,8 @@ def main(sqlite_path, connection_txt):
                                       pg_conn)\
                                       .squeeze()\
                                       .tolist()
+        pg_shift_info = pd.read_sql_table('shift_info', pg_conn, index_col='id')
+
     # Get data from app
     with sqlite_engine.connect() as sl_conn, sl_conn.begin():
         sqlite_tables = pd.read_sql("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT "
@@ -73,10 +75,10 @@ def main(sqlite_path, connection_txt):
                                     .squeeze()
         data = {table_name: pd.read_sql("SELECT * FROM %s" % table_name, sl_conn, index_col='id')
                 for table_name in sqlite_tables}
-        shift_info = pd.read_sql("SELECT * FROM sessions", sl_conn).squeeze()
+        sl_shift_info = pd.read_sql("SELECT * FROM sessions", sl_conn).squeeze()
 
-    if 'imported' in shift_info.index:
-        if shift_info.imported:
+    if 'imported' in sl_shift_info.index:
+        if sl_shift_info.imported:
             raise RuntimeError("These data have already been uploaded")
 
     # Make temp dir and set up vars for looping through tables
