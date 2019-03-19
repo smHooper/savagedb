@@ -7,7 +7,7 @@ from titlecase import titlecase
 
 pd.options.mode.chained_assignment = None
 
-TABLES_WITH_DATES = ['nonbus', 'bustraffic', 'datadates']
+TABLES_WITH_DATES = ['nonbus', 'bustraffic']#, 'datadates']
 
 NONBUS_CODES = {'W': 'right_of_way',
          'B': 'nps_approved',
@@ -149,7 +149,7 @@ COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'destination',
                 'nps_vehicles':     ['observer_name', 'datetime', 'work_group', 'trip_purpose', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'photographers':    ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'road_lottery':     ['id','observer_name', 'datetime', 'permit_number', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
-                'shift_info':       ['obs_date', 'open_time', 'close_time', 'buschecked', 'nonbuschecked'],
+                'shift_info':       ['open_time', 'close_time', 'buschecked', 'nonbuschecked'],
                 'subsistence':      ['observer_name', 'datetime', 'n_nights', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method', 'driver_name'],
                 'tek_campers':      ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'turned_around':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
@@ -192,9 +192,21 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
             # If there's no date, the record is useless anyway so drop it
             df = df.loc[~df[date_column].isnull()]
 
-        df.drop(drop_columns, axis=1, inplace=True)
+        #df.drop(drop_columns, axis=1, inplace=True)
 
-        df.to_csv(csv, index=False)
+        df.to_csv(csv, index=False)#'''
+
+    datadates_txt = os.path.join(search_dir, 'datadates.csv')
+    df = pd.read_csv(datadates_txt)
+    df['open_time'] = df['obs_date'].str.split().apply(lambda x: x[0]) + \
+                      pd.Series([' '] * len(df)) + \
+                      df['open_time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
+    df['close_time'] = df['obs_date'].str.split().apply(lambda x: x[0]) + \
+                      pd.Series([' '] * len(df)) + \
+                      df['close_time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
+    df.drop('obs_date', axis=1, inplace=True)
+    df.to_csv(datadates_txt, index=False)
+
 
     print '\nSplitting nonbus table...\n'
     nonbus_txt = os.path.join(search_dir, 'nonbus.csv')
