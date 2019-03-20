@@ -12,7 +12,9 @@ Option Compare Database
 
 
 Private Sub dpd_time_step_AfterUpdate()
-        
+    
+    On Error GoTo err_handler
+    
     Select Case Me.dpd_time_step
         Case Is = "Year"
             Me.dpd_secondary_time.RowSource = "None"
@@ -30,7 +32,14 @@ Private Sub dpd_time_step_AfterUpdate()
     
     Me.dpd_secondary_time = "None"
     Me.dpd_secondary_time.SetFocus
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 Private Function verify_checkboxes(searchStr As String) As Boolean
     Dim ctl As Control
@@ -94,98 +103,135 @@ End Function
 
 
 Private Sub btn_all_plots_Click()
-
-Dim all_checked As Boolean
-Dim SEARCH_STR As String
-
-SEARCH_STR = "chk_plot*"
-
-' Check if all of the checkboxes with a name matching a given string are checked
-all_checked = verify_checkboxes(SEARCH_STR)
-
-If all_checked Then
-    If btn_all_plots.Caption = "Deselect all" Then
-        btn_all_plots.Caption = "Select all"
+    
+    On Error GoTo err_handler
+    
+    Dim all_checked As Boolean
+    Dim SEARCH_STR As String
+    
+    SEARCH_STR = "chk_plot*"
+    
+    ' Check if all of the checkboxes with a name matching a given string are checked
+    all_checked = verify_checkboxes(SEARCH_STR)
+    
+    If all_checked Then
+        If btn_all_plots.Caption = "Deselect all" Then
+            btn_all_plots.Caption = "Select all"
+        End If
+        deselect_all_checkboxes (SEARCH_STR)
+    Else
+        If btn_all_plots.Caption = "Select all" Then
+            btn_all_plots.Caption = "Deselect all"
+        End If
+        select_all_checkboxes (SEARCH_STR)
     End If
-    deselect_all_checkboxes (SEARCH_STR)
-Else
-    If btn_all_plots.Caption = "Select all" Then
-        btn_all_plots.Caption = "Deselect all"
-    End If
-    select_all_checkboxes (SEARCH_STR)
-End If
+
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 
 End Sub
 
 Private Sub btn_all_queries_Click()
 ' Either select or deselect all query check boxes when clicked
-
-Dim all_checked As Boolean
-Dim SEARCH_STR As String
-
-SEARCH_STR = "chk_query*"
-
-' Check if all of the checkboxes with a name matching a given string are checked
-all_checked = verify_checkboxes(SEARCH_STR)
-
-If all_checked Then
-    If btn_all_queries.Caption = "Deselect all" Then
-        btn_all_queries.Caption = "Select all"
+    On Error GoTo err_handler
+    
+    Dim all_checked As Boolean
+    Dim SEARCH_STR As String
+    
+    SEARCH_STR = "chk_query*"
+    
+    ' Check if all of the checkboxes with a name matching a given string are checked
+    all_checked = verify_checkboxes(SEARCH_STR)
+    
+    If all_checked Then
+        If btn_all_queries.Caption = "Deselect all" Then
+            btn_all_queries.Caption = "Select all"
+        End If
+        deselect_all_checkboxes (SEARCH_STR)
+    Else
+        If btn_all_queries.Caption = "Select all" Then
+            btn_all_queries.Caption = "Deselect all"
+        End If
+        select_all_checkboxes (SEARCH_STR)
     End If
-    deselect_all_checkboxes (SEARCH_STR)
-Else
-    If btn_all_queries.Caption = "Select all" Then
-        btn_all_queries.Caption = "Deselect all"
-    End If
-    select_all_checkboxes (SEARCH_STR)
-End If
+
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 
 End Sub
 
 Private Sub btn_all_optquery_Click()
-
-Dim all_checked As Boolean
-Dim SEARCH_STR As String
-
-SEARCH_STR = "chk_optquery*"
-
-' Check if all of the checkboxes with a name matching a given string are checked
-all_checked = verify_checkboxes(SEARCH_STR)
-
-If all_checked Then
-    If btn_all_optquery.Caption = "Deselect" Then
-        btn_all_optquery.Caption = "Select all"
+    
+    On Error GoTo err_handler
+    
+    Dim all_checked As Boolean
+    Dim SEARCH_STR As String
+    
+    SEARCH_STR = "chk_optquery*"
+    
+    ' Check if all of the checkboxes with a name matching a given string are checked
+    all_checked = verify_checkboxes(SEARCH_STR)
+    
+    If all_checked Then
+        If btn_all_optquery.Caption = "Deselect" Then
+            btn_all_optquery.Caption = "Select all"
+        End If
+        deselect_all_checkboxes (SEARCH_STR)
+    Else
+        If btn_all_optquery.Caption = "Select all" Then
+            btn_all_optquery.Caption = "Deselect"
+        End If
+        select_all_checkboxes (SEARCH_STR)
     End If
-    deselect_all_checkboxes (SEARCH_STR)
-Else
-    If btn_all_optquery.Caption = "Select all" Then
-        btn_all_optquery.Caption = "Deselect"
-    End If
-    select_all_checkboxes (SEARCH_STR)
-End If
+    
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
 End Sub
 
+
 Private Sub btn_all_optplot_Click()
-
-Dim all_checked As Boolean
-Dim SEARCH_STR As String
-
-SEARCH_STR = "chk_optplot*"
-
-' Check if all of the checkboxes with a name matching a given string are checked
-all_checked = verify_checkboxes(SEARCH_STR)
-
-If all_checked Then
-    If btn_all_optplot.Caption = "Deselect" Then
-        btn_all_optplot.Caption = "Select all"
+    On Error GoTo err_handler
+    
+    Dim all_checked As Boolean
+    Dim SEARCH_STR As String
+    
+    SEARCH_STR = "chk_optplot*"
+    
+    ' Check if all of the checkboxes with a name matching a given string are checked
+    all_checked = verify_checkboxes(SEARCH_STR)
+    
+    If all_checked Then
+        If btn_all_optplot.Caption = "Deselect" Then
+            btn_all_optplot.Caption = "Select all"
+        End If
+        deselect_all_checkboxes (SEARCH_STR)
+    Else
+        If btn_all_optplot.Caption = "Select all" Then
+            btn_all_optplot.Caption = "Deselect"
+        End If
+        select_all_checkboxes (SEARCH_STR)
     End If
-    deselect_all_checkboxes (SEARCH_STR)
-Else
-    If btn_all_optplot.Caption = "Select all" Then
-        btn_all_optplot.Caption = "Deselect"
-    End If
-    select_all_checkboxes (SEARCH_STR)
-End If
+    
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Sub btn_open_filepicker_Click()
@@ -196,14 +242,16 @@ Private Sub btn_open_filepicker_Click()
 '   -Check the box for Microsoft Office 16.0 Object Library
 '   -Click OK
 
-With Application.FileDialog(msoFileDialogFolderPicker)
-    .title = "Select an output folder"
-    
-    If .Show Then
-        Me.txt_output_path = .SelectedItems(1)
-    End If
-    
-End With
+'With Application.FileDialog(msoFileDialogFolderPicker)
+'    .title = "Select an output folder"
+'
+'    If .Show Then
+'        Me.txt_output_path = .SelectedItems(1)
+'    End If
+'
+'End With
+
+    Me.txt_output_path = savagedb.open_file_dialog()
 
 End Sub
 Public Function show_hide_filters()
@@ -212,11 +260,14 @@ Dim y_delta As Double: y_delta = 520 ' 1/3" in twips
 Dim checkbox_counts As Variant
 Dim count_true As Integer
     
+    On Error GoTo err_handler
+    
     If Me.chk_filter_values.Value Then
         checkbox_counts = count_checkboxes("chk_query*")
         count_true = checkbox_counts(1)
         If count_true > 1 Then
             MsgBox "Only one query can be run at a time if you are filtering values", vbCritical, "Multiple queries selected"
+            Me.chk_filter_values.Value = False
             Exit Function
         End If
         
@@ -245,7 +296,14 @@ Dim count_true As Integer
     End If
     
     DoCmd.RepaintObject acForm, "frm_query_plot"
+
+exit_sub:
+    Exit Function
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Function
 
 Private Sub chk_filter_values_Click()
@@ -262,20 +320,25 @@ Dim count_true As Integer
     
     check_selected_queries = True
     If count_true = 0 Then
-        MsgBox "You must select 1 (and only 1) query to retreive category values for", vbCritical, "No query selected"
+        MsgBox "You must select 1 (and only 1) query to retreive category values for", vbExclamation, "No query selected"
         check_selected_queries = False
     ElseIf count_true > 1 Then
-        MsgBox "Only one query can be run at a time if you are filtering values. Please check only one box under 'Query types'", vbCritical, "Multiple queries selected"
+        MsgBox "Only one query can be run at a time if you are filtering values. Please check only one box under 'Query types'", _
+                vbExclamation, _
+                "Multiple queries selected"
         check_selected_queries = False
     End If
 
 End Function
 Private Sub btn_show_categories_Click()
 ' Show or hide categories listbox
-Dim checkbox As Control
-Dim query_name As String
-Dim categories_str As String
-Dim cmd As String
+    
+    On Error GoTo err_handler
+    
+    Dim checkbox As Control
+    Dim query_name As String
+    Dim categories_str As String
+    Dim cmd As String
     
     ' Check to see if exactly 1 query was checked. If not, notify the user
     If Not check_selected_queries Then
@@ -302,7 +365,7 @@ Dim cmd As String
                                 " " & CONNECTION_TXT
                         Me.btn_show_categories.Enabled = False 'disable the button so the user can't click it again
                         Me.txt_category_filter.Enabled = False
-                        categories_str = generic.run_sdout_command(cmd)
+                        categories_str = savagedb.run_sdout_command(cmd)
                         Me.txt_category_filter.Enabled = True
                         Me.btn_show_categories.Enabled = True
                         Me.lbx_categories.Visible = True
@@ -324,14 +387,23 @@ Dim cmd As String
         DoCmd.RepaintObject acForm, "frm_query_plot"
     End If
 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 
 Private Sub btn_add_categories_Click()
 ' Set the category filter textbox text to a comma-separated list of all
 ' selected items in the categories list box
-Dim selection_str As String: selection_str = ""
-Dim item_index As Variant
+    On Error GoTo err_handler
+    
+    Dim selection_str As String: selection_str = ""
+    Dim item_index As Variant
     
     ' If no selection was made, warn the user and exit
     If Me.lbx_categories.ListCount = 0 Then
@@ -368,15 +440,24 @@ Dim item_index As Variant
     Me.btn_add_categories.Visible = False
     
     DoCmd.RepaintObject acForm, "frm_query_plot"
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Sub btn_show_destinations_Click()
 ' Show or hide categories listbox
-Dim checkbox As Control
-Dim query_name As String
-Dim categories_str As String
-Dim cmd As String
+    On Error GoTo err_handler
+    
+    Dim checkbox As Control
+    Dim query_name As String
+    Dim categories_str As String
+    Dim cmd As String
     
     'If the other dropdown listbox is visible, hide it
     If Me.lbx_categories.Visible Then
@@ -401,13 +482,22 @@ Dim cmd As String
         DoCmd.RepaintObject acForm, "frm_query_plot"
     End If
 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Sub btn_add_destinations_Click()
 ' Set the category filter textbox text to a comma-separated list of all
 ' selected items in the categories list box
-Dim selection_str As String: selection_str = ""
-Dim item_index As Variant
+    On Error GoTo err_handler
+    
+    Dim selection_str As String: selection_str = ""
+    Dim item_index As Variant
     
     ' If no selection was made, warn the user and exit
     If Me.lbx_destinations.ListCount = 0 Then
@@ -444,7 +534,14 @@ Dim item_index As Variant
     Me.btn_add_destinations.Visible = False
     
     DoCmd.RepaintObject acForm, "frm_query_plot"
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Function check_sql_criteria_and_queries() As Boolean
@@ -512,40 +609,32 @@ Private Sub btn_run_Click()
         MsgBox "Please enter or select a start date", vbCritical, "Start date empty"
         Me.txt_start_date.SetFocus
         Exit Sub
-    End If
-    If IsNull(Me.txt_end_date) Then
+    ElseIf IsNull(Me.txt_end_date) Then
         MsgBox "Please enter or select an end date", vbCritical, "End date empty"
         Me.txt_end_date.SetFocus
         Exit Sub
-    End If
-    If IsNull(Me.dpd_time_step) Then
+    ElseIf IsNull(Me.dpd_time_step) Then
         MsgBox "Please select a time step to summarize by", vbCritical, "No time step selected"
         Me.dpd_time_step.SetFocus
         Exit Sub
-    End If
-    If IsNull(Me.txt_summary_field) Then
+    ElseIf IsNull(Me.txt_summary_field) Then
         MsgBox "Please enter a field to summarize", vbCritical, "Summary field empty"
         Me.txt_summary_field.SetFocus
         Exit Sub
-    End If
-    If IsNull(Me.txt_output_path) Then
+    ElseIf IsNull(Me.txt_output_path) Then
         MsgBox "Please select an output folder", vbCritical, "Output folder empty"
         btn_open_filepicker_Click 'Open the file picker automatically when msg box closed
         Exit Sub
-    End If
-    If CDate(Me.txt_end_date) < CDate(Me.txt_start_date) Then
+    ElseIf CDate(Me.txt_end_date) < CDate(Me.txt_start_date) Then
         MsgBox "End date must be equal to or after start date", vbCritical, "Invalid date range"
         Me.txt_end_date.SetFocus
         Exit Sub
-    End If
-    If Me.chk_filter_values And Not IsNull(Me.txt_sql_filter & Me.txt_category_filter) Then
+    ElseIf Me.chk_filter_values And Not IsNull(Me.txt_sql_filter & Me.txt_category_filter) Then
         ' Verify that there is only 1 query selected if filtering values
         If Not check_selected_queries Then
             Exit Sub
         End If
-    End If
-    If count_checkboxes("chk_query*")(1) = 0 Then '(1) is the number of query boxes checked
-        MsgBox "You must select at least one query to run", vbExclamation, "No query selected"
+    ElseIf Not check_selected_queries Then
         Exit Sub
     End If
     
@@ -709,7 +798,7 @@ Private Sub btn_run_Click()
     Set wShell = VBA.CreateObject("WScript.Shell")
     
     'wShell.Run "cmd.exe /S /K " & cmd
-    generic.run_io_command cmd, logfile, Me.txt_output_path
+    savagedb.run_io_command cmd, logfile, Me.txt_output_path
     
 Exit_btn_run_Click:
     Exit Sub

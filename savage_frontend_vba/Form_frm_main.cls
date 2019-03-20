@@ -14,8 +14,8 @@ Function IsTable(sTblName As String) As Boolean
     '      since the backend might be invalid or missing
 
     On Error GoTo handler
-    Dim x
-    x = DCount("*", sTblName)
+    Dim X
+    X = DCount("*", sTblName)
     IsTable = True
     Exit Function
 handler:
@@ -158,7 +158,10 @@ Private Sub btn_import_objects_Click()
     
     ' Let the user select a DB to import from
     Dim selected_file As String
-    selected_file = open_db_file_picker()
+    selected_file = savagedb.open_file_dialog("Select an Access database file to import from", _
+                                              msoFileDialogFilePicker, _
+                                              "*.accdb; *.mdb", _
+                                              "Access Database files")
     If Len(selected_file) = 0 Then
         Exit Sub
     End If
@@ -297,20 +300,28 @@ End Sub
 Private Sub btn_login_admin_Click()
     
     Dim current_user_state As String
-    current_user_state = generic.get_user_state()
+    current_user_state = savagedb.get_user_state()
     
-    If current_user_state = "admin" Then
-        response = MsgBox("To switch users, the database will need to close and you'll have to re-open it (I know, " & _
-              "Access is pretty annoying, right?). Would you like to close and re-open the database now?", _
-              vbYesNoCancel, _
-              "Close and re-open database?")
-        If response = vbYes Then
-            ' Just set privileges (to read-only) and exit
-            generic.set_read_write
-            Application.Quit
+    Dim response As Integer
+    If current_user_state <> "read" Then ' The user is signed in either as admin or permit user
+        ' Run the restart script only if the user selected "Yes". Othwerwise, exit
+        response = restart_db("savage_read", "0l@usmur!e")
+        If response <> vbYes Then
+            DoCmd.Close acForm, Me.name
+            Exit Sub
         End If
+        
+'        response = MsgBox("To log in as a different user, the database will need to close and you'll have to re-open it (I know, " & _
+'              "Access is pretty annoying, right?). Would you like to close and re-open the database now?", _
+'              vbYesNoCancel, _
+'              "Close and re-open database?")
+'        If response = vbYes Then
+'            ' Just set privileges (to read-only) and exit
+'            savagedb.set_read_write "savage_read", "0l@usmur!e"
+'            Application.Quit
+'        End If
     Else
-        DoCmd.OpenForm "frm_login"
+        DoCmd.OpenForm "frm_login" ' Defaults to expect admin credentials
     End If
 
 End Sub
@@ -322,7 +333,6 @@ Function min_value(v1 As Double, v2 As Double) As Double
         min_value = v2
     End If
 End Function
-
 
 
 Private Sub btn_query_plot_Click()
@@ -373,7 +383,7 @@ Private Sub dpd_query_AfterUpdate()
             plot_form.Form.chk_filter_values = True
             plot_form.Form.txt_custom_title = "GMP vehicles past Savage by year, 1997-" & year(Now)
             Form_frm_query_plot.show_hide_filters
-            plot_form.Form.txt_category_filter = "Long tour, VTS, Other JV Bus, Lodge bus, GOV, POV"
+            plot_form.Form.txt_category_filter = "Long tour, VTS, Other JV bus, Lodge bus, GOV, POV"
         Case Is = "Lodge passengers/month"
             plot_form.Form.txt_start_date = "5/1/" & year(Now)
             plot_form.Form.txt_end_date = CDate(min_value(Int(Date), Int(CDate("9/15/" & year(Now)))))
@@ -424,6 +434,8 @@ Private Sub dpd_query_AfterUpdate()
                               "Invalid query name")
             If response = vbNo Then
                 DoCmd.Close acForm, "frm_query_plot"
+            End If
+    
     End Select
     
     Me.dpd_query = "Select a query option"
@@ -443,13 +455,45 @@ err_handler:
 
 End Sub
 
+
+Private Sub btn_permits_Click()
+    
+    DoCmd.OpenForm "frm_login", acNormal
+    Forms!frm_login!lbl_login_type.Caption = "permit"
+    
+End Sub
+
+Private Function test_connection() As Boolean
+    
+    Dim db As DAO.Database
+    Dim tdf As TableDef
+    Dim current_cnn_str As String
+    Set db = CurrentDb
+    Set tdf = db.TableDefs("inholder_allotments")
+    current_cnn_str = Right(tdf.Connect, Len(tdf.Connect) - 5)
+    
+    Dim cnn As ADODB.connection
+    Set cnn = New ADODB.connection
+    
+    cnn.Open current_cnn_str
+    If cnn.State = adStateOpen Then test_connection = True Else test_connection = False
+    
+    cnn.Close
+    
+
+End Function
+
+
 Private Sub Form_Open(Cancel As Integer)
 ' Check the user state. If the user is logged in as "admin", warn them.
 ' Also set the log in/out button accordingly
-    On Error GoTo err_handler
+    'On Error GoTo err_handler
+    
+    ' Check connection
+    If Not test_connection() Then GoTo bad_connection
     
     Dim user_state As String
-    user_state = generic.get_user_state()
+    user_state = savagedb.get_user_state()
     
     If user_state = "admin" Then
         MsgBox "You are currently logged in as an administrator. Database records are now editable, and " & _
@@ -458,10 +502,28 @@ Private Sub Form_Open(Cancel As Integer)
                "Logged in as administrator"
         Me.btn_login_admin.Caption = "Log in as read-only"
         Me.btn_open_edit_inholders_form.Enabled = True
+    ElseIf user_state = "permit" Then
+        'Notify user that they can edit permits and nothing else
+        DoCmd.Close acForm, Me.name
+        MsgBox "You are currently logged in as a permit administrator. You can edit permit info in the road_permits table only, " & _
+               " but no other tables are editable. To log out as an administrator, click the 'Log in as read-only' button.", _
+               vbExclamation, _
+               "Logged in as permit administrator"
+        DoCmd.OpenForm "frm_permit_menu"
     Else
         Me.btn_login_admin.Caption = "Log in as admin"
         Me.btn_open_edit_inholders_form.Enabled = False
     End If
+
+    Exit Sub
+
+
+bad_connection:
+        MsgBox "The front end database application could not connect to the back-end database." & _
+               " Check your network connection, close the front end application, and then open it again.", _
+               vbExclamation, _
+               "Could not connect to back-end database"
+        Exit Sub
 
 exit_err:
     On Error Resume Next
@@ -470,7 +532,11 @@ exit_err:
     Exit Sub
 
 err_handler:
-    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    If Err.Number = -2147467259 Or Err.Description Like "*Could not connect*" Then
+        GoTo bad_connection
+    Else
+        MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    End If
     Resume exit_err
     
 End Sub

@@ -9,26 +9,12 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Compare Database
 
-'Private Sub btn_open_filepicker_Click()
-'NOTE: To use this code, you must referenc the Microsoft Office 16.0 (or current version)
-'Object Library by clicking menu Tools > References
-'   -Check the box for Microsoft Office 16.0 Object Library
-'   -Click OK
-
-'With Application.FileDialog(msoFileDialogFolderPicker)
-'    .Title = "Select an output folder"
-    
-'    If .Show Then
-'        Me.txt_output_path = .SelectedItems(1)
-'    End If
-    
-'End With
-
-'End Sub
 
 
 Private Sub txt_offset_hours_AfterUpdate()
 ' Validate offset
+    On Error GoTo err_handler
+    
     If Not IsNumeric(Me.txt_offset_hours.Value) Then
         MsgBox "The offset must be a number", vbCritical, "Invalid offset"
         Me.txt_offset_hours.SetFocus
@@ -38,14 +24,21 @@ Private Sub txt_offset_hours_AfterUpdate()
         Me.txt_offset_hours.SetFocus
         Exit Sub
     End If
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 
 Private Sub btn_run_Click()
 
-Dim destination_stmt As String: destination_stmt = ""
-Dim column_stmt As String
+    Dim destination_stmt As String: destination_stmt = ""
+    Dim column_stmt As String
     
     On Error GoTo Err_btn_run_Click
 
@@ -186,7 +179,7 @@ Dim column_stmt As String
     
     ' Run a pass through query
     Set qdf = CurrentDb.CreateQueryDef(query_name)
-    qdf.Connect = "ODBC;" & generic.CONNECTION_STR & "UID=savage_read;PWD=0l@usmur!e;"
+    qdf.Connect = "ODBC;" & savagedb.CONNECTION_STR & "UID=savage_read;PWD=0l@usmur!e;"
     qdf.sql = sql_str
     qdf.Close
     DoCmd.OpenQuery qdf.name

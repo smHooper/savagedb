@@ -10,10 +10,28 @@ Attribute VB_Exposed = False
 Option Compare Database
 
 
-Private Sub btn_login_Click()
-    Const uid = "savage_admin"
-    Const pwd = "@d0lphmur!e"
 
+Private Sub btn_login_Click()
+    
+    'On Error GoTo err_handler
+    
+    Const adminuid = "savage_admin"
+    Const adminpwd = "@d0lphmur!e"
+    Const permituid = "savage_permit"
+    Const permitpwd = "m@rdymur!e"
+    
+    Dim uid As String
+    Dim pwd As String
+    If lbl_login_type.Caption = "write access" Then
+        uid = adminuid
+        pwd = adminpwd
+    ElseIf lbl_login_type.Caption = "permit" Then
+        uid = permituid
+        pwd = permitpwd
+    Else
+        MsgBox "lbl_login_type.Caption " & lbl_login_type.Caption & " not understood", vbCritical, "Login type not understood"
+    End If
+    
     Dim response As Integer
     
     If Me.txt_username <> uid Then
@@ -26,18 +44,19 @@ Private Sub btn_login_Click()
         wShell.Run "cmd.exe /c start chrome https://www.youtube.com/watch?v=RfiQYRn7fBg", 0, False
         
         Exit Sub
-    Else
-        response = MsgBox("To switch users, the database will need to close and you'll have to re-open it (I know, " & _
-                  "Access is pretty annoying, right?). Would you like to close and re-open the database now?", _
-                  vbYesNoCancel, _
-                  "Close and re-open database?")
-        If response = vbYes Then
-            generic.set_read_write Me.txt_username, Me.txt_password
-            Application.Quit
-        Else
+    Else ' correct credentials
+        ' Run the restart script only if the user selected "Yes". Othwerwise, exit
+        If savagedb.restart_db(uid, pwd) <> vbYes Then
             DoCmd.Close acForm, Me.name
             Exit Sub
         End If
     End If
+
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 
 End Sub

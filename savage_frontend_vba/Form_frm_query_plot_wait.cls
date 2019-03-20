@@ -11,7 +11,9 @@ Option Compare Database
 
 
 Private Sub btn_open_file_location_Click()
-
+    
+    On Error GoTo err_handler
+    
     Dim output_dir As String
     
     If Me.btn_open_file_location.Tag <> "" Then
@@ -22,5 +24,12 @@ Private Sub btn_open_file_location_Click()
     
     Shell "C:\WINDOWS\explorer.exe """ & output_dir & "", vbNormalFocus
 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
 End Sub
 

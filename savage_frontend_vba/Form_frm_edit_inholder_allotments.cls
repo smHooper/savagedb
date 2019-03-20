@@ -40,8 +40,10 @@ End Function
 
 Private Sub btn_add_new_column_Click()
 
-Dim year_str As String
-Dim year_column_name As String
+    Dim year_str As String
+    Dim year_column_name As String
+    
+    On Error GoTo err_handler
     
     ' Can't assign year_str with a null string so check if the text box is null
     If IsNull(Me.txt_new_year) Then
@@ -106,7 +108,14 @@ Dim year_column_name As String
     Me.btn_delete_new_column.Visible = True
     Me.btn_delete_col_disabled.Enabled = True
     Me.btn_delete_col_disabled.Visible = False
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
     
 End Sub
 
@@ -118,8 +127,11 @@ Private Sub btn_delete_col_disabled_Click()
 End Sub
 
 Private Sub btn_delete_new_column_Click()
-Dim year_str As String
-Dim year_column_name As String
+    
+    On Error GoTo err_handler
+    
+    Dim year_str As String
+    Dim year_column_name As String
     
     year_str = Me.txt_new_year
     
@@ -159,12 +171,29 @@ Dim year_column_name As String
     
     Me.txt_new_year.SetFocus
 
+exit_sub:
+    On Error Resume Next
+    Set tdf = Nothing
+    Set db = Nothing
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Sub dropdown_year_AfterUpdate()
 ' Sub to detect user-initiated change of the year dropdown
-    
+    On Error GoTo err_handler
+        
     reset_allotment_source
 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 End Sub
 
