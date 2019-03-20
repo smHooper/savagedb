@@ -198,10 +198,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
 
     datadates_txt = os.path.join(search_dir, 'datadates.csv')
     df = pd.read_csv(datadates_txt)
-    df['open_time'] = df['obs_date'].str.split().apply(lambda x: x[0]) + \
+    df['open_time'] = df['shift_date'].str.split().apply(lambda x: x[0]) + \
                       pd.Series([' '] * len(df)) + \
                       df['open_time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
-    df['close_time'] = df['obs_date'].str.split().apply(lambda x: x[0]) + \
+    df['close_time'] = df['shift_date'].str.split().apply(lambda x: x[0]) + \
                       pd.Series([' '] * len(df)) + \
                       df['close_time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
     df.drop('obs_date', axis=1, inplace=True)

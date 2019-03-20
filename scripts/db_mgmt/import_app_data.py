@@ -26,7 +26,7 @@ def replace_lookup_values(data, engine, lookup_params):
 
 
 
-def main(data_dir, sqlite_path, connection_txt, archive_dir=None):
+def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
 
     sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
@@ -42,18 +42,16 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=None):
         sl_shift_info = pd.read_sql("SELECT * FROM sessions", sl_conn).squeeze()
 
     pg_shift_info['date_str'] = pg_shift_info.open_time.dt.strftime('%Y%m%d')
-    import pdb; pdb.set_trace()
     sl_open_time = pd.to_datetime('%(date)s %(openTime)s' % sl_shift_info)
     sl_close_time = pd.to_datetime('%(date)s %(closeTime)s' % sl_shift_info)
 
     # If it exists, replace the open and close times with
     if (pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')).any():
-        index = pg_shift_info.loc[pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')].iloc[0].name
-        pg_open_time = pg_shift_info.loc[index, 'open_time']
-        pg_close_time = pg_shift_info.loc[index, 'close_time']
+        id = pg_shift_info.loc[pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')].iloc[0].name
+        pg_open_time = pg_shift_info.loc[id, 'open_time']
+        pg_close_time = pg_shift_info.loc[id, 'close_time']
         open_time = min(pg_open_time, sl_open_time)
         close_time = max(pg_close_time, sl_close_time)
-        id = pg_shift_info.loc[index, 'id']
         sql = "UPDATE shift_info SET open_time = '%s', close_time = '%s' WHERE id=%s;" % (open_time, close_time, id)
     else:
         sql = "INSERT INTO shift_info (open_time, close_time) VALUES ('%s', '%s')" % (sl_open_time, sl_close_time)
