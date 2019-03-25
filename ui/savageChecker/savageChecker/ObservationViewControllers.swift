@@ -1080,7 +1080,13 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     // Check if the last two records in this table are identical
     func lastRecordDuplicated() -> Bool {
         
+        // Check if the table even has more than 1 record, and if not, return false
+        if let recordCount = try? db.scalar(self.observationsTable.count), recordCount <= 1 {
+            return false
+        }
+        
         // Check if the observation was made within 5 minutes of the last observation
+        
         
         // Get all columns names
         let tableName: String
