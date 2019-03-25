@@ -8,15 +8,15 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Compare Database
-Private Const ARCHIVE_DIR As String = " C:\Users\shooper\proj\savagedb"
-Private Const DB_BROWSER_PATH As String = " C:\Program Files\DB Browser for SQLite\DB Browser for SQLite.exe"
+Private Const ARCHIVE_DIR As String = "C:\users\shooper\desktop\temp\import_test\archive"
+Private Const DB_BROWSER_PATH As String = "C:\Program Files\DB Browser for SQLite\DB Browser for SQLite.exe"
 
 
 
 Private Sub btn_open_filepicker_Click()
-
-    generic.open_file_dialog Me.txt_sqlitedb_path, "Select a .db file to import", msoFileDialogFilePicker, _
-                             "*.db", "SQLite database files"
+    
+    Me.txt_sqlitedb_path = savagedb.open_file_dialog("Select a .db file to import", msoFileDialogFilePicker, _
+                             "*.db", "SQLite database files")
 
 End Sub
 
@@ -108,7 +108,7 @@ Private Sub btn_open_sqlitedb_Click()
                    " " & CONNECTION_TXT & _
                    " > " & logfile & " 2>&1"
 
-    generic.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Checking for duplicates..."
+    savagedb.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Checking for duplicates..."
     
     
     Dim filestream As Integer: filestream = FreeFile
@@ -146,7 +146,7 @@ Private Sub btn_open_sqlitedb_Click()
     
     ' Create the temporary dir for storing text files and make the temporary DB
     Dim temp_db_path As String: temp_db_path = temp_dir & "\temp.accdb"
-    generic.create_temp_db temp_db_path
+    savagedb.create_temp_db temp_db_path
     
     ' For each file in temp_dir, make a table in the temp DB and set the connection of the associated query
     Dim csv_name As String
@@ -223,7 +223,7 @@ Private Sub btn_open_sqlitedb_Click()
             temp_db.Execute "ALTER TABLE " & table_name & " ADD COLUMN import YESNO;", dbFailOnError
             temp_db.Execute "UPDATE " & table_name & " SET import = -1;", dbFailOnError
             Set tdf = temp_db.TableDefs(table_name)
-            Set fld = tdf.Fields("import")
+            Set fld = tdf.fields("import")
             Set prp = fld.CreateProperty("DisplayControl", dbInteger, acCheckBox)
             fld.Properties.Append prp
             
@@ -367,6 +367,8 @@ End Function
 
 Private Sub btn_import_Click()
     
+    On Error GoTo err_handler
+    
     Dim response As Integer
     response = MsgBox("Are you sure you want to import the data? If you click 'yes', " & _
                        "the data will be copied to the master database and making changes will require admin access.", _
@@ -405,9 +407,9 @@ Private Sub btn_import_Click()
                 If Me.Form.Controls("sub_" & table_name).SourceObject = "Query." & query_name Then
                     Set record_set = CurrentDb.OpenRecordset(query_name)
                     With record_set
-                        For j = 0 To .Fields.Count - 1
-                            If (.Fields(j).name <> "import") And (.Fields(j).name <> "duplicated_in_app") And (.Fields(j).name <> "found_in_db") Then
-                                field_names = field_names & .Fields(j).name & ", "
+                        For j = 0 To .fields.Count - 1
+                            If (.fields(j).name <> "import") And (.fields(j).name <> "duplicated_in_app") And (.fields(j).name <> "found_in_db") Then
+                                field_names = field_names & .fields(j).name & ", "
                             End If
                         Next j
                         .Close
@@ -440,7 +442,7 @@ Private Sub btn_import_Click()
                             " " & ARCHIVE_DIR & _
                             " > " & logfile & " 2>&1"
 
-        generic.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Importing data..."
+        savagedb.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Importing data..."
         
         ' Close the script status form immediately
         If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
@@ -456,6 +458,13 @@ Private Sub btn_import_Click()
                 "Import successful"
 
     End If
+
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 
 End Sub
 

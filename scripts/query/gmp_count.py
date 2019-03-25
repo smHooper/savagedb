@@ -164,7 +164,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         output_fields = cvbt.get_output_field_names(date_range, 'month')
 
         # Query buses
-        bus_names = {'VTS': ['SHU', 'CMP', 'OTH'],#
+        bus_names = {'VTS': ['SHU', 'CMP', 'OTH', 'NUL'],#
                      'Tour': ['KXP', 'EXC', 'TWT', 'WIW']##,
                      }
         other_criteria = "is_training = ''false'' " + gmp_date_clause.replace("'", "''")
@@ -204,7 +204,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         approved_vehicles, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
                                                              other_criteria=other_criteria,
                                                              field_names=field_names['nps_approved'], summarize_by='month',
-                                                             output_fields=output_fields, return_sql=True)
+                                                             output_fields=output_fields, return_sql=True,
+                                                                  dissolve_names= {'Other': ['OTH', 'NUL']})
         approved_codes = query.get_lookup_table(engine, 'nps_approved_codes')
         approved_vehicles.rename(index=approved_codes, inplace=True)
         sql_statements.append(sql)
@@ -269,6 +270,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         def replace(x, d):
             return d[x] if x in d else x
         all_data.index = all_data.index.map(lambda x: replace(x, PRINT_NAMES))
+
+        if 'NUL' in all_data.index.tolist(): all_data.drop('NUL', inplace=True)
         all_data = all_data.reindex(index=SORT_ORDER, columns=['May', 'Jun', 'Jul', 'Aug', 'Sep', 'total']).fillna(0)
 
         # Set a multiindex for GMP stats (rows)

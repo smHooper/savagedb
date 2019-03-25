@@ -1,9 +1,10 @@
-Attribute VB_Name = "generic"
+Attribute VB_Name = "savagedb"
 Option Compare Database
 Public Const CONNECTION_STR = "DRIVER={PostgreSQL ANSI};DATABASE=savage;SERVER=165.83.50.66;PORT=5432"
-Public Const PYTHON_PATH = "python"
-Public Const CONNECTION_TXT = "C:\Users\shooper\proj\savagedb\connection_info.txt"
-Public Const SCRIPT_DIR = "C:\Users\shooper\proj\savagedb\git\scripts"
+Public Const PYTHON_PATH = "C:\ProgramData\Anaconda2\python.exe"
+Public Const CONNECTION_TXT = "C:\users\shooper\proj\savagedb\connection_info.txt"
+Public Const SCRIPT_DIR = "C:\users\shooper\proj\savagedb\git\scripts"
+
 
 Public Function pass_through_query(sql_str As String, Optional return_records As Boolean, Optional conn_str As String) As ADODB.recordset
     Dim connection As New ADODB.connection
@@ -16,7 +17,21 @@ Public Function pass_through_query(sql_str As String, Optional return_records As
         connection.Open CONNECTION_STR & ";Trusted_Connection=Yes"
     End If
     
-    record_set.Open sql_str, connection
+    record_set.CursorLocation = adUseClient
+    record_set.Open sql_str, connection, adOpenDynamic, adLockOptimistic
+'    Set connection = New ADODB.connection
+'    connection.ConnectionString = conn_str
+'    connection.Open
+    
+    
+'    Set record_set = New ADODB.recordset
+'    With record_set
+'        .ActiveConnection = conn
+'        .CursorType = adOpenDynamic
+'        .LockType = adLockOptimistic
+'        .source = sql_str
+'        .Open
+'    End With
     
     'Cleanup
     If return_records Then
@@ -249,18 +264,27 @@ Public Function set_read_write(Optional username As String, Optional password As
     
     Dim new_user_state As String
     Dim new_cnn_str As String
-    If current_user_state = "read-only" Then
-        new_user_state = "admin"
-        If Len(username) And Len(password) Then
-            new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=" & username & ";PWD=" & password & ";"
-        Else
-            MsgBox "No username or password given", vbCritical, "Invalid arguments for generic.set_read_write()"
-            set_read_write = ""
-            Exit Function
-        End If
+'    If current_user_state = "read-only" Then
+'        new_user_state = "admin"
+'        If Len(username) And Len(password) Then
+'            new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=" & username & ";PWD=" & password & ";"
+'        Else
+'            MsgBox "No username or password given", vbCritical, "Invalid arguments for savagedb.set_read_write()"
+'            set_read_write = ""
+'            Exit Function
+'        End If
+'    Else
+'        new_user_state = "read-only"
+'        new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=savage_read;PWD=0l@usmur!e;"
+'    End If
+
+    If Len(username) And Len(password) Then
+        new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=" & username & ";PWD=" & password & ";"
+        new_user_state = Split(username, "_")(1) ' all usernames are in the form savage_<userstate>
     Else
-        new_user_state = "read-only"
-        new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=savage_read;PWD=0l@usmur!e;"
+        MsgBox "No username or password given", vbCritical, "Invalid arguments for savagedb.set_read_write()"
+        set_read_write = ""
+        Exit Function
     End If
     
     ' Relink all tables so they have the right permissions
@@ -297,13 +321,16 @@ Public Function set_read_write(Optional username As String, Optional password As
     
     Exit Function
     
-    
+error_exit:
+    On Error Resume Next
+    Exit Function
     
 error_login:
     If Err.Number = 3059 Then 'The user canceled so just exit
         Exit Function
     Else
         MsgBox "Problem with login: " & Err.Description
+        GoTo error_exit
     End If
     
 End Function
@@ -355,7 +382,7 @@ errHandler:
 End Function
 
 
-Public Function open_file_dialog(ByRef textbox As textbox, Optional title As String = "Select an output folder", Optional dialog_type As Integer = msoFileDialogFolderPicker, Optional filter_str As String = "", Optional filter_name As String = "")
+Public Function open_file_dialog(Optional title As String = "Select an output folder", Optional dialog_type As Integer = msoFileDialogFolderPicker, Optional filter_str As String = "", Optional filter_name As String = "") As String
 'NOTE: To use this code, you must reference
 'The Microsoft Office 16.0 (or current version)
 'Object Library by clicking menu Tools > References
@@ -370,7 +397,7 @@ Public Function open_file_dialog(ByRef textbox As textbox, Optional title As Str
         End If
         
         If .Show Then
-            textbox = .SelectedItems(1)
+            open_file_dialog = .SelectedItems(1)
         End If
         
     End With
@@ -407,3 +434,162 @@ Public Sub ExportAllCode()
 
 End Sub
 
+
+Public Function make_qr_str(id_number As Integer) As String
+' Return a JSON string that the app will be able to read
+
+    Dim qr_str As String
+    Dim rs As recordset
+    Set rs = CurrentDb.OpenRecordset("SELECT * FROM road_permits WHERE id = " & id_number, dbOpenSnapshot)
+    
+    rs.MoveLast
+    If rs.RecordCount <> 1 Then
+        MsgBox "Error occurred while making QR code string. No permit found with ID " & id_number, vbCritical, "QR code error"
+        make_qr_str = ""
+        Exit Function
+    End If
+    
+    Dim vehicle_type As String: vehicle_type = rs.fields("permit_type")
+    Select Case vehicle_type
+        Case Is = "Right of Way"
+            If rs.fields("is_lodge_bus") Then
+                qr_str = "{""vehicle_type"": ""Lodge Bus""," & _
+                         " ""Lodge"": """ & rs.fields("permit_holder") & ""","
+            Else
+                qr_str = "{""vehicle_type"": ""Right of Way""," & _
+                         " ""Right of Way"": """ & rs.fields("permit_holder") & ""","
+            End If
+        Case Is = "NPS Approved"
+            qr_str = "{""vehicle_type"": ""NPS Approved""," & _
+                     " ""Approved category"": """ & rs.fields("approved_type") & ""","
+        Case Is = "NPS Contractor"
+            qr_str = "{""vehicle_type"": ""NPS Contractor""," & _
+                     " ""Company/Organization Name"": """ & rs.fields("permit_holder") & ""","
+        Case Is = "Pro Photography and Film"
+            qr_str = "{""vehicle_type"": ""Photographer"","
+        Case Else ' Accessibility, Employee, Subsistence
+            qr_str = "{""vehicle_type"": """ & vehicle_type & """," & _
+                     " ""Permit holder"": """ & rs.fields("permit_holder") & ""","
+    End Select
+    
+    Dim n_days As Integer: n_days = DateDiff("d", rs.fields("date_in"), rs.fields("date_out"))
+    'Dim permit_number As String: permit_number = Replace(Me.lbl_permit_number.Caption, "Permit #: ", "")
+    
+    qr_str = qr_str & " ""Driver's full name"": """ & rs.fields("driver_name") & """," & _
+                      " ""Number of expected nights"": """ & n_days & """," & _
+                      " ""Permit number"": """ & rs.fields("permit_number") & """}"
+    make_qr_str = qr_str
+
+End Function
+
+
+
+Public Function make_qr_code(qr_str As String, Optional output_path As String) As String
+    
+    Debug.Print qr_str
+    
+    ' Get the path of the qr executable
+    Dim qr_exe_path As String: qr_exe_path = left(PYTHON_PATH, InStrRev(PYTHON_PATH, "\")) & "Scripts\qr.exe"
+    
+    ' If an output path wasn't given, just use the dir where the DB is
+    If Len(output_path & "") = 0 Then output_path = CurrentProject.path & "\qr.png"
+    
+    ' Make and run the command, piping the output to the output path
+    Dim cmd As String: cmd = qr_exe_path & " '" & qr_str & "' > " & output_path
+    Dim wShell As Object
+    Set wShell = VBA.CreateObject("WScript.Shell")
+    ' Don't show the window but wait until the QR code command is done. This is necessary because when
+    '   looping through multiple permits, save_permit_to_file tries to set the picture of the img_qr
+    '   while the image is in the middle of being created
+    wShell.Run "cmd.exe /c " & cmd, 0, True
+    
+    ' Return the path
+    make_qr_code = output_path
+
+End Function
+
+
+Public Function save_permit_to_file(ByVal row_id As Integer, permit_type As String, out_path As String, Optional show_file As Boolean = True, Optional is_lodge_bus As Boolean = False) As String
+
+    Dim qr_str As String: qr_str = savagedb.make_qr_str(row_id)
+    Dim qr_path As String: qr_path = savagedb.make_qr_code(qr_str)
+    
+    If Len(out_path & "") = 0 Or left(out_path, 1) = "\" Then Exit Function ' The user canceled from the file dialog
+    
+    ' update last printed by and file_path columns for this record
+    CurrentDb.Execute ("UPDATE road_permits SET file_path='" & out_path & "', last_printed_by='" & Environ$("username") & "'" & _
+                       " WHERE id=" & row_id)
+    
+    ' Open the report and set it up for printing
+    DoCmd.OpenReport "rpt_road_permit", acViewPreview ', OpenArgs:=permit_type & "," & qr_path
+    
+    ' Change the background color to match the colors in the app
+    Dim rpt As Report: Set rpt = Reports("rpt_road_permit").Report
+
+    Select Case permit_type
+        Case Is = "Accessibility"
+            rpt.Section(acPageHeader).BackColor = RGB(128, 110, 171)
+        Case Is = "Employee"
+            rpt.Section(acPageHeader).BackColor = RGB(194, 89, 99)
+        Case Is = "Right of Way"
+            If is_lodge_bus Then
+                rpt.Section(acPageHeader).BackColor = RGB(145, 90, 119)
+            Else
+                rpt.Section(acPageHeader).BackColor = RGB(0, 0, 0)
+                rpt.Controls("txt_title").ForeColor = RGB(255, 255, 255)
+                rpt.Controls("txt_permit_number").ForeColor = RGB(255, 255, 255)
+            End If
+        Case Is = "NPS Approved"
+            rpt.Section(acPageHeader).BackColor = RGB(83, 123, 158)
+        Case Is = "NPS Contractor"
+            rpt.Section(acPageHeader).BackColor = RGB(158, 158, 158)
+        Case Is = "Pro Photography and Film"
+            rpt.Controls("txt_title").TopMargin = 0
+            rpt.Section(acPageHeader).BackColor = RGB(212, 138, 68)
+        Case Is = "Subsistence"
+            rpt.Section(acPageHeader).BackColor = RGB(214, 204, 45)
+        Case Else
+            rpt.Section(acPageHeader).BackColor = RGB(255, 255, 255)
+    End Select
+
+    ' Set the path of the qr code image
+    rpt.Controls("img_qr").Picture = qr_path
+    
+    ' Save to file and close it
+    DoCmd.OutputTo acOutputReport, "rpt_road_permit", acFormatPDF, out_path, show_file
+    DoCmd.Close acReport, "rpt_road_permit", acSaveNo
+    
+    ' delete qr.png
+    Kill qr_path
+    
+    ' Deselect all permits
+    CurrentDb.Execute ("UPDATE road_permits SET select_permit = 0;")
+    
+    save_permit_to_file = out_path ' return the path
+    
+End Function
+
+
+Public Function restart_db(uid As String, pwd As String) As Integer
+        
+    Const TIMEOUT = 5 ' seconds to wait before quitting the restart script
+    
+    response = MsgBox("To log in as a different user, the database will need to restart (I know," & _
+              " Access is pretty annoying, right?). Any changes you've made to forms, reports, etc. will be automatically saved." & _
+              " Would you like to close and re-open the database now?", _
+              vbYesNoCancel + vbQuestion, _
+              "Restart the database?")
+    restart_db = response
+    If response = vbYes Then
+        ' reset connection
+        savagedb.set_read_write uid, pwd
+        
+        ' run script to reopen db once it's closed
+        Dim cmd As String: cmd = SCRIPT_DIR & "\open_db.cmd " & Application.CurrentProject.FullName & " " & TIMEOUT
+        Shell cmd, vbHide
+        
+        Application.Quit
+    
+    End If
+        
+End Function

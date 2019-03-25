@@ -14,16 +14,18 @@ Private Sub btn_open_filepicker_Click()
 'The Microsoft Office 16.0 (or current version)
 'Object Library by clicking menu Tools > References
 '   -Check the box for Microsoft Office 16.0 Object Library
-'   -Click OK
+''   -Click OK
+'
+'With Application.FileDialog(msoFileDialogFolderPicker)
+'    .title = "Select an output folder"
+'
+'    If .Show Then
+'        Me.txt_output_path = .SelectedItems(1)
+'    End If
+'
+'End With
 
-With Application.FileDialog(msoFileDialogFolderPicker)
-    .title = "Select an output folder"
-    
-    If .Show Then
-        Me.txt_output_path = .SelectedItems(1)
-    End If
-    
-End With
+    Me.txt_output_path = savagedb.open_file_dialog()
 
 End Sub
 
@@ -32,9 +34,11 @@ End Sub
 Private Sub dropdown_start_AfterUpdate()
 
 'update the end year dropdown so only years after start year are shown
-
-Dim start_year As String: start_year = Me.dropdown_start
-Dim current_row_souce As String: current_row_source = Me.dropdown_start.RowSource
+    
+    On Error GoTo err_handler
+    
+    Dim start_year As String: start_year = Me.dropdown_start
+    Dim current_row_souce As String: current_row_source = Me.dropdown_start.RowSource
     
     ' Apparently VBA doesn't have a Min() function so just make sure end >= start with an if block
     If Me.dropdown_start > Me.dropdown_end Then
@@ -51,14 +55,21 @@ Dim current_row_souce As String: current_row_source = Me.dropdown_start.RowSourc
     If Int(Me.dropdown_start) = DMax("Year(datetime)", "accessibility") Then
         Me.dropdown_end = Me.dropdown_start
     End If
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Sub btn_run_Click()
 
-Dim cmd As String
+    Dim cmd As String
     
-    'On Error GoTo Err_btn_run_Click
+    On Error GoTo Err_btn_run_Click
 
     ' Check the inputs
     If IsNull(Me.dropdown_start) Then
@@ -93,7 +104,7 @@ Dim cmd As String
            out_dir_arg & _
            years_arg & _
            stdout_str
-    generic.run_io_command cmd, Replace(logfile, """", ""), Me.txt_output_path
+    savagedb.run_io_command cmd, Replace(logfile, """", ""), Me.txt_output_path
     
     
 Exit_btn_run_Click:
@@ -108,6 +119,9 @@ End Sub
 
 Private Sub Form_Load()
 ' Set the start and end dates to the most recent year
+    
+    On Error GoTo err_handler
+    
     Dim year_max As Integer
     
     year_max = DMax("Year(datetime)", "accessibility")
@@ -115,4 +129,11 @@ Private Sub Form_Load()
     dropdown_start_AfterUpdate
     'Me.dropdown_end = year_max
 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
 End Sub

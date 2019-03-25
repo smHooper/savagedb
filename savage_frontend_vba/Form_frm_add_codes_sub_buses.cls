@@ -39,9 +39,9 @@ End Sub
 Private Sub btn_add_new_code_Click()
     
     Dim response As Integer
-    If generic.get_user_state() = "read-only" Then
+    If savagedb.get_user_state() = "read" Then
         response = MsgBox("You must log in as an admin user to add any new codes." & _
-                          " Would you like to log in as an admin user?", _
+                          " Would you like to log in as an admin user now?", _
                           vbInformation + vbYesNoCancel, _
                           "Invalid user permission")
         If response = vbYes Then

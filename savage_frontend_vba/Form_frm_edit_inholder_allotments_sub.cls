@@ -12,6 +12,8 @@ Public new_button_original_top As Double
 
 Private Sub btn_add_new_inholder_Click()
     
+    On Error GoTo err_handler
+    
     ' Set the global var storing the "add new inholder" button's position
     new_button_original_top = Me.btn_add_new_inholder.Top
     new_button_height = Me.btn_add_new_inholder.Height
@@ -33,7 +35,12 @@ Private Sub btn_add_new_inholder_Click()
     
     DoCmd.RepaintObject acForm, "frm_edit_inholder_allotments"
     
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 
 End Sub
 
@@ -60,6 +67,8 @@ End Sub
 
 Private Sub btn_insert_inholder_Click()
     
+    On Error GoTo err_handler
+    
     Dim db As DAO.Database
     Dim tdf As TableDef
     Set db = CurrentDb
@@ -82,6 +91,13 @@ Private Sub btn_insert_inholder_Click()
     DoCmd.GoToRecord , , acLast
     
     hide_inholder_insert_controls
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 

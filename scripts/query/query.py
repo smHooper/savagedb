@@ -188,7 +188,7 @@ def filter_output_fields(filter_sql, engine, output_fields):
         actual_fields = pd.read_sql(filter_sql, conn) #should return a df with only 1 column
 
     if len(actual_fields) == 0:
-        return pd.Series() #.any() will evaluate to false
+        return pd.Series()
 
     field_column_name = actual_fields.columns[0]
     actual_fields[field_column_name] = actual_fields[field_column_name].dt.strftime('%Y-%m-%d %H:%M:%S')

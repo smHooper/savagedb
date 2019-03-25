@@ -11,10 +11,19 @@ Option Compare Database
 
 
 Private Sub btn_open_json_filepicker_Click()
+    
+    On Error GoTo err_handler
+    
+    Me.txt_json_path = savagedb.open_file_dialog("Select a JSON configuration file", msoFileDialogFilePicker, _
+                             "*.json", "JSON files")
 
-    generic.open_file_dialog Me.txt_json_path, "Select a JSON configuration file", msoFileDialogFilePicker, _
-                             "*.json", "JSON files"
-
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
 End Sub
 
 Private Function set_subform_source(ByRef Form As SubForm, source As String)
@@ -149,7 +158,7 @@ Private Sub btn_load_json_Click()
           Me.txt_json_path & _
           " > " & logfile & " 2>&1"
 
-    generic.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Loading data from JSON..."
+    savagedb.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Loading data from JSON..."
     
     ' Close the script status form immediately if there wasn't an error
     If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
@@ -162,7 +171,7 @@ Private Sub btn_load_json_Click()
     
     ' Create the temporary dir for storing text files and make the temporary DB
     Dim temp_db_path As String: temp_db_path = temp_dir & "\temp.accdb"
-    generic.create_temp_db temp_db_path
+    savagedb.create_temp_db temp_db_path
     
     ' Read in CSVs
     load_json_config_from_csvs temp_db_path
@@ -235,7 +244,7 @@ Private Sub configure_checkboxes()
                                 'Set value of checkbox
                                 If json_has_sort Then
                                     rs.MoveFirst
-                                    chk_ctl.Value = rs.Fields(column_name)
+                                    chk_ctl.Value = rs.fields(column_name)
                                 End If
                                 Exit For
                             End If
@@ -260,7 +269,7 @@ End Sub
 
 Private Sub btn_load_db_values_Click()
     
-    'On Error GoTo err_handler
+    On Error GoTo err_handler
     
     ' Check if there's a JSON file given and the
     Dim json_path As String: json_path = Nz(Me.txt_json_path, "")
@@ -307,7 +316,7 @@ Private Sub btn_load_db_values_Click()
           " " & json_path & _
           " > " & logfile & " 2>&1"
 
-    generic.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Loading config options from database..."
+    savagedb.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Loading config options from database..."
     
     ' Close the script status form immediately if there wasn't an error
     If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
@@ -320,7 +329,7 @@ Private Sub btn_load_db_values_Click()
     
     ' Create the temporary dir for storing text files and make the temporary DB
     Dim temp_db_path As String: temp_db_path = temp_dir & "\temp.accdb"
-    generic.create_temp_db temp_db_path
+    savagedb.create_temp_db temp_db_path
     
     ' Read in CSVs
     load_json_config_from_csvs temp_db_path
@@ -351,8 +360,17 @@ End Sub
 
 Private Sub btn_open_folderpicker_Click()
     
-    generic.open_file_dialog Me.txt_output_path
+    On Error GoTo err_handler
     
+    Me.txt_output_path = savagedb.open_file_dialog()
+
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 Private Function validate_json_config()
@@ -400,9 +418,9 @@ Private Function validate_json_config()
     Dim col_name As Variant
     Dim values_rs As DAO.recordset
     For Each col_name In column_names
-        validation_table = Nz(table_rs.Fields(col_name), "")
-        validation_field = Nz(field_rs.Fields(col_name), "")
-        context = Nz(cntxt_rs.Fields(col_name), "")
+        validation_table = Nz(table_rs.fields(col_name), "")
+        validation_field = Nz(field_rs.fields(col_name), "")
+        context = Nz(cntxt_rs.fields(col_name), "")
 
         sql = "INSERT INTO " & missing_val_table & " IN '" & temp_db_path & "'" & _
               " SELECT [" & _
@@ -447,7 +465,7 @@ End Function
 
 Private Sub btn_export_json_Click()
     
-    'On Error GoTo err_handler
+    On Error GoTo err_handler
     
     ' Get output dir and check if there's a config file already there because it will get written over
     Dim out_dir As String: out_dir = Nz(Me.txt_output_path, "")
@@ -520,7 +538,7 @@ Private Sub btn_export_json_Click()
           out_dir & _
           " > " & logfile & " 2>&1"
     
-    generic.run_io_command cmd, logfile, out_dir, False, vbCrLf & vbCrLf & "Saving config options to JSON..."
+    savagedb.run_io_command cmd, logfile, out_dir, False, vbCrLf & vbCrLf & "Saving config options to JSON..."
     
     Exit Sub
     
@@ -559,7 +577,7 @@ End Function
 Private Sub delete_temp_files()
 ' Clean up temporary files if they still exist
     
-    'On Error GoTo err_handler
+    On Error GoTo err_handler
     
     ' Break links to temp DB
     set_subform_source Me.sub_dropdown_options, Me.name & "_sub"
@@ -599,10 +617,19 @@ End Sub
 
 Private Sub btn_close_Click()
     
+    On Error GoTo err_handler
+    
     delete_temp_files
     
     DoCmd.Close acForm, Me.name, acSaveNo
+
+exit_sub:
+    Exit Sub
     
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+
 End Sub
 
 

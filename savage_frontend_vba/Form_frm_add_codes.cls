@@ -11,26 +11,9 @@ Option Compare Database
 
 
 
-Private Sub btn_open_filepicker_Click()
-'NOTE: To use this code, you must reference
-'The Microsoft Office 16.0 (or current version)
-'Object Library by clicking menu Tools > References
-'   -Check the box for Microsoft Office 16.0 Object Library
-'   -Click OK
-
-With Application.FileDialog(msoFileDialogFilePicker)
-    .title = "Select a .db file to import"
-    .Filters.Add "SQLite database files", "*.db", 1
-    
-    If .Show Then
-        Me.txt_sqlitedb_path = .SelectedItems(1)
-    End If
-    
-End With
-
-End Sub
-
 Private Function set_tab_datasource(Optional tab_name As String)
+    
+    On Error GoTo err_handler
     
     Dim current_tab As String
     Dim current_query As String
@@ -61,7 +44,13 @@ Private Function set_tab_datasource(Optional tab_name As String)
     Me.Form.Controls("sub_" & current_table).Form.recordsource = current_query 'uses the SQL from the query
     Me.Form.Controls("sub_" & current_table).Form.Requery
     
-
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
 End Function
 
 
@@ -98,7 +87,7 @@ Public Function load_missing_codes(temp_db_path As String, missing_val_table As 
 ' show the all values from the data_value column as a comma-separated
 ' string in the txt_missing_values textbox of the associated tab
     
-    'On Error GoTo err_handler
+    On Error GoTo err_handler
 
 
     Dim distinct_rs As DAO.recordset
@@ -112,7 +101,7 @@ Public Function load_missing_codes(temp_db_path As String, missing_val_table As 
             .MoveFirst
             For i = 0 To .RecordCount - 1
                 ReDim Preserve table_names(i)
-                table_names(i) = .Fields("lookup_table")
+                table_names(i) = .fields("lookup_table")
                 .MoveNext
             Next i
         End If

@@ -31,7 +31,9 @@ End Function
 
 
 Private Sub btn_run_Click()
-
+    
+    On Error GoTo err_handler
+    
     Dim year As String: year = Nz(Me.dpd_year, "")
     If Len(year) = 0 Then
         MsgBox "You must select a year to run the query", vbExclamation, "No year entered"
@@ -49,4 +51,10 @@ Private Sub btn_run_Click()
         
     End If
 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 End Sub

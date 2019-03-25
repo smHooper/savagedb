@@ -128,6 +128,7 @@ SORT_ORDER = {'summary':   ['Long tour',
                             'NPS employees',
                             'Inholders',
                             'Tek campers',
+                            'NPS contractors',
                             'Other'],
               'total':      [],
               'nps':        [],
@@ -168,6 +169,7 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                         'NPS employees': '#639562',
                         'Inholders':     '#89648F',
                         'Tek campers':   '#BF7F3E',
+                        'NPS contractors': '#ADADAD',
                         'Other':         '#CDCB62'},
           'nps':        {'Administration': '#723C7D',
                          'Concessions': '#779F84',
@@ -209,38 +211,26 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
 
     # Even though we could pass a datetime object here in some cases, when called from functions other than main(),
     #   we have the date str not datetime and we don't necessarily know the format. So just convert to datetime here
-    date_range = pd.date_range(datetime.strptime(start_date, date_format),
-                               datetime.strptime(end_date, date_format),
-                               freq=FREQ_STRS[summarize_by]
-                               )
+    start_datetime = datetime.strptime(start_date, date_format)
+    end_datetime = datetime.strptime(end_date, date_format)
 
     # For months and years, need to add 1
     if summarize_by == 'year':
-        start_year = datetime.strptime(start_date, date_format).year
-        if start_year == datetime.strptime(end_date, date_format).year:
-            date_range = pd.date_range(datetime.strptime(str(start_year), '%Y'),
-                                       datetime.strptime(str(start_year + 1), '%Y'),
-                                       freq='Y')
-        date_range = pd.to_datetime(pd.concat([pd.Series(date_range - pd.offsets.YearBegin()),
-                                               pd.Series(date_range + pd.offsets.YearBegin())])
-                                    .unique()
-                                    )
-    elif summarize_by == 'month':
-        '''############# CLEAN THIS UP ##############'''
-        start_datetime = datetime.strptime(start_date, date_format).replace(day=1)
-        if start_datetime.month == datetime.strptime(end_date, date_format).month:
-            date_range = pd.date_range(start_datetime,
-                                       start_datetime + rd.relativedelta(months=1),
-                                       freq=pd.DateOffset(months=1))
-        else:
-            date_range = pd.date_range(start_datetime,
-                                       datetime.strptime(end_date, date_format),
-                                       freq=FREQ_STRS[summarize_by]
-                                       )
+        date_range = pd.date_range(start_datetime - pd.offsets.YearBegin(),
+                                   end_datetime - pd.offsets.YearBegin(),
+                                   periods=(end_datetime.year - start_datetime.year + 1))
 
-    '''# For day, hour, halfhour, clip the last one because it rolls over into the next interval
-    elif len(date_range) > 1:
-        date_range = date_range[:-1]'''
+    elif summarize_by == 'month':
+        date_range = pd.date_range(start_datetime - pd.offsets.MonthBegin(),
+                                   periods=(end_datetime.month - start_datetime.month + 1),
+                                   freq=FREQ_STRS[summarize_by])
+
+    else:
+        # If there is only one date for this range/frequency, return just the start
+        if start_datetime.strftime(FORMAT_STRS[summarize_by]) == end_datetime.strftime(FORMAT_STRS[summarize_by]):
+            date_range = pd.DatetimeIndex([start_datetime])
+        else:
+            date_range = pd.date_range(start_datetime, end_datetime, freq=FREQ_STRS[summarize_by])
 
     return date_range
 
@@ -371,7 +361,6 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
         povs.drop([i for i in povs.index if i != 'POV'], inplace=True)
     else:
         povs = pd.DataFrame(columns=buses.columns)
-
 
     data = pd.concat([buses, govs, povs], sort=False)
 
@@ -508,7 +497,8 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
         ('nps_approved',        'Other',            OTHER_CRITERIA['other_approved']),
         ('accessibility',       'Other',            ''),
         ('subsistence',         'Other',            ''),
-        ('tek_campers',         'Tek campers',      '')
+        ('tek_campers',         'Tek campers',      ''),
+        ('nps_contractors',     'NPS contractors',  '')
     ]
 
     all_data = []
