@@ -917,7 +917,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                 switch fieldInfo.type {
                 case "normal":
                     self.textFields[i]?.text = value
-                case "dropdown":
+                case "dropDown":
                     self.dropDownTextFields[i]?.text = value
                 default:
                     let _ = 1
@@ -935,11 +935,9 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             fatalError("No valid observation passed from TableViewController")
         }*/
         
-        if !self.qrString.isEmpty {
-            parseQRString()
-        }
+
         // This is a completely new observation
-        else if self.isAddingNewObservation {
+        if self.isAddingNewObservation {
             //self.observation = observation
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -949,10 +947,12 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             formatter.dateStyle = .none
             self.textFields[2]?.text = formatter.string(from: now)//*/
             saveButton.isEnabled = false
+            
+            if !self.qrString.isEmpty {
+                parseQRString()
+            }
         // The observation already exists and is open for viewing/editing
         } else {
-
-            
             self.dropDownTextFields[0]?.text = observation?.observerName
             self.textFields[1]?.text = observation?.date
             self.textFields[2]?.text = observation?.time
@@ -1028,9 +1028,9 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                 //let presentingController = self.presentingViewController!
                 self.dismissTransition = RightToLeftTransition()
                 dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            // Dismiss the last 2 controllers (the current one + AddObs menu) from the stack to get back to the tableView
+            // Dismiss the last 2 controllers (the current one + either the scanner or menu) from the stack to get back to the tableView
             } else {
-                let presentingController = self.presentingViewController?.presentingViewController as! BaseTableViewController
+                let presentingController = self.presentingViewController?.presentingViewController as? BaseTableViewController ?? self.presentingViewController?.presentingViewController as! AddObservationViewController
                 presentingController.dismiss(animated: true, completion: nil)
             }
         } else {
@@ -1090,7 +1090,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         } else {
             return false
         }
-        
         var columnNameString = ""
         if let statement = try? db.prepare(self.observationsTable.asSQL()){
             for (index, colName) in statement.columnNames.enumerated() {
@@ -1104,7 +1103,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             return false
         }
         
-        // Run SQL to check if the last to records are identical
+        // Run SQL to check if the last 2 records are identical
         let sql = "SELECT * FROM \(tableName) WHERE id IN (SELECT id FROM \(tableName) ORDER BY id DESC LIMIT 2) GROUP BY \(columnNameString)"
         var uniqueRowCount = 0
         if let statement = try? db.prepare(sql) {
