@@ -96,6 +96,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         } else {
             loadData()
             self.scrollView.flashScrollIndicators()
+            self.animationComplete = true
         }
         
     }
