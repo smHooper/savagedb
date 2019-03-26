@@ -160,7 +160,6 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         // parse code from format label: comma-separated string
         if let data = code.data(using: .utf8) {
             // Try to read it as a JSON struct (from JSONParser)
-            print(code)
             let jsonObject: JSON!
             jsonObject = try! JSON(data: data)
             if jsonObject != nil {

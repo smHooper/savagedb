@@ -804,6 +804,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     var lastTextFieldIndex = 0
     var observationId: Int?
     var qrString = ""
+    var navBarColor = UIColor.lightGray
     
     // MARK: observation DB columns
     let idColumn = Expression<Int64>("id")
@@ -982,14 +983,17 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         navItem.rightBarButtonItem = self.saveButton
         navItem.leftBarButtonItem = cancelButton
         self.navigationBar.setItems([navItem], animated: false)
+        //self.navigationBar.backgroundColor = self.navBarColor
         
         //self.view.addSubview(self.navigationBar)
     }
+    
     
     // Dismiss with left to right transiton
     @objc func cancelButtonPressed() {
         dismissController()
     }
+    
     
     // Configure tableview controller before it's presented
     @objc func saveButtonPressed() {
