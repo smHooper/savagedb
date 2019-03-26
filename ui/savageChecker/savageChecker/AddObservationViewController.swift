@@ -25,6 +25,22 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var messageView: UITextView!
     var messageViewBackground: UIVisualEffectView!
     var blurredBackground: UIImageView!
+    var animationComplete = false
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        get {
+            if self.animationComplete {
+                return .all
+            } else {
+                //let screenSize = UIApplication.shared.statusBarFrame.size
+                print(UIDevice.current.orientation.rawValue)
+                if UIDevice.current.orientation.isLandscape {
+                    return .landscape
+                } else {
+                    return .portrait
+                }
+            }
+        }
+    }
     
     //MARK: data model properties
     var db: Connection!
@@ -171,6 +187,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                     self.blurredBackground.removeFromSuperview()
                     self.loadData()
                     self.scrollView.flashScrollIndicators()
+                    self.animationComplete = true
                 })
             })
         })
@@ -186,19 +203,25 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     
+    // Lock rotation until animation is complete or dismissed
+    
+    
+    
     // Redo the layout when rotated
     //override func viewDidLayoutSubviews() {
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         
-        addBackground()
-        
-        // Redo the menu and nav bar
-        setupMenuLayout()
-        setNavigationBar()
-        
-        // Reset the scrollView position to 0 if necessary
-        setScrollViewPositionToTop()
+        if self.animationComplete {
+            addBackground()
+            
+            // Redo the menu and nav bar
+            setupMenuLayout()
+            setNavigationBar()
+            
+            // Reset the scrollView position to 0 if necessary
+            setScrollViewPositionToTop()
+        }
     }
     
     
@@ -494,6 +517,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         viewController.title = "New \(labelText) Observation"
         viewController.transitioningDelegate = self
         viewController.modalPresentationStyle = .custom
+        viewController.navBarColor = navBarColors[labelText] ?? UIColor.lightGray
         self.presentTransition = RightToLeftTransition()
         present(viewController, animated: true, completion: {viewController.presentTransition = nil})
         
