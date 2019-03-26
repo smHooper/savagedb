@@ -2,7 +2,7 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--sql_criteria=<str>] [--destinations=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--custom_plot_title=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--sql_criteria=<str>] [--destinations=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--custom_plot_title=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background] [--use_gmp_vehicles]
 
 Examples:
     python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
@@ -67,6 +67,7 @@ Options:
                                 querying function
     -b, --white_background      Use the default Seaborn style (white background). If not specified, the 'dark grid'
                                 style will be used
+    -v, --use_gmp_vehicles      Only include vehicles that count toward GMP annual total
 '''
 
 import os, sys
@@ -203,7 +204,7 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
 
     FREQ_STRS = {'day':         'D',
                  'month':       'MS',
-                 'year':        'Y',
+                 'year':        'YS',
                  'hour':        'H',
                  'halfhour':    '30min',
                  'minute':      'min'
@@ -217,8 +218,8 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
     # For months and years, need to add 1
     if summarize_by == 'year':
         date_range = pd.date_range(start_datetime - pd.offsets.YearBegin(),
-                                   end_datetime - pd.offsets.YearBegin(),
-                                   periods=(end_datetime.year - start_datetime.year + 1))
+                                   periods=(end_datetime.year - start_datetime.year + 1),
+                                   freq=FREQ_STRS[summarize_by])
 
     elif summarize_by == 'month':
         date_range = pd.date_range(start_datetime - pd.offsets.MonthBegin(),
@@ -338,10 +339,10 @@ def filter_data_by_category(data, category_filter):
     return data
 
 
-def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False, get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
+def query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', drop_null=False, get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
 
     ########## Query buses
-    buses, training_buses, buses_sql = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria, get_totals=get_totals, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
+    buses, training_buses, buses_sql = query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=True, other_criteria=other_criteria, get_totals=get_totals, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time, use_gmp_vehicles=use_gmp_vehicles)
     buses = buses.add(training_buses, fill_value=0)
 
     # Query GOVs
@@ -354,7 +355,7 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     govs.index = ['GOV']
 
     # POVs
-    povs, pov_sql = query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
+    povs, pov_sql = query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time, use_gmp_vehicles=use_gmp_vehicles)
 
     if len(povs.columns) > 0:
         povs.loc['POV'] = povs.sum(axis=0)
@@ -370,11 +371,20 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
     if category_filter:
         data = filter_data_by_category(data, category_filter)
 
-    import pdb;
     return data, buses_sql + [gov_sql] + pov_sql
 
 
-def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
+def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
+
+    if use_gmp_vehicles:
+        if value_filter == 'DNH' or category_filter == 'Short tour':
+            raise ValueError("You selected the option to limit this query to only vehicles counted toward the"
+                             " GMP limit (10,512), but you also selected DNHTs as the only buses to count. DNHTs,"
+                             " however, do not count toward that limit. Either remove the SQL value filter for DNHTs"
+                             " or deselect the 'Use GMP vehicles' option")
+        other_criteria += " AND bus_type <> 'DNH' "
+        # remove it from any position in value_filter if it's in there
+        value_filter = value_filter.replace(', DNH,', '').replace('DNH, ', '').replace(', DNH', '')
 
     if value_filter:
         values = ["'%s'" % v for v in value_filter.split(',')]
@@ -385,6 +395,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
                      "AND datetime::date between ''{start_date}'' AND ''{end_date}'' "\
                      .format(start_date=start_date, end_date=end_date) \
                      + other_criteria.replace("'", "''")
+
 
     kwargs = {'other_criteria': bus_other_criteria,
               'field_names': field_names['buses'],
@@ -440,15 +451,15 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     return data, [buses_sql, trn_sql]
 
 
-def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
+def query_total(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
 
-    data, sql = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time)
+    data, sql = query_all_vehicles(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, other_criteria=other_criteria, value_filter=value_filter, category_filter=category_filter, summary_stat=summary_stat, summary_field=summary_field, start_time=start_time, end_time=end_time, use_gmp_vehicles=use_gmp_vehicles)
     totals = pd.DataFrame(data.sum(axis=0)).T
 
     return totals, sql
 
 
-def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field=None, start_time=None, end_time=None):
+def query_nps(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field=None, start_time=None, end_time=None, use_gmp_vehicles=False):
 
     if value_filter:
         values = ["'%s'" % v for v in value_filter.split(',')]
@@ -469,17 +480,16 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
 
     if category_filter:
         data = filter_data_by_category(data, category_filter)
-    import pdb; pdb.set_trace()
 
     return data, [sql]
 
 
-def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
+def query_pov(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
 
     OTHER_CRITERIA = {'nps_employee':   "AND destination IN ('TOK', 'WLK') ",
                       'other_employee': "AND destination NOT IN ('TOK', 'WLK') ",
-                      'researcher':     "AND destination <> 'PRM' AND approved_type = 'RSC' ",
-                      'other_approved': "AND destination <> 'PRM' AND approved_type <> 'RSC' "
+                      'researcher':     "AND approved_type = 'RSC' ",
+                      'other_approved': "AND approved_type <> 'RSC' "
                       }
 
     if value_filter:
@@ -498,8 +508,9 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
         ('accessibility',       'Other',            ''),
         ('subsistence',         'Other',            ''),
         ('tek_campers',         'Tek campers',      ''),
-        ('nps_contractors',     'NPS contractors',  '')
     ]
+    if not use_gmp_vehicles:
+        sql_queries.append(('nps_contractors', 'NPS contractors', ''))
 
     all_data = []
     sql_statements = []
@@ -527,7 +538,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
     return data, sql_statements
 
 
-def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None):
+def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
 
     data, sql = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
                                           summarize_by=summarize_by, output_fields=output_fields,
@@ -666,6 +677,7 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
         plt.xticks(x_tick_inds[::x_tick_interval], x_labels[::x_tick_interval], rotation=45, rotation_mode='anchor', ha='right')
     else:
         plt.xticks([], []) # Don't plot any labels
+    plt.tick_params(axis='both', which='both', length=0)
 
     # If adding horizonal lines, make sure their values are noted on the y axis. Otherwise, just
     #   use the default ticks
@@ -762,6 +774,7 @@ def plot_line(all_data, x_labels, out_img, vehicle_limits=None, title=None, lege
     else:
         plt.ylim([0, max(max_vehicle_limit, all_data.values.max()) + y_tick_interval / 2.0])
     sns.despine()
+    plt.tick_params(axis='both', which='both', length=0)
 
     # Grouped bar charts are too small to read at the default width so widen if bars are grouped
     figure = plt.gcf()
@@ -864,7 +877,7 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter=None, category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None, sql_criteria='', destinations=None, custom_plot_title=None):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter='', category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None, sql_criteria='', destinations=None, custom_plot_title=None, use_gmp_vehicles=False):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -881,7 +894,10 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                       'total':      'Total vehicles'}
 
     sns.set_context('paper')
-    if not white_background:
+
+    if white_background:
+        sns.set_style('white')
+    else:
         sns.set_style('darkgrid')
 
     sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
@@ -928,10 +944,21 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         if sql_criteria.strip().lower().startswith('where'):
             sql_criteria = sql_criteria.split('WHERE')[-1].split('where')[-1]
         sql_criteria = " AND " + sql_criteria
+
+    if use_gmp_vehicles:
+       sql_criteria += " AND destination <> 'PRM' "
+
     destination_criteria = ''
     if destinations:
-        destinations = ', '.join(["'%s'" % d.strip() for d in destinations.split(',')])
-        destination_criteria = " AND destination IN (%s) " % destinations
+        if use_gmp_vehicles and 'PRM' in destinations:
+            warnings.warn("Primrose was included in destinations, but you also elected to only query vehicles"
+                          " that count toward the annual GMP limit (10,512). Vehicles going to Primrose will"
+                          " not be counted in this query.")
+            destinations = destinations.replace(', PRM,', '').replace('PRM,', '')\
+                .replace(', PRM', '').replace('PRM', '')
+        if destinations: # check this because if PRM was the only dest, the SQL will throw an error
+            destinations = ', '.join(["'%s'" % d.strip() for d in destinations.split(',')])
+            destination_criteria = " AND destination IN (%s) " % destinations
 
     # reformat dates for postgres (yyyy-mm-dd), assuming format mm/dd/yyyy
     try:
@@ -1051,7 +1078,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                                              sort_order=SORT_ORDER[query_name], other_criteria=other_criteria,
                                              get_totals=False, value_filter=sql_values_filter,
                                              category_filter=category_filter, summary_stat=summary_stat,
-                                             summary_field=summary_field, start_time=start_time, end_time=end_time)
+                                             summary_field=summary_field, start_time=start_time, end_time=end_time,
+                                             use_gmp_vehicles=use_gmp_vehicles)
             all_data.append(data)
             sql_statements.extend(sql_stmts)
             start_index = index
