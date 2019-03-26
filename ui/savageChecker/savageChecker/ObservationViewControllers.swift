@@ -900,27 +900,24 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
     }
     
-    
-    /*
- var textFields = [Int: UITextField]()
- var dropDownTextFields = [Int: DropDownTextField]()
- var boolSwitches = [Int: UISwitch]()
- var checkBoxes = [Int: CheckBoxControl]()
- */
-    
+    // Parse a JSON string from a QR code. The value of each item in the JSON string will only be used to fill a
+    //  text field if the key for item matches the label of the text field
     func parseQRString() {
         
         if let json = try? JSON(data: self.qrString.data(using: .utf8, allowLossyConversion: false)!) {
+            let jsonDictionary = json.dictionary
             for (i, fieldInfo) in self.textFieldIds.enumerated() {
                 let controlName = fieldInfo.label
                 let value = json[controlName].string ?? ""
-                switch fieldInfo.type {
-                case "normal":
-                    self.textFields[i]?.text = value
-                case "dropDown":
-                    self.dropDownTextFields[i]?.text = value
-                default:
-                    let _ = 1
+                if jsonDictionary?[controlName]?.string != nil {
+                    switch fieldInfo.type {
+                    case "normal", "number":
+                        self.textFields[i]?.text = value
+                    case "dropDown":
+                        self.dropDownTextFields[i]?.text = value
+                    default:
+                        let _ = 1
+                    }
                 }
             }
         } else {
