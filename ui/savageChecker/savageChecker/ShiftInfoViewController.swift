@@ -23,10 +23,10 @@ class ShiftInfoViewController: BaseFormViewController {
     //MARK: DB properties
     let sessionsTable = Table("sessions")
     let idColumn = Expression<Int64>("id")
-    let observerNameColumn = Expression<String>("observerName")
+    let observerNameColumn = Expression<String>("observer_name")
     let dateColumn = Expression<String>("date")
-    let openTimeColumn = Expression<String>("openTime")
-    let closeTimeColumn = Expression<String>("closeTime")
+    let openTimeColumn = Expression<String>("open_time")
+    let closeTimeColumn = Expression<String>("close_time")
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -453,10 +453,10 @@ class ShiftInfoViewController: BaseFormViewController {
         
         // MARK: - Session table
         let idColumn = Expression<Int64>("id")
-        let observerNameColumn = Expression<String>("observerName")
+        let observerNameColumn = Expression<String>("observer_name")
         let dateColumn = Expression<String>("date")
-        let openTimeColumn = Expression<String>("openTime")
-        let closeTimeColumn = Expression<String>("closeTime")
+        let openTimeColumn = Expression<String>("open_time")
+        let closeTimeColumn = Expression<String>("close_time")
         let uploadedColumn = Expression<Bool>("uploaded")
         
         let sessionsTable = Table("sessions")
@@ -475,9 +475,9 @@ class ShiftInfoViewController: BaseFormViewController {
         
         // MARK: - Observations table
         let timeColumn = Expression<String>("time")
-        let driverNameColumn = Expression<String>("driverName")
+        let driverNameColumn = Expression<String>("driver_name")
         let destinationColumn = Expression<String>("destination")
-        let nPassengersColumn = Expression<String>("nPassengers")
+        let nPassengersColumn = Expression<String>("n_passengers")
         let commentsColumn = Expression<String>("comments")
         
         let observationsTable = Table("observations")
@@ -497,10 +497,10 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Buses table
-        let busTypeColumn = Expression<String>("busType")
-        let busNumberColumn = Expression<String>("busNumber")
-        let isTrainingColumn = Expression<Bool>("isTraining")
-        let nOvernightPassengersColumn = Expression<String>("nOvernightPassengers")
+        let busTypeColumn = Expression<String>("bus_type")
+        let busNumberColumn = Expression<String>("bus_number")
+        let isTrainingColumn = Expression<Bool>("is_training")
+        let nOvernightPassengersColumn = Expression<String>("n_lodge_ovrnt")
         
         let busesTable = Table("buses")
         do {
@@ -523,12 +523,11 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS vehicle table
-        let tripPurposeColumn = Expression<String>("tripPurpose")
-        let workDivisionColumn = Expression<String>("workDivision")
-        let workGroupColumn = Expression<String>("workGroup")
-        let nExpectedNightsColumn = Expression<String>("nExpectedDays")
+        let tripPurposeColumn = Expression<String>("trip_purpose")
+        let workGroupColumn = Expression<String>("work_group")
+        let nExpectedNightsColumn = Expression<String>("n_nights")
         
-        let NPSVehicleTable = Table("npsVehicles")
+        let NPSVehicleTable = Table("nps_vehicles")
         do {
             try db?.run(NPSVehicleTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -540,7 +539,6 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(tripPurposeColumn)
-                t.column(workDivisionColumn)
                 t.column(workGroupColumn)
                 t.column(nExpectedNightsColumn)
             })
@@ -549,9 +547,10 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS approved table
-        let approvedTypeColumn = Expression<String>("approvedType")
-        
-        let NPSApprovedTable = Table("npsApproved")
+        let approvedTypeColumn = Expression<String>("approved_type")
+        let permitNumberColumn = Expression<String>("permit_number")
+        let permitHolderColumn = Expression<String>("permit_holder")
+        let NPSApprovedTable = Table("nps_approved")
         do {
             try db?.run(NPSApprovedTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -562,17 +561,17 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
-                t.column(tripPurposeColumn)
                 t.column(approvedTypeColumn)
                 t.column(nExpectedNightsColumn)
+                t.column(permitNumberColumn)
             })
         } catch {
             os_log("Couldn't cofigure the the nps approved table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - NPS conctractor table
-        let organizationNameColumn = Expression<String>("organizationName")
-        let NPSContractorTable = Table("npsContractors")
+        let organizationNameColumn = Expression<String>("organization")
+        let NPSContractorTable = Table("nps_contractors")
         do {
             try db?.run(NPSContractorTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -586,15 +585,16 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(tripPurposeColumn)
                 t.column(nExpectedNightsColumn)
                 t.column(organizationNameColumn)
+                t.column(permitNumberColumn)
             })
         } catch {
             os_log("Couldn't cofigure the the nps contractors table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - employee table
-        let permitHolderColumn = Expression<String>("permitHolder")
+        
         // add permit_number
-        let EmployeeTable = Table("employees")
+        let EmployeeTable = Table("employee_vehicles")
         do {
             try db?.run(EmployeeTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -606,14 +606,14 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(permitHolderColumn)
+                t.column(permitNumberColumn)
             })
         } catch {
             os_log("Couldn't cofigure the the employee table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Right of way table
-        let permitNumberColumn = Expression<String>("permitNumber")
-        let rightOfWayTable = Table("rightOfWay")
+        let rightOfWayTable = Table("inholders")
         do {
             try db?.run(rightOfWayTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -625,15 +625,15 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
                 t.column(permitNumberColumn)
-                t.column(tripPurposeColumn)
+                t.column(permitHolderColumn)
             })
         } catch {
-            os_log("Couldn't cofigure the the rightofway table", log: OSLog.default, type: .debug)
+            os_log("Couldn't cofigure the the inholder table", log: OSLog.default, type: .debug)
         }
         
         // MARK: - Tek camper table
-        let hasTekPassColumn = Expression<Bool>("hasTekPass")
-        let teklanikaCamperTable = Table("tekCampers")
+        let hasTekPassColumn = Expression<Bool>("has_tek_pass")
+        let teklanikaCamperTable = Table("tek_campers")
         do {
             try db?.run(teklanikaCamperTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -680,6 +680,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(driverNameColumn)
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(permitNumberColumn)
                 t.column(commentsColumn)
             })
         } catch {
@@ -704,7 +705,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Hunter table
-        let hunterTable = Table("subsistenceUsers")
+        let hunterTable = Table("subsistence")
         do {
             try db?.run(hunterTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -714,6 +715,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(driverNameColumn, defaultValue: " ")
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
+                t.column(permitNumberColumn)
                 t.column(commentsColumn)
             })
         } catch {
@@ -721,7 +723,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Road lottery table
-        let roadLotteryTable = Table("roadLottery")
+        let roadLotteryTable = Table("road_lottery")
         do {
             try db?.run(roadLotteryTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)
@@ -739,7 +741,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Other table
-        let otherVehicleTable = Table("other")
+        let otherVehicleTable = Table("other_vehicles")
         do {
             try db?.run(otherVehicleTable.create(ifNotExists: true) { t in
                 t.column(idColumn, primaryKey: .autoincrement)

@@ -16,10 +16,10 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
     var db: Connection!
     let sessionsTable = Table("sessions")
     let idColumn = Expression<Int64>("id")
-    let observerNameColumn = Expression<String>("observerName")
+    let observerNameColumn = Expression<String>("observer_name")
     let dateColumn = Expression<String>("date")
-    let openTimeColumn = Expression<String>("openTime")
-    let closeTimeColumn = Expression<String>("closeTime")
+    let openTimeColumn = Expression<String>("open_time")
+    let closeTimeColumn = Expression<String>("close_time")
     let documentInteractionController = UIDocumentInteractionController()
     
     var session: Session!

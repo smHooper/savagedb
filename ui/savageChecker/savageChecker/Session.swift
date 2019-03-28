@@ -26,10 +26,10 @@ class Session {//}: NSObject, NSCoding {
     
     //MARK: Types
     struct PropertyKey {
-        static let observerName = "observerName"
+        static let observerName = "observer_name"
         static let date = "date"
-        static let openTime = "openTime"
-        static let closeTime = "closeTime"
+        static let openTime = "open_time"
+        static let closeTime = "close_time"
     }
     
     init?(id: Int, observerName: String, openTime: String?, closeTime: String?, givenDate: String? = ""){

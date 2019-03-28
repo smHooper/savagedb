@@ -31,18 +31,18 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "Lodge Bus": (normal: "lodgeBusIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
-                 "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
-                 "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
-                 "NPS Contractor": (normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors", dataClassName: "NPSContractorObservation"),
-                 "Employee": (normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employees", dataClassName: "EmployeeObservation"),
-                 "Right of Way": (normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay", dataClassName: "RightOfWayObservation"),
-                 "Tek Camper": (normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers", dataClassName: "TeklanikaCamperObservation"),
+                 "NPS Vehicle": (normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "nps_vehicles", dataClassName: "NPSVehicleObservation"),
+                 "NPS Approved": (normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "nps_approved", dataClassName: "NPSApprovedObservation"),
+                 "NPS Contractor": (normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "nps_contractors", dataClassName: "NPSContractorObservation"),
+                 "Employee": (normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employee_vehicles", dataClassName: "EmployeeObservation"),
+                 "Right of Way": (normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "inholders", dataClassName: "RightOfWayObservation"),
+                 "Tek Camper": (normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tek_campers", dataClassName: "TeklanikaCamperObservation"),
                  "Bicycle": (normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
-                 "Propho": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
+                 "Photographer": (normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                  "Accessibility": (normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
-                 "Subsistence": (normal: "subsistenceIcon", selected: "shuttleBusImg", tableName: "subsistenceUsers", dataClassName: "Observation"),
-                 "Road Lottery": (normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
-                 "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
+                 "Subsistence": (normal: "subsistenceIcon", selected: "shuttleBusImg", tableName: "subsistence", dataClassName: "Observation"),
+                 "Road Lottery": (normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "road_lottery", dataClassName: "Observation"),
+                 "Other": (normal: "otherIcon", selected: "shuttleBusImg", tableName: "other_vehicles", dataClassName: "Observation")]
     
     //MARK: ToolBar properties
     let toolBar = UIToolbar()
@@ -50,18 +50,18 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     let barButtonIcons = [(label: "All", normal: "allTableIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "Bus", normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                           (label: "Lodge Bus", normal: "lodgeBusIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
-                          (label: "NPS Vehicle", normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "npsVehicles", dataClassName: "NPSVehicleObservation"),
-                          (label: "NPS Approved", normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "npsApproved", dataClassName: "NPSApprovedObservation"),
-                          (label: "NPS Contractor", normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "npsContractors", dataClassName: "NPSContractorObservation"),
-                          (label: "Employee", normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employees", dataClassName: "EmployeeObservation"),
-                          (label: "Right of Way", normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "rightOfWay", dataClassName: "RightOfWayObservation"),
-                          (label: "Tek Camper", normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tekCampers", dataClassName: "TeklanikaCamperObservation"),
+                          (label: "NPS Vehicle", normal: "npsVehicleIcon", selected: "shuttleBusImg", tableName: "nps_vehicles", dataClassName: "NPSVehicleObservation"),
+                          (label: "NPS Approved", normal: "npsApprovedIcon", selected: "shuttleBusImg", tableName: "nps_approved", dataClassName: "NPSApprovedObservation"),
+                          (label: "NPS Contractor", normal: "npsContractorIcon", selected: "shuttleBusImg", tableName: "nps_contractors", dataClassName: "NPSContractorObservation"),
+                          (label: "Employee", normal: "employeeIcon", selected: "shuttleBusImg", tableName: "employee_vehicles", dataClassName: "EmployeeObservation"),
+                          (label: "Right of Way", normal: "rightOfWayIcon", selected: "shuttleBusImg", tableName: "inholders", dataClassName: "RightOfWayObservation"),
+                          (label: "Tek Camper", normal: "tekCamperIcon", selected: "shuttleBusImg", tableName: "tek_campers", dataClassName: "TeklanikaCamperObservation"),
                           (label: "Bicycle", normal: "cyclistIcon", selected: "shuttleBusImg", tableName: "cyclists", dataClassName: "Observation"),
-                          (label: "Propho", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
+                          (label: "Photographer", normal: "photographerIcon", selected: "shuttleBusImg", tableName: "photographers", dataClassName: "PhotographerObservation"),
                           (label: "Accessibility", normal: "accessibilityIcon", selected: "shuttleBusImg", tableName: "accessibility", dataClassName: "AccessibilityObservation"),
-                          (label: "Subsistence", normal: "subsistenceIcon", selected: "shuttleBusImg", tableName: "subsistenceUsers", dataClassName: "Observation"),
-                          (label: "Road Lottery", normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "roadLottery", dataClassName: "Observation"),
-                          (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other", dataClassName: "Observation")]
+                          (label: "Subsistence", normal: "subsistenceIcon", selected: "shuttleBusImg", tableName: "subsistence", dataClassName: "Observation"),
+                          (label: "Road Lottery", normal: "roadLotteryIcon", selected: "shuttleBusImg", tableName: "road_lottery", dataClassName: "Observation"),
+                          (label: "Other", normal: "otherIcon", selected: "shuttleBusImg", tableName: "other_vehicles", dataClassName: "Observation")]
     
     let barButtonSize: CGFloat = 65
     let barButtonWidth: CGFloat = 150
@@ -85,20 +85,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     var observationCells = [Int: ObservationCell]()
     var cellOrder = [Int]()
-    let cellLabelColumns = ["Bus":            (label2: "busType",         label3: "destination"),
-                            "Lodge Bus":      (label2: "busType",         label3: "busNumber"),
-                            "NPS Vehicle":    (label2: "driverName",      label3: "workDivision"),
-                            "NPS Approved":   (label2: "approvedType",    label3: "destination"),
-                            "NPS Contractor": (label2: "destination",     label3: "organizationName"),
-                            "Employee":       (label2: "driverName",      label3: "nPassengers"),
-                            "Right of Way":   (label2: "driverName",      label3: "nPassengers"),
-                            "Tek Camper":     (label2: "nPassengers",     label3: ""),
-                            "Bicycle":        (label2: "destination",     label3: "nPassengers"),
-                            "Propho":         (label2: "driverName",      label3: "nExpectedNights"),
-                            "Accessibility":  (label2: "driverName",      label3: "destination"),
-                            "Subsistence":    (label2: "driverName",      label3: "nPassengers"),
-                            "Road Lottery":   (label2: "permitNumber",    label3: "nPassengers"),
-                            "Other":          (label2: "destination",     label3: "nPassengers")]
+    let cellLabelColumns = ["Bus":            (label2: "bus_type",         label3: "destination"),
+                            "Lodge Bus":      (label2: "bus_type",         label3: "bus_number"),
+                            "NPS Vehicle":    (label2: "driver_name",      label3: "work_group"),
+                            "NPS Approved":   (label2: "approved_type",    label3: "destination"),
+                            "NPS Contractor": (label2: "destination",     label3: "organization"),
+                            "Employee":       (label2: "driver_name",      label3: "n_passengers"),
+                            "Right of Way":   (label2: "driver_name",      label3: "n_passengers"),
+                            "Tek Camper":     (label2: "n_passengers",     label3: ""),
+                            "Bicycle":        (label2: "destination",     label3: "n_passengers"),
+                            "Photographer":   (label2: "driver_name",      label3: "n_nights"),
+                            "Accessibility":  (label2: "driver_name",      label3: "destination"),
+                            "Subsistence":    (label2: "driver_name",      label3: "n_passengers"),
+                            "Road Lottery":   (label2: "permit_number",    label3: "n_passengers"),
+                            "Other":          (label2: "destination",     label3: "n_passengers")]
     
     
     //MARK: db properties
@@ -109,20 +109,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     //MARK: observation DB properties
     let idColumn = Expression<Int64>("id")
-    let observerNameColumn = Expression<String>("observerName")
+    let observerNameColumn = Expression<String>("observer_name")
     let dateColumn = Expression<String>("date")
     let timeColumn = Expression<String>("time")
-    let driverNameColumn = Expression<String>("driverName")
+    let driverNameColumn = Expression<String>("driver_name")
     let destinationColumn = Expression<String>("destination")
-    let nPassengersColumn = Expression<String>("nPassengers")
+    let nPassengersColumn = Expression<String>("n_passengers")
     let commentsColumn = Expression<String>("comments")
     
     let observationsTable = Table("observations")
     
     //MARK: session DB properties
     let sessionsTable = Table("sessions")
-    let openTimeColumn = Expression<String>("openTime")
-    let closeTimeColumn = Expression<String>("closeTime")
+    let openTimeColumn = Expression<String>("open_time")
+    let closeTimeColumn = Expression<String>("close_time")
     
 
     //MARK: - Layout

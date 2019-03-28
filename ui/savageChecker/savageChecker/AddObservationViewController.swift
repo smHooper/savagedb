@@ -56,7 +56,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                                     "Right of Way": "rightOfWayIcon",
                                     "Tek Camper": "tekCamperIcon",
                                     "Bicycle": "cyclistIcon",
-                                    "Propho": "photographerIcon",
+                                    "Photographer": "photographerIcon",
                                     "Accessibility": "accessibilityIcon",
                                     "Subsistence": "subsistenceIcon",
                                     "Road Lottery": "roadLotteryIcon",
@@ -503,7 +503,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                      "Right of Way": RightOfWayObservationViewController.self,
                      "Tek Camper": TeklanikaCamperObservationViewController.self,
                      "Bicycle": CyclistObservationViewController.self,
-                     "Propho": PhotographerObservationViewController.self,
+                     "Photographer": PhotographerObservationViewController.self,
                      "Accessibility": AccessibilityObservationViewController.self,
                      "Subsistence": SubsistenceObservationViewController.self,
                      "Road Lottery": RoadLotteryObservationViewController.self,
@@ -653,10 +653,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let db: Connection!
         let sessionsTable = Table("sessions")
         let idColumn = Expression<Int64>("id")
-        let observerNameColumn = Expression<String>("observerName")
+        let observerNameColumn = Expression<String>("observer_name")
         let dateColumn = Expression<String>("date")
-        let openTimeColumn = Expression<String>("openTime")
-        let closeTimeColumn = Expression<String>("closeTime")
+        let openTimeColumn = Expression<String>("open_time")
+        let closeTimeColumn = Expression<String>("close_time")
         do {
             db = try Connection(dbPath)
             rows = Array(try db.prepare(sessionsTable))
