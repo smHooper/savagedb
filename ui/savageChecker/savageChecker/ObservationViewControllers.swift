@@ -2705,7 +2705,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = self.observation?.date
             self.textFields[2]?.text = self.observation?.time
             self.textFields[3]?.text = self.observation?.driverName
-            self.textFields[4]?.text = self.observation?.destination
+            self.dropDownTextFields[4]?.text = self.observation?.destination
             self.textFields[5]?.text = self.observation?.permitNumber
             self.textFields[6]?.text = self.observation?.permitHolder
             self.textFields[7]?.text = self.observation?.nPassengers
@@ -2934,7 +2934,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             } catch {
                 fatalError("Query was unsuccessful because \(error.localizedDescription)")
             }
-            self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], permitHolder: record[permitHolderColumn], tripPurpose: record[tripPurposeColumn], comments: record[commentsColumn])
+            self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], permitHolder: record[permitHolderColumn], comments: record[commentsColumn])
             
             self.dropDownTextFields[0]?.text = self.observation?.observerName
             self.textFields[1]?.text = self.observation?.date
@@ -3533,8 +3533,8 @@ class PhotographerObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[4]?.text = self.observation?.destination
             self.textFields[5]?.text = self.observation?.permitNumber
             self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[6]?.text = self.observation?.nExpectedNights
-            self.textFields[7]?.text = self.observation?.comments
+            self.textFields[7]?.text = self.observation?.nExpectedNights
+            self.textFields[8]?.text = self.observation?.comments
             self.saveButton.isEnabled = true
         }
     }
