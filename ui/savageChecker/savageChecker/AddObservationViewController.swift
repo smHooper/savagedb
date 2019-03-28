@@ -21,7 +21,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var scrollView: UIScrollView!
     var navigationBar: CustomNavigationBar!
-    var blurEffectView: UIVisualEffectView!
     var messageView: UITextView!
     var messageViewBackground: UIVisualEffectView!
     var blurredBackground: UIImageView!
@@ -421,7 +420,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
         // Add blurred background from current view
         let popoverFrame = browserViewController.getVisibleFrame()
-        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+        let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
         browserViewController.view.addSubview(backgroundView)
         browserViewController.view.sendSubview(toBack: backgroundView)
         
@@ -444,7 +443,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             
             // Add blurred background from current view
             let popoverFrame = uploadViewController.getVisibleFrame()
-            let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+            let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
             uploadViewController.view.addSubview(backgroundView)
             uploadViewController.view.sendSubview(toBack: backgroundView)
             
@@ -524,72 +523,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         
     }
     
-    // Return a blurred image of all currently visible views
-    func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
-        
-        //add blur temporarily
-        addBlur()
-        
-        // Get image of all currently visible views
-        let backgroundView = UIImageView(image: self.view.takeSnapshot())
-        
-        // remove blurview
-        self.blurEffectView.removeFromSuperview()
-        
-        // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
-        backgroundView.contentMode = .scaleAspectFill
-        let currentFrame = self.view.frame
-        backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
-        
-        // Add translucent white
-        if whiteAlpha > 0 {
-            let translucentWhite = UIView(frame: backgroundView.frame)
-            translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
-            backgroundView.addSubview(translucentWhite)
-        }
-        
-        return backgroundView
-    }
-    
-    
-    func addBlur() {
-        // Only apply the blur if the user hasn't disabled transparency effects
-        if !UIAccessibilityIsReduceTransparencyEnabled() {
-            self.view.backgroundColor = .clear
-            
-            let blurEffect = UIBlurEffect(style: .light)
-            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
-            let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
-            let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
-            
-            //always fill the view
-            self.blurEffectView.frame = self.view.frame//bounds
-            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            
-            self.view.addSubview(self.blurEffectView)
-            self.view.addSubview(vibrancyView)
-            
-        } else {
-            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
-            self.view.backgroundColor = .black
-        }
-    }
-    
-    
-    func showShiftInfoForm() {
-        let shiftViewController = ShiftInfoViewController()
-        shiftViewController.modalPresentationStyle = .formSheet
-        shiftViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))//CGSize.init(width: 600, height: 600)
-        
-        // Add blurred background from current view
-        let popoverFrame = shiftViewController.getVisibleFrame()
-        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
-        shiftViewController.view.addSubview(backgroundView)
-        shiftViewController.view.sendSubview(toBack: backgroundView)
-        
-        present(shiftViewController, animated: true, completion: nil)
-    }
-    
     
     @objc func editShiftInfoButtonPressed() {
         showShiftInfoForm()
@@ -602,12 +535,12 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     
-    func animateRemoveMenu(duration: CGFloat = 0.75) {
+    /*func animateRemoveMenu(duration: CGFloat = 0.75) {
         let presentingController = presentingViewController as! BaseTableViewController
         UIView.animate(withDuration: 0.75,
                        animations: {presentingController.blurEffectView.alpha = 0.0},//{self.blurEffectView.alpha = 0.0},//
                        completion: {(value: Bool) in presentingController.blurEffectView.removeFromSuperview()})//self.blurEffectView.removeFromSuperview()})//
-    }
+    }*/
 
     
     @objc func moveToTableView(){

@@ -23,7 +23,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var presentTransition: UIViewControllerAnimatedTransitioning?
     var dismissTransition: UIViewControllerAnimatedTransitioning?
     var dismiss = false
-    var blurEffectView: UIVisualEffectView!
+    //var blurEffectView: UIVisualEffectView!
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     let documentInteractionController = UIDocumentInteractionController()
     var currentScreenFrame = UIScreen.main.bounds // Annoyingly, when 'requires full screen' is checked, the screen size doesn't update until after willTransitionTo() is called. So I'll have to calculate it manually
@@ -666,7 +666,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Add blurred background from current view
         let popoverFrame = browserViewController.getVisibleFrame()
-        let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+        let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
         browserViewController.view.addSubview(backgroundView)
         browserViewController.view.sendSubview(toBack: backgroundView)
         
@@ -689,7 +689,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             
             // Add blurred background from current view
             let popoverFrame = uploadViewController.getVisibleFrame()
-            let backgroundView = getBlurredSnapshot(frame: popoverFrame)
+            let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
             uploadViewController.view.addSubview(backgroundView)
             uploadViewController.view.sendSubview(toBack: backgroundView)
             
@@ -725,97 +725,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     // Dismiss the "Sign in with Google" view
     func sign(_ signIn: GIDSignIn!, dismiss viewController: UIViewController!) {
         self.dismiss(animated: true, completion: nil)
-    }
-    
-    
-    // Return a blurred image of all currently visible views
-    func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
-        
-        //add blur temporarily so the snapshot will be blurred
-        addBlur()
-        
-        // Get image of all currently visible views
-        let backgroundView = UIImageView(image: self.view.takeSnapshot())
-        
-        // remove blurview
-        self.blurEffectView.removeFromSuperview()
-        
-        // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
-        backgroundView.contentMode = .scaleAspectFill
-        let currentFrame = self.view.frame
-        backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
-
-        // Add translucent white
-        if whiteAlpha > 0 {
-            let translucentWhite = UIView(frame: backgroundView.frame)
-            translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
-            backgroundView.addSubview(translucentWhite)
-        }
-        
-        return backgroundView
-    }
-    
-    
-    @objc func archiveButtonPressed(button: UIBarButtonItem){
-        
-        let popoverController = ArchivePopoverViewController()
-        popoverController.modalPresentationStyle = .formSheet
-        popoverController.preferredContentSize = CGSize(width: min(self.view.frame.width, 450.0), height: min(self.view.frame.height, 350.0))//CGSize.init(width: 600, height: 600)
-        
-        // Add blurred background from current view
-        let popoverFrame = popoverController.getVisibleFrame()
-        let backgroundView = getBlurredSnapshot(frame: popoverFrame, whiteAlpha: 0.3)
-        popoverController.view.addSubview(backgroundView)
-        popoverController.view.sendSubview(toBack: backgroundView)
-        
-        present(popoverController, animated: true, completion: nil)
-        
-    }
-    
-    func addBlur() {
-        // Only apply the blur if the user hasn't disabled transparency effects
-        if !UIAccessibilityIsReduceTransparencyEnabled() {
-            self.view.backgroundColor = .clear
-            
-            let blurEffect = UIBlurEffect(style: .regular)
-            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
-            let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
-            let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
-            
-            //always fill the view
-            self.blurEffectView.frame = self.view.frame//bounds
-            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            
-            self.view.addSubview(self.blurEffectView)
-            self.view.addSubview(vibrancyView)
-            
-        } else {
-            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
-            self.view.backgroundColor = .black
-        }
-    }
-    
-    
-    @objc func addButtonPressed(){
-        
-        // Cancel editing
-        if self.isEditingTable {
-            self.tableView.isEditing = false
-            self.isEditingTable = false
-            let editButton = makeEditButton(imageName: "deleteIcon")
-            self.editBarButton.customView = editButton
-        }
-        
-        // Add blurEffectView here because if it's added in AddObservationViewController,
-        //  it will be presented modally with the menu. Adding it to this controller makes
-        //  it appear visually between the two controllers, rather than sliding up from the
-        //  bottom of the screen with the menu
-        addBlur()
-        
-        let menuController = AddObservationViewController()
-        menuController.modalPresentationStyle = .overCurrentContext
-        menuController.modalTransitionStyle = .coverVertical
-        present(menuController, animated: true, completion: nil)
     }
     
     

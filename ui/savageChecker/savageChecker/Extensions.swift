@@ -28,6 +28,83 @@ extension String {
 
 extension UIViewController {
     
+    /*var blurEffectView: UIVisualEffectView! {
+        get {
+            let blurEffect = UIBlurEffect(style: .light)
+            let effectView = UIVisualEffectView(effect: blurEffect)
+            effectView.frame = self.view.frame
+            return effectView
+        }
+        set {
+            self.blurEffectView.frame = self.view.frame
+        }
+    }*/
+    //static var formSheetSize = 0
+    var formSheetFrame: CGRect {
+        let contentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))
+        let frame = self.view.frame
+        let controllerMinX = frame.minX + frame.width/2 - contentSize.width/2
+        let controllerMinY = frame.minY + frame.height/2 - contentSize.height/2
+        return CGRect(x: controllerMinX, y: controllerMinY, width: contentSize.width, height: contentSize.height)
+    }
+    
+    /*var blurredSnapshotFrame: CGRect {
+        let currentFrame = self.view.frame
+        let frame = self.formSheetFrame
+        return CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
+    }*/
+    
+    var blurredSnapshotView: UIView {
+        get {
+            let blurEffect = UIBlurEffect(style: .light)
+            let blurEffectView = UIVisualEffectView(effect: blurEffect)
+            // Only apply the blur if the user hasn't disabled transparency effects
+            if !UIAccessibilityIsReduceTransparencyEnabled() {
+                self.view.backgroundColor = .clear
+                
+                let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
+                let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
+                
+                blurEffectView.frame = self.view.frame//bounds
+                blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                
+                self.view.addSubview(blurEffectView)
+                self.view.addSubview(vibrancyView)
+                
+            } else {
+                // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
+                self.view.backgroundColor = .black
+            }
+        
+                
+            // Get image of all currently visible views with the blur
+            let backgroundView = UIImageView(image: self.view.takeSnapshot())
+            
+            // remove blurview
+            blurEffectView.removeFromSuperview()
+            
+            // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
+            backgroundView.contentMode = .scaleAspectFill
+            let currentFrame = self.view.frame
+            backgroundView.frame = CGRect(x: currentFrame.minX - formSheetFrame.minX, y: currentFrame.minY - formSheetFrame.minY, width: currentFrame.width, height: currentFrame.height)
+            
+            // Add translucent white
+            let whiteAlpha: CGFloat = 0 // this is just here in case I want to use this in the future
+            if whiteAlpha > 0 {
+                let translucentWhite = UIView(frame: backgroundView.frame)
+                translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
+                backgroundView.addSubview(translucentWhite)
+            }
+            
+            return backgroundView
+        }
+        /*set {
+            
+        }*/
+    }
+    
+    
+    
     func addBackground(showWhiteView: Bool = true) {
         /*let startingBackGroundView = UIImageView(image: UIImage(named: "viewControllerBackground"))
         startingBackGroundView.frame = self.view.frame
@@ -51,7 +128,7 @@ extension UIViewController {
             backgroundImage = image
         } else {
             let defaultImage = UIImage(named: "viewControllerBackgroundBlurred")
-            saveImage(image: defaultImage!)
+            let _ = saveImage(image: defaultImage!)
             backgroundImage = defaultImage!
         }
         
@@ -205,6 +282,104 @@ extension UIViewController {
         return currentScreenFrame
     }
     
+
+    func getCurrentDbPath() -> String {
+        if let userData = loadUserData() {
+            // Check if the active path's exists
+            return FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
+        } else {
+            // Use global path
+            return dbPath
+        }
+    }
+    
+    
+    /*func addBlur() {
+        // Only apply the blur if the user hasn't disabled transparency effects
+        if !UIAccessibilityIsReduceTransparencyEnabled() {
+            self.view.backgroundColor = .clear
+            
+            let blurEffect = UIBlurEffect(style: .light)
+            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
+            let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
+            let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
+            
+            self.blurEffectView.frame = self.view.frame//bounds
+            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            
+            self.view.addSubview(self.blurEffectView)
+            self.view.addSubview(vibrancyView)
+            
+        } else {
+            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
+            self.view.backgroundColor = .black
+        }
+    }
+
+    
+    // Return a blurred image of all currently visible views
+    func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
+        
+        //add blur temporarily
+        addBlur()
+        
+        // Get image of all currently visible views with the blur
+        let backgroundView = UIImageView(image: self.view.takeSnapshot())
+        
+        // remove blurview
+        self.blurEffectView.removeFromSuperview()
+        
+        // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
+        backgroundView.contentMode = .scaleAspectFill
+        let currentFrame = self.view.frame
+        backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
+        
+        // Add translucent white
+        if whiteAlpha > 0 {
+            let translucentWhite = UIView(frame: backgroundView.frame)
+            translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
+            backgroundView.addSubview(translucentWhite)
+        }
+        
+        return backgroundView
+    }*/
+    
+    
+    func currentDbExists() -> Bool {
+        let currentDbPath = getCurrentDbPath()
+        let fileManager = FileManager.default
+        return fileManager.fileExists(atPath: currentDbPath)
+    }
+    
+
+    func showShiftInfoForm() {
+        let shiftViewController = ShiftInfoViewController()
+        shiftViewController.modalPresentationStyle = .formSheet
+        shiftViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))//CGSize.init(width: 600, height: 600)
+        
+        // Add blurred background from current view
+        //let popoverFrame = shiftViewController.getVisibleFrame()
+        let backgroundView = self.blurredSnapshotView//getBlurredSnapshot(frame: formSheetFrame)
+        shiftViewController.view.addSubview(backgroundView)
+        shiftViewController.view.sendSubview(toBack: backgroundView)
+        
+        present(shiftViewController, animated: true, completion: nil)
+    }
+    
+    
+    func showDbNotExistsAlert() {
+        // If the current DB does not exist, alert the user and force them to create a new DB
+        if !currentDbExists() {
+            let currentDbName = getCurrentDbPath().split(separator: "/")
+            let alertTitle = "No database file found"
+            let alertMessage = "The database named \(currentDbName) that you are trying to access does not exist or could not be found. Perhaps it was deleted? Press OK to create a new database and continue or close the app and re-open it to start from the home screen."
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "Create new DB", style: .default, handler: {handler in
+                //alertController.dismiss(animated: false, completion: nil)
+                self.showShiftInfoForm()
+            }))
+        }
+    }
     
 }
 

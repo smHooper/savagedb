@@ -310,40 +310,8 @@ class ShiftInfoViewController: BaseFormViewController {
                 // If observer name was the field just modified, check to see if there's an existing DB from today with this user's name.
                 //  If so, ask user if they wan't to edit the existing DB or create a new one
                 let dateString = getFileNameTag()
-                /*var existingDBFile: String? = nil
-                if self.currentTextField == 0 {
-                    let databaseFiles = findFiles()
-                    for dbFile in databaseFiles.sorted() {
-                        let thisFileName = dbFile.split(separator: "/").last ?? ""
-                        if thisFileName == "savageChecker_\(dateString).db" {
-                            existingDBFile = dbFile
-                            break
-                        }
-                    }
-                }
-                // If existingDBFile isn't nil, then it was set because there's an existing DB with today's date
-                if let existingDBFile = existingDBFile {
-                    let alertTitle = "Existing database found"
-                    let alertMessage = "A database named \(existingDBFile) already exists for this observer from today. Do you want to create a new database file or add/modify observations in the existing one?"
-                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                    alertController.addAction(UIAlertAction(title: "Create new file", style: .default, handler: {handler in
-                        dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(dateString).db").path // Use new path
-                        self.connectToDB()
-                    }))
-                    alertController.addAction(UIAlertAction(title: "Use existing file", style: .default, handler: {handler in
-                        dbPath = documentsDirectory.appendingPathComponent(existingDBFile).path // Use existing path
-                        self.isNewSession = false
-                        print("dbPath after Use existing file selected: \(dbPath)")
-                        self.connectToDB()
-                    }))
-                    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-                    self.present(alertController, animated: true, completion: nil)
-                }
-                    // Otherwise, just create a new DB with the new path
-                else {*/
                 dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(dateString).db").path // Use new path
                 connectToDB()
-                //}
             }
             
             // Save the UserData instance
