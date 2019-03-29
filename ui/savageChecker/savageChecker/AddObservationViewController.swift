@@ -25,6 +25,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var messageViewBackground: UIVisualEffectView!
     var blurredBackground: UIImageView!
     var animationComplete = false
+    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         get {
             if self.animationComplete {
@@ -167,13 +168,12 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let quoteTimeSeconds = min(7, max(Double(randomQuote.count)/200 * 5, 3))
         
         // Add acticity indicator so it looks like things are loading
-        let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
-        activityIndicator.center = CGPoint(x: self.view.center.x, y: self.messageView.frame.maxY + (self.view.frame.height - self.messageView.frame.maxY)/2)
+        self.activityIndicator.center = CGPoint(x: self.view.center.x, y: self.messageView.frame.maxY + (self.view.frame.height - self.messageView.frame.maxY)/2)
         self.view.addSubview(activityIndicator)
-        activityIndicator.startAnimating()
+        self.activityIndicator.startAnimating()
         DispatchQueue.main.asyncAfter(deadline: .now() + quoteTimeSeconds + 0.5) {
-            activityIndicator.stopAnimating()
-            activityIndicator.isHidden = true
+            self.activityIndicator.stopAnimating()
+            self.activityIndicator.isHidden = true
         }
         
         // First, animate the messageView disappearing (it appears with crossfade automatically
@@ -199,6 +199,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.messageView.layer.removeAllAnimations()
         self.messageViewBackground.layer.removeAllAnimations()
         self.blurredBackground.layer.removeAllAnimations()
+        self.activityIndicator.removeFromSuperview()
         
     }
     
