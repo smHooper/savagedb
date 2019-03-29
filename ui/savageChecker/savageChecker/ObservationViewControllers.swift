@@ -3847,7 +3847,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
-            self.dropDownTextFields[5]?.text = "N/A"
+            //self.dropDownTextFields[5]?.text = "N/A"
             
             self.saveButton.isEnabled = false
             
@@ -3890,6 +3890,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
         if !checkCurrentDb() { return }
         // Reconnect in case the last time save button was pressed, the db didn't exist
         self.db = try? Connection(dbPath)
@@ -4008,14 +4009,41 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     var permitNumberColumn = Expression<String>("permit_number")
     var observation: SubsistenceObservation? //No class specific to this view controller because a hunting observation doesn't add any additional properties to the base class
     
+    //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": observers,
+                                    "Destination": destinations,
+                                    "Trip purpose": ["Other"]]
         
         self.observationsTable = Table("subsistence")
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        
+        self.dropDownMenuOptions = ["Observer name": observers,
+                                    "Destination": destinations,
+                                    "Trip purpose": ["Other"]]
         
         self.observationsTable = Table("subsistence")
     }
