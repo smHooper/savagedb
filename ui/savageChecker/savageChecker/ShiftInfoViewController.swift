@@ -415,7 +415,6 @@ class ShiftInfoViewController: BaseFormViewController {
             os_log("Couldn't cofigure the DB", log: OSLog.default, type: .debug)
             //fatalError(error.localizedDescription)
         }
-        print(dbPath)
         
         // Make tables
         

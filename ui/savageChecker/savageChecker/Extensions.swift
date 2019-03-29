@@ -28,31 +28,14 @@ extension String {
 
 extension UIViewController {
     
-    /*var blurEffectView: UIVisualEffectView! {
-        get {
-            let blurEffect = UIBlurEffect(style: .light)
-            let effectView = UIVisualEffectView(effect: blurEffect)
-            effectView.frame = self.view.frame
-            return effectView
-        }
-        set {
-            self.blurEffectView.frame = self.view.frame
-        }
-    }*/
-    //static var formSheetSize = 0
+    static var formSheetSize = CGSize(width: min(UIScreen.main.bounds.width, 400), height: min(UIScreen.main.bounds.height, 600))
     var formSheetFrame: CGRect {
-        let contentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))
+        let contentSize = UIViewController.formSheetSize//CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))
         let frame = self.view.frame
         let controllerMinX = frame.minX + frame.width/2 - contentSize.width/2
         let controllerMinY = frame.minY + frame.height/2 - contentSize.height/2
         return CGRect(x: controllerMinX, y: controllerMinY, width: contentSize.width, height: contentSize.height)
     }
-    
-    /*var blurredSnapshotFrame: CGRect {
-        let currentFrame = self.view.frame
-        let frame = self.formSheetFrame
-        return CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
-    }*/
     
     var blurredSnapshotView: UIView {
         get {
@@ -76,7 +59,7 @@ extension UIViewController {
                 self.view.backgroundColor = .black
             }
         
-                
+            
             // Get image of all currently visible views with the blur
             let backgroundView = UIImageView(image: self.view.takeSnapshot())
             
@@ -355,7 +338,8 @@ extension UIViewController {
     func showShiftInfoForm() {
         let shiftViewController = ShiftInfoViewController()
         shiftViewController.modalPresentationStyle = .formSheet
-        shiftViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600))//CGSize.init(width: 600, height: 600)
+        UIViewController.formSheetSize = CGSize(width: min(self.view.frame.width, 400), height: min(self.view.frame.height, 600)) // Set this because it affects the bounds of the blurEffectView
+        shiftViewController.preferredContentSize = UIViewController.formSheetSize//CGSize.init(width: 600, height: 600)
         
         // Add blurred background from current view
         //let popoverFrame = shiftViewController.getVisibleFrame()
@@ -369,17 +353,17 @@ extension UIViewController {
     
     func showDbNotExistsAlert() {
         // If the current DB does not exist, alert the user and force them to create a new DB
-        if !currentDbExists() {
-            let currentDbName = getCurrentDbPath().split(separator: "/")
-            let alertTitle = "No database file found"
-            let alertMessage = "The database named \(currentDbName) that you are trying to access does not exist or could not be found. Perhaps it was deleted? Press OK to create a new database and continue or close the app and re-open it to start from the home screen."
-            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "Create new DB", style: .default, handler: {handler in
-                //alertController.dismiss(animated: false, completion: nil)
-                self.showShiftInfoForm()
-            }))
-        }
+        let currentDbName = getCurrentDbPath().split(separator: "/").last ?? ""
+        let alertTitle = "No database file found"
+        let alertMessage = "The database named \(currentDbName) that you are trying to access does not exist or could not be found, and you can't perform the current operation without a valid file. Perhaps the file was deleted? Press OK to create a new database, then re-try what you were trying to do."
+        let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+            //alertController.dismiss(animated: false, completion: nil)
+            self.showShiftInfoForm()
+        }))
+        present(alertController, animated: true, completion: nil)
     }
+    
     
 }
 

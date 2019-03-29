@@ -221,14 +221,31 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
     }
     
+    func checkCurrentDb() -> Bool {
+        // Helper function to verify that the data have not been deleted. If so, show an alert and reload the table
+        if !currentDbExists() {
+            showDbNotExistsAlert()
+            self.observationCells.removeAll() // Make sure the table is blank so the user can't select an observation that doesn't exist
+            self.tableView.reloadData()
+            return false
+        } else {
+            return true
+        }
+    }
+    
     // Convenience function to load all tableView data
     func loadData() {
-        do {
-            try loadSession()
+        
+        if !checkCurrentDb() { return }
+        self.db = try? Connection(dbPath)
+        
+        if self.db != nil {
+            try? loadSession()
             //self.observations = loadObservations()!
             loadObservations()
-        } catch let error{
-            print(error.localizedDescription)
+        } else{
+            print("could not connect to DB in tableViewController.loadData()")
+            os_log("could not connect to DB in tableViewController.loadData()", log: .default, type: .debug)
         }
         
         self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
@@ -662,7 +679,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func prepareDatabaseBrowserViewController() -> DatabaseBrowserViewController {
         let browserViewController = DatabaseBrowserViewController()
         browserViewController.modalPresentationStyle = .formSheet
-        browserViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
+        UIViewController.formSheetSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500)) // Set this because it affects the bounds of the blurEffectView
+        browserViewController.preferredContentSize = UIViewController.formSheetSize//CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
         
         // Add blurred background from current view
         let popoverFrame = browserViewController.getVisibleFrame()
@@ -685,10 +703,11 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         if Reachability.isConnectedToNetwork() {
             let uploadViewController = GoogleDriveUploadViewController()
             uploadViewController.modalPresentationStyle = .formSheet
-            uploadViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 400))
+            UIViewController.formSheetSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500)) // Set this because it affects the bounds of the blurEffectView
+            uploadViewController.preferredContentSize = UIViewController.formSheetSize
             
             // Add blurred background from current view
-            let popoverFrame = uploadViewController.getVisibleFrame()
+            let _ = uploadViewController.getVisibleFrame()
             let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
             uploadViewController.view.addSubview(backgroundView)
             uploadViewController.view.sendSubview(toBack: backgroundView)
@@ -743,6 +762,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     // Compose each cell
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
+        
         // Table view cells are reused and should be dequeued using a cell identifier.
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! BaseObservationTableViewCell
         //let cellIdentifier = "cell"
@@ -796,23 +816,17 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     // called when the cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
+        // If the database has been deleted, alert the user, reload data, and exit
+        if !checkCurrentDb() { return }
+        
         let index = self.cellOrder[indexPath.row]
-        print("self.observationCells[index]: \(self.observationCells[index])")
-        print("index:\(index)")
-        print("indexPath.row: \(indexPath.row)")
         let thisObservation = (self.observationCells[index]?.observation)!
         let observationType = (self.observationCells[index]?.observationType)!
-        /*let tableName = (self.icons[observationType]?.tableName)!
-        let observationClassName = (self.icons[observationType]?.dataClassName)!*/
         
         let observationViewController = observationViewControllers[observationType]! //Stored in Globals.swift
         observationViewController.observationId = thisObservation.id
         observationViewController.title = observationType
-        
         observationViewController.isAddingNewObservation = false
-        // post notification to pass observation to the view controller
-        //NotificationCenter.default.post(name: Notification.Name("updatingObservation"), object: observations[indexPath.row])
-        
         observationViewController.modalPresentationStyle = .custom
         observationViewController.transitioningDelegate = self
         
@@ -824,6 +838,18 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     // Enable editing
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        
+        // If the database has been deleted, alert the user, reload data, set the table to non-edit mode and exit
+        if !checkCurrentDb() {
+            if self.isEditingTable {
+                self.tableView.isEditing = false
+                self.isEditingTable = false
+                let editButton = makeEditButton(imageName: "deleteIcon")
+                self.editBarButton.customView = editButton
+            }
+            return
+        }
+        
         if editingStyle == .delete {
             // Delete the row from the data source
             //let id = observations[indexPath.row].id
@@ -839,7 +865,11 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 loadObservations()
                 tableView.deleteRows(at: [indexPath], with: .fade)
             } else {
-                // alert the user that the delete failed
+                let alertTitle = "Delete failed"
+                let alertMessage = "The delete operation failed for an unknown reason"
+                let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+                present(alertController, animated: true, completion: nil)
             }
             /*do {
                 try db.run(recordToRemove.delete())
@@ -890,13 +920,23 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let label3ColumnName = self.cellLabelColumns[label]!.label3
             let label2Column = Expression<String>(label2ColumnName)
             let label3Column = Expression<String>(label3ColumnName)
-            var rows: [Row]
+            var rows = [Row]()
             
             do {
                 rows = Array(try db.prepare(table))
             } catch {
                 os_log("Could not load observations", log:.default, type:.debug)
-                fatalError("Could not load observations: \(error.localizedDescription)")
+                print("Could not load observations: \(error.localizedDescription)")
+                
+                let alertTitle = "Error encountered with \(info.tableName) table"
+                let alertMessage = "Data from the \(info.tableName) table could not be loaded. This database is likely not valid or it could have somehow gotten corrupt. Press OK to enter shift info and try repairing the database"
+                let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+                    //alertController.dismiss(animated: false, completion: nil)
+                    self.showShiftInfoForm()
+                }))
+                present(alertController, animated: true, completion: nil)
+                return
             }
             
             

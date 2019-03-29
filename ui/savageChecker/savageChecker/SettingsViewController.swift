@@ -52,11 +52,11 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                                           SettingsTableViewRow(label: "Destination",    type: "list", context: "global"),
                                           SettingsTableViewRow(label: "Bus type",       type: "list", context: "Bus"),
                                           SettingsTableViewRow(label: "Lodge",          type: "list", context: "Lodge Bus"),
-                                          SettingsTableViewRow(label: "Work division",     type: "list", context: "NPS Vehicle"),
+                                          SettingsTableViewRow(label: "Work group",     type: "list", context: "NPS Vehicle"),
                                           SettingsTableViewRow(label: "Approved category",  type: "list", context: "NPS Approved")
                                         ]
                    ]
-    
+    //TODO: Add other dropdown menus to main menu
     
     // MARK: - Layout
     

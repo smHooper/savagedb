@@ -737,6 +737,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         textFields[sender.tag]?.resignFirstResponder()
     }
     
+    
+
+    
+    
     @objc func updateData(){
         // Dummy function. Needs to be overridden in sublcasses
         print("updateData() method not overriden")
@@ -997,6 +1001,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     // Configure tableview controller before it's presented
     @objc func saveButtonPressed() {
+        
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -1025,21 +1034,28 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     func dismissController() {
         if self.isAddingNewObservation {
             // Go back to the addObs menu
-            if self.qrString.isEmpty {
+            if let presentingController = self.presentingViewController as? BaseTableViewController {
+                // The only way this would happen is if the db was deleted while viewing an existing record (in which case isAddingNewObservation is set to true)
+                dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
+                presentingController.loadData()
+            } else if self.qrString.isEmpty {
                 //let presentingController = self.presentingViewController!
                 self.dismissTransition = RightToLeftTransition()
                 dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             // Dismiss the last 2 controllers (the current one + either the scanner or menu) from the stack to get back to the tableView
-            } else {
-                let presentingController = self.presentingViewController?.presentingViewController as? BaseTableViewController ?? self.presentingViewController?.presentingViewController as! AddObservationViewController
+            } else if let presentingController = self.presentingViewController?.presentingViewController as? BaseTableViewController ?? self.presentingViewController?.presentingViewController as? AddObservationViewController {
                 presentingController.dismiss(animated: true, completion: nil)
+            } else {
+                dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
             }
         } else {
-            // Just dismiss this controller to get back to the tableView
-            //let presentingController = self.presentingViewController!//self.presentingViewController as! BaseTableViewController
+            // Dismiss this controller to get back to the tableView. Also reload the data.
+            // This way, if the database was deleted while on this screen, the table view will only have 1 record and a differet one couldn't be erroneously selected
             self.dismissTransition = LeftToRightTransition()
             dismiss(animated: true, completion: {[weak self] in self?.dismissTransition = nil})
-            //presentingController.loadData()//tableView.reloadData()
+            if let presentingController = self.presentingViewController as? BaseTableViewController {
+                presentingController.loadData()//tableView.reloadData()
+            }
         }
         
         // Deregister notifications from keyboard
@@ -1048,6 +1064,20 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
 
     
     //MARK: - Private methods
+    
+    func checkCurrentDb() -> Bool {
+        // Helper function to verify that the data have not been deleted. If so, show an alert and reload the table
+        if !currentDbExists() {
+            showDbNotExistsAlert()
+            print(false)
+            self.isAddingNewObservation = true // Because the db will be new, this is a new observation
+            return false
+        } else {
+            print(true)
+            return true
+        }
+    }
+    
     
     // Update save button status
     @objc override func updateData(){
@@ -1224,7 +1254,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     private func loadSession() throws { //}-> Session?{
-        // ************* check that the table exists first **********************
+        
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         let rows = Array(try db.prepare(sessionsTable))
         if rows.count > 1 {
             print("Multiple sessions found")
@@ -1378,9 +1412,13 @@ class BusObservationViewController: BaseObservationViewController {
         }
     }
     
-    
+
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -1669,6 +1707,10 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -1975,6 +2017,10 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -2232,6 +2278,10 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -2476,6 +2526,10 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -2716,6 +2770,11 @@ class EmployeeObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
+        
         // update the observation
         updateData()
         
@@ -2950,6 +3009,10 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -3178,6 +3241,11 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -3194,12 +3262,13 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         // Assign the right ID to the observation
         var max: Int64!
         do {
-                        max = try db.scalar(observationsTable.select(idColumn.max))
+            max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
             print(error.localizedDescription)
+            max = 0
         }
         observation?.id = Int(max)
         
@@ -3354,6 +3423,43 @@ class CyclistObservationViewController: BaseObservationViewController {
         }
     }
     
+    //MARK:  - Navigation
+    @objc override func saveButtonPressed() {
+        
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
+        // update the observation
+        updateData()
+        
+        // Update the database
+        // Add a new record
+        if self.isAddingNewObservation {
+            insertRecord()
+            
+            // Update an existing record
+        } else {
+            updateRecord()
+        }
+        
+        // Assign the right ID to the observation
+        var max: Int64!
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
+            }
+        } catch {
+            print(error.localizedDescription)
+            max = 0
+        }
+        observation?.id = Int(max)
+        
+        dismissController()
+    }
+    
+    
     //MARK: - DB methods
     @objc override func updateData(){
         
@@ -3386,6 +3492,7 @@ class CyclistObservationViewController: BaseObservationViewController {
         
     }
     
+    
     // Add record to DB
     override func insertRecord() {
         // Insert into DB
@@ -3397,6 +3504,7 @@ class CyclistObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            print(rowid)
         } catch {
             print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
@@ -3541,6 +3649,10 @@ class PhotographerObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -3778,6 +3890,10 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -4023,6 +4139,10 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -4201,6 +4321,10 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         
@@ -4362,6 +4486,10 @@ class OtherObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        if !checkCurrentDb() { return }
+        // Reconnect in case the last time save button was pressed, the db didn't exist
+        self.db = try? Connection(dbPath)
+        
         // update the observation
         updateData()
         

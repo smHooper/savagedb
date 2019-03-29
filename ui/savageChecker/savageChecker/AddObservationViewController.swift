@@ -416,10 +416,11 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     func prepareDatabaseBrowserViewController() -> DatabaseBrowserViewController {
         let browserViewController = DatabaseBrowserViewController()
         browserViewController.modalPresentationStyle = .formSheet
-        browserViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500))//CGSize.init(width: 600, height: 600)
+        UIViewController.formSheetSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 500)) // Set this because it affects the bounds of the blurEffectView
+        browserViewController.preferredContentSize = UIViewController.formSheetSize
         
         // Add blurred background from current view
-        let popoverFrame = browserViewController.getVisibleFrame()
+        let _ = browserViewController.getVisibleFrame()
         let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
         browserViewController.view.addSubview(backgroundView)
         browserViewController.view.sendSubview(toBack: backgroundView)
@@ -439,10 +440,11 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         if Reachability.isConnectedToNetwork() {
             let uploadViewController = GoogleDriveUploadViewController()
             uploadViewController.modalPresentationStyle = .formSheet
-            uploadViewController.preferredContentSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 400))
+            UIViewController.formSheetSize = CGSize(width: min(self.view.frame.width, 600), height: min(self.view.frame.height, 400))
+            uploadViewController.preferredContentSize = UIViewController.formSheetSize
             
             // Add blurred background from current view
-            let popoverFrame = uploadViewController.getVisibleFrame()
+            let _ = uploadViewController.getVisibleFrame()
             let backgroundView = self.blurredSnapshotView //getBlurredSnapshot(frame: popoverFrame)
             uploadViewController.view.addSubview(backgroundView)
             uploadViewController.view.sendSubview(toBack: backgroundView)
@@ -544,6 +546,10 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
 
     
     @objc func moveToTableView(){
+        if !currentDbExists() {
+            showDbNotExistsAlert()
+        }
+        
         let tableViewController = BaseTableViewController()
         tableViewController.loadData()
         tableViewController.transitioningDelegate = self
