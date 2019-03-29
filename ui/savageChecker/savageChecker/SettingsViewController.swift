@@ -201,7 +201,14 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     
     func getMainViewBackground() -> UIView {
         
-        let imageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))//self.backgroundImage)//
+        let currentScreenFrame = getCurrentScreenFrame()
+        let displayWidth: CGFloat = currentScreenFrame.width/2
+        let displayHeight: CGFloat = currentScreenFrame.height
+        
+        UIViewController.formSheetSize = CGSize(width: displayWidth/3, height: displayHeight - (statusBarHeight + navigationBarSize)) // Set this because it affects the bounds of the blurEffectView
+        let backgroundView = self.blurredSnapshotView//getBlurredSnapshot(frame: formSheetFrame)
+        
+        /*let imageView = UIImageView(image: UIImage(named: "viewControllerBackgroundBlurred"))//self.backgroundImage)//
         let blurEffect = UIBlurEffect(style: .light)
         let blurView = UIVisualEffectView(effect: blurEffect)
         let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
@@ -210,10 +217,10 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         let view = UIView()
         view.addSubview(imageView)
         view.addSubview(blurView)
-        view.addSubview(vibrancyView)
+        view.addSubview(vibrancyView)*/
         //view.autoresizingMask = [.flexibleHeight, .flexibleWidth]
         
-        return view
+        return backgroundView
         
     }
     
@@ -279,7 +286,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int){
         //view.tintColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
         let header = view as! UITableViewHeaderFooterView
-        header.backgroundView?.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
+        header.backgroundView?.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
     }
     
     
