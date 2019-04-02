@@ -18,8 +18,9 @@ var observers = [String]()
 var dropDownJSON = JSON()
 var busTypes = [String]()
 var lodges = [String]()
-var npsVehicleWorkDivisions = [String]()
-var npsVehicleWorkGroups = [String: [String]]() // Dictionary of string arrays
+var npsVehicleWorkGroups = [String]()
+//var npsVehicleWorkGroups = [String: [String]]() // Dictionary of string arrays
+var npsVehicleTripPurposes = [String]()
 var npsApprovedCategories = [String]()
 var npsContractorTripPurposes = [String]()
 
@@ -43,7 +44,8 @@ func getConfigURL(requireExistingFile: Bool = true) -> URL?{
                 else if let url = Bundle.main.url(forResource: "savageCheckerConfig", withExtension: "json") {
                     jsonURL = url
                 } else {
-                    os_log("Could not configure get JSON file url", log: OSLog.default, type: .debug)
+                    os_log("Could not get JSON configuration file url", log: OSLog.default, type: .debug)
+                    return nil
                 }
         } else {
             return url

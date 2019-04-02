@@ -64,14 +64,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         // Read in the .json as one long text string
         let jsonString: String
         jsonString = try! String(contentsOf: jsonURL, encoding: .utf8)
-        //catch {print(error)}
         
         // If we can read the binary string from the text string
         if let data = jsonString.data(using: .utf8) {
             // Try to read it as a JSON struct (from JSONParser)
-            let jsonObject: JSON!
-            jsonObject = try! JSON(data: data)
-            if jsonObject != nil {
+            let jsonObject: JSON?
+            jsonObject = try? JSON(data: data)
+            if let jsonObject = jsonObject {//}!= nil {
                 // Get globally applicable dropDown options
                 let globalFields = jsonObject["fields"]["global"]
                 for item in globalFields["Observer name"]["options"].arrayValue {

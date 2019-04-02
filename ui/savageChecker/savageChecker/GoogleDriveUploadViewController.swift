@@ -251,14 +251,14 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         for fileName in self.selectedFiles {
             let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
             uploadFile(folderName, filePath: fullPath, MIMEType: "application/x-sqlite3") { (fileID, error) in
-                print("Upload file ID: \(fileID); Error: \(error?.localizedDescription)")
+                //self.showGenericAlert(message: "Upload for file \(fileName) failed because \(error?.localizedDescription)", title: "Google drive upload failed")
                 uploadError = error
                 if error == nil {
                     // Update the uploaded column in the session table
                     if let db = try? Connection(fullPath) {
                         // Update all records because there should be only 1
                         if let resultCode = try? db.run(sessionsTable.update(uploadedColumn <- true)), resultCode > 0 {
-                            print("Updated upload field successful for \(fileName) to \(try? db.pluck(Table("sessions"))![uploadedColumn])")
+                            print("Updated upload field successful for \(fileName) to \(String(describing: try? db.pluck(Table("sessions"))?[uploadedColumn]))")
                         } else {
                             print("Update of upload column failed for \(fileName)")
                         }
@@ -293,7 +293,6 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         } else {
             let failedFileString = failedFiles.joined(separator: "\n")
             alertController.title = "Only \(successfulFiles.count) of \(nFiles) files uploaded"
-            print(alertController.title)
             alertController.message = "All files were uploaded successfully to \(userName)'s Google Drive account except: \n\n\(failedFileString)\n\n Make sure your internet connection is reliable and try again."
             // When the user presses "OK", dismiss the alert controller only
             alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
@@ -313,7 +312,8 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
     //MARK: - DBBrowserViewControllerDelegate
     func updateSelectedFiles(value: Any?) {
         guard let filesFromDBController = value as? [String] else {
-            print("Could not convert value to String Array: \(value)")
+            print("Could not convert value to String Array: \(String(describing: value))")
+            os_log("Could not convert value to String Array in GoogleDriveUploadController.updateSelectedFiles()", log: .default, type: .debug)
             return
         }
         
@@ -351,9 +351,12 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
     //MARK:- GIDSignInDelegate method
     func sign(_ signIn: GIDSignIn!, didSignInFor user: GIDGoogleUser!, withError error: Error!) {
         if let error = error {
-            print("\(error.localizedDescription)")
             self.driveService.authorizer = nil
             os_log("Google sign in failed", log: OSLog.default, type: .debug)
+            let errorDescription = error.localizedDescription
+            if errorDescription != "The user canceled the sign-in flow." {
+                showGenericAlert(message: "Google sign-in failed because \(error.localizedDescription)", title: "Google sign-in failed")
+            }
         } else {
             // Perform any operations on signed in user here.
             self.userNameLabel.text = user.profile.email
@@ -364,7 +367,6 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         }
     }
 }
-
 
 
 protocol DBBrowserViewControllerDelegate {

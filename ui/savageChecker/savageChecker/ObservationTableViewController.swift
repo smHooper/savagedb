@@ -85,7 +85,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     var observationCells = [Int: ObservationCell]()
     var cellOrder = [Int]()
-    let cellLabelColumns = ["Bus":            (label2: "bus_type",         label3: "destination"),
+    let cellLabelColumns = ["Bus":            (label2: "bus_type",         label3: "destination"), //Each label is the column name in the DB the label is derived from and the icon name (with "Icon" at the end)
                             "Lodge Bus":      (label2: "bus_type",         label3: "bus_number"),
                             "NPS Vehicle":    (label2: "driver_name",      label3: "work_group"),
                             "NPS Approved":   (label2: "approved_type",    label3: "destination"),
@@ -162,7 +162,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         do {
             db = try Connection(dbPath)
         } catch let error {
-            print(error.localizedDescription)
+            os_log("Problem connecting to the database in ObservationTableViewController.viewDidLoad()", log: .default, type: .debug)
+            showGenericAlert(message: "Problem connecting to the database at \(dbPath): \(error.localizedDescription)", title: "Database connection error")
         }
         
         self.presentTransition = RightToLeftTransition()
@@ -244,7 +245,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             //self.observations = loadObservations()!
             loadObservations()
         } else{
-            print("could not connect to DB in tableViewController.loadData()")
+            showGenericAlert(message: "Could not connect to the database at \(dbPath)", title: "Database connection error")
             os_log("could not connect to DB in tableViewController.loadData()", log: .default, type: .debug)
         }
         
@@ -373,7 +374,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     func setBarGroupIndicator() {
         
-        print(self.currentBarGroup)
+        //print(self.currentBarGroup)
     }
     
     
@@ -765,42 +766,40 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Table view cells are reused and should be dequeued using a cell identifier.
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! BaseObservationTableViewCell
-        //let cellIdentifier = "cell"
-        
-        /*guard let cell = tableView.dequeueReusableCell(withIdentifier: cellIdentifier, for: indexPath) as? ObservationTableViewCell else {
-         print("The dequeued cell is not an instance of ObservationTableViewCell.")
-         }*/
-        
+    
         // Fetch the right observation for the data source layout
-        //let observation = observations[indexPath.row]
-
         let index = self.cellOrder[indexPath.row]
-        let observationCell = observationCells[index]!
-        let observation = observationCell.observation
-        let imageName = (icons[observationCell.observationType]?.normal)!
-        
-        //cell.driverLabel.text = observation.driverName
-        /*cell.destinationLabel.text = {
-            let destination = observation.destination
-            if destination.replacingOccurrences(of: " ", with: "").isEmpty {
-                return "N/A"
-            } else {
-                return destination
-            }
-        }()*/
-        cell.centerLabel.text = observationCell.label2
-        let observationType = self.cellLabelColumns[observationCell.observationType]!
-        let label2IconName = "\(observationType.label2)Icon"
-        cell.centerIcon.image = UIImage(named: label2IconName)
-        /*let destination = observation.destination
-        if destination.replacingOccurrences(of: " ", with: "").isEmpty {
-            cell.destinationLabel.text =  "N/A"
+        let observationCell: ObservationCell
+        if let thisCell = observationCells[index] {
+            observationCell = thisCell
         } else {
-            cell.destinationLabel.text = destination
-        }*/
+            os_log("Index does not match existing observationCell in tableView(:cellForRowAt)", log: .default, type: .debug)
+            showGenericAlert(message: "The index \(index) does not match an existing item in the list of observations", title: "Data load error")
+            return cell
+        }
+        let observation = observationCell.observation
+        let imageName: String
+        if let name = icons[observationCell.observationType]?.normal {
+            imageName = name
+        } else {
+            os_log("observationType does not exist in icons (tableView(:cellForRowAt))", log: .default, type: .debug)
+            showGenericAlert(message: "The observationType \(observationCell.observationType) is not recognized in self.observationCells", title: "Data load error")
+            return cell
+        }
+        
+        cell.centerLabel.text = observationCell.label2
+        if !self.cellLabelColumns.keys.contains(observationCell.observationType) {
+            os_log("observationType does not exist in self.cellLabelColumns (tableView(:cellForRowAt))", log: .default, type: .debug)
+            showGenericAlert(message: "The observationType \(observationCell.observationType) is not recognized in self.cellLabelColumns", title: "Data load error")
+            return cell
+        }
+        let cellLabels = self.cellLabelColumns[observationCell.observationType]!
+        let label2IconName = "\(cellLabels.label2)Icon"
+        cell.centerIcon.image = UIImage(named: label2IconName)
+
         cell.datetimeLabel.text = "\(observation.date) \(observation.time)"
         cell.rightLabel.text = observationCell.label3//observation.nPassengers
-        let label3IconName = "\(observationType.label3)Icon"
+        let label3IconName = "\(cellLabels.label3)Icon"
         cell.rightIcon.image = UIImage(named: label3IconName)
         cell.mainIcon.image = UIImage(named: imageName)
         
@@ -820,9 +819,19 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         if !checkCurrentDb() { return }
         
         let index = self.cellOrder[indexPath.row]
+        if !self.observationCells.keys.contains(index) {
+            os_log("Index does does not exist in (tableView(:didSelectRowAt))", log: .default, type: .debug)
+            showGenericAlert(message: "The index \(index) does not exist in the list of observations", title: "Data load error")
+            return
+        }
         let thisObservation = (self.observationCells[index]?.observation)!
         let observationType = (self.observationCells[index]?.observationType)!
         
+        if !observationViewControllers.keys.contains(observationType) {
+            os_log("observation type  is not recognized (tableView(:didSelectRowAt))", log: .default, type: .debug)
+            showGenericAlert(message: "The observation type \(observationType) is not recognized (tableView(:didSelectRowAt))", title: "Data load error")
+            return
+        }
         let observationViewController = observationViewControllers[observationType]! //Stored in Globals.swift
         observationViewController.observationId = thisObservation.id
         observationViewController.title = observationType
@@ -853,11 +862,23 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         if editingStyle == .delete {
             // Delete the row from the data source
             //let id = observations[indexPath.row].id
+            if !self.cellOrder.contains(indexPath.row) {
+                os_log("indexPath does does not exist in self.cellOrder - (tableView(:commit:forRowAt))", log: .default, type: .debug)
+                showGenericAlert(message: "The indexPath \(indexPath.row) does not exist in the list of observations", title: "Data load error")
+                return
+            }
             let index = self.cellOrder[indexPath.row]
+            
+            if !self.observationCells.keys.contains(index) {
+                os_log("Index does does not exist in (tableView(:commit:forRowAt))", log: .default, type: .debug)
+                showGenericAlert(message: "The index \(index) does not exist in the list of observations", title: "Data load error")
+                return
+            }
             let thisCell = self.observationCells[index]!
+            
             let id = thisCell.observation.id
             let observationType = thisCell.observationType
-            let tableName = (self.icons[observationType]?.tableName)!
+            let tableName = self.icons[observationType]?.tableName ?? ""
             let table = Table(tableName)
             
             let recordToRemove = table.where(idColumn == id.datatypeValue)
@@ -871,15 +892,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
                 present(alertController, animated: true, completion: nil)
             }
-            /*do {
-                try db.run(recordToRemove.delete())
-            } catch let error{
-                print(error.localizedDescription)
-            }
-            
-            loadObservations()
-            
-            tableView.deleteRows(at: [indexPath], with: .fade)*/
+
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
         }
@@ -898,7 +911,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let selectedObservationType = self.barButtonIcons[self.selectedToolBarButton].label
         switch selectedObservationType {
         case "All":
-            //**** Change title of nav bar *********
             for observationType in self.icons.keys {
                 observationTypes.append(observationType)
             }
@@ -926,7 +938,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 rows = Array(try db.prepare(table))
             } catch {
                 os_log("Could not load observations", log:.default, type:.debug)
-                print("Could not load observations: \(error.localizedDescription)")
                 
                 let alertTitle = "Error encountered with \(info.tableName) table"
                 let alertMessage = "Data from the \(info.tableName) table could not be loaded. This database is likely not valid or it could have somehow gotten corrupt. Press OK to enter shift info and try repairing the database"
@@ -983,7 +994,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 // Get the time stamp as an NSDate object so all timestamps can be properly sorted
                 let datetimeString = "\((observation?.date)!), \((observation?.time)!)"
                 guard let datetime = formatter.date(from: datetimeString) else {
-                    print("Could not interpret datetimeString: \(datetimeString)")
+                    showGenericAlert(message: "Could not interpret datetimeString: \(datetimeString)", title: "Data load error")
+                    os_log("Could not interpret datettimeString in ObservationTableViewControler.loadObservations()", log: .default, type: .debug)
                     return
                 }
                 datetimeStamps[i] = datetime

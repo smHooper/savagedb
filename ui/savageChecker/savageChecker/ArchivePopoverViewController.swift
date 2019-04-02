@@ -37,7 +37,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         do {
             db = try Connection(dbPath)
         } catch let error {
-            print(error.localizedDescription)
+            showGenericAlert(message: "Problem connecting to the datbase at \(dbPath): \(error.localizedDescription))", title: "Database connection error")
             os_log("Error connecting to DB in ArchivePopoverViewController.viewDidLoad()", log: OSLog.default, type: .debug)
         }
         
@@ -223,38 +223,6 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
         let outputURL = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(self.fileName)
         
-        
-        /*if fileManager.fileExists(atPath: outputURL.path) {
-            print("File already exists")
-        } else {
-            do {
-                try fileManager.copyItem(at: dbURL, to: outputURL)//(atPath: (dbURL.absoluteString)!, toPath: outputURL!)
-            } catch {
-                print(error)
-                os_log("Could not save copy of DB", log: OSLog.default, type: .debug)
-            }
-        }
-        
-        // Delete all records from the db
-        //  First get names of all tables in the DB
-        let tableQuery: Statement
-        do {
-            tableQuery = try db.prepare("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%');")
-        } catch {
-            fatalError("Could not fetch all tables because \(error.localizedDescription)")
-        }
-        //  Loop through all tables and delete all records
-        for row in tableQuery {
-            let tableName = "\(row[0]!)"
-            let table = Table(tableName)
-            do {
-                try db.run(table.delete()) // Deletes all rows in table
-            } catch {
-                print("Could not delete records from \(tableName) because \(error.localizedDescription)")
-                os_log("Could not delete row from DB", log: OSLog.default, type: .debug)
-            }
-        }*/
-        
         // Prepare the session controller by clearing all fields and disabling the navigation button
         let presentingController = self.presentingViewController?.presentingViewController as! ShiftInfoViewController
         presentingController.dropDownTextFields[0]!.text = ""
@@ -331,7 +299,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         do {
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            print(error.localizedDescription)
+            showGenericAlert(message: "Problem loading shift info: \(error.localizedDescription)", title: "Database error")
             os_log("Error loading session", log: OSLog.default, type: .debug)
         }
         if rows.count > 1 {
@@ -340,9 +308,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         }
         for row in rows{
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
-            //print("Session date: \(row[dateColumn])")
         }
-        //return session
     }
     
 

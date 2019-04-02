@@ -609,7 +609,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             return false
         }
         
-        print(jsonURL)
         // write the file
         do {
             try jsonString.write(to: jsonURL, atomically: false, encoding: .utf8)
@@ -634,7 +633,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             settingsRowLabel = settingsRow.label
             settingsRowContext = settingsRow.context
         } else {
-            print("no selection in mainTableView")
+            os_log("no selection in mainTableView in SettingsViewController.addButtonPressed()", log: .default, type: .debug)
         }
         //Show an alert controller with a text field to add the new value
         let alertController = UIAlertController(title: "New \(settingsRowLabel) option", message: "Add a new option for the \(settingsRowLabel) dropdown menu: ", preferredStyle: .alert)
@@ -663,7 +662,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alertController.addTextField(configurationHandler: {(textField : UITextField!) -> Void in
             textField.placeholder = ""
-            print(settingsRowLabel)
             textField.autocapitalizationType = settingsRowLabel == "Observer name" ? .words : .sentences
         })
         self.present(alertController, animated: true, completion: nil)

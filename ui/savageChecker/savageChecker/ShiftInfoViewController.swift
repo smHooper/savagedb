@@ -127,7 +127,7 @@ class ShiftInfoViewController: BaseFormViewController {
             // Add a cancel button at the bottom on the left side
             let cancelButton = UIButton(type: .system)
             cancelButton.setTitle("Cancel", for: .normal)
-            cancelButton.titleLabel!.font = UIFont.systemFont(ofSize: 22)
+            cancelButton.titleLabel?.font = UIFont.systemFont(ofSize: 22)
             cancelButton.addTarget(self, action: #selector(cancelButtonPressed), for: .touchUpInside)
             self.view.addSubview(cancelButton)
             cancelButton.translatesAutoresizingMaskIntoConstraints = false
@@ -167,7 +167,7 @@ class ShiftInfoViewController: BaseFormViewController {
             self.db = try? Connection(dbPath)
             if self.db == nil {
                 os_log("Connecting to DB in ShiftInfoViewController.loadData() circa line 169 failed", log: OSLog.default, type: .debug)
-                print("Connection failed in ShiftInfoViewController.loadData() with dbPath \(dbPath)")
+                showGenericAlert(message: "Connection failed with dbPath \(dbPath)", title: "Database connection error")
             }
 
             if let session = loadSession() {
@@ -280,16 +280,18 @@ class ShiftInfoViewController: BaseFormViewController {
                                                 closeTimeColumn <- closeTime)) > 0 {
                     } else {
                         os_log("record not found", log: OSLog.default, type: .debug)
+                        showGenericAlert(message: "Could not update record because the record with id \(String(describing: session.id)) could not be found", title: "Database error")
                     }
                 } catch {
                     os_log("Session update failed", log: OSLog.default, type: .debug)
+                    showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
                 }
-                // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
+                // Get the actual id of the insert row and assign it to the session that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
                 var max: Int64!
                 do {
                     max = try db.scalar(sessionsTable.select(idColumn.max))
                 } catch {
-                    print(error.localizedDescription)
+                    showGenericAlert(message: "Error encountered while saving shift info: \(error.localizedDescription)")
                 }
                 let thisId = Int(max)
                 self.session = Session(id: thisId, observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
@@ -350,8 +352,8 @@ class ShiftInfoViewController: BaseFormViewController {
                                                             closeTimeColumn <- closeTime))
                 self.session?.id = Int(rowid)
             } catch {
-                print("Session insertion failed: \(error)")
                 os_log("Session insertion failed", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not save shift info because \(error.localizedDescription)", title: "Database error")
             }
         }
         
@@ -371,8 +373,8 @@ class ShiftInfoViewController: BaseFormViewController {
                 }
             }
         } catch {
-            print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
             os_log("Error while enumerating files", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Error while enumerating files \(documentsURL.path): \(error.localizedDescription)", title: "Database error")
         }
         
         return files
@@ -391,9 +393,6 @@ class ShiftInfoViewController: BaseFormViewController {
             return nil
         }
         
-        /*if rows.count > 1 {
-         fatalError("Multiple sessions found")
-         }*/
         var session: Session?
         for row in rows{
             session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
@@ -413,7 +412,7 @@ class ShiftInfoViewController: BaseFormViewController {
             self.db = try Connection(dbPath)
         } catch {
             os_log("Couldn't cofigure the DB", log: OSLog.default, type: .debug)
-            //fatalError(error.localizedDescription)
+            showGenericAlert(message: "Connection failed with dbPath \(dbPath)", title: "Database connection error")
         }
         
         // Make tables
