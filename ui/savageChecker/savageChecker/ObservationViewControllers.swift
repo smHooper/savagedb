@@ -1276,7 +1276,8 @@ class BusObservationViewController: BaseObservationViewController {
     let destinationLookup = ["Denali Natural History Tour": "Teklanika",
                              "Tundra Wilderness Tour": "Stony Overlook",
                              "Kantishna Experience": "Kantishna",
-                             "Camper": "Kantishna"]
+                             "Camper": "Kantishna",
+                             "Spare": "Igloo"]
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
