@@ -35,11 +35,14 @@
           ]
       },
       "Destination": {
+        "validation_table": "destination_codes",
+        "validation_field": "name",
         "context": "global",
         "sorted": false,
         "options": [
           "Primrose/Mile 17",
           "Teklanika",
+          "Igloo",
           "Toklat",
           "Stony Overlook",
           "Eielson",
@@ -49,6 +52,8 @@
     },
     "Bus": {
       "Bus type": {
+        "validation_table": "bus_codes",
+        "validation_field": "name",
         "sorted": false,
         "options": [
           "Denali Natural History Tour",
@@ -56,12 +61,17 @@
           "Kantishna Experience",
           "Transit",
           "Camper",
+          "Spare",
+          "Educational Charter",
+          "Commerical Charter",
           "Other"
         ]
       }
     },
     "Lodge Bus": {
       "Lodge": {
+        "validation_table": "bus_codes",
+        "validation_field": "name",
         "sorted": false,
         "options": [
           "Denali Backcountry Lodge",
@@ -72,49 +82,96 @@
       }
     },
     "NPS Vehicle": {
-      "Work division": {
+      "Work group": {
+        "validation_table": "nps_work_groups",
+        "validation_field": "name",
         "sorted": false,
         "options": [
-          "Administration",
-          "Buildings and Utilities",
-          "External Affairs",
-          "Resources",
-          "Visitor and Resource Protection",
+          "Roads",
+          "Maintenance",
+          "Special Projects",
+          "Trails",
+          "Law Enforcement",
+          "Backcountry",
+          "Education",
+          "Interp-east",
+          "Interp-west",
+          "IT",
+          "Administration (other)",
+          "Human Resources",
+          "Superintendent's Office (other)",
+          "Concessions",
+          "Planning",
+          "Cultural Resources",
+          "Water, Air, Geology, Soil",
+          "Wildlife",
+          "Communications Center",
           "Other"
         ]
       },
-      "Work group": {
+      "Trip purpose": {
+        "validation_table": "nps_trip_purposes",
+        "validation_field": "name",
         "sorted": false,
-        "options": {
-          "Administration": ["Human Resources", "IT", "Other"],
-          "Buildings and Utilities": ["Maintenance", "Roads", "Support", "Trails", "Other"],
-          "External Affairs": ["Concessions", "Planning", "Superintendent's Office", "Other"],
-          "Resources": ["Cultural Resources", "Water, Air, Geology, Soil", "Wildlife", "Other"],
-          "Visitor and Resource Protection": ["Law Enforcement", "Comm. Center", "Other"],
-          "Interpetation": ["East District", "West District", "Backcountry", "Education", "Other"],
-          "Other": []
-        }
+        "options": [
+          "Return to duty station",
+          "Routine work",
+          "Law enforcement patrol",
+          "Emergency response"
+        ]
       }
     },
     "NPS Approved": {
       "Approved category": {
+        "validation_table": "nps_approved_codes",
+        "validation_field": "name",
         "sorted": false,
         "options": [
           "Education",
           "Researcher",
           "V.I.P.",
-          "Other"
+          "Concessionaire"
         ]
       }
     },
     "NPS Contractor": {
       "Trip purpose": {
+        "validation_table": "nps_trip_purposes",
+        "validation_field": "name",
         "sorted": false,
         "options": [
-          "Delivery",
-          "Maintenance",
-          "Construction",
-          "Other"
+          "Return to duty station",
+          "Routine work",
+          "Law enforcement patrol",
+          "Emergency response"
+        ]
+      }
+    },
+    "Right of Way": {
+      "Permit holder": {
+        "validation_table": "inholder_allotments",
+        "validation_field": "permit_holder",
+        "sorted": true,
+        "options": [
+          "Celia Hunter",
+          "Don Phillips",
+          "Camp Denali/North Face Lodge",
+          "Ginny Wood",
+          "Denali Backcountry Lodge",
+          "Kantishna Air Taxi",
+          "Gene Desjarlais",
+          "Linda Crabb",
+          "Linda/Steve Neff",
+          "Greg LaHaie",
+          "Mike MarkAnthony",
+          "Rainy Creek LLC",
+          "Ray Krieg",
+          "Romany Wood",
+          "Jeff Barney",
+          "Kantishna Roadhouse",
+          "Michael Conlin",
+          "Paul Shearer",
+          "Rusty Lachelt"
         ]
       }
     }
