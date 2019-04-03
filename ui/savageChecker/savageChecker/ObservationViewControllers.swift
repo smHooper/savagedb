@@ -66,6 +66,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         super.viewDidLoad()
         hideKeyboardWhenTappedAround()
         
+        // Make sure the scrollView container doesn't delay the touch recognition for dropdowns
+        self.scrollView.delaysContentTouches = false
+        
         // Open connection to the DB
         do {
             //print(dbPath)
