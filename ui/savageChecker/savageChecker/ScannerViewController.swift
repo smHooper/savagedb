@@ -169,11 +169,9 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         // parse code from format label: comma-separated string
         if let data = code.data(using: .utf8) {
             // Try to read it as a JSON struct (from JSONParser)
-            //let jsonObject: JSON?
-            //jsonObject =
             if let jsonObject = try? JSON(data: data) {
                 let vehicleType = jsonObject["vehicle_type"].string ?? ""
-                if let viewController = observationViewControllers[vehicleType] {
+                if let viewController = observationViewControllers[vehicleType]?.init() {
                     viewController.qrString = code
                     viewController.isAddingNewObservation = true
                     viewController.session = loadSession()

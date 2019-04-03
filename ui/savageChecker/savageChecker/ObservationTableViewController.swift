@@ -832,7 +832,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             showGenericAlert(message: "The observation type \(observationType) is not recognized (tableView(:didSelectRowAt))", title: "Data load error")
             return
         }
-        let observationViewController = observationViewControllers[observationType]! //Stored in Globals.swift
+        let observationViewController = observationViewControllers[observationType]!.init() //Stored in Constants.swift
         observationViewController.observationId = thisObservation.id
         observationViewController.title = observationType
         observationViewController.isAddingNewObservation = false

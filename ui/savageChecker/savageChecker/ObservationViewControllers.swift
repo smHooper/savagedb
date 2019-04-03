@@ -1609,6 +1609,13 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         
         super.viewDidLoad()
         autoFillTextFields()
+        
+        // Make sure all alphabetic characters in the permit number field are capitalized (only inholder permits have letters in them)
+        for (index, fieldInfo) in self.textFieldIds.enumerated() {
+            if fieldInfo.label == "Permit number" {
+                self.textFields[index]?.autocapitalizationType = .allCharacters
+            }
+        }
     }
     
     
@@ -2166,16 +2173,6 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     }
     
     
-    /*override func parseQRString() {
-        var qrValues = [String]()
-        for value in self.qrString.components(separatedBy: ",") {
-            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
-        }
-        
-        self.dropDownTextFields[3]!.text = qrValues[0] // approvedType
-    }*/
-    
-    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -2282,8 +2279,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         let destination = self.dropDownTextFields[5]?.text ?? ""
         let nPassengers = self.textFields[6]?.text ?? ""
         let nExpectedNights = self.textFields[7]?.text ?? ""
-        let permitNumber = self.textFields[7]?.text ?? ""
-        let comments = self.textFields[8]?.text ?? ""
+        let permitNumber = self.textFields[8]?.text ?? ""
+        let comments = self.textFields[9]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -3145,6 +3142,11 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -3359,6 +3361,11 @@ class CyclistObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     override func autoFillTextFields() {
         super.autoFillTextFields()
         // super.autoFillTextFields will fill in what we need if it's a new observation. If not, though, we need to fill everything in because the Observation isn't initialized until after super.autoFill() is called
@@ -3549,6 +3556,11 @@ class PhotographerObservationViewController: BaseObservationViewController {
     override func viewDidLoad() {
         
         super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         autoFillTextFields()
     }
     
@@ -3797,6 +3809,13 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
+    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -4023,6 +4042,11 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
     override func autoFillTextFields(){
         super.autoFillTextFields()
@@ -4076,7 +4100,7 @@ class SubsistenceObservationViewController: BaseObservationViewController {
             self.observation?.destination = self.dropDownTextFields[4]!.text!
             self.observation?.nPassengers = self.textFields[5]!.text!
             self.observation?.permitNumber = self.textFields[6]!.text!
-            self.observation?.comments = self.textFields[6]!.text!
+            self.observation?.comments = self.textFields[7]!.text!
             
             //self.saveButton.isEnabled = true
         }
@@ -4186,8 +4210,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("road_lottery")
@@ -4199,8 +4223,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("road_lottery")
@@ -4210,6 +4234,13 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         super.viewDidLoad()
         autoFillTextFields()
     }
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
     override func autoFillTextFields(){
@@ -4375,6 +4406,12 @@ class OtherObservationViewController: BaseObservationViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        autoFillTextFields()
+    }
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
         autoFillTextFields()
     }
     
