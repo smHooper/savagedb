@@ -69,6 +69,7 @@ DESTINATION_CODES = {'M': 'PRM',
                      'K': 'KAN',
                      'C': 'OTH'}
 
+
 CONSTANT_FIELDS = ['id', 'observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method']
 
 NONBUS_FIELDS = {'W': ['driver_name',
@@ -301,9 +302,14 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     print '"datadates" to "shift_info"...',
     os.rename(os.path.join(search_dir, 'datadates.csv'), os.path.join(search_dir, 'shift_info.csv'))
 
+    print '"greenstuudytp" to "nps_trip_purposes"...',
+    os.rename(os.path.join(search_dir, 'greenstudytp.csv'), os.path.join(search_dir, 'nps_trip_purposes.csv'))
+
     print '"greenstudywg" to "nps_work_groups"...\n'
     os.rename(os.path.join(search_dir, 'greenstudywg.csv'), os.path.join(search_dir, 'nps_work_groups.csv'))
 
+    print 'Creating "contractor_trip_purposes"...\n'
+    shutil.copy(os.path.join(search_dir, 'nps_trip_purposes.csv'),  os.path.join(search_dir, 'contractor_trip_purposes.csv'))
 
     print 'Deleting unnecessary tables...',
     researcher_txt = os.path.join(out_dir, 'researcher.csv')
@@ -318,10 +324,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     if os.path.isfile(greenstudy_txt):
         print 'greenstudy...',
         os.remove(greenstudy_txt)
-    greenstudytp_txt = greenstudy_txt.replace('.csv', 'tp.csv')
+    '''greenstudytp_txt = greenstudy_txt.replace('.csv', 'tp.csv')
     if os.path.isfile(greenstudytp_txt):
         print 'greenstudytp...',
-        os.remove(greenstudytp_txt)
+        os.remove(greenstudytp_txt)'''
     gmp_txt = os.path.join(out_dir, 'gmp.csv')
     if os.path.isfile(gmp_txt):
         print 'gmp...',
@@ -354,14 +360,17 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     pd.DataFrame(columns=CONSTANT_FIELDS).to_csv(os.path.join(search_dir, 'other_vehicles.csv'), index=False)
 
     work_groups = pd.read_csv(os.path.join(search_dir, 'nps_work_groups.csv'))
+    trip_purposes = pd.read_csv(os.path.join(search_dir, 'nps_trip_purposes.csv'))
     wg_code_dict = dict(zip(work_groups.name, work_groups.code))
+    tp_code_dict = dict(zip(trip_purposes.name, trip_purposes.code))
     dest_code_dict = dict(zip(dest_codes.name, dest_codes.code))
     bus_code_dict = dict(zip(bus_codes.name, bus_codes.code))
     approved_code_dict = dict(zip(approved_codes.name, approved_codes.code))
     replace_dict = {'destination':   dest_code_dict,
                     'bus_type':      bus_code_dict,
                     'approved_type': approved_code_dict,
-                    'work_group':    wg_code_dict
+                    'work_group':    wg_code_dict,
+                    'trip_purpose':  tp_code_dict
                     }
 
     # Add a null option to all code tables

@@ -35,6 +35,8 @@
           ]
       },
       "Destination": {
+        "database_table": "destination_codes",
+        "database_field": "name",
         "context": "global",
         "sorted": false,
         "options": [
@@ -49,6 +51,8 @@
     },
     "Bus": {
       "Bus type": {
+        "database_table": "bus_codes",
+        "database_field": "name",
         "sorted": false,
         "options": [
           "Denali Natural History Tour",
@@ -62,6 +66,8 @@
     },
     "Lodge Bus": {
       "Lodge": {
+        "database_table": "bus_codes",
+        "database_field": "name",
         "sorted": false,
         "options": [
           "Denali Backcountry Lodge",
@@ -72,48 +78,43 @@
       }
     },
     "NPS Vehicle": {
-      "Work division": {
+      "Work group": {
+        "database_table": "nps_work_groups",
+        "database_field": "name",
         "sorted": false,
         "options": [
-          "Administration",
-          "Buildings and Utilities",
-          "External Affairs",
-          "Resources",
-          "Visitor and Resource Protection",
+          "Roads",
+          "Maintenance",
+          "Special Projects",
+          "Trails",
+          "Law Enforcement",
+          "Backcountry",
+          "Education",
+          "Interp-east",
+          "Interp-west",
+          "IT",
+          "Administration (other)",
+          "Human Resources",
+          "Superintendent's Office (other)",
+          "Concessions",
+          "Planning",
+          "Cultural Resources",
+          "Water, Air, Geology, Soil",
+          "Wildlife",
+          "Communications Center",
           "Other"
         ]
-      },
-      "Work group": {
-        "sorted": false,
-        "options": {
-          "Administration": ["Human Resources", "IT", "Other"],
-          "Buildings and Utilities": ["Maintenance", "Roads", "Support", "Trails", "Other"],
-          "External Affairs": ["Concessions", "Planning", "Superintendent's Office", "Other"],
-          "Resources": ["Cultural Resources", "Water, Air, Geology, Soil", "Wildlife", "Other"],
-          "Visitor and Resource Protection": ["Law Enforcement", "Comm. Center", "Other"],
-          "Interpetation": ["East District", "West District", "Backcountry", "Education", "Other"],
-          "Other": []
-        }
       }
     },
     "NPS Approved": {
       "Approved category": {
+        "database_table": "nps_approved_codes",
+        "database_field": "name",
         "sorted": false,
         "options": [
           "Education",
           "Researcher",
           "V.I.P.",
-          "Other"
-        ]
-      }
-    },
-    "NPS Contractor": {
-      "Trip purpose": {
-        "sorted": false,
-        "options": [
-          "Delivery",
-          "Maintenance",
-          "Construction",
           "Other"
         ]
       }
