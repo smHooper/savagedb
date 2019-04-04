@@ -2867,6 +2867,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
                              (label: "Permit holder",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
@@ -2886,6 +2887,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
                              (label: "Permit holder",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
@@ -2937,6 +2939,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
+            self.dropDownTextFields[4]?.text = "Kantishna"
             self.saveButton.isEnabled = false
             
             parseQRString()
@@ -2955,10 +2958,11 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                 self.textFields[1]?.text = self.observation?.date
                 self.textFields[2]?.text = self.observation?.time
                 self.textFields[3]?.text = self.observation?.driverName
-                self.textFields[4]?.text = self.observation?.permitNumber
-                self.dropDownTextFields[5]?.text = self.observation?.permitHolder
-                self.textFields[6]?.text = self.observation?.nPassengers
-                self.textFields[7]?.text = self.observation?.comments
+                self.dropDownTextFields[4]?.text = self.observation?.destination
+                self.textFields[5]?.text = self.observation?.permitNumber
+                self.dropDownTextFields[6]?.text = self.observation?.permitHolder
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
             } else {
                 os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
@@ -3018,10 +3022,11 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let driverName = self.textFields[3]?.text ?? ""
-        let permitNumber = self.textFields[4]?.text ?? ""
-        let permitHolder = self.dropDownTextFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let permitNumber = self.textFields[5]?.text ?? ""
+        let permitHolder = self.dropDownTextFields[6]?.text ?? ""
+        let nPassengers = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -3038,6 +3043,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.driverName = driverName
+            self.observation?.destination = destination
             self.observation?.permitNumber = permitNumber
             self.observation?.permitHolder = permitHolder
             self.observation?.nPassengers = nPassengers
