@@ -153,8 +153,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             os_log("Error while enumerating files", log: OSLog.default, type: .debug)
         }
         
-        // Sort in alphabetical order
-        self.files.sort()
+        // Sort in reverse alphabetical order
+        self.files = self.files.sorted{$0 > $1}//sort()
     }
     
     
@@ -300,8 +300,22 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
                 presentingController.db = try? Connection(dbPath)
                 presentingController.loadData()
             }
+        
             
-            dismiss(animated: true, completion: nil)
+            let formatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "MM-dd-yy"
+            let dateFromFile = selectedFileName.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: ".db", with: "")
+            if let date = formatter.date(from: dateFromFile) {
+                formatter.dateStyle = .long
+                formatter.timeStyle = .none
+                let alertController = UIAlertController(title: "Database successfully loaded", message: "You have now loaded the database for \(formatter.string(from: date))", preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: {_ in self.dismiss(animated: true, completion: nil)}) )
+                present(alertController, animated: true, completion: nil)
+            } else {
+                dismiss(animated: true, completion: nil)
+            }
+            
         } else {
             if let indexPathNotSelected = (tableView.indexPathsForSelectedRows?.contains(indexPath)) {
                 self.selectedFiles.append(self.files[indexPath.row])

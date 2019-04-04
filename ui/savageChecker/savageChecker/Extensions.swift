@@ -314,23 +314,25 @@ extension UIViewController {
     }
     
     // Show a generic warning.info message
-    func showGenericAlert(message: String = "An unknown error has occurred", title: String = "Error") {
+    func showGenericAlert(message: String = "An unknown error has occurred", title: String = "Error", takeScreenshot: Bool = true) {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
         // run in separate process so that it present works in viewDidLoad
         DispatchQueue.main.async {
             self.present(alertController, animated: true, completion: {
-                let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-                let fileName = "error_screenshot \(Date()).png"
-                let screenshotDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("errors")
-                let fileManager = FileManager.default
-                var isDir: ObjCBool = false
-                if !fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) {
-                    try? fileManager.createDirectory(at: screenshotDir, withIntermediateDirectories: true, attributes: nil)
+                if takeScreenshot {
+                    let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+                    let fileName = "error_screenshot \(Date()).png"
+                    let screenshotDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("errors")
+                    let fileManager = FileManager.default
+                    var isDir: ObjCBool = false
+                    if !fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) {
+                        try? fileManager.createDirectory(at: screenshotDir, withIntermediateDirectories: true, attributes: nil)
+                    }
+                    let imgURL = fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) ? screenshotDir.appendingPathComponent(fileName) : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName)
+                    let screenshot = alertController.view.takeSnapshot()
+                    try? UIImagePNGRepresentation(screenshot)?.write(to: imgURL)
                 }
-                let imgURL = fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) ? screenshotDir.appendingPathComponent(fileName) : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName)
-                let screenshot = alertController.view.takeSnapshot()
-                try? UIImagePNGRepresentation(screenshot)?.write(to: imgURL)
             })
         }
     }
