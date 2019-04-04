@@ -235,10 +235,12 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         formatter.timeStyle = .none//.short//
         formatter.dateStyle = .short
         let now = Date()
-        let timestamp = formatter.string(from: now)
+        let timestamp = "\(formatter.string(from: now))_\(UIDevice.current.name)"
             .replacingOccurrences(of: ",", with: "")
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "’", with: "-")
         let folderName = "savageChecker_data_\(timestamp)"
         
         let sessionsTable = Table("sessions")
