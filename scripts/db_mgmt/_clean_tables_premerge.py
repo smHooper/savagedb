@@ -358,6 +358,8 @@ def main(export_tables=False):
 
             greenstudywg.rename(columns=REPLACE_COLUMNS['greenstudywg'], inplace=True)
             greenstudywg.to_csv(greenstudywg_txt, index=False)
+            greenstudytp.rename(columns=REPLACE_COLUMNS['greenstudytp'], inplace=True)
+            greenstudytp.to_csv(greenstudytp_txt, index=False)
 
         nonbus.to_csv(nonbus_txt, index=False)
 
