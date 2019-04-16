@@ -353,10 +353,14 @@ def crosstab_query_by_datetime(engine, table_name, start_str, end_str, pivot_fie
 
     # Combine vehicle types as necessary
     counts.set_index(counts.columns[0], inplace=True) # should always be first column
+
     for out_name, in_names in dissolve_names.iteritems():
         in_names = [n for n in in_names if n in counts.index]
         counts.loc[out_name] = counts.loc[in_names].sum(axis=0)
-        counts.drop(in_names, inplace=True)
+        counts.drop(in_names, inplace=True)#'''
+    '''if len(dissolve_names):
+        counts['vehicle_type'] = pd.Series(dissolve_names)
+        counts.set_index('vehicle_type', inplace=True)'''
 
     if not filter_fields:
         # Make sure all fields (i.e. dates/times) are returned

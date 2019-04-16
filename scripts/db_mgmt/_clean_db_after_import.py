@@ -5,17 +5,17 @@ import sqlalchemy
 from sqlalchemy import create_engine
 
 
-INTEGER_FIELDS = {'accessibility':      ['n_passengers'],
+INTEGER_FIELDS = {'accessibility':      ['n_passengers', 'permit_number'],
                   'buses':              ['n_passengers', 'n_wheelchair', 'n_lodge_ovrnt'],
                   'cyclists':           ['n_passengers'],
                   'employee_vehicles':  ['n_passengers', 'permit_number'],
                   'inholders':          ['n_passengers', 'permit_number'],
-                  'nps_approved':       ['n_nights', 'n_passengers'],
-                  'nps_contractors':    ['n_nights', 'n_passengers'],
+                  'nps_approved':       ['n_nights', 'n_passengers', 'permit_number'],
+                  'nps_contractors':    ['n_nights', 'n_passengers', 'permit_number'],
                   'nps_vehicles':       ['n_nights', 'n_passengers'],
-                  'photographers':      ['n_nights', 'n_passengers'],
+                  'photographers':      ['n_nights', 'n_passengers', 'permit_number'],
                   'road_lottery':       ['n_passengers', 'permit_number'],
-                  'subsistence':        ['n_nights', 'n_passengers'],
+                  'subsistence':        ['n_nights', 'n_passengers', 'permit_number'],
                   'tek_campers':        ['n_passengers'],
                   'turned_around':      ['n_passengers']
                   }
@@ -24,9 +24,9 @@ VARCHAR_FIELDS = {'accessibility':      ['destination', 'driver_name', 'entered_
                   'cyclists':           ['destination', 'entered_by', 'entry_method'],
                   'employee_vehicles':  ['destination', 'driver_name', 'entered_by', 'entry_method'],
                   'inholders':          ['destination', 'driver_name', 'entered_by', 'entry_method', 'permit_number'],
-                  'nps_approved':       ['destination', 'driver_name', 'entered_by', 'entry_method', 'approved_type'],
-                  'nps_contractors':    ['destination', 'organization', 'entered_by', 'entry_method', 'trip_purpose'],
-                  'nps_vehicles':       ['destination', 'driver_name', 'entered_by', 'entry_method', 'trip_purpose', 'work_group'],
+                  'nps_approved':       ['destination', 'driver_name', 'entered_by', 'entry_method'],
+                  'nps_contractors':    ['destination', 'organization', 'entered_by', 'entry_method'],
+                  'nps_vehicles':       ['destination', 'driver_name', 'entered_by', 'entry_method'],
                   'other_vehicles':     ['destination', 'entered_by', 'entry_method'],
                   'photographers':      ['destination', 'driver_name', 'entered_by', 'entry_method', 'permit_holder'],
                   'road_lottery':       ['destination', 'entered_by', 'entry_method'],
@@ -44,8 +44,8 @@ CHAR3_FIELDS = {'accessibility':      ['destination'],
                 'employee_vehicles':  ['destination'],
                 'inholders':          ['destination', 'inholder_code'],
                 'nps_approved':       ['destination', 'approved_type'],
-                'nps_contractors':    ['destination'],
-                'nps_vehicles':       ['destination', 'work_group'],
+                'nps_contractors':    ['destination', 'project_type'],
+                'nps_vehicles':       ['destination', 'work_group', 'trip_purpose'],
                 'other_vehicles':     ['destination'],
                 'photographers':      ['destination'],
                 'road_lottery':       ['destination'],
@@ -55,7 +55,9 @@ CHAR3_FIELDS = {'accessibility':      ['destination'],
                 'bus_codes':          ['code'],
                 'destination_codes':  ['code'],
                 'nps_approved_codes': ['code'],
-                'nps_work_groups':    ['code']
+                'nps_work_groups':    ['code'],
+                'nps_trip_purposes':  ['code'],
+                'contractor_trip_purpose': ['code']
                 }
 DEFAULT_VALUES = {'entry_method': "'manual'"}
 
@@ -65,7 +67,9 @@ UNIQUE_CONSTAINTS = {'bus_codes': ['code'],
                      'inholder_allotments': ['inholder_code'],
                      'inholder_allotments': ['inholder_name'],
                      'nps_approved_codes': ['code'],
-                     'nps_work_groups': ['code']
+                     'nps_work_groups': ['code'],
+                     'nps_trip_purposes': ['code'],
+                     'contractor_trip_purposes': ['code']
                      }
 
 FOREIGN_KEYS = pd.DataFrame([{'l_table': 'accessibility',    'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
@@ -77,7 +81,9 @@ FOREIGN_KEYS = pd.DataFrame([{'l_table': 'accessibility',    'l_column': 'destin
                              {'l_table': 'nps_approved',     'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'nps_approved',     'l_column': 'approved_type','f_table':'nps_approved_codes','f_column': 'code'},
                              {'l_table': 'nps_contractors',  'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
+                             {'l_table': 'nps_contractors',  'l_column': 'project_type', 'f_table': 'contractor_project_types', 'f_column': 'code'},
                              {'l_table': 'nps_vehicles',     'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
+                             {'l_table': 'nps_vehicles',     'l_column': 'trip_purpose', 'f_table': 'nps_trip_purposes', 'f_column': 'code'},
                              {'l_table': 'nps_vehicles',     'l_column': 'work_group',  'f_table': 'nps_work_groups',   'f_column': 'code'},
                              {'l_table': 'other_vehicles',   'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
                              {'l_table': 'photographers',    'l_column': 'destination', 'f_table': 'destination_codes', 'f_column': 'code'},
@@ -239,10 +245,6 @@ def main(info_txt):
                 conn.execute(sql)
             except sqlalchemy.exc.SQLAlchemyError as e:
                 warnings.warn('unable to set constraint with statement %s because %s' % (sql, e.message))
-
-
-
-
 
     # Add foreign key constraints. Need to open and close with each iteration because if one fails, the rest do to until
     #   connection is closed.

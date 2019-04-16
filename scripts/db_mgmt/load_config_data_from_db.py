@@ -12,14 +12,18 @@ sys.path.append(os.path.join(os.path.join(os.path.dirname(__file__), '..'), 'que
 from query import connect_db
 from parse_json_config import COLUMN_ORDER, parse_json_data
 
+
 FIELD_PROPERTIES = pd.DataFrame([['bus_codes', 'Bus type', 'name', 'Bus'],
                                  ['bus_codes', 'Lodge',  'name', 'Lodge Bus'],
-                                 ['inholder_allotments',  'Permit holder', 'permit_holder', 'Inholder'],
+                                 ['inholder_allotments',  'Permit holder', 'inholder_name', 'Inholder'],
                                  ['nps_approved_codes', 'Approved category', 'name', 'NPS Approved'],
                                  ['nps_work_groups', 'Work group', 'name', 'NPS Vehicle'],
+                                 ['nps_trip_purposes', 'Trip purpose', 'name', 'NPS Vehicle'],
+                                 ['contractor_project_types', 'Project type', 'name', 'NPS Contractor'],
                                  ['destination_codes', 'Destination', 'name', 'global'],
-                                 ['', 'Observer name', '', 'global']],
-                              columns=['validation_table', 'config_column', 'validation_field', 'context'])
+                                 ['', 'Observer name', '', 'global']
+                                 ],
+                              columns=['validation_table', 'config_column', 'validation_field', 'context'])#'''
 
 
 def main(connection_txt, out_dir, json_path=None):
@@ -45,6 +49,7 @@ def main(connection_txt, out_dir, json_path=None):
                 sql = "SELECT name FROM (SELECT * FROM destination_codes ORDER BY mile) AS foo;"
             with postgres_engine.connect() as conn, conn.begin():
                 db_values = pd.read_sql(sql, conn).squeeze()
+            db_values = db_values[db_values != 'Null']
 
             # if a JSON config file was given, append new values from the DB to the existing values
             if json_path:

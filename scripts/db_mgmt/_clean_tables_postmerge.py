@@ -69,6 +69,7 @@ DESTINATION_CODES = {'M': 'PRM',
                      'K': 'KAN',
                      'C': 'OTH'}
 
+
 CONSTANT_FIELDS = ['id', 'observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method']
 
 NONBUS_FIELDS = {'W': ['driver_name',
@@ -91,7 +92,7 @@ NONBUS_FIELDS = {'W': ['driver_name',
                        'permit_number',
                        'permit_holder'],
                  'G': ['organization',
-                       'trip_purpose',
+                       'project_type',
                        'n_nights'],
                  'V': [],
                  'C': [],
@@ -136,7 +137,7 @@ ROW_CODES = {'Camp Denali/North Face Lodge': 'CDN',
              'Rusty Lachelt': 'RLA'
              }
 
-COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'driver_name', 'comments','entered_by', 'entry_method'],
+COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'permit_number', 'destination', 'n_passengers', 'driver_name', 'comments','entered_by', 'entry_method'],
                 'buses':            ['observer_name', 'datetime', 'bus_type', 'bus_number', 'is_training', 'destination', 'n_passengers', 'n_wheelchair', 'n_lodge_ovrnt', 'driver_name', 'comments','entered_by', 'entry_method'],
                 'bus_codes':        ['name', 'code'],
                 'cyclists':         ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments','entered_by', 'entry_method'],
@@ -145,15 +146,16 @@ COLUMN_ORDER = {'accessibility':    ['observer_name', 'datetime', 'destination',
                 'inholders':        ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'nps_approved':     ['observer_name', 'datetime', 'approved_type', 'n_nights', 'destination', 'n_passengers', 'driver_name', 'comments', 'entered_by', 'entry_method'],
                 'nps_approved_codes': ['name', 'code'],
-                'nps_contractors':  ['observer_name', 'datetime', 'organization', 'trip_purpose', 'n_nights', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
+                'nps_contractors':  ['observer_name', 'datetime', 'organization', 'project_type', 'n_nights', 'permit_number', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'nps_vehicles':     ['observer_name', 'datetime', 'work_group', 'trip_purpose', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'photographers':    ['observer_name', 'datetime', 'permit_holder', 'permit_number', 'n_nights', 'driver_name', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'road_lottery':     ['id','observer_name', 'datetime', 'permit_number', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'shift_info':       ['open_time', 'close_time', 'buschecked', 'nonbuschecked'],
-                'subsistence':      ['observer_name', 'datetime', 'n_nights', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method', 'driver_name'],
+                'subsistence':      ['observer_name', 'datetime', 'n_nights', 'permit_number', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method', 'driver_name'],
                 'tek_campers':      ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
                 'turned_around':    ['observer_name', 'datetime', 'destination', 'n_passengers', 'comments', 'entered_by', 'entry_method'],
-                'nps_work_groups':  ['name', 'code']
+                'nps_work_groups':  ['name', 'code'],
+                'contractor_project_types': ['name', 'code']
                 }
 
 
@@ -204,7 +206,7 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     df['close_time'] = df['shift_date'].str.split().apply(lambda x: x[0]) + \
                       pd.Series([' '] * len(df)) + \
                       df['close_time'].str.split().apply(lambda x: x[1] if type(x) != float else '00:00:00')
-    df.drop('obs_date', axis=1, inplace=True)
+    df.drop('shift_date', axis=1, inplace=True)
     df.to_csv(datadates_txt, index=False)
 
 
@@ -243,8 +245,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     dest_codes.rename(columns={'cid': 'id', 'codename': 'name', 'codeletter': 'code'}, inplace=True)
     dest_codes.replace({'code': DESTINATION_CODES}, inplace=True)
     dest_codes.set_index('name', inplace=True)
+    dest_codes['Igloo'] = pd.Series({'code': 'IGL', 'id': len(dest_codes)})
     dest_codes['mile'] = pd.Series({'Primrose/Mile 17': 17,
                                     'Teklanika': 27,
+                                    'Igloo': 34,
                                     'Polychrome': 45,
                                     'Toklat': 53,
                                     'Stony Overlook': 62,
@@ -279,6 +283,11 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
         bus_codes.loc[bus_codes.codeletter == letter, 'codename'] = name
     bus_codes.rename(columns={'cid': 'id', 'codename':'name', 'codeletter':'code'}, inplace=True)
     bus_codes.replace({'code': BUS_CODES}, inplace=True)
+    bus_codes.append(pd.DataFrame({'name': ['Educational Charter', 'Commerical Charter', 'Spare'],
+                                   'code': ['EDU',                  'CHT',               'SPR'],
+                                   'id':   range(len(bus_codes), len(bus_codes) + 3)
+                                   })
+                     )
     bus_codes.sort_values(by='name', inplace=True)
     bus_codes['is_lodge_bus'] = False
     bus_codes.loc[bus_codes.code.isin(['CDN', 'DBL', 'KRH', 'MCG']), 'is_lodge_bus'] = True
@@ -301,9 +310,27 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     print '"datadates" to "shift_info"...',
     os.rename(os.path.join(search_dir, 'datadates.csv'), os.path.join(search_dir, 'shift_info.csv'))
 
-    print '"greenstudywg" to "nps_work_groups"...\n'
-    os.rename(os.path.join(search_dir, 'greenstudywg.csv'), os.path.join(search_dir, 'nps_work_groups.csv'))
+    print '"greenstuudytp" to "nps_trip_purposes"...',
+    os.rename(os.path.join(search_dir, 'greenstudytp.csv'), os.path.join(search_dir, 'nps_trip_purposes.csv'))
 
+    print '"greenstudywg" to "nps_work_groups"...\n'
+    work_groups = pd.read_csv(os.path.join(search_dir, 'nps_work_groups.csv')).append(
+        pd.DataFrame([{'name': 'Auto shop', 'code': 'AUT'}])
+    )
+    work_groups.to_csv(os.path.join(search_dir, 'nps_work_groups.csv'), index=False)
+    #os.rename(os.path.join(search_dir, 'greenstudywg.csv'), os.path.join(search_dir, 'nps_work_groups.csv'))
+
+    print 'Creating "contractor_project_types"...\n'
+    project_types = pd.DataFrame([['BLD', 'New building construction'],
+                                  ['MNT', 'Facility maintenance'],
+                                  ['RDW', 'Road work'],
+                                  ['DLV', 'Standalone delivery'],
+                                  ['ITI', 'IT Infrastructure'],
+                                  ['OTH', 'Other'],
+                                  ['UNK', 'Unknown'],
+                                  ['NUL', 'Null']],
+                                 columns=['code', 'name'])
+    project_types.to_csv(os.path.join(search_dir, 'contractor_project_types.csv'))
 
     print 'Deleting unnecessary tables...',
     researcher_txt = os.path.join(out_dir, 'researcher.csv')
@@ -318,10 +345,10 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     if os.path.isfile(greenstudy_txt):
         print 'greenstudy...',
         os.remove(greenstudy_txt)
-    greenstudytp_txt = greenstudy_txt.replace('.csv', 'tp.csv')
+    '''greenstudytp_txt = greenstudy_txt.replace('.csv', 'tp.csv')
     if os.path.isfile(greenstudytp_txt):
         print 'greenstudytp...',
-        os.remove(greenstudytp_txt)
+        os.remove(greenstudytp_txt)'''
     gmp_txt = os.path.join(out_dir, 'gmp.csv')
     if os.path.isfile(gmp_txt):
         print 'gmp...',
@@ -353,15 +380,19 @@ def main(out_dir, search_dir = r'C:\Users\shooper\proj\savagedb\db\merged_tables
     print 'Adding "other_vehicles" table...\n'
     pd.DataFrame(columns=CONSTANT_FIELDS).to_csv(os.path.join(search_dir, 'other_vehicles.csv'), index=False)
 
-    work_groups = pd.read_csv(os.path.join(search_dir, 'nps_work_groups.csv'))
+    trip_purposes = pd.read_csv(os.path.join(search_dir, 'nps_trip_purposes.csv'))
     wg_code_dict = dict(zip(work_groups.name, work_groups.code))
+    tp_code_dict = dict(zip(trip_purposes.name, trip_purposes.code))
     dest_code_dict = dict(zip(dest_codes.name, dest_codes.code))
     bus_code_dict = dict(zip(bus_codes.name, bus_codes.code))
     approved_code_dict = dict(zip(approved_codes.name, approved_codes.code))
+    project_type_dict = dict(zip(project_types.name, project_types.code))
     replace_dict = {'destination':   dest_code_dict,
                     'bus_type':      bus_code_dict,
                     'approved_type': approved_code_dict,
-                    'work_group':    wg_code_dict
+                    'work_group':    wg_code_dict,
+                    'trip_purpose':  tp_code_dict,
+                    'project_type':  project_type_dict
                     }
 
     # Add a null option to all code tables

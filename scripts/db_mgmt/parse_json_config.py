@@ -6,7 +6,14 @@ from datetime import datetime
 import pandas as pd
 
 
-COLUMN_ORDER = ["Observer name", "Bus type", "Lodge", "Permit holder", "Approved category", "Work group", "Destination"]
+COLUMN_ORDER = ["Observer name",
+                "Bus type", "Lodge",
+                "Permit holder",
+                "Approved category",
+                "Work group",
+                "Trip purpose",
+                "Project type",
+                "Destination"]
 
 
 def parse_json_data(json_path):

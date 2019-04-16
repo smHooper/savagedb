@@ -54,6 +54,9 @@ REPLACE_COLUMNS = {'bustraffic': {'busid':      'bus_number',
                                     'work_group_code': 'code',
                                     'work_group': 'name'
                                     },
+                   'greenstudytp': {'gtpid': 'id',
+                                    'trip_code': 'code',
+                                    'trip_purpose': 'name'},
                    'nonbus':     {'dest':       'destination',
                                   'people_':    'n_passengers',
                                   'redwhite':   'permitholder_code',
@@ -84,7 +87,14 @@ WORK_GROUP_CODES = {'A':  'ADM',
                     'S':  'SUP',
                     'O':  'OTH'
                     }
-TRIP_PURPOSE = {'Special Projects (5yrs or less)': 'Special projects',
+PURPOSE_CODES = {'R': 'WRK',
+                 'P': 'PRJ',
+                 'D': 'RTD',
+                 'T': 'ORI',
+                 'O': 'OTH'
+                 }
+
+PURPOSE_NAMES = {'Special Projects (5yrs or less)': 'Special projects',
                 'Orientation Trip':                 'Orientation trip',
                 'Routine Work':                     'Routine work',
                 'Other (note in comment)':          'Other'}
@@ -298,7 +308,8 @@ def main(export_tables=False):
             greenstudy = pd.read_csv(greenstudy_txt)
             greenstudytp = pd.read_csv(greenstudytp_txt)
             greenstudywg.replace({'work_group': WORK_GROUPS, 'work_group_code': WORK_GROUP_CODES}, inplace=True)
-            greenstudytp.replace({'trip_purpose': TRIP_PURPOSE}, inplace=True)
+            greenstudytp.replace({'trip_purpose': PURPOSE_NAMES}, inplace=True)
+            greenstudytp.replace({'trip_code': PURPOSE_CODES}, inplace=True)
 
             # add the nonbus ID to the gsid column for 2007 only because this was the only year where green study ID
             #   was stored in nonbus rather than the nonbus ID being stored in the greenstudy table
@@ -347,6 +358,8 @@ def main(export_tables=False):
 
             greenstudywg.rename(columns=REPLACE_COLUMNS['greenstudywg'], inplace=True)
             greenstudywg.to_csv(greenstudywg_txt, index=False)
+            greenstudytp.rename(columns=REPLACE_COLUMNS['greenstudytp'], inplace=True)
+            greenstudytp.to_csv(greenstudytp_txt, index=False)
 
         nonbus.to_csv(nonbus_txt, index=False)
 
