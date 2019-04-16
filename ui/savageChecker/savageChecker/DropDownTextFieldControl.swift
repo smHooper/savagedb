@@ -20,6 +20,7 @@ protocol dropDownProtocol {
     var dropDownID: Int? = 0//: String? = "" // To distinguish notifications when multiple drowdowns are in the same ViewController
     var dropView = DropDownView()
     var heightConstraint = NSLayoutConstraint()
+    var animationDuration = 0.35
     
     func dropDownPressed(string: String) {
         /*if (self.dropView.dropDownOptions.contains(string)){// && string != "Other"){
@@ -88,7 +89,7 @@ protocol dropDownProtocol {
             
             NSLayoutConstraint.activate([self.heightConstraint])
             
-            UIView.animate(withDuration: 0.5, delay: 0, animations: {
+            UIView.animate(withDuration: self.animationDuration, delay: 0, animations: {
                 self.dropView.layoutIfNeeded()
                 self.dropView.center.y += self.dropView.frame.height / 2
             }, completion: nil)
@@ -99,7 +100,7 @@ protocol dropDownProtocol {
             NSLayoutConstraint.deactivate([self.heightConstraint])
             self.heightConstraint.constant = 0
             NSLayoutConstraint.activate([self.heightConstraint])
-            UIView.animate(withDuration: 0.5, delay: 0, animations: {
+            UIView.animate(withDuration: self.animationDuration, delay: 0, animations: {
                 self.dropView.center.y -= self.dropView.frame.height / 2
                 self.dropView.layoutIfNeeded()
             }, completion: nil)
@@ -112,7 +113,7 @@ protocol dropDownProtocol {
         NSLayoutConstraint.deactivate([self.heightConstraint])
         self.heightConstraint.constant = 0
         NSLayoutConstraint.activate([self.heightConstraint])
-        UIView.animate(withDuration: 0.5, delay: 0, animations: {
+        UIView.animate(withDuration: self.animationDuration, delay: 0, animations: {
             self.dropView.center.y -= self.dropView.frame.height / 2
             self.dropView.layoutIfNeeded()
         }, completion: nil)
@@ -154,6 +155,8 @@ class DropDownView: UIControl, UITableViewDelegate, UITableViewDataSource  {
         //self.tableView.layer.backgroundColor = UIColor(red: 0.9, green: 0.9, blue: 0.9, alpha: 0.2).cgColor
         self.tableView.layer.borderColor = UIColor.clear.cgColor
         self.tableView.rowHeight = self.height/3.3
+        
+        self.tableView.delaysContentTouches = false
         
     }
     

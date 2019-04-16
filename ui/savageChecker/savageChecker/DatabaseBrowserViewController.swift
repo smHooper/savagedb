@@ -32,11 +32,11 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         //self.view.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.7)
         self.view.backgroundColor = UIColor.clear
         
-        guard let userData = loadUserData() else {
+        if let userData = loadUserData() {
+            self.userData = userData
+        } else {
             os_log("Couldn't load user data", log: OSLog.default, type: .debug)
-            return
         }
-        self.userData = userData
         
         findFiles()
         
@@ -149,12 +149,12 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
                 }
             }
         } catch {
-            print("Error while enumerating files \(documentsURL.path): \(error.localizedDescription)")
+            showGenericAlert(message: "Error while enumerating files in \(documentsURL.path): \(error.localizedDescription)")
             os_log("Error while enumerating files", log: OSLog.default, type: .debug)
         }
         
-        // Sort in alphabetical order
-        self.files.sort()
+        // Sort in reverse alphabetical order
+        self.files = self.files.sorted{$0 > $1}//sort()
     }
     
     
@@ -192,6 +192,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         guard let presentingController = self.delegate as? GoogleDriveUploadViewController else {
             os_log("The presenting controller was not a GoogleDriveUploadViewController", log: .default, type: .default)
+            dismiss(animated: true, completion: {self.showGenericAlert()})
             return
         }
         //presentingController.selectedFiles = self.files
@@ -254,21 +255,19 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
                 cell.icon.image = UIImage(named: "databaseFileUploadedIcon", in: Bundle(for: type(of: self)), compatibleWith: self.traitCollection)
             }
         }
-
-        
-        
         
         return cell
     }
     
-    // Called when the cell is selected.
+    // Called when a cell is selected.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         //Update cell appearance
         let cell = tableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
         
         guard let selectedRows = self.fileTableView.indexPathsForSelectedRows else {
-            print("no selected rows")
+            os_log("no selected rows in DatabaseBrowserViewContoller.tableView(:didselectRowAt)", log: .default, type: .debug)
+            showGenericAlert()
             return
         }
         if selectedRows.contains(indexPath) {
@@ -301,8 +300,22 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
                 presentingController.db = try? Connection(dbPath)
                 presentingController.loadData()
             }
+        
             
-            dismiss(animated: true, completion: nil)
+            let formatter = DateFormatter()
+            dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "MM-dd-yy"
+            let dateFromFile = selectedFileName.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: ".db", with: "")
+            if let date = formatter.date(from: dateFromFile) {
+                formatter.dateStyle = .long
+                formatter.timeStyle = .none
+                let alertController = UIAlertController(title: "Database successfully loaded", message: "You have now loaded the database for \(formatter.string(from: date))", preferredStyle: .alert)
+                alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: {_ in self.dismiss(animated: true, completion: nil)}) )
+                present(alertController, animated: true, completion: nil)
+            } else {
+                dismiss(animated: true, completion: nil)
+            }
+            
         } else {
             if let indexPathNotSelected = (tableView.indexPathsForSelectedRows?.contains(indexPath)) {
                 self.selectedFiles.append(self.files[indexPath.row])

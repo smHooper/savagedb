@@ -246,6 +246,7 @@ extension UIViewController {
         var options = [String]()
         for item in fields[fieldName]["options"].arrayValue {
             options.append(item.stringValue)
+            print(item.stringValue)
         }
         return options
     }
@@ -275,57 +276,6 @@ extension UIViewController {
             return dbPath
         }
     }
-    
-    
-    /*func addBlur() {
-        // Only apply the blur if the user hasn't disabled transparency effects
-        if !UIAccessibilityIsReduceTransparencyEnabled() {
-            self.view.backgroundColor = .clear
-            
-            let blurEffect = UIBlurEffect(style: .light)
-            self.blurEffectView = UIVisualEffectView(effect: blurEffect)
-            let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
-            let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
-            
-            self.blurEffectView.frame = self.view.frame//bounds
-            self.blurEffectView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-            
-            self.view.addSubview(self.blurEffectView)
-            self.view.addSubview(vibrancyView)
-            
-        } else {
-            // ************ Might need to make a dummy blur effect so that removeFromSuperview() in AddObservationMenu transition doesn't choke
-            self.view.backgroundColor = .black
-        }
-    }
-
-    
-    // Return a blurred image of all currently visible views
-    func getBlurredSnapshot(frame: CGRect, whiteAlpha: CGFloat = 0) -> UIImageView {
-        
-        //add blur temporarily
-        addBlur()
-        
-        // Get image of all currently visible views with the blur
-        let backgroundView = UIImageView(image: self.view.takeSnapshot())
-        
-        // remove blurview
-        self.blurEffectView.removeFromSuperview()
-        
-        // Since a .formSheet modal presentation will show the image in the upper left corner of the frame, offset the frame so it displays in the right place
-        backgroundView.contentMode = .scaleAspectFill
-        let currentFrame = self.view.frame
-        backgroundView.frame = CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
-        
-        // Add translucent white
-        if whiteAlpha > 0 {
-            let translucentWhite = UIView(frame: backgroundView.frame)
-            translucentWhite.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: whiteAlpha)
-            backgroundView.addSubview(translucentWhite)
-        }
-        
-        return backgroundView
-    }*/
     
     
     func currentDbExists() -> Bool {
@@ -364,7 +314,29 @@ extension UIViewController {
         present(alertController, animated: true, completion: nil)
     }
     
-    
+    // Show a generic warning.info message
+    func showGenericAlert(message: String = "An unknown error has occurred", title: String = "Error", takeScreenshot: Bool = true) {
+        let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+        // run in separate process so that it present works in viewDidLoad
+        DispatchQueue.main.async {
+            self.present(alertController, animated: true, completion: {
+                if takeScreenshot {
+                    let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+                    let fileName = "error_screenshot \(Date()).png"
+                    let screenshotDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("errors")
+                    let fileManager = FileManager.default
+                    var isDir: ObjCBool = false
+                    if !fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) {
+                        try? fileManager.createDirectory(at: screenshotDir, withIntermediateDirectories: true, attributes: nil)
+                    }
+                    let imgURL = fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) ? screenshotDir.appendingPathComponent(fileName) : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName)
+                    let screenshot = alertController.view.takeSnapshot()
+                    try? UIImagePNGRepresentation(screenshot)?.write(to: imgURL)
+                }
+            })
+        }
+    }
 }
 
 

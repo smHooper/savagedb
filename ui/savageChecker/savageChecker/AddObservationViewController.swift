@@ -31,8 +31,6 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             if self.animationComplete {
                 return .all
             } else {
-                //let screenSize = UIApplication.shared.statusBarFrame.size
-                print(UIDevice.current.orientation.rawValue)
                 if UIDevice.current.orientation.isLandscape {
                     return .landscape
                 } else {
@@ -601,10 +599,11 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             db = try Connection(dbPath)
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            print("problem getting session rows: \(error.localizedDescription)")
+            showGenericAlert(message: "Problem getting shift info: \(error.localizedDescription)", title: "Database error")
         }
         if rows.count > 1 {
             os_log("Multiple sessions found", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Multiple records found in shift info table", title: "Warning")
         }
         
         var session: Session?

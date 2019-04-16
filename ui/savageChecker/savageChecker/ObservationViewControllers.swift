@@ -46,7 +46,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     let scrollView = UIScrollView()
     let container = UIView()
-    //var formWidthConstraint = NSLayoutConstraint()
+    var formWidthConstraint = NSLayoutConstraint()
     //var formHeightConstraint = NSLayoutConstraint()
     var topSpacing = 40.0
     let sideSpacing: CGFloat = 8.0
@@ -66,6 +66,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         super.viewDidLoad()
         hideKeyboardWhenTappedAround()
         
+        // Make sure the scrollView container doesn't delay the touch recognition for dropdowns
+        self.scrollView.delaysContentTouches = false
+        
         // Open connection to the DB
         do {
             //print(dbPath)
@@ -73,8 +76,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 db = try Connection(dbPath)
             }
         } catch let error {
-            //fatalError(error.localizedDescription)
-            print(error.localizedDescription)
+            showGenericAlert(message: "Could not connect to the database at \(dbPath) because \(error.localizedDescription)", title: "Database connection error")
+            os_log("Could not connect to database in BaseFormViewController.viewDidLoad()", log: .default, type: .debug)
         }
         
         self.deviceOrientation = UIDevice.current.orientation.rawValue
@@ -122,9 +125,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     func resetLayout() {
         
         //let safeArea = self.view.safeAreaInsets
-        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
+        //let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
         let currentScreenFrame = getCurrentScreenFrame()
         self.scrollView.contentSize = CGSize(width: currentScreenFrame.width - CGFloat(self.sideSpacing * 2), height: self.scrollView.contentSize.height)
+        self.formWidthConstraint.constant = currentScreenFrame.width * 0.8
         self.scrollView.setNeedsUpdateConstraints()
         self.scrollView.layoutIfNeeded()
         self.view.layoutIfNeeded()
@@ -151,10 +155,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.scrollView.addSubview(container)
         
         // Set up constraints.
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
-        container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
-        container.widthAnchor.constraint(equalTo: scrollView.widthAnchor).isActive = true
+        self.container.translatesAutoresizingMaskIntoConstraints = false
+        self.container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
+        self.container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
+        self.formWidthConstraint = self.container.widthAnchor.constraint(equalToConstant: getCurrentScreenFrame().width * 0.8)//.isActive = true
+        self.formWidthConstraint.isActive = true
+        
         
         var containerHeight = CGFloat(0.0)
         var lastBottomAnchor = container.topAnchor
@@ -492,8 +498,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         backgroundView.contentMode = .scaleAspectFill
         let currentFrame = self.view.frame
         backgroundView.frame = frame//CGRect(x: currentFrame.minX - frame.minX, y: currentFrame.minY - frame.minY, width: currentFrame.width, height: currentFrame.height)
-        print(textFieldIds[textField.tag])
-        print(backgroundView.frame)
         /*blurEffectView.removeFromSuperview()
         
         let translucentWhite = UIView(frame: backgroundView.frame)
@@ -551,7 +555,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // When keyboard disappears, restore original position
     @objc func keyboardWillBeHidden(notification: NSNotification){
-        //print("self.currentScrollViewOffset in keyboardWillBeHidden: \(self.currentScrollViewOffset)")
         self.scrollView.contentOffset = CGPoint(x: 0, y: self.currentScrollViewOffset)
         self.view.endEditing(true)
     }
@@ -559,13 +562,6 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // Update data when a the dropDown menu is selected
     @objc func dropDownDidChange(notification: NSNotification) {
-        /*guard let textDictionary = notification.object as? Dictionary<Int, String> else {
-            fatalError("Couldn't downcast textDictionary: \(notification.object!)")
-        }
-        let index = textDictionary.keys.first!
-        let text = textDictionary.values.first!
-        //textFields[index]?.text = text*/
-
         updateData()
     }
     
@@ -604,7 +600,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // MARK: Add a custom datepicker to each of the datetime fields
     
-    // Called when text a text field with type == "date" || "time"
+    // Called when text a text field with type == "date" || "time" is laid out
     func setupDatetimePicker(_ sender: UITextField) {
         let datetimePickerView: UIDatePicker = UIDatePicker()
         let fieldType = textFieldIds[sender.tag].type
@@ -624,7 +620,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             formatter.dateStyle = .short
             formatter.timeStyle = .none
         default:
-            fatalError("textfield \(sender.tag) passed to setupDatetimePicker was of type \(fieldType)")
+            print("textfield \(sender.tag) passed to setupDatetimePicker was of type \(fieldType)")
+            os_log("wrong type of field passed to setUpDatetimePicker()", log: .default, type: .debug)
         }
         
         sender.inputView = datetimePickerView
@@ -632,7 +629,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         datetimePickerView.tag = sender.tag
         
         // Set the default time to now
-        if (sender.text?.isEmpty)! {
+        if sender.text?.isEmpty ?? false {
             sender.text = formatter.string(from: now)
         }
     }
@@ -651,6 +648,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             formatter.timeStyle = .none
         default:
             print("textfield \(textFieldId) passed to setupDatetimePicker was of type \(fieldType)")
+            os_log("wrong type of field passed to formatDatetime()", log: .default, type: .debug)
         }
         
         let datetimeString = formatter.string(from: date)
@@ -663,40 +661,38 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // Send a notification with the value from pickerView
     @objc func handleDatetimePicker(sender: UIDatePicker) {
         
-        guard let currentValue = self.textFields[sender.tag]!.text else {
-            fatalError("No text field matching datetimPicker id \(sender.tag) found")
-        }
-        var datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
+        if let currentValue = self.textFields[sender.tag]?.text {
+            var datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
 
-        // If this is a date field, check if the date is today. If not, send an alert to make sure this is intentional
-        if self.textFieldIds[sender.tag].type == "date" {
-            let today = Date()
-            let formatter = DateFormatter()
-            formatter.dateStyle = .short
-            formatter.timeStyle = .none
-            let todayString = formatter.string(from: today)
-            if datetimeString != todayString && sendDateEntryAlert {
-                let alertTitle = "Date Entry Alert"
-                let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
-                let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[sender.tag]!.text = datetimeString}))
-                alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
-                alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[sender.tag]!.text = datetimeString;
-                    sendDateEntryAlert = false}))
-                present(alertController, animated: true, completion: nil)
+            // If this is a date field, check if the date is today. If not, send an alert to make sure this is intentional
+            if self.textFieldIds[sender.tag].type == "date" {
+                let today = Date()
+                let formatter = DateFormatter()
+                formatter.dateStyle = .short
+                formatter.timeStyle = .none
+                let todayString = formatter.string(from: today)
+                if datetimeString != todayString && sendDateEntryAlert {
+                    let alertTitle = "Date Entry Alert"
+                    let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
+                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString}))
+                    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
+                    alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString;
+                        sendDateEntryAlert = false}))
+                    present(alertController, animated: true, completion: nil)
+                } else {
+                    self.textFields[sender.tag]?.text = datetimeString
+                }
             } else {
-                self.textFields[sender.tag]!.text = datetimeString
+                self.textFields[sender.tag]?.text = datetimeString
             }
+            
         } else {
-            self.textFields[sender.tag]!.text = datetimeString
+            print("No text field matching datetimPicker id \(sender.tag) found")
+            os_log("Bad notification sent to handleDatetimePicker. No matcing datetimePicker id found", log: .default, type: .debug)
+            showGenericAlert(message: "No text field matching datetimPicker id \(sender.tag) found", title: "Unknown datetime field")
         }
-        
-        // Send the string with a notification. Use the tag of the datepicker as the key to a dictionary so the receiver knows which text field this value belongs to
-        //let dictionary: [Int: String] = [sender.tag: datetimeString]
-        //NotificationCenter.default.post(name: Notification.Name("dateTimePicked:\(sender.tag)"), object: dictionary)
-        
-        // ********* override this method in observation view controllers: call super.handleDatetimePicker; updateObservation()
-        //updateObservation()
+            
     }
     
     // Create the datetime picker input view
@@ -716,17 +712,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         // Add a notification to retrieve the value from the datepicker
         //NotificationCenter.default.addObserver(self, selector: #selector(updateDatetimeField(notification:)), name: Notification.Name("dateTimePicked:\(textField.tag)"), object: nil)
     }
-    
-    
-    // Retreive string from notification that was sent by the pickerView
-    /*@objc func updateDatetimeField(notification: Notification){
-        guard let datetimeDictionary = notification.object as? Dictionary<Int, String> else {
-            fatalError("Couldn't downcast dateTimeDict: \(notification.object!)")
-        }
-        let index = datetimeDictionary.keys.first!
-        let datetime = datetimeDictionary.values.first!
-        textFields[index]?.text = datetime
-    }*/
+
     
     // Check that the done button on custom DatePicker was pressed
     @objc func datetimeDonePressed(sender: UIBarButtonItem) {
@@ -738,13 +724,11 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
-
-    
-    
     @objc func updateData(){
         // Dummy function. Needs to be overridden in sublcasses
         print("updateData() method not overriden")
     }
+    
     
     // MARK: Navigation
     func setNavigationBar() {
@@ -770,6 +754,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
 }
+
 
 //MARK: -
 //MARK: -
@@ -875,14 +860,14 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         do {
             db = try Connection(dbPath)
         } catch let error {
-            print(error.localizedDescription)
+            showGenericAlert(message: error.localizedDescription, title: "Database connection error")
         }
         
         //Load the session
         do {
             try loadSession()
         } catch {
-            print(error.localizedDescription)
+            showGenericAlert(message: "Could not load shift info because \(error.localizedDescription)", title: "Datbase error")
         }
         setNavigationBar()
         self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
@@ -908,35 +893,50 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     // Parse a JSON string from a QR code. The value of each item in the JSON string will only be used to fill a
     //  text field if the key for item matches the label of the text field
     func parseQRString() {
-        
-        if let json = try? JSON(data: self.qrString.data(using: .utf8, allowLossyConversion: false)!) {
-            let jsonDictionary = json.dictionary
-            for (i, fieldInfo) in self.textFieldIds.enumerated() {
-                let controlName = fieldInfo.label
-                let value = json[controlName].string ?? ""
-                if jsonDictionary?[controlName]?.string != nil {
-                    switch fieldInfo.type {
-                    case "normal", "number":
-                        self.textFields[i]?.text = value
-                    case "dropDown":
-                        self.dropDownTextFields[i]?.text = value
-                    default:
-                        let _ = 1
+        if !self.qrString.isEmpty {
+            if let json = try? JSON(data: self.qrString.data(using: .utf8, allowLossyConversion: false) ?? " ".data(using: .utf8)!) {
+                let jsonDictionary = json.dictionary
+                for (i, fieldInfo) in self.textFieldIds.enumerated() {
+                    let controlName = fieldInfo.label
+                    let value = json[controlName].string ?? ""
+                    if jsonDictionary?[controlName]?.string != nil {
+                        switch fieldInfo.type {
+                        case "normal", "number":
+                            self.textFields[i]?.text = value
+                        case "dropDown":
+                            self.dropDownTextFields[i]?.text = value
+                        default:
+                            let _ = 1
+                        }
                     }
                 }
+            } else {
+                os_log("Could not parse self.qrString", log: .default, type: .debug)
+                showGenericAlert(message: "Problem encountered while parsing QR code string: \(self.qrString)", title: "QR code read error")
             }
-        } else {
-            os_log("Could not parse self.qrString", log: .default, type: .debug)
         }
+    }
+    
+    func getObservationRecord(id: Int) -> Row? {
+        do {
+            guard let record = try db.pluck(self.observationsTable.where(idColumn == id.datatypeValue)) else {
+                os_log("Could not load data because query of record failed in autofillTextFields", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because the query returned nil. If you save your entry, it will be an entirely new observation.", title: "Data loading error")
+                self.isAddingNewObservation = true
+                return nil
+            }
+            return record
+        } catch {
+            os_log("Could not load data because query of record failed in autofillTextFields", log: .default, type: .debug)
+            showGenericAlert(message: "Could not load data because \(error.localizedDescription). If you save your entry, it will be an entirely new observation", title: "Data loading error")
+            self.isAddingNewObservation = true
+            return nil
+        }
+        
     }
     
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of text fields
     func autoFillTextFields(){
-
-        /*guard let observation = self.modelObject as? Observation else {
-            fatalError("No valid observation passed from TableViewController")
-        }*/
-        
 
         // This is a completely new observation
         if self.isAddingNewObservation {
@@ -967,7 +967,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     @objc func getObservationFromNotification(notification: NSNotification) {
         guard let observation = notification.object as? Observation else {
-            print("Couldn't downcast observation: \(notification.object!)")
+            print("Couldn't downcast observation: \(String(describing: notification.object))")
             return
         }
         self.observation = observation
@@ -981,7 +981,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
         super.setNavigationBar()
         
-        let navItem = UINavigationItem(title: self.title!)
+        let navItem = UINavigationItem(title: self.title ?? "")
         self.saveButton = UIBarButtonItem(title: "Save", style: .plain, target: nil, action: #selector(saveButtonPressed))
         let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: nil, action: #selector(cancelButtonPressed))
         navItem.rightBarButtonItem = self.saveButton
@@ -1177,7 +1177,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                 self.deleteLastRecord(controller: alertController); // delete record
                 self.dismissController() // dismiss controller
             }))
-            alertController.message! += " To remove the observation and start over, press No."
+            alertController.message? += " To remove the observation and start over, press No."
         }
         
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {action in
@@ -1191,7 +1191,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let deleteErrorController = UIAlertController(title: "Delete error", message: "There was a problem while deleting this observation. You will have to delete it manually", preferredStyle: .alert)
         
         if let maxId = try? db.scalar(self.observationsTable.select(idColumn.max)) {
-            let lastRecord = self.observationsTable.filter(idColumn == maxId!)
+            let lastRecord = self.observationsTable.filter(idColumn == maxId ?? 2147483647)
             if let deletedId = try? db.run(lastRecord.delete()) {
                 print("deleted \(deletedId)")
             } else {
@@ -1202,8 +1202,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             controller.dismiss(animated: false, completion: nil)
             present(deleteErrorController, animated: true, completion:nil)
         }
-        
-        
         
     }
     
@@ -1284,7 +1282,8 @@ class BusObservationViewController: BaseObservationViewController {
     let destinationLookup = ["Denali Natural History Tour": "Teklanika",
                              "Tundra Wilderness Tour": "Stony Overlook",
                              "Kantishna Experience": "Kantishna",
-                             "Camper": "Kantishna"]
+                             "Camper": "Kantishna",
+                             "Spare": "Igloo"]
     
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
@@ -1340,22 +1339,6 @@ class BusObservationViewController: BaseObservationViewController {
     }
     
     
-    /*override func parseQRString() {
-        var qrValues = [String]()
-        for value in self.qrString.components(separatedBy: ",") {
-            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
-        }
-        
-        if qrValues.count != 1 {
-            os_log("QR string not understood", log: OSLog.default, type: .debug)
-            print(self.qrString)
-            return
-        }
-        self.dropDownTextFields[3]!.text = qrValues[0] // busType
-        self.dropDownTextFields[5]!.text = self.destinationLookup[qrValues[0]] ?? "" // Try to fill destination
-    }*/
-    
-    
     override func autoFillTextFields() {
 
         // This is a completely new observation
@@ -1382,33 +1365,32 @@ class BusObservationViewController: BaseObservationViewController {
         // The observation already exists and is open for viewing/editing
         } else {
             // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
-            }
-            
-            let record: Row
-            do {
-                // ******* Forced unrwapping a nil optional here **************
-                record = (try db.pluck(self.observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: "0", comments: record[commentsColumn])
-            print(record[commentsColumn])
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.dropDownTextFields[3]?.text = self.observation?.busType
-            self.textFields[4]?.text = self.observation?.busNumber
-            self.dropDownTextFields[5]?.text = self.observation?.destination
-            if (self.observation?.isTraining)! {
-                self.checkBoxes[6]?.isSelected = true
+            if let id = self.observationId {
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+
+                self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: "0", comments: record[commentsColumn])
+
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.dropDownTextFields[3]?.text = self.observation?.busType
+                self.textFields[4]?.text = self.observation?.busNumber
+                self.dropDownTextFields[5]?.text = self.observation?.destination
+                if (self.observation?.isTraining)! {
+                    self.checkBoxes[6]?.isSelected = true
+                } else {
+                    self.checkBoxes[6]?.isSelected = false
+                }
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
             } else {
-                self.checkBoxes[6]?.isSelected = false
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            self.textFields[7]?.text = self.observation?.nPassengers
-            self.textFields[8]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -1438,16 +1420,17 @@ class BusObservationViewController: BaseObservationViewController {
         } else {
         
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -1535,10 +1518,9 @@ class BusObservationViewController: BaseObservationViewController {
                                                             nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!, //Set when initating new observation in autoFillTextFields()
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
-        
     }
     
     override func updateRecord() {
@@ -1559,9 +1541,11 @@ class BusObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -1628,6 +1612,13 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         
         super.viewDidLoad()
         autoFillTextFields()
+        
+        // Make sure all alphabetic characters in the permit number field are capitalized (only inholder permits have letters in them)
+        for (index, fieldInfo) in self.textFieldIds.enumerated() {
+            if fieldInfo.label == "Permit number" {
+                self.textFields[index]?.autocapitalizationType = .allCharacters
+            }
+        }
     }
     
     
@@ -1636,16 +1627,6 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         // This needs to go in viewDidAppear() because viewDidLoad() only gets called the first time you push to each type of view controller
         autoFillTextFields()
     }
-    
-    
-    /*override func parseQRString() {
-        var qrValues = [String]()
-        for value in self.qrString.components(separatedBy: ",") {
-            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
-        }
-        
-        self.dropDownTextFields[3]!.text = qrValues[0] // lodge
-    }*/
     
     
     override func autoFillTextFields() {
@@ -1674,33 +1655,32 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             // The observation already exists and is open for viewing/editing
         } else {
             // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
-            }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: record[nOvernightPassengersColumn], comments: record[commentsColumn])
-            
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.dropDownTextFields[3]?.text = self.observation?.busType
-            self.textFields[4]?.text = self.observation?.busNumber
-            self.dropDownTextFields[5]?.text = self.observation?.destination
-            if (self.observation?.isTraining)! {
-                self.checkBoxes[6]?.isSelected = true
+            if let id = self.observationId {
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: record[nOvernightPassengersColumn], comments: record[commentsColumn])
+                
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.dropDownTextFields[3]?.text = self.observation?.busType
+                self.textFields[4]?.text = self.observation?.busNumber
+                self.dropDownTextFields[5]?.text = self.observation?.destination
+                if (self.observation?.isTraining)! {
+                    self.checkBoxes[6]?.isSelected = true
+                } else {
+                    self.checkBoxes[6]?.isSelected = false
+                }
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text  = self.observation?.nOvernightPassengers
+                self.textFields[9]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
             } else {
-                self.checkBoxes[6]?.isSelected = false
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            self.textFields[7]?.text = self.observation?.nPassengers
-            self.textFields[8]?.text  = self.observation?.nOvernightPassengers
-            self.textFields[9]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -1730,16 +1710,17 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         } else {
             
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -1814,8 +1795,8 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                                                             nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -1837,9 +1818,11 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -1877,9 +1860,8 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Work division": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work division"),
-                                    "Work group": ["Other"],
-                                    "Trip purpose": ["Other"]]
+                                    "Work group": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work group"),
+                                    "Trip purpose": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Trip purpose")]
         self.observationsTable = Table("nps_vehicles")
 
     }
@@ -1900,25 +1882,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Work division": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work division"),
-                                    "Work group": ["Other"],
-                                    "Trip purpose": ["Other"]]
+                                    //"Work division": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work division"),
+                                    "Work group": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work group"),
+                                    "Trip purpose": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Trip purpose")]
         self.observationsTable = Table("nps_vehicles")
     }
-    
-    //MARK: - Layout
-    /*override func viewDidLoad() {
-        
-        super.viewDidLoad()
-        //autoFillTextFields()
-        
-        // Add notification
-        dropDownTextFields[6]?.isEnabled = false
-        labels[6].text = "\(textFieldIds[5].label) (select a division first)"
-        labels[6].textColor = UIColor.gray//(red: 0.8, green: 0.8, blue: 0.8, alpha: 1)
-        NotificationCenter.default.addObserver(self, selector: #selector(setWorkGroupOptions), name: Notification.Name("dropDownPressed:5"), object: nil)
-        
-    }*/
     
     
     override func viewDidAppear(_ animated: Bool) {
@@ -1927,9 +1895,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     }
     
     override func autoFillTextFields() {
-        /*guard let observation = self.observation else {
-            fatalError("No valid observation passed from TableViewController")
-        }*/
+
         // The observation already exists and is open for viewing/editing
         if self.isAddingNewObservation {
             // Get the current time as a string
@@ -1951,36 +1917,30 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.saveButton.isEnabled = false
             
         } else {
-            // Query the db to get the observation
-            var id = 0
-            if let observationId = self.observationId {
-                id = observationId
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = NPSVehicleObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], workGroup: record[workGroupColumn], comments: record[commentsColumn])
+                
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.textFields[3]?.text = self.observation?.driverName
+                self.dropDownTextFields[4]?.text = self.observation?.destination
+                self.dropDownTextFields[5]?.text = self.observation?.workGroup
+                self.dropDownTextFields[6]?.text  = self.observation?.tripPurpose
+                self.textFields[7]?.text = self.observation?.nExpectedNights
+                self.textFields[8]?.text = self.observation?.nPassengers
+                self.textFields[9]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
             } else {
-                //warn user of the error with a function from superclass that shows a uialert
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            /*guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
-            }*/
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = NPSVehicleObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], workGroup: record[workGroupColumn], comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.dropDownTextFields[5]?.text = self.observation?.workGroup
-            self.dropDownTextFields[6]?.text  = self.observation?.tripPurpose
-            self.textFields[7]?.text = self.observation?.nExpectedNights
-            self.textFields[8]?.text = self.observation?.nPassengers
-            self.textFields[9]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
-            //setWorkGroupOptions()
         }
     }
     
@@ -2040,16 +2000,17 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         } else {
             
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -2111,8 +2072,8 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -2134,9 +2095,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Row update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -2213,16 +2176,6 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     }
     
     
-    /*override func parseQRString() {
-        var qrValues = [String]()
-        for value in self.qrString.components(separatedBy: ",") {
-            qrValues.append(value.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines))
-        }
-        
-        self.dropDownTextFields[3]!.text = qrValues[0] // approvedType
-    }*/
-    
-    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -2249,30 +2202,31 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             
         // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = NPSApprovedObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], approvedType: record[approvedTypeColumn], nExpectedNights: record[nExpectedNightsColumn], permitNumber: record[permitNumberColumn], comments: record[commentsColumn])
+                
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.dropDownTextFields[3]?.text = self.observation?.approvedType
+                self.textFields[4]?.text = self.observation?.driverName
+                self.dropDownTextFields[5]?.text = self.observation?.destination
+                self.textFields[6]?.text = self.observation?.nPassengers
+                self.textFields[7]?.text  = self.observation?.nExpectedNights
+                self.textFields[8]?.text = self.observation?.permitNumber
+                self.textFields[9]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = NPSApprovedObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], approvedType: record[approvedTypeColumn], nExpectedNights: record[nExpectedNightsColumn], permitNumber: record[permitNumberColumn], comments: record[commentsColumn])
-            
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.dropDownTextFields[3]?.text = self.observation?.approvedType
-            self.textFields[4]?.text = self.observation?.driverName
-            self.dropDownTextFields[5]?.text = self.observation?.destination
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text  = self.observation?.nExpectedNights
-            self.textFields[8]?.text = self.observation?.permitNumber
-            self.textFields[9]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
+
         }
     }
     
@@ -2301,16 +2255,17 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         } else {
             
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -2327,8 +2282,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         let destination = self.dropDownTextFields[5]?.text ?? ""
         let nPassengers = self.textFields[6]?.text ?? ""
         let nExpectedNights = self.textFields[7]?.text ?? ""
-        let permitNumber = self.textFields[7]?.text ?? ""
-        let comments = self.textFields[8]?.text ?? ""
+        let permitNumber = self.textFields[8]?.text ?? ""
+        let comments = self.textFields[9]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -2374,8 +2329,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -2396,9 +2351,11 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Row update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -2411,7 +2368,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     //MARK: - Properties
     //MARK: DB properties
     var observation: NPSContractorObservation?
-    let tripPurposeColumn = Expression<String>("trip_purpose")
+    let projectTypeColumn = Expression<String>("project_type")
     let nExpectedNightsColumn = Expression<String>("n_nights")
     let organizationNameColumn = Expression<String>("organization")
     let permitNumberColumn = Expression<String>("permit_number")
@@ -2426,7 +2383,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Company/Organization name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
-                             (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
+                             (label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
@@ -2434,7 +2391,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Trip purpose": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Trip purpose")]
+                                    "Project type": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Project type")]
         
         self.observationsTable = Table("nps_contractors")
     }
@@ -2447,7 +2404,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Company/Organization Name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
-                             (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
+                             (label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
@@ -2455,7 +2412,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Trip purpose": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Trip purpose")]
+                                    "Project type": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Project type")]
         self.observationsTable = Table("nps_contractors")
     }
     
@@ -2485,7 +2442,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             
             // Initialize the observation
-            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", tripPurpose: "", nExpectedNights: "", organizationName: "")
+            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", projectType: "", nExpectedNights: "", organizationName: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -2497,32 +2454,33 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             
             // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], projectType: record[projectTypeColumn], nExpectedNights: record[nExpectedNightsColumn], organizationName: record[organizationNameColumn], permitNumber: record[permitNumberColumn], comments: record[commentsColumn])
+                
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.dropDownTextFields[3]?.text = self.observation?.destination
+                self.textFields[4]?.text = self.observation?.organizationName
+                self.dropDownTextFields[5]?.text = self.observation?.projectType
+                self.textFields[6]?.text = self.observation?.nPassengers
+                self.textFields[7]?.text  = self.observation?.nExpectedNights
+                self.textFields[8]?.text = self.observation?.permitNumber
+                self.textFields[9]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], nExpectedNights: record[nExpectedNightsColumn], organizationName: record[organizationNameColumn], permitNumber: record[permitNumberColumn], comments: record[commentsColumn])
-            
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.dropDownTextFields[3]?.text = self.observation?.destination
-            self.textFields[4]?.text = self.observation?.organizationName
-            self.dropDownTextFields[5]?.text = self.observation?.tripPurpose
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text  = self.observation?.nExpectedNights
-            self.textFields[8]?.text = self.observation?.permitNumber
-            self.textFields[9]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
+    
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
@@ -2549,16 +2507,17 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         } else {
             
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -2574,7 +2533,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         let time = self.textFields[2]?.text ?? ""
         let destination = self.dropDownTextFields[3]?.text ?? ""
         let organizationName = self.textFields[4]?.text ?? ""
-        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
+        let projectType = self.dropDownTextFields[5]?.text ?? "Unknown"
         let nPassengers = self.textFields[6]?.text ?? ""
         let nExpectedNights = self.textFields[7]?.text ?? ""
         let permitNumber = self.textFields[8]?.text ?? ""
@@ -2586,7 +2545,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 !time.isEmpty &&
                 !destination.isEmpty &&
                 !organizationName.isEmpty &&
-                !tripPurpose.isEmpty &&
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
         
@@ -2598,7 +2556,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.observation?.time = time
             self.observation?.destination = destination
             self.observation?.organizationName = organizationName
-            self.observation?.tripPurpose = tripPurpose
+            self.observation?.projectType = projectType
             self.observation?.nPassengers = nPassengers
             self.observation?.nExpectedNights = nExpectedNights
             self.observation?.permitNumber = permitNumber
@@ -2619,13 +2577,13 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             organizationNameColumn <- (self.observation?.organizationName)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
-                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                                            projectTypeColumn <- (self.observation?.projectType)!,
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -2641,15 +2599,17 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                         destinationColumn <- (self.observation?.destination)!,
                                         organizationNameColumn <- (self.observation?.organizationName)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
-                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                        projectTypeColumn <- (self.observation?.projectType)!,
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Row update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -2705,13 +2665,6 @@ class EmployeeObservationViewController: BaseObservationViewController {
         self.observationsTable = Table("employee_vehicles")
     }
     
-    //MARK: - Layout
-    /*override func viewDidLoad() {
-        
-        super.viewDidLoad()
-        autoFillTextFields()
-    }*/
-    
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
@@ -2740,31 +2693,31 @@ class EmployeeObservationViewController: BaseObservationViewController {
             
             parseQRString()
             
-            // The observation already exists and is open for viewing/editing
+        // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = EmployeeObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], permitHolder: record[permitHolderColumn], comments: record[commentsColumn])
+                
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.textFields[3]?.text = self.observation?.driverName
+                self.dropDownTextFields[4]?.text = self.observation?.destination
+                self.textFields[5]?.text = self.observation?.permitNumber
+                self.textFields[6]?.text = self.observation?.permitHolder
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = EmployeeObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], permitHolder: record[permitHolderColumn], comments: record[commentsColumn])
-            
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.textFields[5]?.text = self.observation?.permitNumber
-            self.textFields[6]?.text = self.observation?.permitHolder
-            self.textFields[7]?.text = self.observation?.nPassengers
-            self.textFields[8]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -2794,16 +2747,17 @@ class EmployeeObservationViewController: BaseObservationViewController {
         } else {
             
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -2864,8 +2818,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                                             permitHolderColumn <- (self.observation?.permitHolder)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -2886,9 +2840,11 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Row update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -2913,6 +2869,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
                              (label: "Permit holder",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
@@ -2920,7 +2877,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Permit holder": ["A name", "change in obs view controller"]]
+                                    "Permit holder": parseJSON(controllerLabel: "Right of Way", fieldName: "Permit holder")]
         
         self.observationsTable = Table("inholders")
     }
@@ -2932,6 +2889,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
                              (label: "Permit holder",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
@@ -2939,7 +2897,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Permit holder": ["A name", "change in obs view controller"]]
+                                    "Permit holder": parseJSON(controllerLabel: "Right of Way", fieldName: "Permit holder")]
         
         self.observationsTable = Table("inholders")
     }
@@ -2955,6 +2913,13 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         autoFillTextFields()
+        
+        // Make sure all alphabetic characters in the permit number field are capitalized (only inholder permits have letters in them)
+        for (index, fieldInfo) in self.textFieldIds.enumerated() {
+            if fieldInfo.label == "Permit number" {
+                self.textFields[index]?.autocapitalizationType = .allCharacters
+            }
+        }
     }
     
     
@@ -2976,34 +2941,36 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
+            self.dropDownTextFields[4]?.text = "Kantishna"
             self.saveButton.isEnabled = false
             
             parseQRString()
             
             // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], permitHolder: record[permitHolderColumn], comments: record[commentsColumn])
+                
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.textFields[3]?.text = self.observation?.driverName
+                self.dropDownTextFields[4]?.text = self.observation?.destination
+                self.textFields[5]?.text = self.observation?.permitNumber
+                self.dropDownTextFields[6]?.text = self.observation?.permitHolder
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            self.observation = RightOfWayObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], permitNumber: record[permitNumberColumn], permitHolder: record[permitHolderColumn], comments: record[commentsColumn])
-            
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
-            self.textFields[4]?.text = self.observation?.permitNumber
-            self.dropDownTextFields[5]?.text = self.observation?.permitHolder
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -3032,16 +2999,17 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         } else {
             
             // Assign the right ID to the observation
-            var max: Int64!
+            var max: Int64? = 2147483647
             do {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
                 }
             } catch {
-                print(error.localizedDescription)
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
             }
-            observation?.id = Int(max)
+            observation?.id = Int(max!)
             
             dismissController()
         }
@@ -3056,10 +3024,11 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let driverName = self.textFields[3]?.text ?? ""
-        let permitNumber = self.textFields[4]?.text ?? ""
-        let permitHolder = self.dropDownTextFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        let destination = self.dropDownTextFields[4]?.text ?? ""
+        let permitNumber = self.textFields[5]?.text ?? ""
+        let permitHolder = self.dropDownTextFields[6]?.text ?? ""
+        let nPassengers = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -3076,6 +3045,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.driverName = driverName
+            self.observation?.destination = destination
             self.observation?.permitNumber = permitNumber
             self.observation?.permitHolder = permitHolder
             self.observation?.nPassengers = nPassengers
@@ -3101,6 +3071,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
             os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -3121,9 +3092,11 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Row update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -3177,6 +3150,11 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -3202,40 +3180,36 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             
             // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                //fatalError("No ID passed from the tableViewController")
-                print("No ID passed from the tableViewController")
-                return
-            }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = TeklanikaCamperObservation(id: id,
-                                                          observerName: record[observerNameColumn],
-                                                          date: record[dateColumn],
-                                                          time: record[timeColumn],
-                                                          destination: record[destinationColumn],
-                                                          nPassengers: record[nPassengersColumn],
-                                                          hasTekPass: record[hasTekPassColumn],
-                                                          driverName: record[driverNameColumn],
-                                                          comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            if (self.observation?.hasTekPass)! {
-                self.checkBoxes[3]?.isSelected = true
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = TeklanikaCamperObservation(id: id,
+                                                              observerName: record[observerNameColumn],
+                                                              date: record[dateColumn],
+                                                              time: record[timeColumn],
+                                                              destination: record[destinationColumn],
+                                                              nPassengers: record[nPassengersColumn],
+                                                              hasTekPass: record[hasTekPassColumn],
+                                                              driverName: record[driverNameColumn],
+                                                              comments: record[commentsColumn])
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                if (self.observation?.hasTekPass)! {
+                    self.checkBoxes[3]?.isSelected = true
+                } else {
+                    self.checkBoxes[3]?.isSelected = false
+                }
+                self.textFields[4]?.text = self.observation?.nPassengers
+                self.textFields[5]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
             } else {
-                self.checkBoxes[3]?.isSelected = false
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            self.textFields[4]?.text = self.observation?.nPassengers
-            self.textFields[5]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -3260,17 +3234,17 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         }
         
         // Assign the right ID to the observation
-        var max: Int64!
+        var max: Int64? = 2147483647
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
-            print(error.localizedDescription)
-            max = 0
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
         }
-        observation?.id = Int(max)
+        observation?.id = Int(max!)
         
         dismissController()
     }
@@ -3327,8 +3301,8 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                                                             hasTekPassColumn <- (self.observation?.hasTekPass)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -3347,9 +3321,11 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -3393,6 +3369,11 @@ class CyclistObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     override func autoFillTextFields() {
         super.autoFillTextFields()
         // super.autoFillTextFields will fill in what we need if it's a new observation. If not, though, we need to fill everything in because the Observation isn't initialized until after super.autoFill() is called
@@ -3401,25 +3382,25 @@ class CyclistObservationViewController: BaseObservationViewController {
             let time = (self.textFields[2]?.text)!
             self.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: time, driverName: "N/A", destination: "", nPassengers: "")
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = Observation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], comments: record[commentsColumn])
+                
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = observation?.observerName
+                self.textFields[1]?.text = observation?.date
+                self.textFields[2]?.text = observation?.time
+                self.dropDownTextFields[3]?.text = self.observation?.destination
+                self.textFields[4]?.text = self.observation?.nPassengers
+                self.textFields[5]?.text = self.observation?.comments
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = Observation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = observation?.observerName
-            self.textFields[1]?.text = observation?.date
-            self.textFields[2]?.text = observation?.time
-            self.dropDownTextFields[3]?.text = self.observation?.destination
-            self.textFields[4]?.text = self.observation?.nPassengers
-            self.textFields[5]?.text = self.observation?.comments
         }
     }
     
@@ -3444,17 +3425,17 @@ class CyclistObservationViewController: BaseObservationViewController {
         }
         
         // Assign the right ID to the observation
-        var max: Int64!
+        var max: Int64? = 2147483647
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
-            print(error.localizedDescription)
-            max = 0
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
         }
-        observation?.id = Int(max)
+        observation?.id = Int(max!)
         
         dismissController()
     }
@@ -3504,10 +3485,9 @@ class CyclistObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
-            print(rowid)
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -3526,9 +3506,11 @@ class CyclistObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -3585,6 +3567,11 @@ class PhotographerObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -3612,38 +3599,37 @@ class PhotographerObservationViewController: BaseObservationViewController {
             
             // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = PhotographerObservation(id: id,
+                                                           observerName: record[observerNameColumn],
+                                                           date: record[dateColumn],
+                                                           time: record[timeColumn],
+                                                           driverName: record[driverNameColumn],
+                                                           destination: record[destinationColumn],
+                                                           nPassengers: record[nPassengersColumn],
+                                                           permitNumber: record[permitNumberColumn],
+                                                           nExpectedNights: record[nExpectedNightsColumn],
+                                                           comments: record[commentsColumn])
+                // Fill text fields
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.textFields[3]?.text = self.observation?.driverName
+                self.dropDownTextFields[4]?.text = self.observation?.destination
+                self.textFields[5]?.text = self.observation?.permitNumber
+                self.textFields[6]?.text = self.observation?.nPassengers
+                self.textFields[7]?.text = self.observation?.nExpectedNights
+                self.textFields[8]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = PhotographerObservation(id: id,
-                                                       observerName: record[observerNameColumn],
-                                                       date: record[dateColumn],
-                                                       time: record[timeColumn],
-                                                       driverName: record[driverNameColumn],
-                                                       destination: record[destinationColumn],
-                                                       nPassengers: record[nPassengersColumn],
-                                                       permitNumber: record[permitNumberColumn],
-                                                       nExpectedNights: record[nExpectedNightsColumn],
-                                                       comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.textFields[5]?.text = self.observation?.permitNumber
-            self.textFields[6]?.text = self.observation?.nPassengers
-            self.textFields[7]?.text = self.observation?.nExpectedNights
-            self.textFields[8]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -3671,19 +3657,20 @@ class PhotographerObservationViewController: BaseObservationViewController {
             
         } else {
             
-            // Assign the right ID to the observation
-            var max: Int64!
-            do {
-                max = try db.scalar(observationsTable.select(idColumn.max))
-                if max == nil {
-                    max = 0
-                }
-            } catch {
-                print(error.localizedDescription)
+        // Assign the right ID to the observation
+        var max: Int64? = 2147483647
+        do {
+            max = try db.scalar(observationsTable.select(idColumn.max))
+            if max == nil {
+                max = 0
             }
-            observation?.id = Int(max)
-            
-            dismissController()
+        } catch {
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+        }
+        observation?.id = Int(max!)
+        
+        dismissController()
         }
     }
     
@@ -3741,8 +3728,8 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -3763,9 +3750,11 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -3828,6 +3817,13 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
+    
     override func autoFillTextFields() {
         
         // This is a completely new observation
@@ -3855,36 +3851,34 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             
         // The observation already exists and is open for viewing/editing
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = AccessibilityObservation(id: id,
+                                                            observerName: record[observerNameColumn],
+                                                            date: record[dateColumn],
+                                                            time: record[timeColumn],
+                                                            driverName: record[driverNameColumn],
+                                                            destination: record[destinationColumn],
+                                                            nPassengers: record[nPassengersColumn],
+                                                            permitNumber: record[permitNumberColumn],
+                                                            comments: record[commentsColumn])
+                self.dropDownTextFields[0]?.text = self.observation?.observerName
+                self.textFields[1]?.text = self.observation?.date
+                self.textFields[2]?.text = self.observation?.time
+                self.textFields[3]?.text = self.observation?.driverName
+                self.dropDownTextFields[4]?.text = self.observation?.destination
+                self.textFields[5]?.text = self.observation?.nPassengers
+                self.textFields[6]?.text = self.observation?.permitNumber
+                self.textFields[7]?.text = self.observation?.comments
+                self.saveButton.isEnabled = true
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = AccessibilityObservation(id: id,
-                                                       observerName: record[observerNameColumn],
-                                                       date: record[dateColumn],
-                                                       time: record[timeColumn],
-                                                       driverName: record[driverNameColumn],
-                                                       destination: record[destinationColumn],
-                                                       nPassengers: record[nPassengersColumn],
-                                                       permitNumber: record[permitNumberColumn],
-                                                       comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = self.observation?.observerName
-            self.textFields[1]?.text = self.observation?.date
-            self.textFields[2]?.text = self.observation?.time
-            self.textFields[3]?.text = self.observation?.driverName
-            self.dropDownTextFields[4]?.text = self.observation?.destination
-            self.textFields[5]?.text = self.observation?.nPassengers
-            self.textFields[6]?.text = self.observation?.permitNumber
-            self.textFields[7]?.text = self.observation?.comments
-            self.saveButton.isEnabled = true
         }
     }
     
@@ -3909,16 +3903,17 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         }
         
         // Assign the right ID to the observation
-        var max: Int64!
+        var max: Int64? = 2147483647
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
-            print(error.localizedDescription)
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
         }
-        observation?.id = Int(max)
+        observation?.id = Int(max!)
         
         dismissController()
     }
@@ -3973,8 +3968,8 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -3994,9 +3989,11 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
 }
@@ -4053,6 +4050,11 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
     override func autoFillTextFields(){
         super.autoFillTextFields()
@@ -4062,35 +4064,33 @@ class SubsistenceObservationViewController: BaseObservationViewController {
             self.observation = SubsistenceObservation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "Kantishna", nPassengers: "")
             self.dropDownTextFields[4]?.text = "Kantishna"
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = SubsistenceObservation(id: id,
+                                                          observerName: record[observerNameColumn],
+                                                          date: record[dateColumn],
+                                                          time: record[timeColumn],
+                                                          driverName: record[driverNameColumn],
+                                                          destination: record[destinationColumn],
+                                                          nPassengers: record[nPassengersColumn],
+                                                          permitNumber: record[permitNumberColumn],
+                                                          comments: record[commentsColumn])
+                self.dropDownTextFields[0]?.text = observation?.observerName
+                self.textFields[1]?.text = observation?.date
+                self.textFields[2]?.text = observation?.time
+                self.textFields[3]?.text = observation?.driverName
+                self.dropDownTextFields[4]?.text = observation?.destination
+                self.textFields[5]?.text = observation?.nPassengers
+                self.textFields[6]?.text = observation?.permitNumber
+                self.textFields[7]?.text = observation?.comments
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = SubsistenceObservation(id: id,
-                                                    observerName: record[observerNameColumn],
-                                                    date: record[dateColumn],
-                                                    time: record[timeColumn],
-                                                    driverName: record[driverNameColumn],
-                                                    destination: record[destinationColumn],
-                                                    nPassengers: record[nPassengersColumn],
-                                                    permitNumber: record[permitNumberColumn],
-                                                    comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = observation?.observerName
-            self.textFields[1]?.text = observation?.date
-            self.textFields[2]?.text = observation?.time
-            self.textFields[3]?.text = observation?.driverName
-            self.dropDownTextFields[4]?.text = observation?.destination
-            self.textFields[5]?.text = observation?.nPassengers
-            self.textFields[6]?.text = observation?.permitNumber
-            self.textFields[7]?.text = observation?.comments
         }
     }
     
@@ -4108,7 +4108,7 @@ class SubsistenceObservationViewController: BaseObservationViewController {
             self.observation?.destination = self.dropDownTextFields[4]!.text!
             self.observation?.nPassengers = self.textFields[5]!.text!
             self.observation?.permitNumber = self.textFields[6]!.text!
-            self.observation?.comments = self.textFields[6]!.text!
+            self.observation?.comments = self.textFields[7]!.text!
             
             //self.saveButton.isEnabled = true
         }
@@ -4137,8 +4137,8 @@ class SubsistenceObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- permitNumber!,
                                                             commentsColumn <- comments!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -4159,9 +4159,11 @@ class SubsistenceObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -4185,16 +4187,17 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         }
         
         // Assign the right ID to the observation
-        var max: Int64!
+        var max: Int64? = 2147483647
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
-            print(error.localizedDescription)
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
         }
-        observation?.id = Int(max)
+        observation?.id = Int(max!)
         
         dismissController()
     }
@@ -4215,8 +4218,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("road_lottery")
@@ -4228,8 +4231,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date", type: "date"),
                              (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.observationsTable = Table("road_lottery")
@@ -4239,6 +4242,13 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         super.viewDidLoad()
         autoFillTextFields()
     }
+    
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
     override func autoFillTextFields(){
@@ -4254,33 +4264,31 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                       permitNumber: "")
             self.dropDownTextFields[4]?.text = "N/A"
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = RoadLotteryObservation(id: id,
+                                                          observerName: record[observerNameColumn],
+                                                          date: record[dateColumn],
+                                                          time: record[timeColumn],
+                                                          driverName: "N/A",
+                                                          destination: "N/A",
+                                                          nPassengers: record[nPassengersColumn],
+                                                          permitNumber: record[permitNumberColumn],
+                                                          comments: record[commentsColumn])
+                self.dropDownTextFields[0]?.text = observation?.observerName
+                self.textFields[1]?.text = observation?.date
+                self.textFields[2]?.text = observation?.time
+                self.textFields[3]?.text = observation?.nPassengers
+                self.textFields[4]?.text = observation?.permitNumber
+                self.textFields[5]?.text = observation?.comments
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = RoadLotteryObservation(id: id,
-                                                      observerName: record[observerNameColumn],
-                                                      date: record[dateColumn],
-                                                      time: record[timeColumn],
-                                                      driverName: "N/A",
-                                                      destination: "N/A",
-                                                      nPassengers: record[nPassengersColumn],
-                                                      permitNumber: record[permitNumberColumn],
-                                                      comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = observation?.observerName
-            self.textFields[1]?.text = observation?.date
-            self.textFields[2]?.text = observation?.time
-            self.textFields[3]?.text = observation?.nPassengers
-            self.textFields[4]?.text = observation?.permitNumber
-            self.textFields[5]?.text = observation?.comments
         }
     }
     
@@ -4321,8 +4329,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
         } catch {
-            print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -4341,9 +4349,11 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
         } catch {
             os_log("Record update failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
     }
     
@@ -4367,16 +4377,17 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         }
         
         // Assign the right ID to the observation
-        var max: Int64!
+        var max: Int64? = 2147483647
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
-            print(error.localizedDescription)
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
         }
-        observation?.id = Int(max)
+        observation?.id = Int(max!)
         
         dismissController()
     }
@@ -4406,42 +4417,46 @@ class OtherObservationViewController: BaseObservationViewController {
         autoFillTextFields()
     }
     
+    
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        autoFillTextFields()
+    }
+    
     // This portion of viewDidLoad() needs to be easily overridable to customize the order of texr fields
     override func autoFillTextFields(){
         super.autoFillTextFields()
         
         // Initialize the observation. Also, fill destination field with default.
         if self.isAddingNewObservation {
-            self.observation = Observation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "N/A", nPassengers: "")
+            self.observation = Observation(id: -1, observerName: session?.observerName ?? "", date: session?.date ?? "", time: self.textFields[2]?.text ?? "", driverName: "", destination: "N/A", nPassengers: "")
             self.dropDownTextFields[4]?.text = "N/A"
         } else {
-            // Query the db to get the observation
-            guard let id = self.observationId else {
-                fatalError("No ID passed from the tableViewController")
+            if let id = self.observationId {
+                // Load observation
+                guard let record = getObservationRecord(id: id) else {
+                    return
+                }
+                self.observation = Observation(id: id,
+                                               observerName: record[observerNameColumn],
+                                               date: record[dateColumn],
+                                               time: record[timeColumn],
+                                               driverName: record[driverNameColumn],
+                                               destination: record[destinationColumn],
+                                               nPassengers: record[nPassengersColumn],
+                                               comments: record[commentsColumn])
+                self.dropDownTextFields[0]?.text = observation?.observerName
+                self.textFields[1]?.text = observation?.date
+                self.textFields[2]?.text = observation?.time
+                self.textFields[3]?.text = observation?.driverName
+                self.dropDownTextFields[4]?.text = observation?.destination
+                self.textFields[5]?.text = observation?.nPassengers
+                self.textFields[6]?.text = observation?.comments
+            } else {
+                os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
+                showGenericAlert(message: "Could not load data because no ID passed from the tableViewController. If you save your entry, it will be an entirely new observation", title: "Error")
+                self.isAddingNewObservation = true
             }
-            
-            let record: Row
-            do {
-                record = (try db.pluck(observationsTable.where(idColumn == id.datatypeValue)))!
-            } catch {
-                fatalError("Query was unsuccessful because \(error.localizedDescription)")
-            }
-            
-            self.observation = Observation(id: id,
-                                           observerName: record[observerNameColumn],
-                                           date: record[dateColumn],
-                                           time: record[timeColumn],
-                                           driverName: record[driverNameColumn],
-                                           destination: record[destinationColumn],
-                                           nPassengers: record[nPassengersColumn],
-                                           comments: record[commentsColumn])
-            self.dropDownTextFields[0]?.text = observation?.observerName
-            self.textFields[1]?.text = observation?.date
-            self.textFields[2]?.text = observation?.time
-            self.textFields[3]?.text = observation?.driverName
-            self.dropDownTextFields[4]?.text = observation?.destination
-            self.textFields[5]?.text = observation?.nPassengers
-            self.textFields[6]?.text = observation?.comments
         }
     }
     
@@ -4532,16 +4547,17 @@ class OtherObservationViewController: BaseObservationViewController {
         }
         
         // Assign the right ID to the observation
-        var max: Int64!
+        var max: Int64? = 2147483647
         do {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
             }
         } catch {
-            print(error.localizedDescription)
+            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
         }
-        observation?.id = Int(max)
+        observation?.id = Int(max!)
         
         dismissController()
     }

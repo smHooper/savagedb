@@ -53,6 +53,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                                           SettingsTableViewRow(label: "Bus type",       type: "list", context: "Bus"),
                                           SettingsTableViewRow(label: "Lodge",          type: "list", context: "Lodge Bus"),
                                           SettingsTableViewRow(label: "Work group",     type: "list", context: "NPS Vehicle"),
+                                          SettingsTableViewRow(label: "Trip purpose",   type: "list", context: "NPS Vehicle"),
+                                          SettingsTableViewRow(label: "Trip purpose",   type: "list", context: "NPS Contractor"),
                                           SettingsTableViewRow(label: "Approved category",  type: "list", context: "NPS Approved")
                                         ]
                    ]
@@ -317,9 +319,19 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         
         if tableView == self.mainTableView {
             let sectionName = self.sectionOrder[indexPath.section]
-            let rowType = self.settings[sectionName]?[indexPath.row].type ?? ""
+            let thisSetting = self.settings[sectionName]?[indexPath.row]
+            let rowType = thisSetting?.type ?? ""
             let cell = tableView.dequeueReusableCell(withIdentifier: rowType, for: indexPath) as! MainSettingsTableViewCell
-            let label = self.settings[sectionName]?[indexPath.row].label ?? ""
+            let label: String// = thisSetting?.label ?? ""
+            if thisSetting?.label == "Trip purpose" { //Since there are 2 trip purpose fields, differentiate them
+                if thisSetting?.context == "NPS Vehicle" {
+                    label = "\(thisSetting?.label ?? "") (NPS)"
+                } else {
+                    label = "\(thisSetting?.label ?? "") (Contractor)"
+                }
+            } else {
+                label = thisSetting?.label ?? ""
+            }
             cell.label.text = label
             //cell.rowType =
             cell.checkBoxButton.isSelected = self.currentSettings[label] ?? false
@@ -430,7 +442,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             // Should only be one type of row that's selectable, so no need to check
             let settingsRow = self.settings["Dropdown options"]?[indexPath.row]
             if let row = settingsRow {
-                self.dropdownOptions = parseJSON(controllerLabel: row.context, fieldName: row.label)
+                let field = row.label.contains("(") ? row.label.split(separator: "(")[0].trimmingCharacters(in: .whitespaces) : row.label
+                self.dropdownOptions = parseJSON(controllerLabel: row.context, fieldName: field)
             } else {
                 os_log("the indexPath.row in tableView(didSelectRowAt) in SettingsViewController couldn't be found in self.settings", log: OSLog.default, type: .debug)
                 return
@@ -550,8 +563,14 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             busTypes = self.dropdownOptions
         case "Lodge":
             lodges = self.dropdownOptions
-        case "Work division":
-            npsVehicleWorkDivisions = self.dropdownOptions
+        case "Work group":
+            npsVehicleWorkGroups = self.dropdownOptions
+        case "Trip purpose":
+            if context == "NPS Vehicle" {
+                npsVehicleTripPurposes = self.dropdownOptions
+            } else {
+                npsContractorTripPurposes = self.dropdownOptions
+            }
         case "Approved category":
             npsApprovedCategories = self.dropdownOptions
         default:
@@ -590,7 +609,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             return false
         }
         
-        print(jsonURL)
         // write the file
         do {
             try jsonString.write(to: jsonURL, atomically: false, encoding: .utf8)
@@ -615,7 +633,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             settingsRowLabel = settingsRow.label
             settingsRowContext = settingsRow.context
         } else {
-            print("no selection in mainTableView")
+            os_log("no selection in mainTableView in SettingsViewController.addButtonPressed()", log: .default, type: .debug)
         }
         //Show an alert controller with a text field to add the new value
         let alertController = UIAlertController(title: "New \(settingsRowLabel) option", message: "Add a new option for the \(settingsRowLabel) dropdown menu: ", preferredStyle: .alert)
@@ -644,7 +662,6 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alertController.addTextField(configurationHandler: {(textField : UITextField!) -> Void in
             textField.placeholder = ""
-            print(settingsRowLabel)
             textField.autocapitalizationType = settingsRowLabel == "Observer name" ? .words : .sentences
         })
         self.present(alertController, animated: true, completion: nil)
