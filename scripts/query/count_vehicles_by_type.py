@@ -136,6 +136,7 @@ SORT_ORDER = {'summary':   ['Long tour',
               'bikes':      []
               }
 
+
 COLORS = {'summary':   {'Long tour':  '#462970',
                         'Short tour': '#6255A4',
                         'VTS':        '#5C7CB0',
@@ -407,12 +408,14 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     #   is being called as just a query of buses, don't aggregate at all so no need to set dissolve_names
     if is_subquery:
         bus_names = {'VTS': ['SHU', 'CMP'],
-                     'Other JV bus': ['OTH'],
+                     'Other JV bus': ['OTH', 'NUL'],
                      'Long tour': ['KXP', 'EXC', 'TWT', 'WIW'],
                      'Short tour': ['DNH'],
                      'Lodge bus': ['KRH', 'DBL', 'CDN']
                      }
-        kwargs['dissolve_names'] = bus_names
+    else:
+        bus_names = {k: [v] for k, v in query.get_lookup_table(engine, 'bus_codes', 'name', 'code').iteritems()}
+    kwargs['dissolve_names'] = bus_names
 
     kwargs['output_fields'] = output_fields
 
@@ -427,7 +430,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     kwargs['other_criteria'] = trn_other_criteria
 
     if is_subquery:
-        kwargs['dissolve_names'] = {'Other JV bus': ['SHU', 'CMP', 'KXP', 'EXC', 'TWT', 'WIW', 'DNH', 'OTH'],
+        kwargs['dissolve_names'] = {'Other JV bus': ['SHU', 'CMP', 'KXP', 'EXC', 'TWT', 'WIW', 'DNH', 'OTH', 'NUL'],
                                     'Lodge bus': ['KRH', 'DBL', 'CDN']
                                     }
 
@@ -442,6 +445,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     training_buses.index = training_buses.index + ' TRN'
 
     data = pd.concat([buses, training_buses], sort=False)
+
     if sort_order:
         data = data.reindex(sort_order)
 

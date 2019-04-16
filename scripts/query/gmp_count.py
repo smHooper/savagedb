@@ -168,14 +168,24 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
                      'Tour': ['KXP', 'EXC', 'TWT', 'WIW']##,
                      }
         other_criteria = "is_training = ''false'' " + gmp_date_clause.replace("'", "''")
+        # All non-training buses except DNHTs. Do this separately so I can exclude buses going to Primrose
         bus_vehicles, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
-                                                        other_criteria=other_criteria, dissolve_names=bus_names,
+                                                        other_criteria=other_criteria + " AND bus_type <> ''DNH'' AND destination <> ''PRM''",
+                                                             dissolve_names=bus_names,
                                                         field_names=field_names['buses'], summarize_by='month',
                                                         output_fields=output_fields, filter_fields=True, return_sql=True)
         sql_statements.append(sql)
+        # Just non-training DNHTs
+        dnhts, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
+                                                        other_criteria=other_criteria + " AND bus_type = ''DNH''",
+                                                        field_names=field_names['buses'], summarize_by='month',
+                                                        output_fields=output_fields, filter_fields=True, return_sql=True)
+        sql_statements.append(sql)
+        bus_vehicles = bus_vehicles.append(dnhts)
+
         # Rename lodge bus codes to use actual name
         bus_codes = query.get_lookup_table(engine, 'bus_codes')
-        del bus_codes['NUL'] # don't count buses without a type
+        #del bus_codes['NUL'] # don't count buses without a type
         bus_vehicles.rename(index=bus_codes, inplace=True)
 
         # Query bus passengers
