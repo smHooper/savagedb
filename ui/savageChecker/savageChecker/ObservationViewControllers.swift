@@ -46,7 +46,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     let tableView = UITableView(frame: UIScreen.main.bounds, style: UITableViewStyle.plain)
     let scrollView = UIScrollView()
     let container = UIView()
-    //var formWidthConstraint = NSLayoutConstraint()
+    var formWidthConstraint = NSLayoutConstraint()
     //var formHeightConstraint = NSLayoutConstraint()
     var topSpacing = 40.0
     let sideSpacing: CGFloat = 8.0
@@ -125,9 +125,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     func resetLayout() {
         
         //let safeArea = self.view.safeAreaInsets
-        let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
+        //let screenSize = UIScreen.main.bounds // This is actually the screen size before rotation
         let currentScreenFrame = getCurrentScreenFrame()
         self.scrollView.contentSize = CGSize(width: currentScreenFrame.width - CGFloat(self.sideSpacing * 2), height: self.scrollView.contentSize.height)
+        self.formWidthConstraint.constant = currentScreenFrame.width * 0.8
         self.scrollView.setNeedsUpdateConstraints()
         self.scrollView.layoutIfNeeded()
         self.view.layoutIfNeeded()
@@ -154,10 +155,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.scrollView.addSubview(container)
         
         // Set up constraints.
-        container.translatesAutoresizingMaskIntoConstraints = false
-        container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
-        container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
-        container.widthAnchor.constraint(equalTo: scrollView.widthAnchor).isActive = true
+        self.container.translatesAutoresizingMaskIntoConstraints = false
+        self.container.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor).isActive = true
+        self.container.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
+        self.formWidthConstraint = self.container.widthAnchor.constraint(equalToConstant: getCurrentScreenFrame().width * 0.8)//.isActive = true
+        self.formWidthConstraint.isActive = true
+        
         
         var containerHeight = CGFloat(0.0)
         var lastBottomAnchor = container.topAnchor
@@ -2365,7 +2368,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     //MARK: - Properties
     //MARK: DB properties
     var observation: NPSContractorObservation?
-    let tripPurposeColumn = Expression<String>("trip_purpose")
+    let projectTypeColumn = Expression<String>("project_type")
     let nExpectedNightsColumn = Expression<String>("n_nights")
     let organizationNameColumn = Expression<String>("organization")
     let permitNumberColumn = Expression<String>("permit_number")
@@ -2380,7 +2383,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Company/Organization name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
-                             (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
+                             (label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
@@ -2388,7 +2391,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Trip purpose": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Trip purpose")]
+                                    "Project type": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Project type")]
         
         self.observationsTable = Table("nps_contractors")
     }
@@ -2401,7 +2404,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Company/Organization Name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
-                             (label: "Trip purpose",   placeholder: "Select or enter the trip purpose",   type: "dropDown"),
+                             (label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
@@ -2409,7 +2412,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Trip purpose": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Trip purpose")]
+                                    "Project type": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Project type")]
         self.observationsTable = Table("nps_contractors")
     }
     
@@ -2439,7 +2442,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             
             // Initialize the observation
-            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", tripPurpose: "", nExpectedNights: "", organizationName: "")
+            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", projectType: "", nExpectedNights: "", organizationName: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -2456,7 +2459,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 guard let record = getObservationRecord(id: id) else {
                     return
                 }
-                self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], nExpectedNights: record[nExpectedNightsColumn], organizationName: record[organizationNameColumn], permitNumber: record[permitNumberColumn], comments: record[commentsColumn])
+                self.observation = NPSContractorObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], projectType: record[projectTypeColumn], nExpectedNights: record[nExpectedNightsColumn], organizationName: record[organizationNameColumn], permitNumber: record[permitNumberColumn], comments: record[commentsColumn])
                 
                 // Fill text fields
                 self.dropDownTextFields[0]?.text = self.observation?.observerName
@@ -2464,7 +2467,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 self.textFields[2]?.text = self.observation?.time
                 self.dropDownTextFields[3]?.text = self.observation?.destination
                 self.textFields[4]?.text = self.observation?.organizationName
-                self.dropDownTextFields[5]?.text = self.observation?.tripPurpose
+                self.dropDownTextFields[5]?.text = self.observation?.projectType
                 self.textFields[6]?.text = self.observation?.nPassengers
                 self.textFields[7]?.text  = self.observation?.nExpectedNights
                 self.textFields[8]?.text = self.observation?.permitNumber
@@ -2530,7 +2533,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         let time = self.textFields[2]?.text ?? ""
         let destination = self.dropDownTextFields[3]?.text ?? ""
         let organizationName = self.textFields[4]?.text ?? ""
-        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
+        let projectType = self.dropDownTextFields[5]?.text ?? "Unknown"
         let nPassengers = self.textFields[6]?.text ?? ""
         let nExpectedNights = self.textFields[7]?.text ?? ""
         let permitNumber = self.textFields[8]?.text ?? ""
@@ -2542,7 +2545,6 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 !time.isEmpty &&
                 !destination.isEmpty &&
                 !organizationName.isEmpty &&
-                !tripPurpose.isEmpty &&
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
         
@@ -2554,7 +2556,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.observation?.time = time
             self.observation?.destination = destination
             self.observation?.organizationName = organizationName
-            self.observation?.tripPurpose = tripPurpose
+            self.observation?.projectType = projectType
             self.observation?.nPassengers = nPassengers
             self.observation?.nExpectedNights = nExpectedNights
             self.observation?.permitNumber = permitNumber
@@ -2575,7 +2577,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             organizationNameColumn <- (self.observation?.organizationName)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
-                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                                            projectTypeColumn <- (self.observation?.projectType)!,
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
@@ -2597,7 +2599,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                         destinationColumn <- (self.observation?.destination)!,
                                         organizationNameColumn <- (self.observation?.organizationName)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
-                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                        projectTypeColumn <- (self.observation?.projectType)!,
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {

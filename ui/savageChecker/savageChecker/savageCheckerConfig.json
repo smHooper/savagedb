@@ -91,6 +91,7 @@
           "Maintenance",
           "Special Projects",
           "Trails",
+          "Autoshop",
           "Law Enforcement",
           "Backcountry",
           "Education",
@@ -135,7 +136,7 @@
       }
     },
     "NPS Contractor": {
-      "Trip purpose": {
+      "Project type": {
         "validation_table": "nps_trip_purposes",
         "validation_field": "name",
         "sorted": false,

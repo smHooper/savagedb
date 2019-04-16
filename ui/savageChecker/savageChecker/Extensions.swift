@@ -246,6 +246,7 @@ extension UIViewController {
         var options = [String]()
         for item in fields[fieldName]["options"].arrayValue {
             options.append(item.stringValue)
+            print(item.stringValue)
         }
         return options
     }

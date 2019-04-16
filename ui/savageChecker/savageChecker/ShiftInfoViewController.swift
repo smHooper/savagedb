@@ -54,6 +54,8 @@ class ShiftInfoViewController: BaseFormViewController {
         
         super.viewDidLoad()
         
+        resetLayout()
+        
         // Show animated quote the first time the view loads, but allow user to swipe to cancel
         //showQuote(seconds: 5.0)
         
@@ -135,6 +137,16 @@ class ShiftInfoViewController: BaseFormViewController {
             cancelButton.centerYAnchor.constraint(equalTo: self.saveButton.centerYAnchor).isActive = true
         }
         
+        
+    }
+    
+    
+    override func resetLayout() {
+        super.resetLayout()
+        
+        self.formWidthConstraint.constant = self.preferredContentSize.width * 0.95
+        self.scrollView.setNeedsUpdateConstraints()
+        self.scrollView.layoutIfNeeded()
     }
     
     
@@ -536,6 +548,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS conctractor table
+        let projectTypeColumn = Expression<String>("project_type")
         let organizationNameColumn = Expression<String>("organization")
         let NPSContractorTable = Table("nps_contractors")
         do {
@@ -548,7 +561,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
-                t.column(tripPurposeColumn)
+                t.column(projectTypeColumn)
                 t.column(nExpectedNightsColumn)
                 t.column(organizationNameColumn)
                 t.column(permitNumberColumn)
