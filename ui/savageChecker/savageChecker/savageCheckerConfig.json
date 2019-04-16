@@ -1,0 +1,180 @@
+{
+  "fields": {
+    "global": {
+      "Observer name": {
+        "sorted": true,
+        "options": [
+          "Jaz Ammon",
+          "Elizabeth Beavers",
+          "Amanda Bertino",
+          "Jenn Boyd",
+          "John Brueck",
+          "Marinell Chandler",
+          "Christina Chatfield",
+          "Tyler Dempsey",
+          "NJ Gates",
+          "Keith Gortowski",
+          "Jakara Hubbard",
+          "Brian Janson",
+          "Sami King",
+          "Andrea Markell",
+          "Anna Moore",
+          "Chad Oelke",
+          "Maddi Owen",
+          "Bill Reynolds",
+          "Mara Scallon",
+          "Jan Tomsen",
+          "Matthew Trucano",
+          "Susan Trucano",
+          "Laura Vachula",
+          "Seth Williams",
+          "Malia Walters",
+          "Stony Yanuchi",
+          "Nathan Ziegler",
+          "Other"
+          ]
+      },
+      "Destination": {
+        "validation_table": "destination_codes",
+        "validation_field": "name",
+        "context": "global",
+        "sorted": false,
+        "options": [
+          "Primrose/Mile 17",
+          "Teklanika",
+          "Igloo",
+          "Toklat",
+          "Stony Overlook",
+          "Eielson",
+          "Wonder Lake",
+          "Kantishna"]
+      }
+    },
+    "Bus": {
+      "Bus type": {
+        "validation_table": "bus_codes",
+        "validation_field": "name",
+        "sorted": false,
+        "options": [
+          "Denali Natural History Tour",
+          "Tundra Wilderness Tour",
+          "Kantishna Experience",
+          "Transit",
+          "Camper",
+          "Spare",
+          "Educational Charter",
+          "Commerical Charter",
+          "Other"
+        ]
+      }
+    },
+    "Lodge Bus": {
+      "Lodge": {
+        "validation_table": "bus_codes",
+        "validation_field": "name",
+        "sorted": false,
+        "options": [
+          "Denali Backcountry Lodge",
+          "Kantishna Roadhouse",
+          "Camp Denali/North Face",
+          "Other"
+        ]
+      }
+    },
+    "NPS Vehicle": {
+      "Work group": {
+        "validation_table": "nps_work_groups",
+        "validation_field": "name",
+        "sorted": false,
+        "options": [
+          "Roads",
+          "Maintenance",
+          "Special Projects",
+          "Trails",
+          "Autoshop",
+          "Law Enforcement",
+          "Backcountry",
+          "Education",
+          "Interp-east",
+          "Interp-west",
+          "IT",
+          "Administration (other)",
+          "Human Resources",
+          "Superintendent's Office (other)",
+          "Concessions",
+          "Planning",
+          "Cultural Resources",
+          "Water, Air, Geology, Soil",
+          "Wildlife",
+          "Communications Center",
+          "Other"
+        ]
+      },
+      "Trip purpose": {
+        "validation_table": "nps_trip_purposes",
+        "validation_field": "name",
+        "sorted": false,
+        "options": [
+          "Return to duty station",
+          "Routine work",
+          "Law enforcement patrol",
+          "Emergency response"
+        ]
+      }
+    },
+    "NPS Approved": {
+      "Approved category": {
+        "validation_table": "nps_approved_codes",
+        "validation_field": "name",
+        "sorted": false,
+        "options": [
+          "Education",
+          "Researcher",
+          "V.I.P.",
+          "Concessionaire"
+        ]
+      }
+    },
+    "NPS Contractor": {
+      "Project type": {
+        "validation_table": "nps_trip_purposes",
+        "validation_field": "name",
+        "sorted": false,
+        "options": [
+          "New building construction",
+          "Routine work",
+          "Law enforcement patrol",
+          "Emergency response"
+        ]
+      }
+    },
+    "Right of Way": {
+      "Permit holder": {
+        "validation_table": "inholder_allotments",
+        "validation_field": "permit_holder",
+        "sorted": true,
+        "options": [
+          "Celia Hunter",
+          "Don Phillips",
+          "Camp Denali/North Face Lodge",
+          "Ginny Wood",
+          "Denali Backcountry Lodge",
+          "Kantishna Air Taxi",
+          "Gene Desjarlais",
+          "Linda Crabb",
+          "Linda/Steve Neff",
+          "Greg LaHaie",
+          "Mike MarkAnthony",
+          "Rainy Creek LLC",
+          "Ray Krieg",
+          "Romany Wood",
+          "Jeff Barney",
+          "Kantishna Roadhouse",
+          "Michael Conlin",
+          "Paul Shearer",
+          "Rusty Lachelt"
+        ]
+      }
+    }
+  }
+}
