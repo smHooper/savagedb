@@ -1906,7 +1906,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "N/A", workGroup: "")
+            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "", workGroup: "")
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             
@@ -3380,7 +3380,7 @@ class CyclistObservationViewController: BaseObservationViewController {
         if self.isAddingNewObservation {
             // Can get time from text field because super.autfill() already fills it in
             let time = (self.textFields[2]?.text)!
-            self.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: time, driverName: "N/A", destination: "", nPassengers: "")
+            self.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: time, driverName: "Null", destination: "", nPassengers: "")
         } else {
             if let id = self.observationId {
                 // Load observation
@@ -4259,10 +4259,10 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
             self.observation = RoadLotteryObservation(id: -1, observerName: "",
                                                       date: (session?.date)!,
                                                       time: self.textFields[2]!.text!,
-                                                      driverName: "N/A", destination: "N/A",
+                                                      driverName: "Null", destination: "Null",
                                                       nPassengers: "",
-                                                      permitNumber: "")
-            self.dropDownTextFields[4]?.text = "N/A"
+                                                      permitNumber: "-1")
+            self.textFields[4]?.text = "-1"
         } else {
             if let id = self.observationId {
                 // Load observation
@@ -4273,8 +4273,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                           observerName: record[observerNameColumn],
                                                           date: record[dateColumn],
                                                           time: record[timeColumn],
-                                                          driverName: "N/A",
-                                                          destination: "N/A",
+                                                          driverName: record[driverNameColumn],
+                                                          destination: record[destinationColumn],
                                                           nPassengers: record[nPassengersColumn],
                                                           permitNumber: record[permitNumberColumn],
                                                           comments: record[commentsColumn])
@@ -4300,7 +4300,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let nPassengers = self.textFields[3]?.text ?? ""
-        let permitNumber = self.textFields[4]?.text ?? "" //This is an optional field for now
+        let permitNumber = self.textFields[4]?.text ?? "-1" //This is an optional field for now
         let comments = self.textFields[5]?.text ?? ""
 
         
@@ -4429,8 +4429,8 @@ class OtherObservationViewController: BaseObservationViewController {
         
         // Initialize the observation. Also, fill destination field with default.
         if self.isAddingNewObservation {
-            self.observation = Observation(id: -1, observerName: session?.observerName ?? "", date: session?.date ?? "", time: self.textFields[2]?.text ?? "", driverName: "", destination: "N/A", nPassengers: "")
-            self.dropDownTextFields[4]?.text = "N/A"
+            self.observation = Observation(id: -1, observerName: session?.observerName ?? "", date: session?.date ?? "", time: self.textFields[2]?.text ?? "", driverName: "", destination: "Null", nPassengers: "")
+            //self.dropDownTextFields[4]?.text = "N/A"
         } else {
             if let id = self.observationId {
                 // Load observation
