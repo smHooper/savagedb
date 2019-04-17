@@ -36,11 +36,11 @@ def main():
     # Import csvs to DB
     print '\n\nImporting data into Postgres db...\n'
     connection_txt = os.path.join(os.path.join(ROOT_DIR, '..'), 'connection_info.txt')
-    csvs_to_postgres.main(os.path.join(os.path.join(merged_dir, 'cleaned')), connection_txt=connection_txt)#, primary_key=PRIMARY_KEYS)
+    #csvs_to_postgres.main(os.path.join(os.path.join(merged_dir, 'cleaned')), connection_txt=connection_txt)#, primary_key=PRIMARY_KEYS)
 
     # Clean up datatypes in DB
     print '\n\nCleaning Postrgres db after import...'
-    _clean_db_after_import.main(connection_txt)
+    #_clean_db_after_import.main(connection_txt)
 
 
 if __name__ == '__main__':

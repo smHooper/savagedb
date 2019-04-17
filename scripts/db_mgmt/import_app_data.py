@@ -16,11 +16,11 @@ from validate_app_data import LOOKUP_FIELDS
 BOOLEAN_FIELDS = {'buses': ['is_training']}
 
 
-def replace_lookup_values(data, engine, lookup_params):
+def replace_lookup_values(data, engine, data_field, lookup_params):
 
     lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_value,
                                      lookup_params.lookup_index)
-    data.replace({lookup_params.data_field: lookup_values}, inplace=True)
+    data.replace({data_field: lookup_values}, inplace=True)
 
     return data
 
@@ -42,10 +42,10 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
         sl_shift_info = pd.read_sql("SELECT * FROM sessions", sl_conn).squeeze()
 
     pg_shift_info['date_str'] = pg_shift_info.open_time.dt.strftime('%Y%m%d')
-    sl_open_time = pd.to_datetime('%(date)s %(openTime)s' % sl_shift_info)
-    sl_close_time = pd.to_datetime('%(date)s %(closeTime)s' % sl_shift_info)
+    sl_open_time = pd.to_datetime('%(date)s %(open_time)s' % sl_shift_info)
+    sl_close_time = pd.to_datetime('%(date)s %(close_time)s' % sl_shift_info)
 
-    # If it exists, replace the open and close times with
+    # If it exists, replace the open and close times with the earliest and latest, respectively
     if (pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')).any():
         id = pg_shift_info.loc[pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')].iloc[0].name
         pg_open_time = pg_shift_info.loc[id, 'open_time']
@@ -53,12 +53,15 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
         open_time = min(pg_open_time, sl_open_time)
         close_time = max(pg_close_time, sl_close_time)
         sql = "UPDATE shift_info SET open_time = '%s', close_time = '%s' WHERE id=%s;" % (open_time, close_time, id)
+        import pdb; pdb.set_trace()
     else:
-        sql = "INSERT INTO shift_info (open_time, close_time) VALUES ('%s', '%s')" % (sl_open_time, sl_close_time)
+        sql = "INSERT INTO shift_info (open_time, close_time, shift_date) VALUES ('%s', '%s', '%s')" % \
+              (sl_open_time, sl_close_time, sl_open_time.strftime('%Y-%m-%d'))
 
     with postgres_engine.connect() as conn, conn.begin():
         conn.execute(sql)
 
+    sys.stdout.write('Successfully imported from:')
 
     for csv_path in glob(os.path.join(data_dir, '*_checked.csv')):
         table_name = os.path.basename(csv_path).replace('_checked.csv', '')
@@ -80,12 +83,13 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
                 df[c] = df[c].astype(dtype)
 
         if 'destination' in df.columns:
-            destination_lookup_params = pd.Series({'data_table': table_name, 'data_field': 'destination',
+            destination_lookup_params = pd.Series({'data_table': table_name,
                                                    'lookup_table': 'destination_codes', 'lookup_index': 'code',
                                                    'lookup_value': 'name'})
-            df = replace_lookup_values(df, postgres_engine, destination_lookup_params)
+            df = replace_lookup_values(df, postgres_engine, 'destination', destination_lookup_params)
         if table_name in LOOKUP_FIELDS.index:
-            df = replace_lookup_values(df, postgres_engine, LOOKUP_FIELDS.loc[table_name])
+            for data_field, lookup_params in LOOKUP_FIELDS.loc[table_name].iterrows():
+                df = replace_lookup_values(df, postgres_engine, data_field, lookup_params)
 
         if len(df):
             with postgres_engine.connect() as pg_conn, pg_conn.begin():
@@ -98,6 +102,7 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
                 df.drop([c for c in df if c not in postgres_columns] + ['id'], axis=1, inplace=True)
 
                 df.to_sql(table_name, pg_conn, if_exists='append', index=False)
+                sys.stdout.write('\n\t-%s' % table_name)
 
     # Update the imported column
     try:

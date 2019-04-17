@@ -9,7 +9,7 @@ INTEGER_FIELDS = {'accessibility':      ['n_passengers', 'permit_number'],
                   'buses':              ['n_passengers', 'n_wheelchair', 'n_lodge_ovrnt'],
                   'cyclists':           ['n_passengers'],
                   'employee_vehicles':  ['n_passengers', 'permit_number'],
-                  'inholders':          ['n_passengers', 'permit_number'],
+                  'inholders':          ['n_passengers'],
                   'nps_approved':       ['n_nights', 'n_passengers', 'permit_number'],
                   'nps_contractors':    ['n_nights', 'n_passengers', 'permit_number'],
                   'nps_vehicles':       ['n_nights', 'n_passengers'],
@@ -22,7 +22,7 @@ INTEGER_FIELDS = {'accessibility':      ['n_passengers', 'permit_number'],
 VARCHAR_FIELDS = {'accessibility':      ['destination', 'driver_name', 'entered_by', 'entry_method'],
                   'buses':              ['destination', 'driver_name', 'entered_by', 'entry_method', 'bus_type'],
                   'cyclists':           ['destination', 'entered_by', 'entry_method'],
-                  'employee_vehicles':  ['destination', 'driver_name', 'entered_by', 'entry_method'],
+                  'employee_vehicles':  ['destination', 'driver_name', 'entered_by', 'entry_method', 'permit_holder'],
                   'inholders':          ['destination', 'driver_name', 'entered_by', 'entry_method', 'permit_number'],
                   'nps_approved':       ['destination', 'driver_name', 'entered_by', 'entry_method'],
                   'nps_contractors':    ['destination', 'organization', 'entered_by', 'entry_method'],
@@ -147,35 +147,35 @@ def main(info_txt):
            " entered_by varchar(255), " \
            " entry_method varchar(255), " \
            " id serial PRIMARY KEY " \
-           ")"
+           ");"
 
     #CREATE TABLE IF NOT EXISTS road_permits (permit_number varchar(20), permit_type varchar(255), date_in date, date_out date, driver_name varchar(255), address text, vehicle_make varchar(255), vehicle_model varchar(255), vehicle_year int, vehicle_color varchar(255), license_plate_number varchar(20), license_plate_state varchar(20) destination varchar(255), inholder_code char(3), approved_type varchar(255), parking_locations text, time_entered timestamp, entered_by varchar(255), entered_by_phone varchar(20), entered_by_schedule varchar(255), entered_by_email varchar(255), last_edited_by varchar(255), time_last_edited timestamp, notes text, date_range_notes text, file_path text, select_permit boolean, id serial PRIMARY KEY);
 
     # Add operators so Access handles Booleans properly
-    sql += 'CREATE OR REPLACE FUNCTION inttobool(integer, boolean) RETURNS boolean' \
+    sql += 'CREATE OR REPLACE FUNCTION inttobool(integer, boolean) RETURNS boolean ' \
            'AS $$' \
-           'SELECT CASE WHEN $1=0 and NOT $2 OR ($1<>0 and $2) THEN true ELSE false END' \
+           'SELECT CASE WHEN $1=0 and NOT $2 OR ($1<>0 and $2) THEN true ELSE false END ' \
+           '$$ ' \
+           'LANGUAGE sql;'
+
+    sql += 'CREATE OR REPLACE FUNCTION inttobool(boolean, integer) RETURNS boolean ' \
+           'AS $$ ' \
+           'SELECT inttobool($2, $1); ' \
            '$$' \
            'LANGUAGE sql;'
 
-    sql += 'CREATE OR REPLACE FUNCTION inttobool(boolean, integer) RETURNS boolean' \
-           'AS $$' \
-           'SELECT inttobool($2, $1);' \
-           '$$' \
-           'LANGUAGE sql;'
-
-    sql += 'CREATE OR REPLACE FUNCTION notinttobool(boolean, integer) RETURNS boolean' \
+    sql += 'CREATE OR REPLACE FUNCTION notinttobool(boolean, integer) RETURNS boolean ' \
            'AS ' \
-           '$$' \
-           'SELECT NOT inttobool($2,$1);' \
-           '$$' \
+           '$$ ' \
+           'SELECT NOT inttobool($2,$1); ' \
+           '$$ ' \
            'LANGUAGE sql;'
 
-    sql += 'CREATE OR REPLACE FUNCTION notinttobool(integer, boolean) RETURNS boolean' \
-           'AS $$' \
+    sql += 'CREATE OR REPLACE FUNCTION notinttobool(integer, boolean) RETURNS boolean ' \
+           'AS $$ ' \
            'SELECT NOT inttobool($1,$2);' \
-           '$$' \
-           'LANGUAGE sql;' \
+           '$$ ' \
+           'LANGUAGE sql; ' \
            'CREATE OPERATOR = (' \
            'PROCEDURE = inttobool,' \
            'LEFTARG = boolean,' \
@@ -206,7 +206,11 @@ def main(info_txt):
            'RIGHTARG = integer,' \
            'COMMUTATOR = <>,' \
            'NEGATOR = =' \
-           ');'
+           ');' #'''
+
+
+    sql += 'ALTER TABLE shift_info ALTER COLUMN buschecked SET DEFAULT false;' \
+           'ALTER TABLE shift_info ALTER COLUMN nonbuschecked SET DEFAULT false;'
 
 
     # Make changes to the DB
@@ -220,7 +224,7 @@ def main(info_txt):
 
         for row in result:
             field = row['column_name']
-            if field != 'permit_holder':
+            if not field in ['inholder_name', 'inholder_code', 'id']:
                 conn.execute('ALTER TABLE inholder_allotments'
                              ' ALTER COLUMN {field} SET DATA TYPE integer'
                              ' USING {field}::integer;'
