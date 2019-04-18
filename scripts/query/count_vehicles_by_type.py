@@ -631,7 +631,7 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
     ax = plt.gca()
     date_index = np.arange(n_dates) * spacing_factor
     grouped_index = np.arange(n_vehicles) - n_vehicles / 2  # /2 centers bar for grouped bar chart
-    bar_index = np.arange(n_vehicles) * spacing_factor
+    bar_index = np.arange(n_vehicles) * spacing_factor if n_dates > 1 else np.arange(n_vehicles)
 
     # PLot horizontal lines showing max concessionaire buses and total vehicles per day or year
     if vehicle_limits:
@@ -703,7 +703,7 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
         plt.xlim([-n_vehicles / 2, x_tick_inds.max() + n_vehicles / 2 + 1])
     else:
         plt.xlim([-1, x_tick_inds.max() + 1])
-
+    import pdb; pdb.set_trace()
     if not title:
         title = 'Vehicles past Savage River, %s - %s' % (x_labels.iloc[0], x_labels.iloc[-1])
     plt.title(title)
@@ -902,12 +902,12 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                        'bikes':     query_bikes,
                        'total':     query_total}
 
-    TITLE_PREFIXES = {'summary':    'Vehicles',
-                      'buses':      'Buses',
+    TITLE_PREFIXES = {'summary':    'vehicles',
+                      'buses':      'buses',
                       'nps':        'NPS vehicles',
-                      'pov':        'Private vehicles',
-                      'bikes':      'Bikes',
-                      'total':      'Total vehicles'}
+                      'pov':        'private vehicles',
+                      'bikes':      'bikes',
+                      'total':      'total vehicles'}
 
     sns.set_context('paper')
 
@@ -1143,16 +1143,20 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
         # Write csv to disk
         try:
-            this_csv_path = os.path.join(out_dir,
-                                         '{query_name}_{summary_stat}_by_{summarize_by}_{aggregate_by}{start_date}_{end_date}.csv'
-                                         .format(query_name=query_name,
-                                                 summary_stat=agg_stat.lower() if aggregate_by else summary_stat.lower(),
-                                                 summarize_by=summarize_by,
-                                                 aggregate_by='per_' + aggregate_by.replace(' ','') + '_' if aggregate_by else '',
-                                                 start_date=start_datetime.strftime('%Y%m%d'),
-                                                 end_date=end_datetime.strftime('%Y%m%d')
-                                                 )
-                                        )
+            if out_dir:
+                this_csv_path = os.path.join(out_dir,
+                                             '{query_name}_{summary_stat}_by_{summarize_by}_{aggregate_by}{start_date}_{end_date}.csv'
+                                             .format(query_name=query_name,
+                                                     summary_stat=agg_stat.lower() if aggregate_by else summary_stat.lower(),
+                                                     summarize_by=summarize_by,
+                                                     aggregate_by='per_' + aggregate_by.replace(' ','') + '_' if aggregate_by else '',
+                                                     start_date=start_datetime.strftime('%Y%m%d'),
+                                                     end_date=end_datetime.strftime('%Y%m%d')
+                                                     )
+                                            )
+            else: # out_csv was given because already checked this
+                this_dir, this_filename = os.path.split(out_csv)
+                this_csv_path = os.path.join(this_dir, '%s_%s' % (query_name, this_filename))
             data.to_csv(this_csv_path)
         except IOError as e:
             if e.errno == os.errno.EACCES:
@@ -1182,8 +1186,8 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         out_img = this_csv_path.replace('.csv', '.' + plot_extension.lstrip('.'))
         colors = COLORS[query_name]
         if not custom_plot_title:
-            title = '{prefix} past Savage by {interval}, {start}-{end}'\
-                .format(prefix=TITLE_PREFIXES[query_name], interval=summarize_by,
+            title = '{summary_stat} of {prefix} past Savage by {interval}, {start}-{end}'\
+                .format(summary_stat=summary_stat, prefix=TITLE_PREFIXES[query_name], interval=summarize_by,
                         start=these_labels.iloc[0], end=these_labels.iloc[-1])
         else:
             title = custom_plot_title
@@ -1216,7 +1220,7 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
                        start_datetime.strftime('%m/%d/%y'), end_datetime.strftime('%m/%d/%y'),
                        sql_values_filter, category_filter)
 
-    print '\nOutput files written to', out_dir
+    print '\nOutput files written to', os.path.dirname(this_csv_path)
 
 
 if __name__ == '__main__':
