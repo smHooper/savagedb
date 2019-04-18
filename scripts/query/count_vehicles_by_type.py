@@ -2,7 +2,7 @@
 Query vehicle counts by day, month, or year for a specified date range
 
 Usage:
-    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--sql_criteria=<str>] [--destinations=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--custom_plot_title=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--remove_gaps] [--drop_null] [--write_sql] [--white_background] [--use_gmp_vehicles]
+    count_vehicles_by_type.py <connection_txt> <start_date> <end_date> (--out_dir=<str> | --out_csv=<str>) --summarize_by=<str> [--queries=<str>] [--plot_types=<str>] [--sql_values_filter=<str>] [--category_filter=<str>] [--sql_criteria=<str>] [--destinations=<str>] [--summary_stat=<>] [--summary_field=<str>] [--aggregate_by=<str>] [--time_range=<str>] [--plot_extension=<str>] [--custom_plot_title=<str>] [--strip_data] [--plot_vehicle_limits] [--use_gmp_dates] [--show_stats] [--plot_totals] [--show_percents] [--show_values] [--remove_gaps] [--drop_null] [--write_sql] [--white_background] [--use_gmp_vehicles]
 
 Examples:
     python count_vehicles_by_type.py C:\Users\shooper\proj\savagedb\connection_info.txt 5/20/1997 9/15/2017 --out_dir=C:\Users\shooper\Desktop\plot_test --summarize_by=year --queries=summary --plot_types="best fit" -s -g
@@ -57,12 +57,13 @@ Options:
     -p, --plot_vehicle_limits   Plot dashed lines indicating daily limits specified by the VMP (91 concessionaire buses
                                 and 160 total vehicles) or yearly limits from the GMP (10,512 total vehicles per year).
                                 Limits will be plotted according to the specifc query and plot types. Default is False.
-    -g, --use_gmp_dates         Limit query to GMP allocation period (5/20-9/15) in addition to start_date-end_date
+    -d, --use_gmp_dates         Limit query to GMP allocation period (5/20-9/15) in addition to start_date-end_date
     -x, --show_stats            Add relevant stats to labels in the legend. Only valid for 'best fit' plot type.
     -t, --plot_totals           Additionally show totals of all vehicle types. Not valid for 'total' plot type.
     -c, --show_percents         Draw percent of totals per interval on bars (only relevant for bar chart plot_types)
+    -v, --show_values           Draw total values per vehicle type at the tops of bars (only relevant for bar charts)
     -r, --remove_gaps           Plot bars without gaps between them
-    -d, --drop_null             Remove any column (date/time) without any data for the given query
+    -n, --drop_null             Remove any column (date/time) without any data for the given query
     -w, --write_sql             Write a text file per query with the exact SQL statements passed to the
                                 querying function
     -b, --white_background      Use the default Seaborn style (white background). If not specified, the 'dark grid'
@@ -615,17 +616,17 @@ def show_legend(legend_title, label_suffix=None):
     plt.subplots_adjust(right=right_adjustment, bottom=.15)  # make room for legend and x labels
 
 
-def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limits=None, title=None, legend_title='', max_xticks=20, colors={}, plot_totals=False, show_percents=False, remove_gaps=False):
+def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limits=None, title=None, legend_title='', max_xticks=20, colors={}, plot_totals=False, show_percents=False, show_values=False, remove_gaps=False):
 
     if plot_totals:
         all_data.loc['Total'] = all_data.sum(axis=0)
 
     n_vehicles, n_dates = all_data.shape
-    if remove_gaps:
-        spacing_factor = int(n_vehicles) if plot_type == 'grouped bar' else 1
-    else:
-        spacing_factor = int(n_vehicles * 1.3) if plot_type == 'grouped bar' else 2
     bar_width = 1
+    if remove_gaps:
+        spacing_factor = int(n_vehicles) if plot_type == 'grouped bar' else bar_width #1
+    else:
+        spacing_factor = int(n_vehicles * 1.3) if plot_type == 'grouped bar' else bar_width * 2 #2
 
     ax = plt.gca()
     date_index = np.arange(n_dates) * spacing_factor
@@ -639,6 +640,7 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
                     [y_value, y_value], '--', alpha=0.3, color='0.3',
                     zorder=100)# zorder = 2 because seaborn grid lines will plot on top if 0 or 1
 
+    value_text_offset = all_data.values.max() * 0.025
     last_top = np.zeros(n_dates)
     for i, (vehicle_type, data) in enumerate(all_data.iterrows()):
         # If a color for this vehicle type isn't given, set a random color
@@ -667,6 +669,14 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
 
             for i in range(len(x_inds)):
                 ax.text(x_inds[i], percent_y[i], '%d%%' % round(percents.iloc[i]), color='white', fontsize=6,
+                        horizontalalignment='center', verticalalignment='center',
+                        zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
+
+        if show_values:
+
+            for i in range(len(x_inds)):
+                #import pdb; pdb.set_trace()
+                ax.text(x_inds[i], data.iloc[i] + value_text_offset, '%d' % data.iloc[i], color='k', fontsize=6,
                         horizontalalignment='center', verticalalignment='center',
                         zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
 
@@ -705,6 +715,8 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
     width = figure.get_figwidth()
     # Make sure the width scale is between 1 and 3
     width_scale = max(1, min(n_dates/float(max_xticks), 3))
+    if show_values and plot_type == 'grouped bar':
+        width_scale *= 2.25
     figure.set_figwidth(width * width_scale)
 
     if n_vehicles > 1:
@@ -881,7 +893,7 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
         readme.write(msg)
 
 
-def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter='', category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None, sql_criteria='', destinations=None, custom_plot_title=None, use_gmp_vehicles=False):
+def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_types='stacked bar', summarize_by='day', queries=None, strip_data=False, plot_vehicle_limits=False, use_gmp_dates=False, show_stats=False, plot_totals=False, show_percents=False, show_values=False, max_queried_columns=1599, drop_null=False, remove_gaps=False, sql_values_filter='', category_filter=None, write_sql=False, summary_stat=None, summary_field=None, white_background=False, time_range=None, plot_extension=None, aggregate_by=None, sql_criteria='', destinations=None, custom_plot_title=None, use_gmp_vehicles=False):
 
     QUERY_FUNCTIONS = {'summary':   query_all_vehicles,
                        'buses':     query_buses,
@@ -1177,11 +1189,11 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             title = custom_plot_title
 
         if 'bar' in plot_types:
-            plot_bar(data, these_labels, out_img, plot_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
+            plot_bar(data, these_labels, out_img, plot_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
         if 'stacked bar' in plot_types:
-            plot_bar(data, these_labels, out_img, plot_type='stacked bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
+            plot_bar(data, these_labels, out_img, plot_type='stacked bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
         if 'grouped bar' in plot_types:
-            plot_bar(data, these_labels, out_img, plot_type='grouped bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, remove_gaps=remove_gaps)
+            plot_bar(data, these_labels, out_img, plot_type='grouped bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
         if 'line' in plot_types:
             plot_line(data, these_labels, out_img, vehicle_limits=None, title=title, colors=colors, plot_totals=plot_totals)
         if 'best fit' in plot_types:
