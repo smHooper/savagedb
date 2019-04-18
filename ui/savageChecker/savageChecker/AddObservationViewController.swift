@@ -429,7 +429,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     
     @objc func selectDatabaseButtonPressed() {
         let browserViewController = prepareDatabaseBrowserViewController()
-        
+
         present(browserViewController, animated: true, completion: nil)
     }
     

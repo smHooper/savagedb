@@ -335,6 +335,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             // Set up custom keyboards
             switch(textFieldIds[i].type) {
             case "time", "date":
+                //let datetimePicker = CustomDatetimePickerControl()
+                //datetimePicker.setupDatetimePicker(textField: textFields[i]!, viewController: self, datetimeMode: textFieldIds[i].type)
                 createDatetimePicker(textField: textFields[i]!)
             case "number":
                 textFields[i]!.keyboardType = .numberPad
@@ -625,7 +627,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
         
         sender.inputView = datetimePickerView
-        datetimePickerView.addTarget(self, action: #selector(handleDatetimePicker), for: UIControlEvents.valueChanged)
+        //datetimePickerView.addTarget(self, action: #selector(handleDatetimePicker), for: UIControlEvents.valueChanged)
         datetimePickerView.tag = sender.tag
         
         // Set the default time to now
@@ -703,8 +705,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         let doneButton = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.done, target: self, action: #selector(BaseObservationViewController.datetimeDonePressed))
         doneButton.tag = textField.tag
+        let cancelButton = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(datetimeCancelPressed))
         let flexSpace = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.flexibleSpace, target: self, action: nil)
-        toolBar.setItems([flexSpace, doneButton, flexSpace], animated: true)
+        toolBar.setItems([flexSpace, cancelButton, flexSpace, doneButton, flexSpace], animated: true)
         
         // Make sure this is added to the controller when setupDatetimePicker() is called
         textField.inputAccessoryView = toolBar
@@ -714,12 +717,50 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
 
     
+    @objc func datetimeCancelPressed() {
+        dismissInputView()
+    }
+    
+    
     // Check that the done button on custom DatePicker was pressed
     @objc func datetimeDonePressed(sender: UIBarButtonItem) {
-        let datetimePickerView = textFields[sender.tag]?.inputView as! UIDatePicker
-        let datetimeString = formatDatetime(textFieldId: sender.tag, date: datetimePickerView.date)
+
         
-        textFields[sender.tag]?.text = datetimeString
+        if let currentValue = self.textFields[sender.tag]?.text {
+            let datetimePickerView = textFields[sender.tag]?.inputView as! UIDatePicker
+            var datetimeString = formatDatetime(textFieldId: sender.tag, date: datetimePickerView.date)
+            //var datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
+            
+            // If this is a date field, check if the date is today. If not, send an alert to make sure this is intentional
+            if self.textFieldIds[sender.tag].type == "date" {
+                let today = Date()
+                let formatter = DateFormatter()
+                formatter.dateStyle = .short
+                formatter.timeStyle = .none
+                let todayString = formatter.string(from: today)
+                if datetimeString != todayString && sendDateEntryAlert {
+                    let alertTitle = "Date Entry Alert"
+                    let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
+                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString}))
+                    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
+                    alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString;
+                        sendDateEntryAlert = false}))
+                    present(alertController, animated: true, completion: nil)
+                } else {
+                    self.textFields[sender.tag]?.text = datetimeString
+                }
+            } else {
+                self.textFields[sender.tag]?.text = datetimeString
+            }
+            
+        } else {
+            print("No text field matching datetimPicker id \(sender.tag) found")
+            os_log("Bad notification sent to handleDatetimePicker. No matcing datetimePicker id found", log: .default, type: .debug)
+            showGenericAlert(message: "No text field matching datetimPicker id \(sender.tag) found", title: "Unknown datetime field")
+        }
+        
+        //textFields[sender.tag]?.text = datetimeString
         textFields[sender.tag]?.resignFirstResponder()
     }
     
@@ -2382,6 +2423,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Company/Organization name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
                              (label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
@@ -2403,6 +2445,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Company/Organization Name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
                              (label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
@@ -2466,12 +2509,13 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 self.textFields[1]?.text = self.observation?.date
                 self.textFields[2]?.text = self.observation?.time
                 self.dropDownTextFields[3]?.text = self.observation?.destination
-                self.textFields[4]?.text = self.observation?.organizationName
-                self.dropDownTextFields[5]?.text = self.observation?.projectType
-                self.textFields[6]?.text = self.observation?.nPassengers
-                self.textFields[7]?.text  = self.observation?.nExpectedNights
-                self.textFields[8]?.text = self.observation?.permitNumber
-                self.textFields[9]?.text = self.observation?.comments
+                self.textFields[4]?.text = self.observation?.driverName
+                self.textFields[5]?.text = self.observation?.organizationName
+                self.dropDownTextFields[6]?.text = self.observation?.projectType
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text  = self.observation?.nExpectedNights
+                self.textFields[9]?.text = self.observation?.permitNumber
+                self.textFields[10]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
             } else {
                 os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
@@ -2532,18 +2576,20 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         let destination = self.dropDownTextFields[3]?.text ?? ""
-        let organizationName = self.textFields[4]?.text ?? ""
-        let projectType = self.dropDownTextFields[5]?.text ?? "Unknown"
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let nExpectedNights = self.textFields[7]?.text ?? ""
-        let permitNumber = self.textFields[8]?.text ?? ""
-        let comments = self.textFields[9]?.text ?? ""
+        let driverName = self.textFields[4]?.text ?? ""
+        let organizationName = self.textFields[5]?.text ?? ""
+        let projectType = self.dropDownTextFields[6]?.text ?? "Unknown"
+        let nPassengers = self.textFields[7]?.text ?? ""
+        let nExpectedNights = self.textFields[8]?.text ?? ""
+        let permitNumber = self.textFields[9]?.text ?? ""
+        let comments = self.textFields[10]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !destination.isEmpty &&
+                !driverName.isEmpty &&
                 !organizationName.isEmpty &&
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
@@ -2555,6 +2601,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.destination = destination
+            self.observation?.driverName = driverName
             self.observation?.organizationName = organizationName
             self.observation?.projectType = projectType
             self.observation?.nPassengers = nPassengers
@@ -2575,6 +2622,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                                             dateColumn <- (self.observation?.date)!,
                                                             timeColumn <- (self.observation?.time)!,
                                                             destinationColumn <- (self.observation?.destination)!,
+                                                            driverNameColumn <- (self.observation?.driverName)!,
                                                             organizationNameColumn <- (self.observation?.organizationName)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             projectTypeColumn <- (self.observation?.projectType)!,
@@ -2597,6 +2645,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                         dateColumn <- (self.observation?.date)!,
                                         timeColumn <- (self.observation?.time)!,
                                         destinationColumn <- (self.observation?.destination)!,
+                                        driverNameColumn <- (self.observation?.driverName)!,
                                         organizationNameColumn <- (self.observation?.organizationName)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         projectTypeColumn <- (self.observation?.projectType)!,

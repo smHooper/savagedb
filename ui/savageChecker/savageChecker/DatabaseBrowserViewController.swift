@@ -42,7 +42,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         // Add a title at the top
         let titleLabel = UILabel()
-        titleLabel.text = self.isLoadingDatabase ? "Select one or more files to upload" : "Select a database file to load"
+        titleLabel.text = self.isLoadingDatabase ? "Select a database file to load" : "Select one or more files to upload" 
         titleLabel.textAlignment = .center
         titleLabel.font = UIFont.boldSystemFont(ofSize: 20)
         self.view.addSubview(titleLabel)
