@@ -212,8 +212,24 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             return
         }
         
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd_hh-mm-ss"
+        let now = Date()
+        let deviceName = UIDevice.current.name
+        var cleanedDeviceName: String?
+        if let regex = try? NSRegularExpression(pattern: "[^a-zA-Z0-9]", options: .caseInsensitive) {
+            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "_")
+        }
+        let timestamp = "\(formatter.string(from: now))_\(cleanedDeviceName ?? deviceName)" // Don't make a helper function out of this because timeStyle in uploadButtonPressed = .none
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: " ", with: "_")
+            .replacingOccurrences(of: "/", with: "-")
+            .replacingOccurrences(of: " ", with: "")
+            .replacingOccurrences(of: "’", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
+        
         let file = GTLRDrive_File()
-        file.name = path.components(separatedBy: "/").last
+        file.name = path.components(separatedBy: "/").last?.replacingOccurrences(of: ".db", with: "_\(timestamp).db")
         file.parents = [parentID] // file can have multiple parents because it can exist in multiple folders
         
         let uploadParams = GTLRUploadParameters.init(data: data, mimeType: MIMEType)
@@ -241,6 +257,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "’", with: "-")
+            .replacingOccurrences(of: ":", with: "-")
         let folderName = "savageChecker_data_\(timestamp)"
         
         let sessionsTable = Table("sessions")
