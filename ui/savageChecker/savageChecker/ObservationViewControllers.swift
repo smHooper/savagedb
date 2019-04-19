@@ -4311,7 +4311,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                       driverName: "Null", destination: "Null",
                                                       nPassengers: "",
                                                       permitNumber: "-1")
-            self.textFields[4]?.text = "-1"
+            //self.textFields[4]?.text = "-1"
         } else {
             if let id = self.observationId {
                 // Load observation

@@ -54,7 +54,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                                           SettingsTableViewRow(label: "Lodge",          type: "list", context: "Lodge Bus"),
                                           SettingsTableViewRow(label: "Work group",     type: "list", context: "NPS Vehicle"),
                                           SettingsTableViewRow(label: "Trip purpose",   type: "list", context: "NPS Vehicle"),
-                                          SettingsTableViewRow(label: "Trip purpose",   type: "list", context: "NPS Contractor"),
+                                          SettingsTableViewRow(label: "Project type",   type: "list", context: "NPS Contractor"),
                                           SettingsTableViewRow(label: "Approved category",  type: "list", context: "NPS Approved")
                                         ]
                    ]
@@ -322,8 +322,8 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             let thisSetting = self.settings[sectionName]?[indexPath.row]
             let rowType = thisSetting?.type ?? ""
             let cell = tableView.dequeueReusableCell(withIdentifier: rowType, for: indexPath) as! MainSettingsTableViewCell
-            let label: String// = thisSetting?.label ?? ""
-            if thisSetting?.label == "Trip purpose" { //Since there are 2 trip purpose fields, differentiate them
+            let label: String = thisSetting?.label ?? ""
+            /*if thisSetting?.label == "Trip purpose" { //Since there are 2 trip purpose fields, differentiate them
                 if thisSetting?.context == "NPS Vehicle" {
                     label = "\(thisSetting?.label ?? "") (NPS)"
                 } else {
@@ -331,7 +331,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                 }
             } else {
                 label = thisSetting?.label ?? ""
-            }
+            }*/
             cell.label.text = label
             //cell.rowType =
             cell.checkBoxButton.isSelected = self.currentSettings[label] ?? false
@@ -566,11 +566,14 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         case "Work group":
             npsVehicleWorkGroups = self.dropdownOptions
         case "Trip purpose":
-            if context == "NPS Vehicle" {
+            npsVehicleTripPurposes = self.dropdownOptions
+            /*if context == "NPS Vehicle" {
                 npsVehicleTripPurposes = self.dropdownOptions
             } else {
-                npsContractorTripPurposes = self.dropdownOptions
-            }
+                npsContractorProjectTypes = self.dropdownOptions
+            }*/
+        case "Project type":
+            npsContractorProjectTypes = self.dropdownOptions
         case "Approved category":
             npsApprovedCategories = self.dropdownOptions
         default:
@@ -771,7 +774,7 @@ class MainSettingsTableViewCell: UITableViewCell {
     }
     
     required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
     }
     
     
@@ -799,7 +802,7 @@ class DropdownSettingsTableViewCell: UITableViewCell {
     }
     
     required init?(coder aDecoder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+        super.init(coder: aDecoder)
     }
     
 }

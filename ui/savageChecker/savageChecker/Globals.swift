@@ -22,7 +22,7 @@ var npsVehicleWorkGroups = [String]()
 //var npsVehicleWorkGroups = [String: [String]]() // Dictionary of string arrays
 var npsVehicleTripPurposes = [String]()
 var npsApprovedCategories = [String]()
-var npsContractorTripPurposes = [String]()
+var npsContractorProjectTypes = [String]()
 
 var showQuoteAtStartup = true
 var showHelpTips = false
