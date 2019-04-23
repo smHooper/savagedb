@@ -19,14 +19,14 @@ Private Function set_tab_datasource(Optional tab_name As String)
     Dim current_query As String
     Dim current_table As String
     
-    current_tab = Me.tcl_data.Pages(Me.tcl_data.Value).name
+    current_tab = Me.tcl_data.Pages(Me.tcl_data.Value).Name
     ' If tab_name is given
     If (Len(tab_name) > 0) And (current_tab <> tab_name) Then
         current_tab = tab_name
         Dim i As Integer
         For i = 0 To Me.tcl_data.Pages.Count - 1
             With Me.tcl_data.Pages(i)
-                If .name = current_tab Then
+                If .Name = current_tab Then
                     .SetFocus
                     Exit For
                 End If
@@ -59,8 +59,8 @@ Private Function validate_lookup_values(data_table, data_field, temp_db_path, lo
 ' Make sure that all values in the data_field of data_table exist
 ' in the lookup_field of lookup_table
     
-    Dim data_rs As DAO.recordset
-    Dim lookup_rs As DAO.recordset
+    Dim data_rs As DAO.Recordset
+    Dim lookup_rs As DAO.Recordset
     
     ' Get recordset for both data_table and lookup_table
     Set data_rs = CurrentDb.OpenRecordset("SELECT " & data_field & " FROM " & data_table & " IN '" & temp_db_path & "';")
@@ -90,7 +90,7 @@ Public Function load_missing_codes(temp_db_path As String, missing_val_table As 
     On Error GoTo err_handler
 
 
-    Dim distinct_rs As DAO.recordset
+    Dim distinct_rs As DAO.Recordset
     Dim sql_str As String
     sql_str = "SELECT DISTINCT lookup_table FROM " & missing_val_table & " IN '" & temp_db_path & "';"
     Set distinct_rs = CurrentDb.OpenRecordset(sql_str)
@@ -111,7 +111,7 @@ Public Function load_missing_codes(temp_db_path As String, missing_val_table As 
     
     ' Loop through each table found
     Dim t_name As Variant
-    Dim values_rs As DAO.recordset
+    Dim values_rs As DAO.Recordset
     Dim values_str As String: values_str = ""
     Dim tab_ind As Integer
     Dim ctl As Control
@@ -148,10 +148,10 @@ Public Function load_missing_codes(temp_db_path As String, missing_val_table As 
                             values_rs.MoveNext
                         Wend
                         ' Trim the last comma off the end. This would only be necessary if .RecordCount > 1
-                        If Right(values_str, 1) = vbCrLf Then values_str = left(values_str, Len(values_str) - 1)
+                        If Right(values_str, 1) = vbCrLf Then values_str = Left(values_str, Len(values_str) - 1)
                         
                         'Set the text in the text box to the value_str
-                        txt_box_name = "lbl_missing" & Right(.name, Len(.name) - 3) '.Name is name of the tab
+                        txt_box_name = "lbl_missing" & Right(.Name, Len(.Name) - 3) '.Name is name of the tab
                         Me.Form.Controls(txt_box_name).Caption = values_str
                         Exit For
                     End If

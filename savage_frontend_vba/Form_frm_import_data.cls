@@ -26,14 +26,14 @@ Private Function set_tab_datasource(Optional tab_name As String)
     Dim current_query As String
     Dim current_table As String
     
-    current_tab = Me.tcl_data.Pages(Me.tcl_data.Value).name
+    current_tab = Me.tcl_data.Pages(Me.tcl_data.Value).Name
     ' If tab_name is given
     If (Len(tab_name) > 0) And (current_tab <> tab_name) Then
         current_tab = tab_name
         Dim i As Integer
         For i = 0 To Me.tcl_data.Pages.Count - 1
             With Me.tcl_data.Pages(i)
-                If .name = current_tab Then
+                If .Name = current_tab Then
                     .SetFocus
                     Exit For
                 End If
@@ -61,7 +61,7 @@ Private Function break_links()
     For i = 0 To Me.tcl_data.Pages.Count - 1
         With Me.tcl_data.Pages(i)
             .Visible = True ' This could have been set to false if the function was run before and this table had no data
-            Form.Controls("sub_" & Right(.name, Len(.name) - 4)).SourceObject = Me.name & "_sub"
+            Form.Controls("sub_" & Right(.Name, Len(.Name) - 4)).SourceObject = Me.Name & "_sub"
         End With
     Next i
 
@@ -89,7 +89,7 @@ Private Sub btn_open_sqlitedb_Click()
     break_links
     
     ' If the temp dir exists, delete it and re-make it
-    temp_dir = left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+    temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
     If Dir(temp_dir, vbDirectory + vbHidden) <> "" Then
         If Dir(temp_dir & "\*.*") <> "" Then
             Kill temp_dir & "\*.*"
@@ -108,7 +108,7 @@ Private Sub btn_open_sqlitedb_Click()
                    " " & CONNECTION_TXT & _
                    " > " & logfile & " 2>&1"
 
-    savagedb.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Checking for duplicates..."
+    savagedb.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Validating data from file..."
     
     
     Dim filestream As Integer: filestream = FreeFile
@@ -207,7 +207,7 @@ Private Sub btn_open_sqlitedb_Click()
                     Dim wShell As Object
                     Set wShell = VBA.CreateObject("WScript.Shell")
                     Dim cmd As String: cmd = """" & DB_BROWSER_PATH & """ " & sqlite_path
-                    wShell.Run "cmd.exe /c " & cmd, 0, False ' Run command silently and but don't wait for process to finish
+                    wShell.Run cmd, 1, False ' Run command silently and but don't wait for process to finish
                 End If
                 
                 ' Reset form
@@ -232,7 +232,7 @@ Private Sub btn_open_sqlitedb_Click()
             query_exists = False
             query_name = "qry_import_" & table_name
             For Each qdf In current_db.QueryDefs
-                If qdf.name = query_name Then
+                If qdf.Name = query_name Then
                     qdf.sql = "SELECT import, duplicated_in_app, found_in_db, datetime, *, '" & _
                                Environ$("Username") & "' AS entered_by, 'imported' AS entry_method " & _
                               "FROM " & table_name & " IN '" & temp_db_path & "';"
@@ -257,7 +257,7 @@ Private Sub btn_open_sqlitedb_Click()
             Else
                 For j = 0 To Me.tcl_data.Pages.Count - 1
                     With Me.tcl_data.Pages(j)
-                        If .name = "tab_" & table_name Then
+                        If .Name = "tab_" & table_name Then
                             Me.SetFocus
                             .Visible = False
                             Exit For
@@ -342,8 +342,8 @@ Private Function validate_lookup_values(data_table, data_field, temp_db_path, lo
 ' Make sure that all values in the data_field of data_table exist
 ' in the lookup_field of lookup_table
     
-    Dim data_rs As DAO.recordset
-    Dim lookup_rs As DAO.recordset
+    Dim data_rs As DAO.Recordset
+    Dim lookup_rs As DAO.Recordset
     
     ' Get recordset for both data_table and lookup_table
     Set data_rs = CurrentDb.OpenRecordset("SELECT " & data_field & " FROM " & data_table & " IN '" & temp_db_path & "';")
@@ -383,12 +383,12 @@ Private Sub btn_import_Click()
         Dim query_name As String
         Dim temp_dir As String
         Dim csv_path As String
-        Dim record_set As DAO.recordset
+        Dim record_set As DAO.Recordset
         Dim field_names As String
         Dim export_sql As String
         
         sqlite_path = Me.txt_sqlitedb_path
-        temp_dir = left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+        temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
         DoCmd.OpenForm "frm_query_plot_wait"
         Forms.frm_query_plot_wait.Form.label_status.Caption = vbCrLf & vbCrLf & "Saving changes to app data..."
         DoCmd.RepaintObject acForm, "frm_query_plot_wait"
@@ -397,7 +397,7 @@ Private Sub btn_import_Click()
         For i = 0 To Me.tcl_data.Pages.Count - 1
             With Me.tcl_data.Pages(i)
                 
-                table_name = Right(.name, Len(.name) - 4)
+                table_name = Right(.Name, Len(.Name) - 4)
                 query_name = "qry_import_" & table_name
                 csv_path = temp_dir & "\" & table_name & "_checked.csv"
                 
@@ -408,13 +408,13 @@ Private Sub btn_import_Click()
                     Set record_set = CurrentDb.OpenRecordset(query_name)
                     With record_set
                         For j = 0 To .fields.Count - 1
-                            If (.fields(j).name <> "import") And (.fields(j).name <> "duplicated_in_app") And (.fields(j).name <> "found_in_db") Then
-                                field_names = field_names & .fields(j).name & ", "
+                            If (.fields(j).Name <> "import") And (.fields(j).Name <> "duplicated_in_app") And (.fields(j).Name <> "found_in_db") Then
+                                field_names = field_names & .fields(j).Name & ", "
                             End If
                         Next j
                         .Close
                     End With
-                    export_sql = "SELECT " & left(field_names, Len(field_names) - 2) & " FROM " & query_name & " WHERE import <> 0;"
+                    export_sql = "SELECT " & Left(field_names, Len(field_names) - 2) & " FROM " & query_name & " WHERE import <> 0;"
                     CurrentDb.CreateQueryDef "temp_export", export_sql
                     DoCmd.TransferText acExportDelim, , "temp_export", csv_path, HasFieldNames:=True
                     DoCmd.DeleteObject acQuery, "temp_export"
@@ -426,8 +426,6 @@ Private Sub btn_import_Click()
         Set record_set = Nothing
         DoCmd.Close acForm, "frm_query_plot_wait"
         
-        Exit Sub
-        
         ' Reset subform data sources (so temp db isn't connected) so the Python script can delete the temp dir
         break_links
         
@@ -435,14 +433,14 @@ Private Sub btn_import_Click()
         Dim import_cmd As String
         Dim logfile As String
         logfile = temp_dir & "\log_import.txt"
-            validate_cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\import_app_data.py " & _
-                            temp_dir & " " & _
-                            sqlite_path & _
-                            " " & CONNECTION_TXT & _
-                            " " & ARCHIVE_DIR & _
-                            " > " & logfile & " 2>&1"
+        import_cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\import_app_data.py " & _
+                        temp_dir & " " & _
+                        sqlite_path & _
+                        " " & CONNECTION_TXT & _
+                        " " & ARCHIVE_DIR & _
+                        " > " & logfile & " 2>&1"
 
-        savagedb.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Importing data..."
+        savagedb.run_io_command import_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Importing data..."
         
         ' Close the script status form immediately
         If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
@@ -453,7 +451,7 @@ Private Sub btn_import_Click()
             End If
         End If
         
-        MsgBox "Your data were successfully imported. You might have to close and reopen the database to see the changes.", _
+        MsgBox "Your data were successfully imported. You might have to close and reopen the any currently open tables to see the changes.", _
                 vbInformation, _
                 "Import successful"
 
@@ -475,7 +473,7 @@ Private Function delete_temp_files() As String
     Dim temp_dir As String
     Dim sqlite_path As String: sqlite_path = Nz(Me.txt_sqlitedb_path, "")
     Dim fso As Object
-    temp_dir = left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+    temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
     delete_temp_files = temp_dir
     If Dir(temp_dir, vbDirectory + vbHidden) <> "" Then
         If Dir(temp_dir & "\*.*") <> "" Then
@@ -498,7 +496,7 @@ Private Sub btn_cancel_Click()
     Dim i As Integer
     For i = 0 To Me.tcl_data.Pages.Count - 1
         With Me.tcl_data.Pages(i)
-            If Form.Controls("sub_" & Right(.name, Len(.name) - 4)).Form.recordsource Like "qry_import*" Then
+            If Form.Controls("sub_" & Right(.Name, Len(.Name) - 4)).Form.recordsource Like "qry_import*" Then
                 data_loaded = True
                 Exit For
             End If
@@ -507,7 +505,7 @@ Private Sub btn_cancel_Click()
     
     Dim temp_dir As String
     Dim sqlite_path As String: sqlite_path = Nz(Me.txt_sqlitedb_path, "")
-    temp_dir = left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+    temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
     If data_loaded Then
         Dim response As Integer
         response = MsgBox("Are you sure you want to close this form? If you click 'yes', " & _
@@ -519,12 +517,12 @@ Private Sub btn_cancel_Click()
             break_links
             temp_dir = delete_temp_files()
             
-            DoCmd.Close acForm, Me.name, acSaveNo
+            DoCmd.Close acForm, Me.Name, acSaveNo
             Exit Sub
         End If
     Else
         delete_temp_files
-        DoCmd.Close acForm, Me.name, acSaveNo
+        DoCmd.Close acForm, Me.Name, acSaveNo
     End If
     
     Exit Sub

@@ -13,7 +13,7 @@ Option Compare Database
 
 Private Sub btn_login_Click()
     
-    'On Error GoTo err_handler
+    On Error GoTo err_handler
     
     Const adminuid = "savage_admin"
     Const adminpwd = "@d0lphmur!e"
@@ -47,7 +47,7 @@ Private Sub btn_login_Click()
     Else ' correct credentials
         ' Run the restart script only if the user selected "Yes". Othwerwise, exit
         If savagedb.restart_db(uid, pwd) <> vbYes Then
-            DoCmd.Close acForm, Me.name
+            DoCmd.Close acForm, Me.Name
             Exit Sub
         End If
     End If

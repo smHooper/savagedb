@@ -16,13 +16,13 @@ Function regex_find_first(ByVal text As String) As String
     Dim re As Object
     Set re = CreateObject("vbscript.regexp")
     
-    re.Pattern = "\d{4}"
+    re.pattern = "\d{4}"
     re.Global = True
     re.IgnoreCase = True
     Set matches = re.Execute(text)
     
     If matches.Count <> 0 Then
-        result = matches.item(0)
+        result = matches.Item(0)
     End If
     
     regex_find_first = result
@@ -42,12 +42,12 @@ Private Sub btn_run_Click()
     Else
         Dim qdf As QueryDef
         Set qdf = CurrentDb.QueryDefs("qry_remaining_inholder_permits")
-        DoCmd.Close acQuery, qdf.name, acSaveNo
+        DoCmd.Close acQuery, qdf.Name, acSaveNo
         Dim old_sql As String: old_sql = qdf.sql
         qdf.sql = Replace(old_sql, regex_find_first(old_sql), year)
         
-        DoCmd.OpenQuery qdf.name, DataMode:=acReadOnly
-        DoCmd.RepaintObject acQuery, qdf.name
+        DoCmd.OpenQuery qdf.Name, DataMode:=acReadOnly
+        DoCmd.RepaintObject acQuery, qdf.Name
         
     End If
 

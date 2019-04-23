@@ -46,7 +46,7 @@ Private Function verify_checkboxes(searchStr As String) As Boolean
     verify_checkboxes = True  'initialize return value as True
     For Each ctl In Me.Form.Controls
         If (ctl.ControlType = acCheckBox) Then
-            If (ctl.name Like searchStr) And (ctl.Value = False) Then
+            If (ctl.Name Like searchStr) And (ctl.Value = False) Then
                 verify_checkboxes = False
                 Exit Function
             End If
@@ -61,7 +61,7 @@ Dim count_true As Integer: count_true = 0
     
     For Each ctl In Me.Form.Controls
         If (ctl.ControlType = acCheckBox) Then
-            If (ctl.name Like searchStr) Then
+            If (ctl.Name Like searchStr) Then
                 count_total = count_total + 1
                 If ctl.Value Then
                     count_true = count_true + 1
@@ -78,7 +78,7 @@ Public Function select_all_checkboxes(searchStr As String)
     Dim ctl As Control
     For Each ctl In Me.Form.Controls
         If (ctl.ControlType = acCheckBox) Then
-            If (ctl.name Like searchStr) Then
+            If (ctl.Name Like searchStr) Then
                 ctl.Value = True
             End If
         End If
@@ -89,7 +89,7 @@ Private Function deselect_all_checkboxes(searchStr As String)
     Dim ctl As Control
     For Each ctl In Me.Form.Controls
         If (ctl.ControlType = acCheckBox) Then
-            If (ctl.name Like searchStr) Then
+            If (ctl.Name Like searchStr) Then
                 ctl.Value = False
             End If
         End If
@@ -235,24 +235,31 @@ err_handler:
 End Sub
 
 Private Sub btn_open_filepicker_Click()
+    
+    On Error GoTo err_handler
+    
+    Dim out_dir As String: out_dir = savagedb.open_file_dialog()
+    If out_dir = "" Then Exit Sub ' the user canceled
+    
+    If Not check_inputs(check_out_path:=False) Then Exit Sub
+    
+    ' Create the file name
+    Dim summarize_tag As String: summarize_tag = Me.dpd_time_step
+    If Nz(Me.dpd_secondary_time, "") <> "None" Then summarize_tag = Me.dpd_time_step & "_" & Me.dpd_secondary_time
+    Dim file_name As String
+    file_name = LCase(Me.dpd_summary_stat & "_of_" & Me.dpd_summary_field & "_by_" & summarize_tag & "_" & _
+                Format(Me.txt_start_date, "yyyymmdd") & "_to_" & Format(Me.txt_end_date, "yyyymmdd") & ".csv") '{query_name}_{summary_stat}_by_{summarize_by}_{aggregate_by}{start_date}_{end_date}
+    
+    ' Store the output path in
+    Me.txt_output_path = out_dir & "\" & file_name
 
-'NOTE: To use this code, you must reference
-'The Microsoft Office 16.0 (or current version)
-'Object Library by clicking menu Tools > References
-'   -Check the box for Microsoft Office 16.0 Object Library
-'   -Click OK
-
-'With Application.FileDialog(msoFileDialogFolderPicker)
-'    .title = "Select an output folder"
-'
-'    If .Show Then
-'        Me.txt_output_path = .SelectedItems(1)
-'    End If
-'
-'End With
-
-    Me.txt_output_path = savagedb.open_file_dialog()
-
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
 End Sub
 Public Function show_hide_filters()
 
@@ -272,8 +279,8 @@ Dim count_true As Integer
         End If
         
         ' Move the checkbox up
-        Me.chk_filter_values.Move Me.chk_filter_values.left, Me.chk_filter_values.Top - y_delta
-        Me.lbl_filter_values.Move Me.lbl_filter_values.left, Me.lbl_filter_values.Top - y_delta
+        Me.chk_filter_values.Move Me.chk_filter_values.Left, Me.chk_filter_values.Top - y_delta
+        Me.lbl_filter_values.Move Me.lbl_filter_values.Left, Me.lbl_filter_values.Top - y_delta
         
         ' Show the text boxes
         Me.txt_sql_filter.Visible = True
@@ -284,8 +291,8 @@ Dim count_true As Integer
     
     Else
         ' Move the checkbox up
-        Me.chk_filter_values.Move Me.chk_filter_values.left, Me.chk_filter_values.Top + y_delta
-        Me.lbl_filter_values.Move Me.lbl_filter_values.left, Me.lbl_filter_values.Top + y_delta
+        Me.chk_filter_values.Move Me.chk_filter_values.Left, Me.chk_filter_values.Top + y_delta
+        Me.lbl_filter_values.Move Me.lbl_filter_values.Left, Me.lbl_filter_values.Top + y_delta
         
         ' Hide the text boxes
         Me.txt_sql_filter.Visible = False
@@ -358,7 +365,7 @@ Private Sub btn_show_categories_Click()
         For Each ctl In Me.Form.Controls
             If (ctl.ControlType = acCheckBox) Then
                 If ctl.Value Then
-                    If (ctl.name Like "chk_query*") Then
+                    If (ctl.Name Like "chk_query*") Then
                         query_name = ctl.Tag
                         cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\query\get_vehicle_categories.py " & _
                                 query_name & _
@@ -429,7 +436,7 @@ Private Sub btn_add_categories_Click()
             selection_str = selection_str & Me.lbx_categories.ItemData(item_index) & ", "
     Next item_index
     If Right(selection_str, 2) = ", " Then ' Drop the last ", "
-        selection_str = left(selection_str, Len(selection_str) - 2)
+        selection_str = Left(selection_str, Len(selection_str) - 2)
     End If
     
     Me.txt_category_filter = selection_str
@@ -523,7 +530,7 @@ Private Sub btn_add_destinations_Click()
             selection_str = selection_str & Me.lbx_destinations.ItemData(item_index) & ", "
     Next item_index
     If Right(selection_str, 2) = ", " Then ' Drop the last ", "
-        selection_str = left(selection_str, Len(selection_str) - 2)
+        selection_str = Left(selection_str, Len(selection_str) - 2)
     End If
     
     Me.txt_destinations = selection_str
@@ -575,7 +582,7 @@ Dim response As Integer
         For Each ctl In Me.Form.Controls
             If (ctl.ControlType = acCheckBox) Then
                 If ctl.Value Then
-                    If (ctl.name Like "chk_query*") Then
+                    If (ctl.Name Like "chk_query*") Then
                         query_name = ctl.Tag
                         If (query_name Like "summary") Or (query_name Like "pov") Or (query_name Like "total") Then
                             response = MsgBox("You have entered SQL criteria, and at least one of the queries you" & _
@@ -598,45 +605,55 @@ Dim response As Integer
 
 End Function
 
+Private Function check_inputs(Optional check_out_path As Boolean = True) As Boolean
+    
+    check_inputs = True
+    
+    If IsNull(Me.txt_start_date) Then
+        MsgBox "Please enter or select a start date", vbCritical, "Start date empty"
+        Me.txt_start_date.SetFocus
+        check_inputs = False
+    ElseIf IsNull(Me.txt_end_date) Then
+        MsgBox "Please enter or select an end date", vbCritical, "End date empty"
+        Me.txt_end_date.SetFocus
+        check_inputs = False
+    ElseIf IsNull(Me.dpd_time_step) Then
+        MsgBox "Please select a time step to summarize by", vbCritical, "No time step selected"
+        Me.dpd_time_step.SetFocus
+        check_inputs = False
+    ElseIf IsNull(Me.dpd_summary_field) Then
+        MsgBox "Please enter a field to summarize", vbCritical, "Summary field empty"
+        Me.dpd_summary_field.SetFocus
+        check_inputs = False
+    ElseIf IsNull(Me.txt_output_path) And check_out_path Then
+        MsgBox "Please select an output folder", vbCritical, "Output folder empty"
+        btn_open_filepicker_Click 'Open the file picker automatically when msg box closed
+        check_inputs = False
+    ElseIf CDate(Me.txt_end_date) < CDate(Me.txt_start_date) Then
+        MsgBox "End date must be equal to or after start date", vbCritical, "Invalid date range"
+        Me.txt_end_date.SetFocus
+        check_inputs = False
+    ElseIf Me.chk_filter_values And Not IsNull(Me.txt_sql_filter & Me.txt_category_filter) Then
+        ' Verify that there is only 1 query selected if filtering values
+        If Not check_selected_queries Then
+            check_inputs = False
+        End If
+    ElseIf Not check_selected_queries Then
+        check_inputs = False
+    End If
+
+
+End Function
+
+
 
 Private Sub btn_run_Click()
 ' Run the Python script
 
-    'On Error GoTo Err_btn_run_Click
+    On Error GoTo Err_btn_run_Click
     
     ' Check the inputs
-    If IsNull(Me.txt_start_date) Then
-        MsgBox "Please enter or select a start date", vbCritical, "Start date empty"
-        Me.txt_start_date.SetFocus
-        Exit Sub
-    ElseIf IsNull(Me.txt_end_date) Then
-        MsgBox "Please enter or select an end date", vbCritical, "End date empty"
-        Me.txt_end_date.SetFocus
-        Exit Sub
-    ElseIf IsNull(Me.dpd_time_step) Then
-        MsgBox "Please select a time step to summarize by", vbCritical, "No time step selected"
-        Me.dpd_time_step.SetFocus
-        Exit Sub
-    ElseIf IsNull(Me.txt_summary_field) Then
-        MsgBox "Please enter a field to summarize", vbCritical, "Summary field empty"
-        Me.txt_summary_field.SetFocus
-        Exit Sub
-    ElseIf IsNull(Me.txt_output_path) Then
-        MsgBox "Please select an output folder", vbCritical, "Output folder empty"
-        btn_open_filepicker_Click 'Open the file picker automatically when msg box closed
-        Exit Sub
-    ElseIf CDate(Me.txt_end_date) < CDate(Me.txt_start_date) Then
-        MsgBox "End date must be equal to or after start date", vbCritical, "Invalid date range"
-        Me.txt_end_date.SetFocus
-        Exit Sub
-    ElseIf Me.chk_filter_values And Not IsNull(Me.txt_sql_filter & Me.txt_category_filter) Then
-        ' Verify that there is only 1 query selected if filtering values
-        If Not check_selected_queries Then
-            Exit Sub
-        End If
-    ElseIf Not check_selected_queries Then
-        Exit Sub
-    End If
+    If Not check_inputs() Then Exit Sub
     
     ' Check this here rather than after_update of SQL criteria because the user
     '   could enter the SQL, then select different queries.
@@ -660,11 +677,11 @@ Private Sub btn_run_Click()
     For Each ctl In Me.Form.Controls
         If (ctl.ControlType = acCheckBox) Then
             If ctl.Value Then
-                If (ctl.name Like "chk_query*") Then
+                If (ctl.Name Like "chk_query*") Then
                     query_str = query_str & ctl.Tag & ", "
-                ElseIf (ctl.name Like "chk_plot*") Then
+                ElseIf (ctl.Name Like "chk_plot*") Then
                     plot_str = plot_str & ctl.Tag & ", "
-                ElseIf (ctl.name Like "chk_optquery*") Or (ctl.name Like "chk_optplot*") Then
+                ElseIf (ctl.Name Like "chk_optquery*") Or (ctl.Name Like "chk_optplot*") Then
                     options_str = options_str & ctl.Tag & " "  ' tag for options is just flag so no need for comma
                 End If
             End If
@@ -692,14 +709,14 @@ Private Sub btn_run_Click()
     If query_str <> "" Then
         query_str = " --queries=""" & query_str
         If Right(query_str, 2) = ", " Then
-            query_str = left(query_str, Len(query_str) - 2)
+            query_str = Left(query_str, Len(query_str) - 2)
         query_str = query_str & """" ' need 2 double-quotes because first escapes the second
         End If
     End If
     If plot_str <> "" Then
         plot_str = " --plot_types=""" & plot_str
         If Right(plot_str, 2) = ", " Then
-            plot_str = left(plot_str, Len(plot_str) - 2)
+            plot_str = Left(plot_str, Len(plot_str) - 2)
         plot_str = plot_str & """"
         End If
     End If
@@ -713,7 +730,7 @@ Private Sub btn_run_Click()
             Exit Sub
         End If
         Me.SetFocus
-        time_range = " --time_range=""" & Right("0" & left(Me.txt_start_time, 5), 5) ' Pad with leading 0 if necessary
+        time_range = " --time_range=""" & Right("0" & Left(Me.txt_start_time, 5), 5) ' Pad with leading 0 if necessary
     ElseIf Not IsNull(Me.txt_end_time) Then
         MsgBox "Start time was empty but end time was not. Either enter a start time to limit the times " & _
                "of day to query or delete the end time to query all times of day", _
@@ -729,7 +746,7 @@ Private Sub btn_run_Click()
             Exit Sub
         End If
         Me.SetFocus
-        time_range = time_range & "-" & Right("0" & left(Me.txt_end_time, 5), 5) & """"
+        time_range = time_range & "-" & Right("0" & Left(Me.txt_end_time, 5), 5) & """"
     ElseIf Not IsNull(Me.txt_start_time) Then
         MsgBox "End time was empty but start time was not. Either enter an end time to limit the times " & _
                "of day to query or delete the start time to query all times of day", _
@@ -762,21 +779,23 @@ Private Sub btn_run_Click()
     Dim end_date As String: end_date = " " & Me.txt_end_date
     Dim summarize_by As String: summarize_by = " --summarize_by=" & Replace(LCase(Me.dpd_time_step), " ", "")
     Dim stat_str As String: stat_str = " --summary_stat=" & Me.dpd_summary_stat
-    Dim field_str As String: field_str = " --summary_field=" & Me.txt_summary_field
-    Dim outdir As String: outdir = " --out_dir=""" & Me.txt_output_path & """"
+    Dim field_str As String: field_str = " --summary_field=" & Me.dpd_summary_field
+    
+    Dim out_csv As String: out_csv = " --out_csv=""" & Me.txt_output_path & """"
     
     ' Redirect stdout and stderr to a file, which can then be used to check if the script is done
     '   Make sure the output_path doesn't end with "\", so we can safely append the file name
     '   with a "\"
-    Dim logfile As String: logfile = Me.txt_output_path & "\log.txt"
-    Dim stdout_str As String: stdout_str = "> " & logfile & " 2>&1" ' 2>&1 sends both stderr and stdout to file
+    Dim output_dir As String: output_dir = Left(Me.txt_output_path, InStrRev(Me.txt_output_path, "\") - 1)
+    Dim logfile As String: logfile = output_dir & "\log.txt"
+    Dim stdout_str As String: stdout_str = "> """ & logfile & """ 2>&1" ' 2>&1 sends both stderr and stdout to file
     
     Dim cmd As String
     cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\query\count_vehicles_by_type.py " & _
            CONNECTION_TXT & _
            start_date & _
            end_date & _
-           outdir & _
+           out_csv & _
            stat_str & _
            field_str & _
            summarize_by & _
@@ -798,7 +817,7 @@ Private Sub btn_run_Click()
     Set wShell = VBA.CreateObject("WScript.Shell")
     
     'wShell.Run "cmd.exe /S /K " & cmd
-    savagedb.run_io_command cmd, logfile, Me.txt_output_path
+    savagedb.run_io_command cmd, logfile, output_dir
     
 Exit_btn_run_Click:
     Exit Sub

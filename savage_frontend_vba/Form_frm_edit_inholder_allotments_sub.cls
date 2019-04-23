@@ -27,7 +27,7 @@ Private Sub btn_add_new_inholder_Click()
     
     ' Move the text box
     With Me.txt_new_permit_holder
-        Me.btn_add_new_inholder.Move Me.btn_add_new_inholder.left, _
+        Me.btn_add_new_inholder.Move Me.btn_add_new_inholder.Left, _
                                      new_button_original_top + (.Top + .Height - new_button_original_top) + (.Height / 3)
         
         .SetFocus

@@ -4,11 +4,12 @@ Public Const CONNECTION_STR = "DRIVER={PostgreSQL ANSI};DATABASE=savage;SERVER=1
 Public Const PYTHON_PATH = "C:\ProgramData\Anaconda2\python.exe"
 Public Const CONNECTION_TXT = "C:\users\shooper\proj\savagedb\connection_info.txt"
 Public Const SCRIPT_DIR = "C:\users\shooper\proj\savagedb\git\scripts"
+Public Const MASTER_DB_DIR = "C:\Users\shooper\proj\savagedb\db\test" '"D:\savage"
 
 
-Public Function pass_through_query(sql_str As String, Optional return_records As Boolean, Optional conn_str As String) As ADODB.recordset
+Public Function pass_through_query(sql_str As String, Optional return_records As Boolean, Optional conn_str As String) As ADODB.Recordset
     Dim connection As New ADODB.connection
-    Dim record_set As New ADODB.recordset
+    Dim record_set As New ADODB.Recordset
     Dim result As Long
     
     If Len(conn_str) Then
@@ -210,9 +211,9 @@ Public Function stripSchemaName(schemaName As String, silent As Boolean)
     Dim definition As Object
     Dim i As Integer
     For Each definition In CurrentDb.TableDefs
-        If left(definition.name, Len(schemaName)) = schemaName Then
+        If Left(definition.Name, Len(schemaName)) = schemaName Then
              'plus 2 to strip the _ as well
-            definition.name = Mid(definition.name, Len(schemaName) + 2)
+            definition.Name = Mid(definition.Name, Len(schemaName) + 2)
         End If
     Next
     If Not silent Then MsgBox "Removed " + schemaName + " from all tables"
@@ -240,7 +241,7 @@ End Function
 
 Public Function get_user_state() As String
     
-    Dim record_set As DAO.recordset
+    Dim record_set As DAO.Recordset
     Dim user_state As String
     
     Set record_set = CurrentDb.OpenRecordset("Select login FROM user_state;")
@@ -256,7 +257,7 @@ End Function
 
 Public Function set_read_write(Optional username As String, Optional password As String) As String
 
-    'On Error GoTo error_login
+    On Error GoTo error_login
     
     ' Get the current user state from a local table
     Dim current_user_state As String
@@ -291,7 +292,7 @@ Public Function set_read_write(Optional username As String, Optional password As
     Dim tdf As DAO.TableDef
     For Each tdf In CurrentDb.TableDefs
         ' Only set the connection if it's an ODBC linked table
-        If left$(tdf.Connect, 5) = "ODBC;" Then
+        If Left$(tdf.Connect, 5) = "ODBC;" Then
             tdf.Connect = new_cnn_str
             If tdf.Attributes < 537001984 Then
                 tdf.Attributes = dbAttachSavePWD 'dbAttachSavePWD = 131072
@@ -302,7 +303,7 @@ Public Function set_read_write(Optional username As String, Optional password As
     
     Dim qdf As QueryDef
     For Each qdf In CurrentDb.QueryDefs
-        If left$(qdf.Connect, 5) = "ODBC;" Then
+        If Left$(qdf.Connect, 5) = "ODBC;" Then
             qdf.Connect = new_cnn_str
         End If
     Next
@@ -404,13 +405,15 @@ Public Function open_file_dialog(Optional title As String = "Select an output fo
 
 End Function
 
-Public Sub ExportAllCode()
+Public Sub export_vba_code(Optional out_dir As String = "")
 
     Dim c As VBComponent
     Dim ext As String
-    Dim out_dir As String
-
-    out_dir = CurrentProject.path & "\" & left(CurrentProject.name, InStrRev(CurrentProject.name, ".") - 1) & "_vba"
+    
+    If out_dir & "" = "" Then
+        out_dir = CurrentProject.path & "\" & Left(CurrentProject.Name, InStrRev(CurrentProject.Name, ".") - 1) & "_vba"
+    End If
+    
     If Dir(out_dir, vbDirectory) = "" Then
         MkDir out_dir
     End If
@@ -428,7 +431,7 @@ Public Sub ExportAllCode()
         End Select
         
         If ext <> "" Then
-            c.Export FileName:=out_dir & "\" & c.name & ext
+            c.Export FileName:=out_dir & "\" & c.Name & ext
         End If
     Next c
 
@@ -439,7 +442,7 @@ Public Function make_qr_str(id_number As Integer) As String
 ' Return a JSON string that the app will be able to read
 
     Dim qr_str As String
-    Dim rs As recordset
+    Dim rs As Recordset
     Set rs = CurrentDb.OpenRecordset("SELECT * FROM road_permits WHERE id = " & id_number, dbOpenSnapshot)
     
     rs.MoveLast
@@ -449,35 +452,42 @@ Public Function make_qr_str(id_number As Integer) As String
         Exit Function
     End If
     
+    Dim q As String: q = """""" ' this will produce a double quote ("") in the cmd
     Dim vehicle_type As String: vehicle_type = rs.fields("permit_type")
     Select Case vehicle_type
         Case Is = "Right of Way"
             If rs.fields("is_lodge_bus") Then
-                qr_str = "{""vehicle_type"": ""Lodge Bus""," & _
-                         " ""Lodge"": """ & rs.fields("permit_holder") & ""","
+                qr_str = "{" & q & "vehicle_type" & q & ": " & q & "Lodge Bus" & q & "," & _
+                         " " & q & "Lodge" & q & ": " & q & rs.fields("permit_holder") & q & ","
             Else
-                qr_str = "{""vehicle_type"": ""Right of Way""," & _
-                         " ""Right of Way"": """ & rs.fields("permit_holder") & ""","
+                qr_str = "{" & q & "vehicle_type" & q & ": " & q & "Right of Way" & q & "," & _
+                         " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ","
             End If
         Case Is = "NPS Approved"
-            qr_str = "{""vehicle_type"": ""NPS Approved""," & _
-                     " ""Approved category"": """ & rs.fields("approved_type") & ""","
+            qr_str = "{" & q & "vehicle_type" & q & ": " & q & "NPS Approved" & q & "," & _
+                     " " & q & "Approved category" & q & ": " & q & rs.fields("approved_type") & q & ","
+            If rs.fields("approved_type") = "Researcher" Then
+                qr_str = qr_str & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & ","
+            End If
         Case Is = "NPS Contractor"
-            qr_str = "{""vehicle_type"": ""NPS Contractor""," & _
-                     " ""Company/Organization Name"": """ & rs.fields("permit_holder") & ""","
-        Case Is = "Pro Photography and Film"
-            qr_str = "{""vehicle_type"": ""Photographer"","
+            qr_str = "{" & q & "vehicle_type" & q & ": " & q & "NPS Contractor" & q & "," & _
+                     " " & q & "Company/Organization name" & q & ": " & q & rs.fields("permit_holder") & q & "," & _
+                     " " & q & "Project type" & q & ": " & q & rs.fields("contractor_project_type") & q & ","
+        Case Is = "Pro Film/Photo"
+            qr_str = "{" & q & "vehicle_type" & q & ": " & q & "Photographer" & q & "," & _
+                     " " & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & ","
         Case Else ' Accessibility, Employee, Subsistence
-            qr_str = "{""vehicle_type"": """ & vehicle_type & """," & _
-                     " ""Permit holder"": """ & rs.fields("permit_holder") & ""","
+            qr_str = "{" & q & "vehicle_type" & q & ": " & q & vehicle_type & q & "," & _
+                     " " & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & "," & _
+                     " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ","
     End Select
     
     Dim n_days As Integer: n_days = DateDiff("d", rs.fields("date_in"), rs.fields("date_out"))
     'Dim permit_number As String: permit_number = Replace(Me.lbl_permit_number.Caption, "Permit #: ", "")
     
-    qr_str = qr_str & " ""Driver's full name"": """ & rs.fields("driver_name") & """," & _
-                      " ""Number of expected nights"": """ & n_days & """," & _
-                      " ""Permit number"": """ & rs.fields("permit_number") & """}"
+    qr_str = qr_str & " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ", " & _
+                      " " & q & "Number of expected nights" & q & ": " & q & n_days & q & "," & _
+                      " " & q & "Permit number" & q & ": " & q & rs.fields("permit_number_prefix") & rs.fields("permit_number") & q & "}"
     make_qr_str = qr_str
 
 End Function
@@ -486,16 +496,16 @@ End Function
 
 Public Function make_qr_code(qr_str As String, Optional output_path As String) As String
     
-    Debug.Print qr_str
+    'Debug.Print qr_str
     
     ' Get the path of the qr executable
-    Dim qr_exe_path As String: qr_exe_path = left(PYTHON_PATH, InStrRev(PYTHON_PATH, "\")) & "Scripts\qr.exe"
+    Dim qr_exe_path As String: qr_exe_path = Left(PYTHON_PATH, InStrRev(PYTHON_PATH, "\")) & "Scripts\qr.exe"
     
     ' If an output path wasn't given, just use the dir where the DB is
     If Len(output_path & "") = 0 Then output_path = CurrentProject.path & "\qr.png"
     
     ' Make and run the command, piping the output to the output path
-    Dim cmd As String: cmd = qr_exe_path & " '" & qr_str & "' > " & output_path
+    Dim cmd As String: cmd = qr_exe_path & " """ & qr_str & """ > " & output_path
     Dim wShell As Object
     Set wShell = VBA.CreateObject("WScript.Shell")
     ' Don't show the window but wait until the QR code command is done. This is necessary because when
@@ -514,7 +524,7 @@ Public Function save_permit_to_file(ByVal row_id As Integer, permit_type As Stri
     Dim qr_str As String: qr_str = savagedb.make_qr_str(row_id)
     Dim qr_path As String: qr_path = savagedb.make_qr_code(qr_str)
     
-    If Len(out_path & "") = 0 Or left(out_path, 1) = "\" Then Exit Function ' The user canceled from the file dialog
+    If Len(out_path & "") = 0 Or Left(out_path, 1) = "\" Then Exit Function ' The user canceled from the file dialog
     
     ' update last printed by and file_path columns for this record
     CurrentDb.Execute ("UPDATE road_permits SET file_path='" & out_path & "', last_printed_by='" & Environ$("username") & "'" & _
@@ -529,6 +539,8 @@ Public Function save_permit_to_file(ByVal row_id As Integer, permit_type As Stri
     Select Case permit_type
         Case Is = "Accessibility"
             rpt.Section(acPageHeader).BackColor = RGB(128, 110, 171)
+            rpt.Controls("txt_title").ForeColor = RGB(255, 255, 255)
+            rpt.Controls("txt_permit_number").ForeColor = RGB(255, 255, 255)
         Case Is = "Employee"
             rpt.Section(acPageHeader).BackColor = RGB(194, 89, 99)
         Case Is = "Right of Way"
@@ -536,15 +548,17 @@ Public Function save_permit_to_file(ByVal row_id As Integer, permit_type As Stri
                 rpt.Section(acPageHeader).BackColor = RGB(145, 90, 119)
             Else
                 rpt.Section(acPageHeader).BackColor = RGB(0, 0, 0)
-                rpt.Controls("txt_title").ForeColor = RGB(255, 255, 255)
-                rpt.Controls("txt_permit_number").ForeColor = RGB(255, 255, 255)
             End If
+            rpt.Controls("txt_title").ForeColor = RGB(255, 255, 255)
+            rpt.Controls("txt_permit_number").ForeColor = RGB(255, 255, 255)
         Case Is = "NPS Approved"
             rpt.Section(acPageHeader).BackColor = RGB(83, 123, 158)
+            rpt.Controls("txt_title").ForeColor = RGB(255, 255, 255)
+            rpt.Controls("txt_permit_number").ForeColor = RGB(255, 255, 255)
         Case Is = "NPS Contractor"
             rpt.Section(acPageHeader).BackColor = RGB(158, 158, 158)
-        Case Is = "Pro Photography and Film"
-            rpt.Controls("txt_title").TopMargin = 0
+        Case Is = "Pro Film/Photo"
+            'rpt.Controls("txt_title").TopMargin = 0
             rpt.Section(acPageHeader).BackColor = RGB(212, 138, 68)
         Case Is = "Subsistence"
             rpt.Section(acPageHeader).BackColor = RGB(214, 204, 45)
@@ -592,4 +606,56 @@ Public Function restart_db(uid As String, pwd As String) As Integer
     
     End If
         
+End Function
+
+
+Public Function make_road_permit_number(Optional inholder_code As String = "") As String
+' Helper function to create a permit number. Because the number is prepended with a 2-digit year,
+' this requires a lot of regex replacement so the permit numbers start over each year
+
+    ' Run a query to get all permit numbers with leading inholder codes (if there is one) removed
+    Dim rs As ADODB.Recordset
+    Dim db As DAO.Database
+    Dim tdf As TableDef
+    Dim current_cnn_str As String
+    Dim sql As String
+    Set db = CurrentDb
+    Set tdf = db.TableDefs("inholder_allotments")
+    current_cnn_str = Right(tdf.Connect, Len(tdf.Connect) - 5)
+    '############################################################
+    'Change permit_number column into 2 columns, number and prefix. Then I won't have to use this regex_replace expression
+    'sql = "SELECT regexp_replace(permit_number, '[A-Z]{3}', '')::int AS id FROM road_permits ORDER BY 1"
+    sql = "SELECT permit_number FROM road_permits ORDER BY 1"
+    Set rs = savagedb.pass_through_query(sql, True, current_cnn_str)
+    
+    ' Get the id of the last record
+    rs.MoveLast
+    Dim max_id As Long
+    If rs.RecordCount > 0 Then
+        max_id = rs.fields("permit_number") + 1
+    Else
+        get_permit_number = ""
+        Set rs = Nothing
+        Exit Function
+    End If
+    Set rs = Nothing
+    
+    ' Strip the 2-digit year and all leading 0s from the id
+    Dim year_str As String: year_str = Right(Str(year(Now())), 2)
+    Dim id_number As String
+    Dim re As RegExp
+    Set re = New RegExp
+    With re
+        .Global = True
+        .pattern = "\d{2}0{0:4}"
+        id_number = .Replace(Str(max_id), "")
+    End With
+    
+    ' Add the current 2-digit year
+    id_number = year_str & Right("0000" & Int(id_number), 5)
+    
+    If Not (Len(inholder_code) = 0 Or inholder_code = "NUL") Then id_number = inholder_code & id_number
+    
+    make_road_permit_number = id_number
+
 End Function

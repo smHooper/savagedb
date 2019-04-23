@@ -109,12 +109,12 @@ Private Sub btn_run_Click()
     ' If 1 or more items was selected, loop through them and construct the destination_stmt
     Else
         i = 1
-        destination_stmt = " AND destination IN ('"
+        destination_stmt = " AND buses.destination IN ('"
         For Each item_index In Me.lbx_destination.ItemsSelected
             destination_stmt = destination_stmt & Me.lbx_destination.ItemData(item_index) & "', '"
             i = i + 1
         Next item_index
-        destination_stmt = left(destination_stmt, Len(destination_stmt) - 4) & "') "
+        destination_stmt = Left(destination_stmt, Len(destination_stmt) - 4) & "') "
     End If
     
     ' Assemble the query SQL
@@ -147,28 +147,28 @@ Private Sub btn_run_Click()
         functions_str = functions_str & Me.lbx_functions.ItemData(item_index) & "(" & value_field & "), "
         i = i + 1
     Next item_index
-    functions_str = left(functions_str, Len(functions_str) - 2) & " "
+    functions_str = Left(functions_str, Len(functions_str) - 2) & " "
     
-    Dim from_where_clause As String
-    from_where_clause = "FROM buses " & _
-                        "WHERE " & _
-                            "(datetime BETWEEN '" & start_date & "' AND '" & end_date & "') AND " & _
-                            "((datetime + '" & offset_hours & " hours')::Time BETWEEN '" & start_time & "' AND '" & end_time & "') " & _
-                            destination_stmt
+    Dim where_clause As String
+    where_clause = "WHERE " & _
+                        "(datetime::date BETWEEN '" & start_date & "' AND '" & end_date & "') AND " & _
+                        "((datetime + '" & offset_hours & " hours')::Time BETWEEN '" & start_time & "' AND '" & end_time & "') " & _
+                        destination_stmt
     
-    sql_str = "(SELECT destination, " & functions_str & _
-                from_where_clause & _
-                "GROUP BY destination) " & _
+    sql_str = "(SELECT destination_codes.name AS destination, " & functions_str & _
+                "FROM buses INNER JOIN destination_codes ON destination_codes.code = buses.destination " & _
+                where_clause & _
+                "GROUP BY destination_codes.name) " & _
                 "UNION ALL " & _
                 "(SELECT constant AS destination, " & Replace(functions_str, "(" & value_field & ")", "") & " " & _
                 "FROM (SELECT 'All selected destinations' As constant, " & functions_str & _
-                from_where_clause & " " & _
+                " FROM buses " & where_clause & " " & _
                 "Group BY constant) AS t);"
     
     ' Delete the query if it already exists
     Dim query_def As QueryDef
     For Each query_def In CurrentDb.QueryDefs
-        If query_def.name = query_name Then
+        If query_def.Name = query_name Then
             If SysCmd(acSysCmdGetObjectState, acQuery, query_name) <> 0 Then
                 DoCmd.Close acQuery, query_name, acSaveNo
             End If
@@ -182,7 +182,7 @@ Private Sub btn_run_Click()
     qdf.Connect = "ODBC;" & savagedb.CONNECTION_STR & "UID=savage_read;PWD=0l@usmur!e;"
     qdf.sql = sql_str
     qdf.Close
-    DoCmd.OpenQuery qdf.name
+    DoCmd.OpenQuery qdf.Name
     Set qdf = Nothing
     
     Exit Sub

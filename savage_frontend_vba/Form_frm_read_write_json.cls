@@ -35,7 +35,7 @@ End Function
 
 Private Function reset_temp_db(temp_dir As String)
 
-    set_subform_source Me.sub_dropdown_options, Me.name & "_sub"
+    set_subform_source Me.sub_dropdown_options, Me.Name & "_sub"
     'set_subform_source Me.sub_field_properties, Me.name & "_sub"
     
     ' If the temp dir exists, delete it and re-make it
@@ -54,7 +54,7 @@ Private Function load_json_config_from_csvs(temp_db_path As String)
     
     On Error GoTo err_handler
     
-    Dim temp_dir As String: temp_dir = left(temp_db_path, InStrRev(temp_db_path, "\") - 1)
+    Dim temp_dir As String: temp_dir = Left(temp_db_path, InStrRev(temp_db_path, "\") - 1)
     Dim current_db As DAO.Database
     Dim temp_db As DAO.Database
     Dim temp_app As Access.Application
@@ -87,7 +87,7 @@ Private Function load_json_config_from_csvs(temp_db_path As String)
             query_name = "qry_" & table_name
             sql = "SELECT * FROM " & table_name & " IN '" & temp_db_path & "';"
             For Each qdf In current_db.QueryDefs
-                If qdf.name = "qry_" & table_name Then
+                If qdf.Name = "qry_" & table_name Then
                     qdf.sql = sql
                     query_exists = True
                 End If
@@ -140,14 +140,15 @@ Private Sub btn_load_json_Click()
     Dim json_path As String: json_path = Nz(Me.txt_json_path, "")
     Dim temp_dir As String
     If Len(json_path) = 0 Then
-        MsgBox "You must enter the path for a JSON file or select one by clicking the 'Browse JSON' button", _
+        MsgBox "You must enter the path for a JSON file before you can load values", _
                 vbCritical, _
                 "No JSON file given"
+        btn_open_json_filepicker_Click
         Exit Sub
     End If
     
     ' Reset the source object of subform so it's not linked to the temp DB
-    temp_dir = left(json_path, InStrRev(json_path, "\")) & "_temp"
+    temp_dir = Left(json_path, InStrRev(json_path, "\")) & "_temp"
     reset_temp_db temp_dir
     
     ' Run command to parse JSON
@@ -213,7 +214,7 @@ Private Sub configure_checkboxes()
     ' Make the label for the check boxes visible
     Me.lbl_sort.Visible = True
     
-    Dim rs As DAO.recordset
+    Dim rs As DAO.Recordset
     Dim json_has_sort As Boolean: json_has_sort = True
     Set rs = CurrentDb.OpenRecordset("SELECT * FROM qry_json_config_field_properties WHERE attribute = 'sorted';", _
                                      dbOpenSnapshot)
@@ -222,24 +223,24 @@ Private Sub configure_checkboxes()
     
     Dim main_ctl As Control
     Dim i As Integer
-    Dim left_position As Integer: left_position = Me.sub_dropdown_options.left
+    Dim left_position As Integer: left_position = Me.sub_dropdown_options.Left
     Dim column_name As String
     Dim chk_ctl As Control
     For i = 1 To column_count
         ' Loop through all the controls in the subform and find the next one in order
         For Each subform_ctl In Me.sub_dropdown_options.Controls
             If subform_ctl.ControlType = 116 Then
-                With Me.sub_dropdown_options.Controls(subform_ctl.name)
+                With Me.sub_dropdown_options.Controls(subform_ctl.Name)
                     column_name = .Properties("Name")
                     If .Properties("ColumnOrder") = i Then
                         ' Loop through and find the checkbox with the corresponding name
                         For Each main_ctl In Me.Controls
                             ' Set the horizontal position of the checkbox
                             If main_ctl.ControlType = acCheckBox And _
-                              main_ctl.name = "chk_" & LCase(Replace(column_name, " ", "_")) Then
-                                Set chk_ctl = Me.Controls(main_ctl.name)
+                              main_ctl.Name = "chk_" & LCase(Replace(column_name, " ", "_")) Then
+                                Set chk_ctl = Me.Controls(main_ctl.Name)
                                 chk_ctl.Visible = True
-                                chk_ctl.left = left_position + .Properties("ColumnWidth") / 2
+                                chk_ctl.Left = left_position + .Properties("ColumnWidth") / 2
                                 
                                 'Set value of checkbox
                                 If json_has_sort Then
@@ -307,7 +308,7 @@ Private Sub btn_load_db_values_Click()
     Dim cmd As String
     Dim logfile As String
     'Dim csv_dir As String
-    csv_dir = left(temp_dir, InStrRev(temp_dir, "\") - 1)
+    csv_dir = Left(temp_dir, InStrRev(temp_dir, "\") - 1)
     logfile = temp_dir & "\log_load_config_data_from_db.txt"
     ' json_path is an optional argument
     cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\load_config_data_from_db.py " & _
@@ -373,8 +374,10 @@ err_handler:
 
 End Sub
 
-Private Function validate_json_config()
-
+Private Function validate_json_config() As Boolean
+    
+    validate_json_config = True ' default to return True
+    
     ' Loop through each column
     Dim column_names() As String
     Dim ctl As Control
@@ -382,7 +385,7 @@ Private Function validate_json_config()
     For Each ctl In Me.sub_dropdown_options.Controls
         If ctl.ControlType = 116 Then
             ReDim Preserve column_names(i)
-            column_names(i) = ctl.name
+            column_names(i) = ctl.Name
             i = i + 1
         End If
     Next ctl
@@ -393,9 +396,9 @@ Private Function validate_json_config()
     CurrentDb.Execute "DELETE * FROM " & missing_val_table & " IN '" & temp_db_path & "' WHERE lookup_table IS NOT NULL"
     
     ' Get recordsets for the validation table names and field names
-    Dim table_rs As DAO.recordset 'gets validation table name
-    Dim field_rs As DAO.recordset 'gets validation field name
-    Dim cntxt_rs As DAO.recordset 'gets context, which will be the data_table
+    Dim table_rs As DAO.Recordset 'gets validation table name
+    Dim field_rs As DAO.Recordset 'gets validation field name
+    Dim cntxt_rs As DAO.Recordset 'gets context, which will be the data_table
     Set table_rs = CurrentDb.OpenRecordset("SELECT * FROM qry_json_config_field_properties WHERE attribute = 'validation_table';", _
                                             dbOpenSnapshot)
     Set field_rs = CurrentDb.OpenRecordset("SELECT * FROM qry_json_config_field_properties WHERE attribute = 'validation_field';", _
@@ -416,7 +419,7 @@ Private Function validate_json_config()
     Dim sql As String
     Dim missing_values As Boolean: missing_values = False
     Dim col_name As Variant
-    Dim values_rs As DAO.recordset
+    Dim values_rs As DAO.Recordset
     For Each col_name In column_names
         validation_table = Nz(table_rs.fields(col_name), "")
         validation_field = Nz(field_rs.fields(col_name), "")
@@ -434,7 +437,7 @@ Private Function validate_json_config()
         
         
         If context <> "global" Then
-            Debug.Print sql
+            'Debug.Print sql
             CurrentDb.Execute sql
         End If
     Next col_name
@@ -445,6 +448,7 @@ Private Function validate_json_config()
     
     ' Open add_codes form
     If DCount("*", "qry_" & missing_val_table) > 0 Then
+        validate_json_config = False
         Dim response As Integer
         response = MsgBox("There are values you entered that don't match any values in the corresponding look-up" & _
                           " tables in the database. You cannot save this configuration file without either" & _
@@ -456,6 +460,7 @@ Private Function validate_json_config()
             DoCmd.OpenForm "frm_add_codes"
             Forms.frm_add_codes.SetFocus
             Form_frm_add_codes.load_missing_codes temp_db_path, missing_val_table
+            Forms("frm_add_codes").Move 0, 0
         End If
     End If
 
@@ -488,7 +493,7 @@ Private Sub btn_export_json_Click()
     
     
     'Verify that values in the table are all present in their corresponding lookup fields in the DB
-    validate_json_config
+    If Not validate_json_config() Then Exit Sub
     
     Dim temp_dir As String
     Dim temp_db_path As String
@@ -505,8 +510,8 @@ Private Sub btn_export_json_Click()
         If ctl.ControlType = acCheckBox Then
             'Loop through fields and find the one with a matching name
             For Each subform_ctl In Me.sub_dropdown_options.Controls
-                column_name = subform_ctl.name
-                If subform_ctl.ControlType = 116 And ctl.name = "chk_" & LCase(Replace(column_name, " ", "_")) Then
+                column_name = subform_ctl.Name
+                If subform_ctl.ControlType = 116 And ctl.Name = "chk_" & LCase(Replace(column_name, " ", "_")) Then
                     ' Execute update SQL
                     If ctl.Value = -1 Then check_value = True Else check_value = False
                     sql = "UPDATE json_config_field_properties IN '" & temp_db_path & "'" & _
@@ -523,9 +528,9 @@ Private Sub btn_export_json_Click()
     Dim qdf As QueryDef
     Dim csv_path As String
     For Each qdf In CurrentDb.QueryDefs
-        If qdf.name Like "qry_json_config*" Then
-            csv_path = temp_dir & "\" & Replace(qdf.name, "qry_", "") & "_edited.csv"
-            DoCmd.TransferText acExportDelim, , qdf.name, csv_path, HasFieldNames:=True
+        If qdf.Name Like "qry_json_config*" Then
+            csv_path = temp_dir & "\" & Replace(qdf.Name, "qry_", "") & "_edited.csv"
+            DoCmd.TransferText acExportDelim, , qdf.Name, csv_path, HasFieldNames:=True
         End If
     Next qdf
     
@@ -567,7 +572,7 @@ Private Function get_temp_dir_path() As String
     json_path = Nz(Me.txt_json_path, "")
     
     If Len(json_path) > 0 Then
-        get_temp_dir_path = left(json_path, InStrRev(json_path, "\")) & "_temp"
+        get_temp_dir_path = Left(json_path, InStrRev(json_path, "\")) & "_temp"
     Else
         get_temp_dir_path = Me.lbl_temp_dir.Caption
     End If
@@ -580,7 +585,7 @@ Private Sub delete_temp_files()
     On Error GoTo err_handler
     
     ' Break links to temp DB
-    set_subform_source Me.sub_dropdown_options, Me.name & "_sub"
+    set_subform_source Me.sub_dropdown_options, Me.Name & "_sub"
     
     ' If the temp dir exists, delete it and re-make it
     Dim temp_dir As String
@@ -621,7 +626,7 @@ Private Sub btn_close_Click()
     
     delete_temp_files
     
-    DoCmd.Close acForm, Me.name, acSaveNo
+    DoCmd.Close acForm, Me.Name, acSaveNo
 
 exit_sub:
     Exit Sub

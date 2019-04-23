@@ -63,7 +63,7 @@ End Function
 
 Function list_objects(db As DAO.Database) As Dictionary
     'On Error GoTo Error_Handler
-    Dim rs As DAO.recordset
+    Dim rs As DAO.Recordset
     Dim sSQL As String
     Dim object_types As New Dictionary
     
@@ -126,33 +126,33 @@ Private Sub btn_import_objects_Click()
     '   multiple objects with the same name but different types
     Set current_db = CurrentDb()
     For Each tdf In current_db.TableDefs
-        object_name = tdf.name
+        object_name = tdf.Name
         current_objects.Add object_name, acTable
     Next tdf
     
     For Each qdf In current_db.QueryDefs
-        object_name = qdf.name
+        object_name = qdf.Name
         current_objects.Add object_name, acQuery
     Next qdf
     
     Dim obj As AccessObject
     For Each obj In CurrentProject.AllForms
-        object_name = obj.name
+        object_name = obj.Name
         current_objects.Add object_name, acForm
     Next obj
     
     For Each rpt In Reports
-        object_name = rpt.name
+        object_name = rpt.Name
         current_objects.Add object_name, acReport
     Next rpt
 
     For Each obj In CurrentProject.AllModules
-        object_name = obj.name
+        object_name = obj.Name
         current_objects.Add object_name, acModule
     Next obj
     
     For Each obj In CurrentProject.AllMacros
-        object_name = obj.name
+        object_name = obj.Name
         current_objects.Add object_name, acMacro
     Next obj
     
@@ -168,7 +168,7 @@ Private Sub btn_import_objects_Click()
     
     Dim imports As New Dictionary
     Dim do_import As Boolean: do_import = False
-    Dim rs As DAO.recordset
+    Dim rs As DAO.Recordset
     Dim sql_str As String
     Dim object_type As Integer
     Dim ac_object_type As Integer
@@ -307,7 +307,7 @@ Private Sub btn_login_admin_Click()
         ' Run the restart script only if the user selected "Yes". Othwerwise, exit
         response = restart_db("savage_read", "0l@usmur!e")
         If response <> vbYes Then
-            DoCmd.Close acForm, Me.name
+            DoCmd.Close acForm, Me.Name
             Exit Sub
         End If
         
@@ -370,7 +370,7 @@ Private Sub dpd_query_AfterUpdate()
             plot_form.Form.dpd_time_step = "Year"
             plot_form.Form.chk_query_summary = True
             plot_form.Form.chk_plot_grouped = True
-            plot_form.Form.chk_optquery_gmp = True
+            plot_form.Form.chk_optquery_dates = True
             plot_form.Form.txt_custom_title = "Total vehicles past Savage this season as of " & Split(Now)(0)
         Case Is = "GMP vehicles by year"
             plot_form.Form.txt_start_date = "5/1/1997"
@@ -378,7 +378,8 @@ Private Sub dpd_query_AfterUpdate()
             plot_form.Form.dpd_time_step = "Year"
             plot_form.Form.chk_query_summary = True
             plot_form.Form.chk_plot_stacked = True
-            plot_form.Form.chk_optquery_gmp = True
+            plot_form.Form.chk_optquery_dates = True
+            plot_form.Form.chk_optquery_vehicles = True
             plot_form.Form.chk_optplot_limits = True
             plot_form.Form.chk_filter_values = True
             plot_form.Form.txt_custom_title = "GMP vehicles past Savage by year, 1997-" & year(Now)
@@ -389,7 +390,7 @@ Private Sub dpd_query_AfterUpdate()
             plot_form.Form.txt_end_date = CDate(min_value(Int(Date), Int(CDate("9/15/" & year(Now)))))
             plot_form.Form.dpd_time_step = "Month"
             plot_form.Form.dpd_summary_stat = "sum"
-            plot_form.Form.txt_summary_field = "n_passengers"
+            plot_form.Form.dpd_summary_field = "n_passengers"
             plot_form.Form.chk_query_buses = True
             plot_form.Form.chk_plot_grouped = True
             plot_form.Form.chk_filter_values = True
@@ -421,7 +422,7 @@ Private Sub dpd_query_AfterUpdate()
             plot_form.Form.dpd_time_step = "Year"
             plot_form.Form.chk_query_bikes = True
             plot_form.Form.dpd_summary_stat = "sum"
-            plot_form.Form.txt_summary_field = "n_passengers"
+            plot_form.Form.dpd_summary_field = "n_passengers"
             plot_form.Form.txt_custom_title = "Bikes past Savage by year, 2010-" & year(Now)
         Case Is = "Custom query"
             ' do nothing
@@ -458,12 +459,33 @@ End Sub
 
 Private Sub btn_permits_Click()
     
-    DoCmd.OpenForm "frm_login", acNormal
-    Forms!frm_login!lbl_login_type.Caption = "permit"
-    
+    On Error GoTo err_handler
+
+    If savagedb.get_user_state() = "admin" Then
+        DoCmd.OpenForm "frm_permit_menu"
+        Forms!frm_permit_menu!btn_logout.Enabled = False
+    Else
+        DoCmd.OpenForm "frm_login", acNormal
+        Forms!frm_login!lbl_login_type.Caption = "permit"
+    End If
+
+exit_err:
+    Exit Sub
+
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_err
+
+
+End Sub
+
+Private Sub Command48_Click()
+    test_connection
 End Sub
 
 Private Function test_connection() As Boolean
+    
+    On Error GoTo err_handler
     
     Dim db As DAO.Database
     Dim tdf As TableDef
@@ -479,15 +501,88 @@ Private Function test_connection() As Boolean
     If cnn.State = adStateOpen Then test_connection = True Else test_connection = False
     
     cnn.Close
-    
+ 
+exit_err:
+    Exit Function
+
+err_handler:
+    ' If the error is anything other than a bad connection, show the error
+    If Err.Number <> -2147467259 Then MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_err
 
 End Function
+
+
+Public Function read_change_log() As String
+    
+    Dim log_path As String: log_path = "D:\savage\" & Dir("D:\savage\change_log*.txt", vbHidden)
+    If log_path = "D:\savage\" Then Exit Function
+    
+    Dim fso As Object
+    Dim text_file As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set text_file = fso.OpenTextFile(log_path, 1)
+    log_str = text_file.ReadAll()
+    text_file.Close
+    
+    Dim line As Variant
+    Dim changes As String
+    For Each line In Split(log_str, vbCrLf)
+        If line Like "[!#]*" And Trim(line) <> "" Then changes = changes & line & vbCrLf
+    Next line
+    
+    read_change_log = changes
+    
+End Function
+
+
+Private Function check_version()
+    
+    Dim master_db_path As String: master_db_path = MASTER_DB_DIR & "\" & Dir(MASTER_DB_DIR & "\savage_frontend_v*.accdb")
+    If master_db_path <> MASTER_DB_DIR & "\" Then
+        Dim rs As Recordset: Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state;")
+        rs.MoveFirst
+        Dim this_version() As String: this_version = Split(rs.fields("version"), ".")
+        Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state IN '" & master_db_path & "';")
+        rs.MoveFirst
+        Dim master_version() As String: master_version = Split(rs.fields("version"), ".")
+        Set rs = Nothing
+        
+        Dim prompt_user As Boolean: prompt_user = False
+        ' If they have different lengths, the versions aren't in the same format
+        If UBound(this_version) = UBound(master_version) Then
+            ' Loop through each version number decimal starting with the left side (highest level)
+            
+            Dim i As Integer
+            For i = 0 To UBound(this_version)
+                ' If the master version decimal is higher than the decimal of this version, prompt the user
+                If Int(master_version(i)) > Int(this_version(i)) Then
+                    Dim msg As String
+                    msg = "A new version of the database is available at " & master_db_path & ". To take advantage of the latest functionality of the database, please" & _
+                           " save a new copy of the latest version to your preferred location and use that for all future Savage database operations. If you created" & _
+                           " queries, reports, or other Access objects in this old copy of the front end, use the 'Import objects from DB' button in your new copy" & _
+                           " to continue using them in the new copy."
+                    Dim changes As String: changes = read_change_log()
+                    If changes <> "" Then msg = msg & vbCrLf & vbCrLf & "Changes for this version include:" & vbCrLf & vbCrLf & changes
+                    MsgBox msg, vbInformation, "New version available"
+                    Exit Function
+                ' If the opposite is true, this version is new than the master (this should never actually happen)
+                ElseIf Int(master_version(i)) < Int(this_version(i)) Then
+                    Exit Function
+                End If
+            Next i
+        End If
+    End If
+
+End Function
+
 
 
 Private Sub Form_Open(Cancel As Integer)
 ' Check the user state. If the user is logged in as "admin", warn them.
 ' Also set the log in/out button accordingly
-    'On Error GoTo err_handler
+    On Error GoTo err_handler
     
     ' Check connection
     If Not test_connection() Then GoTo bad_connection
@@ -504,24 +599,35 @@ Private Sub Form_Open(Cancel As Integer)
         Me.btn_open_edit_inholders_form.Enabled = True
     ElseIf user_state = "permit" Then
         'Notify user that they can edit permits and nothing else
-        DoCmd.Close acForm, Me.name
+        DoCmd.Close acForm, Me.Name
         MsgBox "You are currently logged in as a permit administrator. You can edit permit info in the road_permits table only, " & _
-               " but no other tables are editable. To log out as an administrator, click the 'Log in as read-only' button.", _
+               " but no other tables are editable. To log out as an administrator, click the 'Log out' button.", _
                vbExclamation, _
                "Logged in as permit administrator"
         DoCmd.OpenForm "frm_permit_menu"
+        
+        ' Hide nav pane
+        DoCmd.NavigateTo ("acNavigationCategoryObjectType")
+        DoCmd.RunCommand (acCmdWindowHide)
     Else
         Me.btn_login_admin.Caption = "Log in as admin"
         Me.btn_open_edit_inholders_form.Enabled = False
+        
+        ' Hide nav pane
+        DoCmd.NavigateTo ("acNavigationCategoryObjectType")
+        DoCmd.RunCommand (acCmdWindowHide)
     End If
-
+    
+    ' Check to see if there's a later version and prompt the user if so
+    check_version
+    
     Exit Sub
 
 
 bad_connection:
         MsgBox "The front end database application could not connect to the back-end database." & _
-               " Check your network connection, close the front end application, and then open it again.", _
-               vbExclamation, _
+               " Check your network connection, then close and re-open the front end application to try again.", _
+               vbCritical, _
                "Could not connect to back-end database"
         Exit Sub
 
