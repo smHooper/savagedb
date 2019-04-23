@@ -103,7 +103,7 @@ SORT_ORDER = {'summary':   ['Long tour',
                             'Lodge bus',
                             'GOV',
                             'POV'],
-              'buses':     ['Shuttle',
+              'buses':     ['Transit',
                             'Camper',
                             'Other',
                             'Tundra Wilderness Tour',
@@ -145,7 +145,7 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                         'Lodge bus':  '#A88455',
                         'GOV':        '#CCB974',
                         'POV':        '#C44E52'},
-          'buses':     {'Shuttle':                       '#B43234',
+          'buses':     {'Transit':                       '#B43234',
                         'Camper':                        '#CB7F2C',
                         'Other':                         '#E8DF60',
                         'Tundra Wilderness Tour':        '#282C69',
@@ -703,7 +703,7 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
         plt.xlim([-n_vehicles / 2, x_tick_inds.max() + n_vehicles / 2 + 1])
     else:
         plt.xlim([-1, x_tick_inds.max() + 1])
-    import pdb; pdb.set_trace()
+
     if not title:
         title = 'Vehicles past Savage River, %s - %s' % (x_labels.iloc[0], x_labels.iloc[-1])
     plt.title(title)

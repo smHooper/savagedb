@@ -317,7 +317,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
             f.write(stmt + '\n\n%s\n\n' % break_str)
         f.write('\n\n\n')
 
-    print '\nCSV written to: %s' % out_csv
+    print '\nOutput file written to: %s' % out_csv
 
 
 if __name__ == '__main__':
