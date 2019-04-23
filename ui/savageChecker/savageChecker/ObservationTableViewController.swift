@@ -602,7 +602,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         fixedSpaceLeft.width = 50
         fixedSpaceRight.width = 50
         navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
-        navigationItem.rightBarButtonItems = [addObservationButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, self.editBarButton]
+        navigationItem.rightBarButtonItems = [self.editBarButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, addObservationButton]
         self.navigationBar.setItems([navigationItem], animated: false)
         
     }

@@ -119,16 +119,14 @@ class NPSApprovedObservation: Observation {
 
 class NPSContractorObservation: Observation {
     
-    var projectType: String?
     var nExpectedNights = "0"
     var organizationName: String?
     var permitNumber = ""
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, projectType: String, nExpectedNights: String = "0", organizationName: String, permitNumber: String = "", comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, nExpectedNights: String = "0", organizationName: String, permitNumber: String = "", comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
-        self.projectType = projectType
         self.nExpectedNights = nExpectedNights
         self.organizationName = organizationName
         self.permitNumber = permitNumber

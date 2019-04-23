@@ -548,7 +548,6 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS conctractor table
-        let projectTypeColumn = Expression<String>("project_type")
         let organizationNameColumn = Expression<String>("organization")
         let NPSContractorTable = Table("nps_contractors")
         do {
@@ -561,7 +560,6 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(destinationColumn)
                 t.column(nPassengersColumn)
                 t.column(commentsColumn)
-                t.column(projectTypeColumn)
                 t.column(nExpectedNightsColumn)
                 t.column(organizationNameColumn)
                 t.column(permitNumberColumn)
