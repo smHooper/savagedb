@@ -12,7 +12,6 @@ COLUMN_ORDER = ["Observer name",
                 "Approved category",
                 "Work group",
                 "Trip purpose",
-                "Project type",
                 "Destination"]
 
 

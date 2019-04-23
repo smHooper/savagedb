@@ -19,7 +19,6 @@ FIELD_PROPERTIES = pd.DataFrame([['bus_codes', 'Bus type', 'name', 'Bus'],
                                  ['nps_approved_codes', 'Approved category', 'name', 'NPS Approved'],
                                  ['nps_work_groups', 'Work group', 'name', 'NPS Vehicle'],
                                  ['nps_trip_purposes', 'Trip purpose', 'name', 'NPS Vehicle'],
-                                 ['contractor_project_types', 'Project type', 'name', 'NPS Contractor'],
                                  ['destination_codes', 'Destination', 'name', 'global'],
                                  ['', 'Observer name', '', 'global']
                                  ],

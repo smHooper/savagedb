@@ -53,7 +53,6 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
         open_time = min(pg_open_time, sl_open_time)
         close_time = max(pg_close_time, sl_close_time)
         sql = "UPDATE shift_info SET open_time = '%s', close_time = '%s' WHERE id=%s;" % (open_time, close_time, id)
-        import pdb; pdb.set_trace()
     else:
         sql = "INSERT INTO shift_info (open_time, close_time, shift_date) VALUES ('%s', '%s', '%s')" % \
               (sl_open_time, sl_close_time, sl_open_time.strftime('%Y-%m-%d'))

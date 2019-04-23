@@ -19,7 +19,7 @@ DUPLICATE_FIELDS_TBL = {'accessibility': [],
                         'employee_vehicles': ['permit_number', 'permit_holder'],
                         'inholders': ['permit_holder', 'permit_number'],
                         'nps_approved': ['permit_number', 'approved_type', 'n_nights'],
-                        'nps_contractors': ['n_nights', 'organization', 'project_type'],
+                        'nps_contractors': ['n_nights', 'organization'],
                         'nps_vehicles': ['n_nights', 'trip_purpose', 'work_group'],
                         'photographers': ['n_nights', 'permit_number'],
                         'road_lottery': [],
@@ -32,8 +32,7 @@ LOOKUP_FIELDS = pd.DataFrame([['buses', 'bus_type', 'bus_codes', 'code', 'name']
                               ['nps_vehicles', 'work_group', 'nps_work_groups', 'code', 'name'],
                               ['inholders', 'permit_holder', 'inholder_allotments', 'inholder_code', 'inholder_name'],
                               ['nps_vehicles', 'work_group', 'nps_work_groups', 'code', 'name'],
-                              ['nps_vehicles', 'trip_purpose', 'nps_trip_purposes', 'code', 'name'],
-                              ['nps_contractors', 'project_type', 'contractor_project_types', 'code', 'name']
+                              ['nps_vehicles', 'trip_purpose', 'nps_trip_purposes', 'code', 'name']
                               ],
                              columns=['data_table', 'data_field', 'lookup_table', 'lookup_index', 'lookup_value'])\
                         .sort_values(['data_table', 'data_field'])\
