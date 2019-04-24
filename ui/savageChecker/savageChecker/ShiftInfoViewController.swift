@@ -215,8 +215,10 @@ class ShiftInfoViewController: BaseFormViewController {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         self.textFields[1]?.text = formatter.string(from: now)
-        self.textFields[2]?.text = "6:30 AM"
-        self.textFields[3]?.text = "9:30 PM"
+        let openTime = parseJSON(controllerLabel: nil, fieldName: nil, property: "default_open_tim")[0]
+        let closeTime = parseJSON(controllerLabel: nil, fieldName: nil, property: "default_close_time")[0]
+        self.textFields[2]?.text = openTime.isEmpty ? "6:30 AM" : openTime
+        self.textFields[3]?.text = closeTime.isEmpty ? "9:30 PM" : closeTime
         
         // Disable navigation to vehicle list until all fields are filled
         self.saveButton.isEnabled = false

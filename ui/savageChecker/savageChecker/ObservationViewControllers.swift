@@ -1990,7 +1990,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         // Clear the workgroup field
         dropDownTextFields[6]?.text?.removeAll()
         
-        let workGroupField = dropDownJSON["NPS Vehicle"]["Work group"]
+        let workGroupField = configJSON["fields"]["NPS Vehicle"]["Work group"]
         var workGroups = [String: [String]]()
         for (key, array) in workGroupField["options"] {
             var optionsArray = [String]()

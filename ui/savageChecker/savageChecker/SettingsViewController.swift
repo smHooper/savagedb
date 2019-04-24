@@ -525,16 +525,29 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     }
     
     
+    func showJSONwriteAlert() {
+        let alertController = UIAlertController(title: "Failed to save config file",
+                                                message: """
+                                                             The app could not save changes to the configuration file. Your changes to settings will only remain
+                                                             while the app is open, but if you turn the iPad off or restart the app all settings will revert to
+                                                             how they were before. Try editing the configuration file from a desktop computer when you can.
+                                                             """,
+                                                preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
+    
     func updateJSONData(value: String? = nil, context: String, field: String) {
         
         // Check if values for inserting were passed
         if let value = value {
             self.dropdownOptions.append(value)
-            if dropDownJSON[context][field]["sorted"].bool ?? false {
+            if configJSON["fields"][context][field]["sorted"].bool ?? false {
                 self.dropdownOptions.sort()
             }
             
-            dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
+            configJSON["fields"][context][field]["options"].arrayObject = self.dropdownOptions
             let position = self.dropdownOptions.index(of: value)
             if let rowIndex = position {
                 reloadChildViewData(withInsert: IndexPath(row: rowIndex, section: 0))
@@ -550,7 +563,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
                 self.present(alertController, animated: true, completion: nil)
             }
         } else {
-            dropDownJSON[context][field]["options"].arrayObject = self.dropdownOptions
+            configJSON["fields"][context][field]["options"].arrayObject = self.dropdownOptions
         }
         
         // Set global vars
@@ -581,20 +594,12 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         }
         
         // Write the JSON file
-        var fullJSON = JSON()
-        fullJSON["fields"] = dropDownJSON
-        let success = writeJSONConfigFile(json: fullJSON)
+        //var fullJSON = JSON()
+        //fullJSON["fields"] = configJSON
+        let success = writeJSONConfigFile(json: configJSON)
         if !success {
             // Alert user
-            let alertController = UIAlertController(title: "Failed to save config file",
-                                                    message: """
-                                                             The app could not save changes to the configuration file. Your changes to settings will only remain
-                                                             while the app is open, but if you turn the iPad off or restart the app all settings will revert to
-                                                             how they were before. Try editing the configuration file from a desktop computer when you can.
-                                                             """,
-                                                    preferredStyle: .alert)
-            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-            self.present(alertController, animated: true, completion: nil)
+            showJSONwriteAlert()
         }
 
     }
@@ -703,10 +708,15 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             sendDateEntryAlert = !checkBox.isSelected // Set to inverse because it's already reset in checkBoxTapped
         case "Show quote":
             showQuoteAtStartup = !checkBox.isSelected
+            configJSON["show_quote_at_startup"].bool = showQuoteAtStartup
         case "Show help tips":
             showHelpTips = !checkBox.isSelected
         default:
-            print("check box label/tag not understood. Label:\(checkBoxLabel), tag:\(checkBox.tag) ")
+            print("check box label/tag not understood. Label:\(String(describing: checkBoxLabel)), tag:\(checkBox.tag) ")
+        }
+        
+        if !writeJSONConfigFile(json: configJSON) {
+            showJSONwriteAlert()
         }
         
         // Hide the childView if it's visible and deselect the dropdown row

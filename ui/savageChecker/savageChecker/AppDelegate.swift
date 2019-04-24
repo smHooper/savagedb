@@ -85,8 +85,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
                     lodges.append(item.stringValue)
                 }
                 
-                // For all the controller-specific options, just set the global var dropDownJSON so each controller can access it
-                dropDownJSON = jsonObject["fields"]
+                // For all the controller-specific options, just set the global var configJSON so each controller can access it
+                configJSON = jsonObject//["fields"]
             }
         }
     }

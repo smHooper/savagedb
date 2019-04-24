@@ -1,10 +1,13 @@
 {
+"show_quote_at_startup": true,
+"default_open_time": "7:00 AM",
+"default_close_time": "9:30 PM",
   "fields": {
     "global": {
       "Observer name": {
         "sorted": true,
         "options": [
-          "Jaz Ammon",
+          "Jaz Ammo",
           "Elizabeth Beavers",
           "Amanda Bertino",
           "Jenn Boyd",
@@ -58,9 +61,9 @@
         "options": [
           "Denali Natural History Tour",
           "Tundra Wilderness Tour",
-          "Kantishna Experience",
           "Transit",
           "Camper",
+          "Kantishna Experience",
           "Spare",
           "Educational Charter",
           "Commerical Charter",
@@ -131,7 +134,8 @@
           "Education",
           "Researcher",
           "V.I.P.",
-          "Concessionaire"
+          "Concessionaire",
+          "Bookstore"
         ]
       }
     },
