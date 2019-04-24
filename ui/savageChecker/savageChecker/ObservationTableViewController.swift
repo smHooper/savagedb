@@ -546,7 +546,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         //let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
         // Add button for adding a new observation
         let addButton = UIButton(type: .custom)
-        addButton.setImage(UIImage(named: "addIcon"), for: .normal)
+        addButton.setImage(UIImage(named: "addObservationIcon"), for: .normal)
         addButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
         addButton.translatesAutoresizingMaskIntoConstraints = false
         addButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
