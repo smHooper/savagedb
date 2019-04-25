@@ -257,6 +257,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             .replacingOccurrences(of: "/", with: "-")
             .replacingOccurrences(of: " ", with: "")
             .replacingOccurrences(of: "’", with: "-")
+            .replacingOccurrences(of: "'", with: "-")
             .replacingOccurrences(of: ":", with: "-")
         let folderName = "savageChecker_data_\(timestamp)"
         
