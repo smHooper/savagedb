@@ -1891,7 +1891,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name",     type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",             type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",             type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
+                             //(label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
@@ -1913,7 +1913,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name",     type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",             type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",             type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
+                             //(label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
@@ -1954,7 +1954,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             // Fill text fields with defaults
             self.textFields[2]?.text = currentTime
             //self.dropDownTextFields[7]?.text = "N/A"
-            self.textFields[7]?.text = "0"
+            self.textFields[6]?.text = "0"
             self.saveButton.isEnabled = false
             
         } else {
@@ -1963,19 +1963,19 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 guard let record = getObservationRecord(id: id) else {
                     return
                 }
-                self.observation = NPSVehicleObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], workGroup: record[workGroupColumn], comments: record[commentsColumn])
+                self.observation = NPSVehicleObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], tripPurpose: record[tripPurposeColumn], workGroup: record[workGroupColumn], nExpectedNights: record[nExpectedNightsColumn], comments: record[commentsColumn])
                 
                 // Fill text fields
                 self.dropDownTextFields[0]?.text = self.observation?.observerName
                 self.textFields[1]?.text = self.observation?.date
                 self.textFields[2]?.text = self.observation?.time
-                self.textFields[3]?.text = self.observation?.driverName
-                self.dropDownTextFields[4]?.text = self.observation?.destination
-                self.dropDownTextFields[5]?.text = self.observation?.workGroup
-                self.dropDownTextFields[6]?.text  = self.observation?.tripPurpose
-                self.textFields[7]?.text = self.observation?.nExpectedNights
-                self.textFields[8]?.text = self.observation?.nPassengers
-                self.textFields[9]?.text = self.observation?.comments
+                //self.textFields[3]?.text = self.observation?.driverName
+                self.dropDownTextFields[3]?.text = self.observation?.destination
+                self.dropDownTextFields[4]?.text = self.observation?.workGroup
+                self.dropDownTextFields[5]?.text  = self.observation?.tripPurpose
+                self.textFields[6]?.text = self.observation?.nExpectedNights
+                self.textFields[7]?.text = self.observation?.nPassengers
+                self.textFields[8]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
             } else {
                 os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
@@ -2064,19 +2064,19 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
-        let driverName = self.textFields[3]?.text ?? ""
-        let destination = self.dropDownTextFields[4]?.text ?? ""
-        let workGroup = self.dropDownTextFields[5]?.text ?? ""
-        let tripPurpose = self.dropDownTextFields[6]?.text ?? ""
-        let nExpectedNights = self.textFields[7]?.text ?? ""
-        let nPassengers = self.textFields[8]?.text ?? ""
-        let comments = self.textFields[9]?.text ?? ""
+        let driverName = "" //self.textFields[3]?.text ?? ""
+        let destination = self.dropDownTextFields[3]?.text ?? ""
+        let workGroup = self.dropDownTextFields[4]?.text ?? ""
+        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
+        let nExpectedNights = self.textFields[6]?.text ?? ""
+        let nPassengers = self.textFields[7]?.text ?? ""
+        let comments = self.textFields[8]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
-                !driverName.isEmpty &&
+                //!driverName.isEmpty &&
                 !workGroup.isEmpty &&
                 !tripPurpose.isEmpty &&
                 !nExpectedNights.isEmpty &&
