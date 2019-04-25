@@ -19,15 +19,16 @@ def parse_json_data(json_path):
 
     try:
         with open(json_path) as json_file:
-            json_data = json.load(json_file)['fields']
+            json_data = json.load(json_file)#['fields']
     except:
         raise IOError("Problem reading json file: %s" % json_path)
 
+    # Retrieve dropdown options
     field_options = []
     field_properties = []
 
     # Create one csv of data with one col per option, and one with field properties
-    for context, field_info in json_data.iteritems():
+    for context, field_info in json_data['fields'].iteritems():
         for field_name, field in field_info.iteritems():
 
             if field['sorted']:
@@ -50,7 +51,7 @@ def parse_json_data(json_path):
     field_properties = field_properties.reindex(index=['sorted', 'context', 'validation_table', 'validation_field'],
                                                 columns=these_columns)
 
-    return field_options, field_properties
+    return field_options, field_properties, json_data
 
 
 def main(json_path, out_dir=None):
@@ -59,7 +60,11 @@ def main(json_path, out_dir=None):
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
-    field_options, field_properties = parse_json_data(json_path)
+    field_options, field_properties, json_data = parse_json_data(json_path)
+
+    # Retrieve global properties. They're all at the top level (i.e., "name": "value"), not dicts
+    global_properties = {k: v for k, v in json_data.iteritems() if type(v) == str or type(v) == unicode or type(v) == bool}
+    global_properties = pd.DataFrame(global_properties, index=[0])
 
     # Create a blank table to store missing values if any exist (not checked until export JSON button
     #   clicked in Access)
@@ -90,6 +95,8 @@ def main(json_path, out_dir=None):
     field_options.to_csv(os.path.join(out_dir, 'json_config_dropdown_options.csv'), index=False)
     field_properties.to_csv(os.path.join(out_dir, 'json_config_field_properties.csv'))
     missing_values.to_csv(os.path.join(out_dir, 'json_config_missing_values.csv'), index=False)
+    if len(global_properties):
+        global_properties.to_csv(os.path.join(out_dir, 'json_config_global_properties.csv'), index=False)
 
     print 'Parsed data written to %s' % out_dir
 

@@ -1,5 +1,6 @@
 import os, sys
 import json
+import numpy as np
 import shutil
 import subprocess
 from datetime import datetime
@@ -8,6 +9,10 @@ import pandas as pd
 
 # Structure of the dict to dump into JSON needs to be:
 # {
+#   property_1: value_1,
+#
+#   property_2: value_2,
+#
 #   fields: {
 #       context 1: {
 #           app_field_name 1: {
@@ -65,9 +70,18 @@ def main(data_dir, out_dir):
 
         fields[context] = context_dict
 
-    # Nest the whole dict in its own dict because if I ever develop other configuration options,
-    #   they would be at the top level, not at the same level as individual fields or contexts
+    # Nest the whole dict in its own dict so that global properties are at the top level,
+    #   not at the same level as individual fields or contexts
     config = {'fields': fields}
+
+    # Set global properties, if they exist for this file
+    global_csv = os.path.join(data_dir, 'json_config_global_properties_edited.csv')
+    if os.path.isfile(global_csv):
+        global_properties = pd.read_csv(global_csv).squeeze()
+        for property, value in global_properties.iteritems():
+            if type(value) == np.bool_: value = bool(value)
+            config[property] = value
+        #import pdb; pdb.set_trace()
 
     out_json = os.path.join(out_dir, 'savageCheckerConfig.json')
     with open(out_json, 'w') as json_file:
