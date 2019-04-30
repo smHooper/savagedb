@@ -1053,10 +1053,10 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+        if !insertRecord() {return} // return so the alert message can be presented
         // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
@@ -1247,7 +1247,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     // Add record to DB
-    func insertRecord() {
+    func insertRecord() -> Bool {
         // Can just get text values from the observation because it has to be updated before saveButton is enabled
         let observerName = observation?.observerName
         let date = observation?.date
@@ -1266,13 +1266,15 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                                                             destinationColumn <- destination!,
                                                             nPassengersColumn <- nPassengers!,
                                                             commentsColumn <- comments!))
+            return true
         } catch {
             print("insertion failed: \(error)")
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            return false
         }
     }
     
-    func updateRecord() {
+    func updateRecord() -> Bool {
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -1284,11 +1286,14 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                return true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                return false
             }
         } catch {
             os_log("Record not found", log: OSLog.default, type: .debug)
+            return false
         }
     }
     
@@ -1448,11 +1453,11 @@ class BusObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
-            // Update an existing record
+        // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -1466,6 +1471,8 @@ class BusObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    observation?.id = Int(max!)
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
@@ -1526,16 +1533,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.observation?.busType = busType
             self.observation?.busNumber = busNumber
             self.observation?.destination = destination
-            if let isTrainingCheckBox = self.checkBoxes[6] {
-                self.observation?.isTraining = isTrainingCheckBox.isSelected
-            } else {
-                self.observation?.isTraining = false
-            }
-            /*if isTraining == "Yes" {
-                self.observation?.isTraining = true
-            } else {
-                self.observation?.isTraining = false
-            }*/
+            self.observation?.isTraining = self.checkBoxes[6] == nil ? false : self.checkBoxes[6]!.isSelected
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
             
@@ -1544,7 +1542,8 @@ class BusObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         
         do {
@@ -1558,13 +1557,20 @@ class BusObservationViewController: BaseObservationViewController {
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!, //Set when initating new observation in autoFillTextFields()
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -1580,14 +1586,20 @@ class BusObservationViewController: BaseObservationViewController {
                                         isTrainingColumn <- (self.observation?.isTraining)!,
                                         nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
 }
@@ -1602,6 +1614,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     let busTypeColumn = Expression<String>("bus_type")
     let busNumberColumn = Expression<String>("bus_number")
     let isTrainingColumn = Expression<Bool>("is_training")
+    let isOvernightColumn = Expression<Bool>("is_overnight")
     let nOvernightPassengersColumn = Expression<String>("n_lodge_ovrnt")
 
     
@@ -1615,7 +1628,8 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
+                             (label: "This bus is training", placeholder: "",                             type: "checkBox"),
+                             (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -1637,7 +1651,8 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
+                             (label: "This bus is training", placeholder: "",                             type: "checkBox"),
+                             (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "normal"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -1682,7 +1697,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             let currentTime = formatter.string(from: now)
             
-            self.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
+            self.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", busType: "", busNumber: "", isTraining: false, isOvernight: false, nOvernightPassengers: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -1700,7 +1715,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                 guard let record = getObservationRecord(id: id) else {
                     return
                 }
-                self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: record[nOvernightPassengersColumn], comments: record[commentsColumn])
+                self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], isOvernight: record[isOvernightColumn], nOvernightPassengers: record[nOvernightPassengersColumn], comments: record[commentsColumn])
                 
                 self.dropDownTextFields[0]?.text = self.observation?.observerName
                 self.textFields[1]?.text = self.observation?.date
@@ -1713,9 +1728,14 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                 } else {
                     self.checkBoxes[6]?.isSelected = false
                 }
-                self.textFields[7]?.text = self.observation?.nPassengers
-                self.textFields[8]?.text  = self.observation?.nOvernightPassengers
-                self.textFields[9]?.text = self.observation?.comments
+                if (self.observation?.isOvernight)! {
+                    self.checkBoxes[7]?.isSelected = true
+                } else {
+                    self.checkBoxes[7]?.isSelected = false
+                }
+                self.textFields[8]?.text = self.observation?.nPassengers
+                self.textFields[9]?.text  = self.observation?.nOvernightPassengers
+                self.textFields[10]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
             } else {
                 os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
@@ -1738,11 +1758,11 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+        if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -1756,10 +1776,12 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
                 os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+                return
             }
             observation?.id = Int(max!)
             
@@ -1778,9 +1800,9 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         let busNumber = self.textFields[4]?.text ?? ""
         let destination = self.dropDownTextFields[5]?.text ?? ""
         //let isTraining = self.textFields[6]?.text ?? ""
-        let nPassengers = self.textFields[7]?.text ?? ""
-        let nOvernightPassengers = self.textFields[8]?.text ?? ""
-        let comments = self.textFields[9]?.text ?? ""
+        let nPassengers = self.textFields[8]?.text ?? ""
+        let nOvernightPassengers = self.textFields[9]?.text ?? ""
+        let comments = self.textFields[10]?.text ?? ""
         
         let fieldsFull =
             !observerName.isEmpty &&
@@ -1801,16 +1823,8 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             self.observation?.busType = busType
             self.observation?.busNumber = busNumber
             self.observation?.destination = destination
-            if let isTrainingCheckBox = self.checkBoxes[6] {
-                self.observation?.isTraining = isTrainingCheckBox.isSelected
-            } else {
-                self.observation?.isTraining = false
-            }
-            /*if isTraining == "Yes" {
-                self.observation?.isTraining = true
-            } else {
-                self.observation?.isTraining = false
-            }*/
+            self.observation?.isTraining = self.checkBoxes[6] == nil ? false : self.checkBoxes[6]!.isSelected
+            self.observation?.isOvernight = self.checkBoxes[7] == nil ? false : self.checkBoxes[7]!.isSelected
             self.observation?.nPassengers = nPassengers
             self.observation?.nOvernightPassengers = nOvernightPassengers
             self.observation?.comments = comments
@@ -1821,7 +1835,8 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         
         do {
@@ -1832,16 +1847,24 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                                                             busNumberColumn <- (self.observation?.busNumber)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             isTrainingColumn <- (self.observation?.isTraining)!,
+                                                            isOvernightColumn <- (self.observation?.isOvernight)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -1855,16 +1878,23 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                                         busTypeColumn <- (self.observation?.busType)!,
                                         busNumberColumn <- (self.observation?.busNumber)!,
                                         isTrainingColumn <- (self.observation?.isTraining)!,
+                                        isOvernightColumn <- (self.observation?.isOvernight)!,
                                         nOvernightPassengersColumn <- (self.observation?.nOvernightPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
 }
@@ -2028,11 +2058,11 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -2046,10 +2076,12 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
                 os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+                return
             }
             observation?.id = Int(max!)
             
@@ -2099,7 +2131,8 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2112,13 +2145,20 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -2134,14 +2174,20 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                         workGroupColumn <- (self.observation?.workGroup)!,
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -2283,11 +2329,11 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -2301,10 +2347,12 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
                 os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+                return
             }
             observation?.id = Int(max!)
             
@@ -2356,7 +2404,8 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2369,13 +2418,20 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -2390,14 +2446,20 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -2535,11 +2597,11 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -2553,10 +2615,12 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
                 os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+                return
             }
             observation?.id = Int(max!)
             
@@ -2610,7 +2674,8 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2623,13 +2688,20 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -2645,14 +2717,20 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -2776,11 +2854,11 @@ class EmployeeObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -2794,10 +2872,12 @@ class EmployeeObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
                 os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+                return
             }
             observation?.id = Int(max!)
             
@@ -2847,7 +2927,8 @@ class EmployeeObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -2859,13 +2940,20 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             permitHolderColumn <- (self.observation?.permitHolder)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -2880,14 +2968,20 @@ class EmployeeObservationViewController: BaseObservationViewController {
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         permitHolderColumn <- (self.observation?.permitHolder)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -3028,11 +3122,11 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -3046,10 +3140,12 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                 max = try db.scalar(observationsTable.select(idColumn.max))
                 if max == nil {
                     max = 0
+                    return
                 }
             } catch {
                 showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
                 os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+                return
             }
             observation?.id = Int(max!)
             
@@ -3099,7 +3195,8 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -3111,13 +3208,20 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             permitHolderColumn <- (self.observation?.permitHolder)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -3132,14 +3236,20 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         permitHolderColumn <- (self.observation?.permitHolder)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Row update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -3268,11 +3378,11 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Assign the right ID to the observation
@@ -3281,10 +3391,12 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         
@@ -3332,7 +3444,8 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -3342,13 +3455,20 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             hasTekPassColumn <- (self.observation?.hasTekPass)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
-            os_log("Row insertion failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -3361,14 +3481,20 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         hasTekPassColumn <- (self.observation?.hasTekPass)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -3459,11 +3585,11 @@ class CyclistObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Assign the right ID to the observation
@@ -3472,10 +3598,12 @@ class CyclistObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         
@@ -3517,7 +3645,8 @@ class CyclistObservationViewController: BaseObservationViewController {
     
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -3527,13 +3656,20 @@ class CyclistObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -3546,14 +3682,20 @@ class CyclistObservationViewController: BaseObservationViewController {
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
 }
@@ -3687,11 +3829,11 @@ class PhotographerObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         if lastRecordDuplicated() {
@@ -3705,10 +3847,12 @@ class PhotographerObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         
@@ -3757,7 +3901,8 @@ class PhotographerObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -3769,13 +3914,20 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -3790,14 +3942,20 @@ class PhotographerObservationViewController: BaseObservationViewController {
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         nExpectedNightsColumn <- (self.observation?.nExpectedNights)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -3937,11 +4095,11 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Assign the right ID to the observation
@@ -3950,10 +4108,12 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         
@@ -3998,7 +4158,8 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     }
     
     // Add record to DB
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Insert into DB
         do {
             let rowid = try db.run(observationsTable.insert(observerNameColumn <- (self.observation?.observerName)!,
@@ -4009,13 +4170,20 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -4029,14 +4197,20 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
 }
 
@@ -4157,7 +4331,8 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     }
     
     // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Can just get text values from the observation because it has to be updated before saveButton is enabled
         let observerName = observation?.observerName
         let date = observation?.date
@@ -4178,14 +4353,21 @@ class SubsistenceObservationViewController: BaseObservationViewController {
                                                             nPassengersColumn <- nPassengers!,
                                                             permitNumberColumn <- permitNumber!,
                                                             commentsColumn <- comments!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -4199,14 +4381,20 @@ class SubsistenceObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
     //MARK:  - Navigation
@@ -4221,11 +4409,11 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Assign the right ID to the observation
@@ -4234,10 +4422,12 @@ class SubsistenceObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         
@@ -4360,7 +4550,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
     }
     
     // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         
         // Insert into DB
         do {
@@ -4370,14 +4561,21 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             permitNumberColumn <- (self.observation?.permitNumber)!,
                                                             commentsColumn <- (self.observation?.comments)!))
+            success = true
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
         } catch {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -4389,14 +4587,20 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         permitNumberColumn <- (self.observation?.permitNumber)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
     //MARK:  - Navigation
@@ -4411,11 +4615,11 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Assign the right ID to the observation
@@ -4424,10 +4628,12 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         
@@ -4522,7 +4728,8 @@ class OtherObservationViewController: BaseObservationViewController {
     }
     
     // Need to override these methods even though they're identical to the super's because super.observation has to be private in order for other classes to override this property with a different type of observation
-    override func insertRecord() {
+    override func insertRecord() -> Bool {
+        var success = false
         // Can just get text values from the observation because it has to be updated before saveButton is enabled
         let observerName = observation?.observerName
         let date = observation?.date
@@ -4541,14 +4748,21 @@ class OtherObservationViewController: BaseObservationViewController {
                                                             destinationColumn <- destination!,
                                                             nPassengersColumn <- nPassengers!,
                                                             commentsColumn <- comments!))
-        } catch {
-            print("insertion failed: \(error)")
+            success = true
+        } catch let Result.error(message, _, _) {
             os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(message)", title: "Database error")
+        } catch {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
     
-    override func updateRecord() {
+    override func updateRecord() -> Bool {
+        var success = false
         do {
             // Select the record to update
             let record = observationsTable.filter(idColumn == (observation?.id.datatypeValue)!)
@@ -4561,12 +4775,20 @@ class OtherObservationViewController: BaseObservationViewController {
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
+                success = true
             } else {
                 os_log("Record not found", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not update record because the record with id \(String(describing: self.observation?.id)) could not be found", title: "Database error")
             }
+        } catch let Result.error(message, _, _) {
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(message)", title: "Database error")
         } catch {
-            os_log("Record update failed", log: OSLog.default, type: .debug)
+            os_log("Record insertion failed", log: OSLog.default, type: .debug)
+            showGenericAlert(message: "Could not update record because \(error.localizedDescription)", title: "Database error")
         }
+        
+        return success
     }
     
     //MARK:  - Navigation
@@ -4581,11 +4803,11 @@ class OtherObservationViewController: BaseObservationViewController {
         // Update the database
         // Add a new record
         if self.isAddingNewObservation {
-            insertRecord()
+            if !insertRecord() {return} // return so the alert message can be presented
             
             // Update an existing record
         } else {
-            updateRecord()
+            if !updateRecord() {return} // return so the alert message can be presented
         }
         
         // Assign the right ID to the observation
@@ -4594,10 +4816,12 @@ class OtherObservationViewController: BaseObservationViewController {
             max = try db.scalar(observationsTable.select(idColumn.max))
             if max == nil {
                 max = 0
+                return
             }
         } catch {
             showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
             os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
+            return
         }
         observation?.id = Int(max!)
         

@@ -68,18 +68,20 @@ class BusObservation: Observation {
     var busType: String?
     var busNumber: String?
     var isTraining: Bool?
+    var isOvernight: Bool?
     var nOvernightPassengers = "0"
     
     // Not stored in DB
     private var isLodgeBus = false
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, nOvernightPassengers: String = "0", comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, busType: String, busNumber: String, isTraining: Bool, isOvernight: Bool = false, nOvernightPassengers: String = "0", comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         
         self.busType = busType
         self.busNumber = busNumber
         self.isTraining = isTraining
+        self.isOvernight = isOvernight
         self.nOvernightPassengers = nOvernightPassengers
     }
 }

@@ -480,6 +480,7 @@ class ShiftInfoViewController: BaseFormViewController {
         let busTypeColumn = Expression<String>("bus_type")
         let busNumberColumn = Expression<String>("bus_number")
         let isTrainingColumn = Expression<Bool>("is_training")
+        let isOvernightColumn = Expression<Bool>("is_overnight")
         let nOvernightPassengersColumn = Expression<String>("n_lodge_ovrnt")
         
         let busesTable = Table("buses")
@@ -496,6 +497,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(busTypeColumn)
                 t.column(busNumberColumn)
                 t.column(isTrainingColumn)
+                t.column(isOvernightColumn)//, defaultValue: false)
                 t.column(nOvernightPassengersColumn)
             })
         } catch {
