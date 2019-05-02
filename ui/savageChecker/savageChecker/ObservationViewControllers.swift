@@ -3007,13 +3007,13 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
-                             (label: "Permit holder",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
+                             (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Permit holder": parseJSON(controllerLabel: "Right of Way", fieldName: "Permit holder")]
+                                    "Inholder name": parseJSON(controllerLabel: "Right of Way", fieldName: "Inholder name")]
         
         self.observationsTable = Table("inholders")
     }
@@ -3027,13 +3027,13 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
-                             (label: "Permit holder",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
+                             (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Permit holder": parseJSON(controllerLabel: "Right of Way", fieldName: "Permit holder")]
+                                    "Inholder name": parseJSON(controllerLabel: "Right of Way", fieldName: "Inholder name")]
         
         self.observationsTable = Table("inholders")
     }
