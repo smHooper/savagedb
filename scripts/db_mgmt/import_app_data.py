@@ -13,7 +13,7 @@ from query import connect_db, get_lookup_table
 from validate_app_data import LOOKUP_FIELDS
 
 # SQLite doesn't have a boolean datatype (they're stored as int) so
-BOOLEAN_FIELDS = {'buses': ['is_training']}
+BOOLEAN_FIELDS = {'buses': ['is_training', 'is_overnight']}
 
 
 def replace_lookup_values(data, engine, data_field, lookup_params):

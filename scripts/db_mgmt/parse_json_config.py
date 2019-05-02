@@ -8,7 +8,7 @@ import pandas as pd
 
 COLUMN_ORDER = ["Observer name",
                 "Bus type", "Lodge",
-                "Permit holder",
+                "Inholder name",
                 "Approved category",
                 "Work group",
                 "Trip purpose",

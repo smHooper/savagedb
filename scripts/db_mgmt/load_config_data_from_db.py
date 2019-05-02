@@ -15,7 +15,7 @@ from parse_json_config import COLUMN_ORDER, parse_json_data
 
 FIELD_PROPERTIES = pd.DataFrame([['bus_codes', 'Bus type', 'name', 'Bus'],
                                  ['bus_codes', 'Lodge',  'name', 'Lodge Bus'],
-                                 ['inholder_allotments',  'Permit holder', 'inholder_name', 'Inholder'],
+                                 ['inholder_allotments',  'Inholder name', 'inholder_name', 'Inholder'],
                                  ['nps_approved_codes', 'Approved category', 'name', 'NPS Approved'],
                                  ['nps_work_groups', 'Work group', 'name', 'NPS Vehicle'],
                                  ['nps_trip_purposes', 'Trip purpose', 'name', 'NPS Vehicle'],
@@ -32,7 +32,7 @@ def main(connection_txt, out_dir, json_path=None):
     sys.stdout.flush()
 
     if json_path:
-        json_dropdown_options, json_field_properties = parse_json_data(json_path)
+        json_dropdown_options, json_field_properties, json_data = parse_json_data(json_path)
 
     # Get lookup values from the DB
     dropdown_options = []
@@ -44,6 +44,9 @@ def main(connection_txt, out_dir, json_path=None):
                 sql = sql.replace(';', " WHERE NOT is_lodge_bus;")
             elif table_info.config_column == 'Lodge':
                 sql = sql.replace(';', " WHERE is_lodge_bus;")
+            #elif table_info.config_column == 'Inholder':
+                #max_year = pd.read_sql("SELECT replace(column_name, '_', '') FROM information_schema.columns WHERE table_name = 'inholder_allotments' AND left(column_name, 1) = '_';", conn).squeeze().max()
+                #sql = sql.replace(';', " WHERE _{year} <> 0 AND _{year} IS NOT NULL;".format(year=max_year))
             elif table_info.config_column == 'Destination':
                 sql = "SELECT name FROM (SELECT * FROM destination_codes ORDER BY mile) AS foo;"
             with postgres_engine.connect() as conn, conn.begin():
@@ -96,6 +99,12 @@ def main(connection_txt, out_dir, json_path=None):
     field_options.to_csv(os.path.join(out_dir, 'json_config_dropdown_options.csv'), index=False)
     field_properties.to_csv(os.path.join(out_dir, 'json_config_field_properties.csv'))
     missing_values.to_csv(os.path.join(out_dir, 'json_config_missing_values.csv'), index=False)
+    if json_path:
+        global_properties = {k: v for k, v in json_data.iteritems() if
+                             type(v) == str or type(v) == unicode or type(v) == bool}
+        if len(global_properties):
+            pd.DataFrame(global_properties, index=[0])\
+                .to_csv(os.path.join(out_dir, 'json_config_global_properties.csv'), index=False)
 
     print 'Parsed data written to %s' % out_dir
 
