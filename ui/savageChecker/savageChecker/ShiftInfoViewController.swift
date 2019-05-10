@@ -497,7 +497,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(busTypeColumn)
                 t.column(busNumberColumn)
                 t.column(isTrainingColumn)
-                t.column(isOvernightColumn)//, defaultValue: false)
+                t.column(isOvernightColumn, defaultValue: false)
                 t.column(nOvernightPassengersColumn)
             })
         } catch {
