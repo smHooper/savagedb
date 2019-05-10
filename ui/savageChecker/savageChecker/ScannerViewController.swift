@@ -165,9 +165,31 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         present(alertController, animated: true, completion: nil)
     }
     
+    func sanitizeQRString(code: String)-> String {
+        // Some permits created with an early version of the front end weren't quoted correctly, so handle those properly
+        var qr_items = [String]()
+        for item in code.split(separator: ",") {
+            if let property = item.split(separator: ":").first, let value = item.split(separator: ":").last {
+                let this_property = property.replacingOccurrences(of: "{", with: "").trimmingCharacters(in: .whitespaces)
+                let this_value = value.replacingOccurrences(of: "}", with: "").trimmingCharacters(in: .whitespaces)
+                print(this_property.hasPrefix("\""))
+                let trimmed_property = this_property.hasPrefix("\"") ?
+                    "\(this_property.trimmingCharacters(in: .whitespaces))" :
+                "\"\(this_property.trimmingCharacters(in: .whitespaces))\""
+                print(this_property.trimmingCharacters(in: .whitespaces))
+                let trimmed_value = this_value.trimmingCharacters(in: .whitespaces).hasPrefix("\"") ?
+                    "\(this_value.trimmingCharacters(in: .whitespaces))" :
+                "\"\(this_value.trimmingCharacters(in: .whitespaces))\""
+                qr_items.append("\(trimmed_property): \(trimmed_value)")
+            }
+        }
+        return "{\(qr_items.joined(separator: ", "))}"
+    }
+    
     func found(code: String) {
         // parse code from format label: comma-separated string
-        if let data = code.data(using: .utf8) {
+        
+        if let data = sanitizeQRString(code: code).data(using: .utf8) {
             // Try to read it as a JSON struct (from JSONParser)
             if let jsonObject = try? JSON(data: data) {
                 let vehicleType = jsonObject["vehicle_type"].string ?? ""
