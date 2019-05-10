@@ -1,7 +1,7 @@
 {
     "show_quote_at_startup": true,
 
-    "default_open_time": "7:00 AM",
+    "default_open_time": "6:00 AM",
 
     "default_close_time": "9:30 PM",
 
@@ -9,7 +9,7 @@
         "Right of Way": {
             "Inholder name": {
                 "validation_table": "inholder_allotments",
-                "sorted": true,
+                "sorted": false,
                 "validation_field": "inholder_name",
                 "options": [
                     "Camp Denali/North Face Lodge",
@@ -40,23 +40,23 @@
                 "sorted": false,
                 "validation_field": "name",
                 "options": [
+                    "Denali Natural History Tour",
                     "Tundra Wilderness Tour",
                     "Transit",
-                    "Eielson Excursion",
-                    "Denali Natural History Tour",
-                    "Commerical Charter",
-                    "Educational Charter",
                     "Camper",
                     "Kantishna Experience",
-                    "Windows Into Wilderness",
-                    "Spare"
+                    "Educational Charter",
+                    "Commerical Charter",
+                    "Spare",
+                    "Rescue bus",
+                    "Other"
                 ]
             }
         },
         "global": {
             "Observer name": {
                 "validation_table": "",
-                "sorted": true,
+                "sorted": false,
                 "validation_field": "",
                 "options": [
                     "Amanda Bertino",
@@ -102,23 +102,22 @@
                     "Stony Overlook",
                     "Eielson",
                     "Wonder Lake",
-                    "Kantishna",
-                    "Other"
+                    "Kantishna"
                 ]
             }
         },
         "NPS Approved": {
             "Approved category": {
                 "validation_table": "nps_approved_codes",
-                "sorted": true,
+                "sorted": false,
                 "validation_field": "name",
                 "options": [
                     "Bookstore",
                     "Concessionaire",
                     "Education",
-                    "Other",
                     "Researcher",
-                    "V.I.P."
+                    "Very important person",
+                    "Other"
                 ]
             }
         },
@@ -137,7 +136,7 @@
         "NPS Vehicle": {
             "Work group": {
                 "validation_table": "nps_work_groups",
-                "sorted": true,
+                "sorted": false,
                 "validation_field": "name",
                 "options": [
                     "Administration",
@@ -148,27 +147,27 @@
                     "Maintenance - Roads",
                     "Maintenance - Special projects",
                     "Maintenance - Trails",
-                    "Other",
                     "Planning",
                     "Resources - Cultural",
                     "Resources - Natural",
                     "Superintendent's Office",
-                    "Visitor and Resource Protection"
+                    "Visitor and Resource Protection",
+                    "Other"
                 ]
             },
             "Trip purpose": {
                 "validation_table": "nps_trip_purposes",
-                "sorted": true,
+                "sorted": false,
                 "validation_field": "name",
                 "options": [
-                    "Emergency response",
-                    "Other",
-                    "Project with duration <= 2 years",
-                    "Return to duty station",
                     "Routine work",
+                    "Return to duty station",
                     "Standalone delivery/pick-up",
+                    "Project with duration <= 2 years",
                     "Training",
-                    "Very important person"
+                    "Emergency response",
+                    "Very important person",
+                    "Other"
                 ]
             }
         }
