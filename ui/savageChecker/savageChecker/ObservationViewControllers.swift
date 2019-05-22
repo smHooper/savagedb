@@ -824,6 +824,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     //MARK: - Properties
     var saveButton: UIBarButtonItem!
+    var fieldsFull = false
     
     //Used to pass observation from tableViewController when updating an observation. It should be type Any so that all subclasses can inherit it and modelObject can be downcast to the appropriate data model subclass of Observation. This way, self.observation can remain private so that all subclasses of the BaseObservationViewController can have self.observation be of the appropriate class.
     var modelObject: Any?
@@ -940,6 +941,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                 for (i, fieldInfo) in self.textFieldIds.enumerated() {
                     let controlName = fieldInfo.label
                     let value = json[controlName].string ?? ""
+                    if controlName == "Number of expected nights" {continue}//Make sure "Number of expected nights" isn't autofilled because Savage staff requested it be so
                     if jsonDictionary?[controlName]?.string != nil {
                         switch fieldInfo.type {
                         case "normal", "number":
@@ -989,7 +991,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             formatter.timeStyle = .short
             formatter.dateStyle = .none
             self.textFields[2]?.text = formatter.string(from: now)//*/
-            saveButton.isEnabled = false
+            //saveButton.isEnabled = false
             
             if !self.qrString.isEmpty {
                 parseQRString()
@@ -1227,6 +1229,34 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     
+    func showFieldsEmptyAlert(yesAction: UIAlertAction) {
+        var emptyFields = [String]()
+        for (i, fieldInfo) in self.textFieldIds.enumerated() {
+            switch fieldInfo.type {
+            case "normal", "date", "time", "number":
+                if (self.textFields[i]?.text ?? "").isEmpty && fieldInfo.label != "Comments" {
+                    emptyFields.append(fieldInfo.label)
+                }
+            case "dropDown":
+                if (self.dropDownTextFields[i]?.text ?? "").isEmpty {
+                    emptyFields.append(fieldInfo.label)
+                }
+            default:
+                let _ = 1
+            }
+        }
+        
+        if emptyFields.count > 0 {
+            let alertTitle = "Empty fields found"
+            let alertMessage = "You have not entered any data in the following fields:\n\(emptyFields.joined(separator: "\n"))\n\nAre you sure you want to continue saving this observation?"
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(yesAction)
+            alertController.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+            present(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    
     func deleteLastRecord(controller: UIAlertController) {
         
         let deleteErrorController = UIAlertController(title: "Delete error", message: "There was a problem while deleting this observation. You will have to delete it manually", preferredStyle: .alert)
@@ -1403,7 +1433,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
             self.textFields[6]?.text = "No"
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             if !self.qrString.isEmpty {
                 parseQRString()
@@ -1444,6 +1474,16 @@ class BusObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         // Reconnect in case the last time save button was pressed, the db didn't exist
         self.db = try? Connection(dbPath)
         
@@ -1516,7 +1556,7 @@ class BusObservationViewController: BaseObservationViewController {
         let nPassengers = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
             !date.isEmpty &&
             !time.isEmpty &&
@@ -1525,7 +1565,7 @@ class BusObservationViewController: BaseObservationViewController {
             !destination.isEmpty &&
             !nPassengers.isEmpty
 
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -1538,7 +1578,7 @@ class BusObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
     }
     
     // Add record to DB
@@ -1625,12 +1665,12 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
+                             (label: "Lodge",         placeholder: "Select the lodge operating the bus",              type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "This bus is training", placeholder: "",                             type: "checkBox"),
                              (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -1648,12 +1688,12 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Lodge",         placeholder: "Select the type of bus",              type: "dropDown"),
+                             (label: "Lodge",         placeholder: "Select the lodge operating the bus",              type: "dropDown"),
                              (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "This bus is training", placeholder: "",                             type: "checkBox"),
                              (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver and employees)", type: "number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
                              (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "normal"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
@@ -1704,7 +1744,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = currentTime
             self.dropDownTextFields[5]?.text = "Kantishna"
             self.textFields[6]?.text = "No"
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
             
@@ -1749,7 +1789,16 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -1804,7 +1853,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         let nOvernightPassengers = self.textFields[9]?.text ?? ""
         let comments = self.textFields[10]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -1814,7 +1863,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                 !nPassengers.isEmpty &&
                 !nOvernightPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             
             // Update the observation instance
             self.observation?.observerName = observerName
@@ -1830,7 +1879,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
 
     }
     
@@ -1985,7 +2034,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = currentTime
             //self.dropDownTextFields[7]?.text = "N/A"
             self.textFields[6]?.text = "0"
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
         } else {
             if let id = self.observationId {
@@ -2049,7 +2098,16 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -2104,7 +2162,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         let nPassengers = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -2115,7 +2173,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 !destination.isEmpty &&
                 !nPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             self.observation?.date = date
             self.observation?.time = time
             self.observation?.driverName = driverName
@@ -2127,7 +2185,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
         
             self.saveButton.isEnabled = true
-        }
+        //}
     }
     
     // Add record to DB
@@ -2283,7 +2341,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
             self.textFields[7]?.text = "0"
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
             
@@ -2320,7 +2378,16 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -2374,7 +2441,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         let permitNumber = self.textFields[8]?.text ?? ""
         let comments = self.textFields[9]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -2384,7 +2451,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             
             // Update the observation instance
             self.observation?.observerName = observerName
@@ -2399,7 +2466,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
 
     }
     
@@ -2486,7 +2553,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Company/Organization name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
+                             (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "normal"),
                              //(label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
@@ -2507,7 +2574,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Company/Organization Name", placeholder: "Enter the contractor's company or organization name",   type: "normal"),
+                             (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "normal"),
                              //(label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
@@ -2551,9 +2618,11 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = formatter.string(from: now)
             self.textFields[7]?.text = "0"
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
+            
+            //self.textFields[5]?.text = "" // Remove number of expected nights
             
             // The observation already exists and is open for viewing/editing
         } else {
@@ -2588,7 +2657,16 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -2644,7 +2722,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         let permitNumber = self.textFields[8]?.text ?? ""
         let comments = self.textFields[9]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -2654,7 +2732,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             
             // Update the observation instance
             self.observation?.observerName = observerName
@@ -2669,7 +2747,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -2809,7 +2887,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
             
             self.textFields[2]?.text = formatter.string(from: now)
             
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
             
@@ -2844,7 +2922,16 @@ class EmployeeObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         
@@ -2900,7 +2987,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
         let nPassengers = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -2909,7 +2996,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
                 !(permitHolder.isEmpty || permitNumber.isEmpty) && // Only one needs to be filled
                 !nPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -2922,7 +3009,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -3004,7 +3091,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
                              (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
@@ -3024,7 +3111,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
+                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
                              (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
@@ -3078,7 +3165,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
             self.dropDownTextFields[4]?.text = "Kantishna"
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
             
@@ -3113,7 +3200,16 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -3168,7 +3264,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         let nPassengers = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -3177,7 +3273,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                 !permitNumber.isEmpty && 
                 !nPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -3190,7 +3286,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -3328,7 +3424,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = formatter.string(from: now)
             //self.textFields[3]?.text = "No"
             
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             // The observation already exists and is open for viewing/editing
         } else {
@@ -3367,9 +3463,17 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
-        
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -3402,6 +3506,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         
         dismissController()
     }
+
     
     //MARK: - DB methods
     @objc override func updateData(){
@@ -3414,13 +3519,13 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         let nPassengers = self.textFields[4]?.text ?? ""
         let comments = self.textFields[5]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !nPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -3439,7 +3544,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -3574,9 +3679,17 @@ class CyclistObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
-        
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -3622,14 +3735,14 @@ class CyclistObservationViewController: BaseObservationViewController {
         let nPassengers = self.textFields[4]?.text ?? ""
         let comments = self.textFields[5]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
                 !destination.isEmpty &&
                 !nPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -3639,7 +3752,7 @@ class CyclistObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -3777,7 +3890,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = formatter.string(from: now)
             self.textFields[7]?.text = "0"
             
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
             
@@ -3820,7 +3933,16 @@ class PhotographerObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -3874,7 +3996,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
         let nExpectedNights = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -3883,7 +4005,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                 !nPassengers.isEmpty &&
                 !nExpectedNights.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -3896,7 +4018,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -4045,7 +4167,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             self.textFields[2]?.text = formatter.string(from: now)
             //self.dropDownTextFields[5]?.text = "N/A"
             
-            self.saveButton.isEnabled = false
+            //self.saveButton.isEnabled = false
             
             parseQRString()
             
@@ -4083,10 +4205,19 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     }
     
     //MARK:  - Navigation
+    //MARK:  - Navigation
     @objc override func saveButtonPressed() {
-        
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -4102,22 +4233,28 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             if !updateRecord() {return} // return so the alert message can be presented
         }
         
-        // Assign the right ID to the observation
-        var max: Int64? = 2147483647
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64? = 2147483647
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                    return
+                }
+            } catch {
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
                 return
             }
-        } catch {
-            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
-            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
-            return
+            observation?.id = Int(max!)
+            
+            dismissController()
         }
-        observation?.id = Int(max!)
-        
-        dismissController()
     }
     
     //MARK: - DB methods
@@ -4133,7 +4270,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         let permitNumber = self.textFields[6]?.text ?? ""
         let comments = self.textFields[7]?.text ?? ""
         
-        let fieldsFull =
+        self.fieldsFull =
             !observerName.isEmpty &&
                 !date.isEmpty &&
                 !time.isEmpty &&
@@ -4141,7 +4278,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
                 !destination.isEmpty &&
                 !nPassengers.isEmpty
         
-        if fieldsFull {
+        //if fieldsFull {
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -4153,7 +4290,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             self.observation?.comments = comments
             
             self.saveButton.isEnabled = true
-        }
+        //}
         
     }
     
@@ -4400,7 +4537,16 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -4416,22 +4562,28 @@ class SubsistenceObservationViewController: BaseObservationViewController {
             if !updateRecord() {return} // return so the alert message can be presented
         }
         
-        // Assign the right ID to the observation
-        var max: Int64? = 2147483647
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+        if lastRecordDuplicated() {
+            showDuplicatedAlert(isNewObservation: self.isAddingNewObservation)
+            
+        } else {
+            
+            // Assign the right ID to the observation
+            var max: Int64? = 2147483647
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                    return
+                }
+            } catch {
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
                 return
             }
-        } catch {
-            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
-            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
-            return
+            observation?.id = Int(max!)
+            
+            dismissController()
         }
-        observation?.id = Int(max!)
-        
-        dismissController()
     }
 }
 
@@ -4493,7 +4645,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                                                       time: self.textFields[2]!.text!,
                                                       driverName: "Null", destination: "Null",
                                                       nPassengers: "",
-                                                      permitNumber: "-1")
+                                                      permitNumber: "")
             //self.textFields[4]?.text = "-1"
         } else {
             if let id = self.observationId {
@@ -4606,7 +4758,16 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
@@ -4794,7 +4955,16 @@ class OtherObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
         if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
+        
+        if !self.fieldsFull {
+            showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
+            return
+        } else {
+            saveObservation()
+        }
+    }
+    
+    func saveObservation(){
         self.db = try? Connection(dbPath)
         
         // update the observation
