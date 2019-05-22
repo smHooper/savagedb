@@ -3091,9 +3091,9 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
+                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
                              (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -3111,9 +3111,9 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
                              (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
+                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
                              (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
@@ -3164,7 +3164,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
-            self.dropDownTextFields[4]?.text = "Kantishna"
+            self.dropDownTextFields[3]?.text = "Kantishna"
             //self.saveButton.isEnabled = false
             
             parseQRString()
@@ -3182,9 +3182,9 @@ class RightOfWayObservationViewController: BaseObservationViewController {
                 self.dropDownTextFields[0]?.text = self.observation?.observerName
                 self.textFields[1]?.text = self.observation?.date
                 self.textFields[2]?.text = self.observation?.time
-                self.textFields[3]?.text = self.observation?.driverName
-                self.dropDownTextFields[4]?.text = self.observation?.destination
-                self.textFields[5]?.text = self.observation?.permitNumber
+                self.dropDownTextFields[3]?.text = self.observation?.destination
+                self.textFields[4]?.text = self.observation?.permitNumber
+                self.textFields[5]?.text = self.observation?.driverName
                 self.dropDownTextFields[6]?.text = self.observation?.permitHolder
                 self.textFields[7]?.text = self.observation?.nPassengers
                 self.textFields[8]?.text = self.observation?.comments
@@ -3257,9 +3257,9 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         let observerName = self.dropDownTextFields[0]?.text ?? ""
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
-        let driverName = self.textFields[3]?.text ?? ""
-        let destination = self.dropDownTextFields[4]?.text ?? ""
-        let permitNumber = self.textFields[5]?.text ?? ""
+        let destination = self.dropDownTextFields[3]?.text ?? ""
+        let permitNumber = self.textFields[4]?.text ?? ""
+        let driverName = self.textFields[5]?.text ?? ""//this is actually permit holder
         let permitHolder = self.dropDownTextFields[6]?.text ?? ""
         let nPassengers = self.textFields[7]?.text ?? ""
         let comments = self.textFields[8]?.text ?? ""
@@ -3367,8 +3367,13 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Driver reminded one trip in; one trip out (no driving past Tek CG)?", placeholder: "",                 type: "checkBox"),
+                             (label: "Has a bus ticket (Tek Pass)?", placeholder: "",                                                       type: "checkBox"),
+                             (label: "Has supplies for 3 nights (food, RV water and dump)?", placeholder: "",                               type: "checkBox"),
+                             (label: "Driving the road (no dust speed, soft shoulders, bus passing)?", placeholder: "", type: "checkBox"),
+                             (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox"),
+                             (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
@@ -3382,8 +3387,13 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
                              (label: "Date",          placeholder: "Select the observation date",         type: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Does the vehicle have a Tek Pass?", placeholder: "",                type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
+                             (label: "Driver reminded one trip in; one trip out (no driving past Tek CG)?", placeholder: "",                 type: "checkBox"),
+                             (label: "Driver has a bus ticket (Tek Pass)?", placeholder: "",                                                type: "checkBox"),
+                             (label: "Has supplies for 3 nights (food, RV water and dump)?", placeholder: "",                               type: "checkBox"),
+                             (label: "Driving the road (no dust speed, soft shoulders, bus passing)?", placeholder: "", type: "checkBox"),
+                             (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox"),
+                             (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
@@ -3445,13 +3455,14 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                 self.dropDownTextFields[0]?.text = self.observation?.observerName
                 self.textFields[1]?.text = self.observation?.date
                 self.textFields[2]?.text = self.observation?.time
+                self.textFields[3]?.text = self.observation?.nPassengers
                 if (self.observation?.hasTekPass)! {
-                    self.checkBoxes[3]?.isSelected = true
+                    self.checkBoxes[5]?.isSelected = true
                 } else {
-                    self.checkBoxes[3]?.isSelected = false
+                    self.checkBoxes[5]?.isSelected = false
                 }
-                self.textFields[4]?.text = self.observation?.nPassengers
-                self.textFields[5]?.text = self.observation?.comments
+                
+                self.textFields[10]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
             } else {
                 os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
@@ -3516,8 +3527,8 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         let date = self.textFields[1]?.text ?? ""
         let time = self.textFields[2]?.text ?? ""
         //let hasTekPass = self.textFields[3]?.text ?? ""
-        let nPassengers = self.textFields[4]?.text ?? ""
-        let comments = self.textFields[5]?.text ?? ""
+        let nPassengers = self.textFields[3]?.text ?? ""
+        let comments = self.textFields[10]?.text ?? ""
         
         self.fieldsFull =
             !observerName.isEmpty &&
@@ -3527,23 +3538,24 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         
         //if fieldsFull {
             // Update the observation instance
-            self.observation?.observerName = observerName
-            self.observation?.date = date
-            self.observation?.time = time
-            if let hasPassCheckBox = self.checkBoxes[3] {
-                self.observation?.hasTekPass = hasPassCheckBox.isSelected
-            } else {
-                self.observation?.hasTekPass = false
-            }
-            /*if hasTekPass == "Yes" {
-                self.observation?.hasTekPass = true
-            } else {
-                self.observation?.hasTekPass = false
-            }*/
-            self.observation?.nPassengers = nPassengers
-            self.observation?.comments = comments
-            
-            self.saveButton.isEnabled = true
+        self.observation?.observerName = observerName
+        self.observation?.date = date
+        self.observation?.time = time
+
+        /*if hasTekPass == "Yes" {
+            self.observation?.hasTekPass = true
+        } else {
+            self.observation?.hasTekPass = false
+        }*/
+        self.observation?.nPassengers = nPassengers
+        if let hasPassCheckBox = self.checkBoxes[5] {
+            self.observation?.hasTekPass = hasPassCheckBox.isSelected
+        } else {
+            self.observation?.hasTekPass = false
+        }
+        self.observation?.comments = comments
+        
+        self.saveButton.isEnabled = true
         //}
         
     }
