@@ -1,10 +1,5 @@
 {
-    "show_quote_at_startup": true,
-
-    "default_open_time": "6:00 AM",
-
     "default_close_time": "9:30 PM",
-
     "fields": {
         "Right of Way": {
             "Inholder name": {
@@ -19,18 +14,22 @@
                     "Gene Desjarlais",
                     "Ginny Wood",
                     "Greg LaHaie",
+                    "Hank Swan",
                     "Jeff Barney",
                     "Kantishna Air Taxi",
                     "Kantishna Roadhouse",
                     "Linda Crabb",
                     "Linda/Steve Neff",
+                    "Mark Wayson",
                     "Michael Conlin",
                     "Mike MarkAnthony",
                     "Paul Shearer",
                     "Rainy Creek LLC",
                     "Ray Krieg",
                     "Romany Wood",
-                    "Rusty Lachelt"
+                    "Rusty Lachelt",
+                    "Yvonne Desjarlais",
+                    "Unknown"
                 ]
             }
         },
@@ -45,11 +44,13 @@
                     "Transit",
                     "Camper",
                     "Kantishna Experience",
-                    "Educational Charter",
                     "Commerical Charter",
+                    "Educational Charter",
+                    "Training",
                     "Spare",
                     "Rescue bus",
-                    "Other"
+                    "Other",
+                    "Unknown"
                 ]
             }
         },
@@ -59,34 +60,40 @@
                 "sorted": false,
                 "validation_field": "",
                 "options": [
-                    "Amanda Bertino",
+                    "Allison Przybylski",
                     "Andrea Markell",
+                    "Andres Bustamante",
                     "Anna Moore",
+                    "Anne Triest",
                     "Bill Reynolds",
                     "Brian Janson",
-                    "Chad Oelke",
-                    "Christina Chatfield",
-                    "Elizabeth Beavers",
+                    "Brian Westlund",
+                    "Chelsea Niles",
+                    "Dawn Conroy",
+                    "Deanna DePue",
+                    "Elaina Allen",
+                    "Eliza Kurth",
+                    "Emily Wong",
+                    "Halbe Brown",
                     "Jakara Hubbard",
                     "Jan Tomsen",
-                    "Jaz Ammon",
+                    "Jen Jackson",
                     "Jenn Boyd",
-                    "John Brueck",
-                    "Keith Gortowski",
+                    "Jessica Drain",
+                    "Julia DeNoto",
+                    "Kaila Pfister",
+                    "Kari Sandage",
+                    "Katie Karnes",
                     "Laura Vachula",
                     "Maddi Owen",
                     "Malia Walters",
-                    "Mara Scallon",
-                    "Marinell Chandler",
-                    "Matthew Trucano",
                     "NJ Gates",
-                    "Nathan Ziegler",
-                    "Other",
-                    "Sami King",
-                    "Seth Williams",
-                    "Stony Yanuchi",
+                    "Nate Hughes",
+                    "Pattie Reed",
+                    "Riley Hays",
                     "Susan Trucano",
-                    "Tyler Dempsey"
+                    "Tyler Dempsey",
+                    "Other"
                 ]
             },
             "Destination": {
@@ -102,7 +109,8 @@
                     "Stony Overlook",
                     "Eielson",
                     "Wonder Lake",
-                    "Kantishna"
+                    "Kantishna",
+                    "Unknown"
                 ]
             }
         },
@@ -117,14 +125,15 @@
                     "Education",
                     "Researcher",
                     "Very important person",
-                    "Other"
+                    "Other",
+                    "Unknown"
                 ]
             }
         },
         "Lodge Bus": {
             "Lodge": {
                 "validation_table": "bus_codes",
-                "sorted": true,
+                "sorted": false,
                 "validation_field": "name",
                 "options": [
                     "Camp Denali/North Face Lodge",
@@ -145,6 +154,7 @@
                     "Maintenance - Autoshop",
                     "Maintenance - B and U",
                     "Maintenance - Roads",
+                    "Maintenance - Special Projects",
                     "Maintenance - Special projects",
                     "Maintenance - Trails",
                     "Planning",
@@ -152,7 +162,8 @@
                     "Resources - Natural",
                     "Superintendent's Office",
                     "Visitor and Resource Protection",
-                    "Other"
+                    "Other",
+                    "Unknown"
                 ]
             },
             "Trip purpose": {
@@ -167,9 +178,12 @@
                     "Training",
                     "Emergency response",
                     "Very important person",
-                    "Other"
+                    "Other",
+                    "Unknown"
                 ]
             }
         }
-    }
+    },
+    "show_quote_at_startup": true,
+    "default_open_time": "6:00 AM"
 }
