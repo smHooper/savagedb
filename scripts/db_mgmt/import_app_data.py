@@ -20,7 +20,15 @@ def replace_lookup_values(data, engine, data_field, lookup_params):
 
     lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_value,
                                      lookup_params.lookup_index)
+    invalid_values = data.loc[data[data_field].isin(lookup_values.values()) & ~data[data_field].isnull(), data_field].unique()
+    if len(invalid_values):
+        raise ValueError('The following entries for the field {field} in table {table} were invalid:\n\t-{values}'
+                         .format(field=data_field,
+                                 table=lookup_params.data_table,
+                                 values='\n\t-'.join(invalid_values)))
     data.replace({data_field: lookup_values}, inplace=True)
+    data[[data_field]] = data[[data_field]].fillna(value='NUL') # make sure any empty data are marked as NUL, which should be in every lookup table
+
 
     return data
 
@@ -89,6 +97,8 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
         if table_name in LOOKUP_FIELDS.index:
             for data_field, lookup_params in LOOKUP_FIELDS.loc[table_name].iterrows():
                 df = replace_lookup_values(df, postgres_engine, data_field, lookup_params)
+                if lookup_params.lookup_index == 'inholder_code':
+                    df['inholder_code'] = df.permit_holder
 
         if len(df):
             with postgres_engine.connect() as pg_conn, pg_conn.begin():
@@ -102,6 +112,7 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
 
                 df.to_sql(table_name, pg_conn, if_exists='append', index=False)
                 sys.stdout.write('\n\t-%s' % table_name)
+
 
     # Update the imported column
     try:

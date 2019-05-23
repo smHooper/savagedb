@@ -16,10 +16,10 @@ DUPLICATE_FIELDS_ALL = ['datetime', 'n_passengers', 'destination', 'comments']
 DUPLICATE_FIELDS_TBL = {'accessibility': [],
                         'buses': ['bus_type', 'bus_number', 'is_training', 'n_lodge_ovrnt'],
                         'cyclists': [],
-                        'employee_vehicles': ['permit_number', 'permit_holder'],
-                        'inholders': ['permit_holder', 'permit_number'],
-                        'nps_approved': ['permit_number', 'approved_type', 'n_nights'],
-                        'nps_contractors': ['n_nights', 'organization'],
+                        'employee_vehicles': ['permit_number', 'permit_holder', 'driver_name'],
+                        'inholders': ['permit_holder', 'permit_number', 'driver_name'],
+                        'nps_approved': ['permit_number', 'approved_type', 'n_nights', 'permit_holder'],
+                        'nps_contractors': ['n_nights', 'organization', 'permit_number'],
                         'nps_vehicles': ['n_nights', 'trip_purpose', 'work_group'],
                         'photographers': ['n_nights', 'permit_number'],
                         'road_lottery': [],
@@ -29,7 +29,6 @@ DUPLICATE_FIELDS_TBL = {'accessibility': [],
 
 LOOKUP_FIELDS = pd.DataFrame([['buses', 'bus_type', 'bus_codes', 'code', 'name'],
                               ['nps_approved', 'approved_type', 'nps_approved_codes', 'code', 'name'],
-                              ['nps_vehicles', 'work_group', 'nps_work_groups', 'code', 'name'],
                               ['inholders', 'permit_holder', 'inholder_allotments', 'inholder_code', 'inholder_name'],
                               ['nps_vehicles', 'work_group', 'nps_work_groups', 'code', 'name'],
                               ['nps_vehicles', 'trip_purpose', 'nps_trip_purposes', 'code', 'name']
@@ -38,12 +37,12 @@ LOOKUP_FIELDS = pd.DataFrame([['buses', 'bus_type', 'bus_codes', 'code', 'name']
                         .sort_values(['data_table', 'data_field'])\
                         .set_index(['data_table', 'data_field'])
 
-
 def get_missing_lookup(data, table_name, data_field, engine, lookup_params):
     lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_index,
                                      lookup_params.lookup_value) \
         .values()  # returns dict, but only need list-like
-    missing_lookup = data.loc[~data[data_field].isin(lookup_values), data_field].unique()
+    # Ignore data == "" because this will just be changed to NUL in the import process
+    missing_lookup = data.loc[~data[data_field].isin(lookup_values) & (data[data_field] != ''), data_field].unique()
     n_missing = len(missing_lookup)
     missing_info = pd.DataFrame({'data_value': missing_lookup,
                                  'data_table': [table_name for _ in range(n_missing)],
