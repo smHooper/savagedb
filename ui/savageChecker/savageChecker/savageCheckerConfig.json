@@ -3,9 +3,9 @@
     "fields": {
         "Right of Way": {
             "Inholder name": {
-                "validation_table": "inholder_allotments",
-                "sorted": false,
-                "validation_field": "inholder_name",
+                "validation_table": "inholder_allotments", 
+                "sorted": false, 
+                "validation_field": "inholder_name", 
                 "options": [
                     "Camp Denali/North Face Lodge",
                     "Celia Hunter",
@@ -32,12 +32,12 @@
                     "Unknown"
                 ]
             }
-        },
+        }, 
         "Bus": {
             "Bus type": {
-                "validation_table": "bus_codes",
-                "sorted": false,
-                "validation_field": "name",
+                "validation_table": "bus_codes", 
+                "sorted": false, 
+                "validation_field": "name", 
                 "options": [
                     "Denali Natural History Tour",
                     "Tundra Wilderness Tour",
@@ -53,12 +53,12 @@
                     "Unknown"
                 ]
             }
-        },
+        }, 
         "global": {
             "Observer name": {
-                "validation_table": "",
-                "sorted": false,
-                "validation_field": "",
+                "validation_table": "", 
+                "sorted": true, 
+                "validation_field": "", 
                 "options": [
                     "Allison Przybylski",
                     "Andrea Markell",
@@ -95,11 +95,11 @@
                     "Tyler Dempsey",
                     "Other"
                 ]
-            },
+            }, 
             "Destination": {
-                "validation_table": "destination_codes",
-                "sorted": false,
-                "validation_field": "name",
+                "validation_table": "destination_codes", 
+                "sorted": false, 
+                "validation_field": "name", 
                 "options": [
                     "Primrose/Mile 17",
                     "Teklanika",
@@ -113,12 +113,12 @@
                     "Unknown"
                 ]
             }
-        },
+        }, 
         "NPS Approved": {
             "Approved category": {
-                "validation_table": "nps_approved_codes",
-                "sorted": false,
-                "validation_field": "name",
+                "validation_table": "nps_approved_codes", 
+                "sorted": false, 
+                "validation_field": "name", 
                 "options": [
                     "Bookstore",
                     "Concessionaire",
@@ -129,24 +129,24 @@
                     "Unknown"
                 ]
             }
-        },
+        }, 
         "Lodge Bus": {
             "Lodge": {
                 "validation_table": "bus_codes",
                 "sorted": false,
                 "validation_field": "name",
                 "options": [
-                    "Camp Denali/North Face Lodge",
-                    "Denali Backcountry Lodge",
+                    "Camp Denali/North Face Lodge", 
+                    "Denali Backcountry Lodge", 
                     "Kantishna Roadhouse"
                 ]
             }
-        },
+        }, 
         "NPS Vehicle": {
             "Work group": {
-                "validation_table": "nps_work_groups",
-                "sorted": false,
-                "validation_field": "name",
+                "validation_table": "nps_work_groups", 
+                "sorted": false, 
+                "validation_field": "name", 
                 "options": [
                     "Administration",
                     "Commercial Services",
@@ -165,11 +165,11 @@
                     "Other",
                     "Unknown"
                 ]
-            },
+            }, 
             "Trip purpose": {
-                "validation_table": "nps_trip_purposes",
-                "sorted": false,
-                "validation_field": "name",
+                "validation_table": "nps_trip_purposes", 
+                "sorted": false, 
+                "validation_field": "name", 
                 "options": [
                     "Routine work",
                     "Return to duty station",

@@ -217,7 +217,7 @@ class ShiftInfoViewController: BaseFormViewController {
         self.textFields[1]?.text = formatter.string(from: now)
         let openTime = parseJSON(controllerLabel: nil, fieldName: nil, property: "default_open_tim")[0]
         let closeTime = parseJSON(controllerLabel: nil, fieldName: nil, property: "default_close_time")[0]
-        self.textFields[2]?.text = openTime.isEmpty ? "6:30 AM" : openTime
+        self.textFields[2]?.text = openTime.isEmpty ? "6:00 AM" : openTime
         self.textFields[3]?.text = closeTime.isEmpty ? "9:30 PM" : closeTime
         
         // Disable navigation to vehicle list until all fields are filled
@@ -454,11 +454,11 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Observations table
-        let timeColumn = Expression<String>("time")
-        let driverNameColumn = Expression<String>("driver_name")
-        let destinationColumn = Expression<String>("destination")
-        let nPassengersColumn = Expression<String>("n_passengers")
-        let commentsColumn = Expression<String>("comments")
+        let timeColumn = Expression<String?>("time")
+        let driverNameColumn = Expression<String?>("driver_name")
+        let destinationColumn = Expression<String?>("destination")
+        let nPassengersColumn = Expression<String?>("n_passengers")
+        let commentsColumn = Expression<String?>("comments")
         
         let observationsTable = Table("observations")
         do {
@@ -477,11 +477,11 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Buses table
-        let busTypeColumn = Expression<String>("bus_type")
-        let busNumberColumn = Expression<String>("bus_number")
-        let isTrainingColumn = Expression<Bool>("is_training")
-        let isOvernightColumn = Expression<Bool>("is_overnight")
-        let nOvernightPassengersColumn = Expression<String>("n_lodge_ovrnt")
+        let busTypeColumn = Expression<String?>("bus_type")
+        let busNumberColumn = Expression<String?>("bus_number")
+        let isTrainingColumn = Expression<Bool?>("is_training")
+        let isOvernightColumn = Expression<Bool?>("is_overnight")
+        let nOvernightPassengersColumn = Expression<String?>("n_lodge_ovrnt")
         
         let busesTable = Table("buses")
         do {
@@ -505,9 +505,9 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS vehicle table
-        let tripPurposeColumn = Expression<String>("trip_purpose")
-        let workGroupColumn = Expression<String>("work_group")
-        let nExpectedNightsColumn = Expression<String>("n_nights")
+        let tripPurposeColumn = Expression<String?>("trip_purpose")
+        let workGroupColumn = Expression<String?>("work_group")
+        let nExpectedNightsColumn = Expression<String?>("n_nights")
         
         let NPSVehicleTable = Table("nps_vehicles")
         do {
@@ -529,9 +529,9 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS approved table
-        let approvedTypeColumn = Expression<String>("approved_type")
-        let permitNumberColumn = Expression<String>("permit_number")
-        let permitHolderColumn = Expression<String>("permit_holder")
+        let approvedTypeColumn = Expression<String?>("approved_type")
+        let permitNumberColumn = Expression<String?>("permit_number")
+        let permitHolderColumn = Expression<String?>("permit_holder")
         let NPSApprovedTable = Table("nps_approved")
         do {
             try db?.run(NPSApprovedTable.create(ifNotExists: true) { t in
@@ -552,7 +552,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - NPS conctractor table
-        let organizationNameColumn = Expression<String>("organization")
+        let organizationNameColumn = Expression<String?>("organization")
         let NPSContractorTable = Table("nps_contractors")
         do {
             try db?.run(NPSContractorTable.create(ifNotExists: true) { t in
@@ -613,7 +613,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
         
         // MARK: - Tek camper table
-        let hasTekPassColumn = Expression<Bool>("has_tek_pass")
+        let hasTekPassColumn = Expression<Bool?>("has_tek_pass")
         let teklanikaCamperTable = Table("tek_campers")
         do {
             try db?.run(teklanikaCamperTable.create(ifNotExists: true) { t in
