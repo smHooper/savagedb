@@ -19,7 +19,7 @@ DUPLICATE_FIELDS_TBL = {'accessibility': [],
                         'buses': ['bus_type', 'bus_number', 'is_training', 'n_lodge_ovrnt'],
                         'cyclists': [],
                         'employee_vehicles': ['permit_number', 'permit_holder', 'driver_name'],
-                        'inholders': ['permit_holder', 'permit_number', 'driver_name'],
+                        'inholders': ['inholder_code', 'permit_number', 'driver_name'],
                         'nps_approved': ['permit_number', 'approved_type', 'n_nights', 'permit_holder'],
                         'nps_contractors': ['n_nights', 'organization', 'permit_number'],
                         'nps_vehicles': ['n_nights', 'trip_purpose', 'work_group'],
@@ -43,14 +43,21 @@ LOOKUP_FIELDS = pd.DataFrame([['buses', 'bus_type', 'bus_codes', 'code', 'name']
 BOOLEAN_FIELDS = {'buses': ['is_training', 'is_overnight']}
 
 
-def check_numeric_fields(data, postgres_engine, table_name, filename=None):
-
+def get_numeric_pg_fields(postgres_engine, table_name):
     with postgres_engine.connect() as conn, conn.begin():
         numeric_fields = pd.read_sql("SELECT column_name FROM information_schema.columns "
                                      "WHERE table_name = '%s' AND "
                                      "data_type IN ('smallint', 'integer', 'bigint', 'decimal', 'real', 'double precision', 'numeric')" % table_name,
-                                     conn)\
-                        .squeeze()
+                                     conn) \
+            .squeeze()
+
+    return numeric_fields
+
+
+def check_numeric_fields(data, postgres_engine, table_name, filename=None):
+
+    numeric_fields = get_numeric_pg_fields(postgres_engine, table_name)
+
     invalid_fields = []
     for field in numeric_fields:
         if field in data.columns:
@@ -244,15 +251,28 @@ def main(sqlite_paths_str, connection_txt):
 
         # Check for duplicates with the Postgres db. Limit the check to only Postgres records from this year to
         #   reduce read times
+        numeric_fields = get_numeric_pg_fields(postgres_engine, table_name)
+        if hasattr(numeric_fields, '__iter__'):
+            numeric_fields = numeric_fields[numeric_fields.isin(duplicate_columns) & numeric_fields.isin(df.columns)]
         with postgres_engine.connect() as pg_conn, pg_conn.begin():
             pg_data = pd.read_sql("SELECT * FROM {table_name} WHERE extract(year FROM datetime) = {year}"
                                   .format(table_name=table_name, year=datetime.now().year),
                                   pg_conn)
 
-        all_data = pd.concat([pg_data, clean_app_data(df, df, table_name, postgres_engine)], sort=False, ignore_index=True)
+        cleaned_data = clean_app_data(df, df, table_name, postgres_engine)
+        cleaned_data['id_value'] = cleaned_data.index
+        all_data = pd.concat([pg_data, cleaned_data], sort=False, ignore_index=True)
+
+        # Make sure the NaN values are all the same for numeric and text fields. For text fields, somewhere NaNs
+        #  (or just the 'comments' column) are getting filled with 'None' (could be NoneType but it's re-read as string)
+        all_data[numeric_fields] = all_data[numeric_fields] \
+            .fillna(0)\
+            .astype(np.int64)
+        all_data.loc[:, all_data.dtypes == np.object] = all_data.loc[:, all_data.dtypes == np.object].fillna('None')
+
         # Get all indices from all rows in df whose duplicate columns match those in the master DB
         is_pg_duplicate = all_data.duplicated(subset=duplicate_columns, keep=False)
-        pg_duplicates = df.loc[df.index.isin(all_data.loc[is_pg_duplicate].index)]
+        pg_duplicates = df.loc[df.index.isin(all_data.loc[is_pg_duplicate].id_value)]
         pg_duplicates['found_in_db'] = True
 
         duplicates = pd.concat([sl_duplicates, pg_duplicates], sort=False)
@@ -294,7 +314,7 @@ def main(sqlite_paths_str, connection_txt):
         df = pd.concat([pd.DataFrame(np.full((50, len(df.columns)), 'aaaa'), columns=df.columns),
                         df])
 
-        df.to_csv(flagged_path)
+        df.to_csv(flagged_path, index=False)
 
     # If there were any missing lookup values, save the CSV
     if len(missing_lookup_dfs) > 0:
