@@ -438,6 +438,7 @@ class ShiftInfoViewController: BaseFormViewController {
         let openTimeColumn = Expression<String>("open_time")
         let closeTimeColumn = Expression<String>("close_time")
         let uploadedColumn = Expression<Bool>("uploaded")
+        let importedColumn = Expression<Bool>("imported")
         
         let sessionsTable = Table("sessions")
         do {
@@ -448,6 +449,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 t.column(openTimeColumn)
                 t.column(closeTimeColumn)
                 t.column(uploadedColumn, defaultValue: false)
+                t.column(importedColumn, defaultValue: false)
             })
         } catch {
             os_log("Couldn't cofigure the the Session table", log: OSLog.default, type: .debug)
