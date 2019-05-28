@@ -10,28 +10,7 @@ from sqlalchemy import create_engine
 
 sys.path.append(os.path.join(os.path.join(os.path.dirname(__file__), '..'), 'query'))
 from query import connect_db, get_lookup_table
-from validate_app_data import LOOKUP_FIELDS
-
-# SQLite doesn't have a boolean datatype (they're stored as int) so
-BOOLEAN_FIELDS = {'buses': ['is_training', 'is_overnight']}
-
-
-def replace_lookup_values(data, engine, data_field, lookup_params):
-
-    lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_value,
-                                     lookup_params.lookup_index)
-    invalid_values = data.loc[data[data_field].isin(lookup_values.values()) & ~data[data_field].isnull(), data_field].unique()
-    if len(invalid_values):
-        raise ValueError('The following entries for the field {field} in table {table} were invalid:\n\t-{values}'
-                         .format(field=data_field,
-                                 table=lookup_params.data_table,
-                                 values='\n\t-'.join(invalid_values)))
-    data.replace({data_field: lookup_values}, inplace=True)
-    data[[data_field]] = data[[data_field]].fillna(value='NUL') # make sure any empty data are marked as NUL, which should be in every lookup table
-
-
-    return data
-
+from validate_app_data import LOOKUP_FIELDS, replace_lookup_values, BOOLEAN_FIELDS, clean_app_data
 
 
 def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
@@ -47,23 +26,24 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
     with postgres_engine.connect() as pg_conn, pg_conn.begin():
         pg_shift_info = pd.read_sql_table('shift_info', pg_conn, index_col='id')
     with sqlite_engine.connect() as sl_conn, sl_conn.begin():
-        sl_shift_info = pd.read_sql("SELECT * FROM sessions", sl_conn).squeeze()
+        shift_info_data = pd.read_sql("SELECT * FROM sessions", sl_conn)#.squeeze()
 
-    pg_shift_info['date_str'] = pg_shift_info.open_time.dt.strftime('%Y%m%d')
-    sl_open_time = pd.to_datetime('%(date)s %(open_time)s' % sl_shift_info)
-    sl_close_time = pd.to_datetime('%(date)s %(close_time)s' % sl_shift_info)
+    for _, sl_shift_info in shift_info_data.iterrows:
+        pg_shift_info['date_str'] = pg_shift_info.open_time.dt.strftime('%Y%m%d')
+        sl_open_time = pd.to_datetime('%(date)s %(open_time)s' % sl_shift_info)
+        sl_close_time = pd.to_datetime('%(date)s %(close_time)s' % sl_shift_info)
 
-    # If it exists, replace the open and close times with the earliest and latest, respectively
-    if (pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')).any():
-        id = pg_shift_info.loc[pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')].iloc[0].name
-        pg_open_time = pg_shift_info.loc[id, 'open_time']
-        pg_close_time = pg_shift_info.loc[id, 'close_time']
-        open_time = min(pg_open_time, sl_open_time)
-        close_time = max(pg_close_time, sl_close_time)
-        sql = "UPDATE shift_info SET open_time = '%s', close_time = '%s' WHERE id=%s;" % (open_time, close_time, id)
-    else:
-        sql = "INSERT INTO shift_info (open_time, close_time, shift_date) VALUES ('%s', '%s', '%s')" % \
-              (sl_open_time, sl_close_time, sl_open_time.strftime('%Y-%m-%d'))
+        # If it exists, replace the open and close times with the earliest and latest, respectively
+        if (pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')).any():
+            id = pg_shift_info.loc[pg_shift_info.date_str == sl_open_time.strftime('%Y%m%d')].iloc[0].name
+            pg_open_time = pg_shift_info.loc[id, 'open_time']
+            pg_close_time = pg_shift_info.loc[id, 'close_time']
+            open_time = min(pg_open_time, sl_open_time)
+            close_time = max(pg_close_time, sl_close_time)
+            sql = "UPDATE shift_info SET open_time = '%s', close_time = '%s' WHERE id=%s;" % (open_time, close_time, id)
+        else:
+            sql = "INSERT INTO shift_info (open_time, close_time, shift_date) VALUES ('%s', '%s', '%s')" % \
+                  (sl_open_time, sl_close_time, sl_open_time.strftime('%Y-%m-%d'))
 
     with postgres_engine.connect() as conn, conn.begin():
         conn.execute(sql)
@@ -81,24 +61,7 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
         with sqlite_engine.connect() as conn, conn.begin():
             sqlite_data = pd.read_sql_table(table_name, conn)
 
-        for c in df.columns:
-            if c in sqlite_data.columns:
-                dtype = sqlite_data[c].dtype
-                if table_name in BOOLEAN_FIELDS:
-                    if c in BOOLEAN_FIELDS[table_name]:
-                        dtype = bool
-                df[c] = df[c].astype(dtype)
-
-        if 'destination' in df.columns:
-            destination_lookup_params = pd.Series({'data_table': table_name,
-                                                   'lookup_table': 'destination_codes', 'lookup_index': 'code',
-                                                   'lookup_value': 'name'})
-            df = replace_lookup_values(df, postgres_engine, 'destination', destination_lookup_params)
-        if table_name in LOOKUP_FIELDS.index:
-            for data_field, lookup_params in LOOKUP_FIELDS.loc[table_name].iterrows():
-                df = replace_lookup_values(df, postgres_engine, data_field, lookup_params)
-                if lookup_params.lookup_index == 'inholder_code':
-                    df['inholder_code'] = df.permit_holder
+        df = clean_app_data(df, sqlite_data, table_name, postgres_engine)
 
         if len(df):
             with postgres_engine.connect() as pg_conn, pg_conn.begin():
