@@ -473,9 +473,20 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
-    func getTextFieldCoordinates(textFieldId: Int) {
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool{
         
-        
+        if self.textFieldIds[textField.tag].type == "number" {
+            let allowedCharacters = CharacterSet.decimalDigits
+            let characterSet = CharacterSet(charactersIn: string)
+            
+            let charactersValid = allowedCharacters.isSuperset(of: characterSet)
+            if !charactersValid {
+                showGenericAlert(message: "Only numbers are allowed in this field. You typed a \"\(string)\".", title: "Non-numeric character typed", takeScreenshot: false)
+            }
+            return charactersValid
+        } else {
+            return true
+        }
     }
     
     // Setup dropdown background view
@@ -1694,7 +1705,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
                              (label: "This bus is training", placeholder: "",                             type: "checkBox"),
                              (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
-                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "normal"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
@@ -3461,6 +3472,8 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                 } else {
                     self.checkBoxes[5]?.isSelected = false
                 }
+                
+                
                 
                 self.textFields[10]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
