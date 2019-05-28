@@ -5,6 +5,7 @@ import warnings
 import subprocess
 import sqlite3
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from sqlalchemy import create_engine
 
@@ -42,6 +43,71 @@ LOOKUP_FIELDS = pd.DataFrame([['buses', 'bus_type', 'bus_codes', 'code', 'name']
 BOOLEAN_FIELDS = {'buses': ['is_training', 'is_overnight']}
 
 
+def check_numeric_fields(data, postgres_engine, table_name, filename=None):
+
+    with postgres_engine.connect() as conn, conn.begin():
+        numeric_fields = pd.read_sql("SELECT column_name FROM information_schema.columns "
+                                     "WHERE table_name = '%s' AND "
+                                     "data_type IN ('smallint', 'integer', 'bigint', 'decimal', 'real', 'double precision', 'numeric')" % table_name,
+                                     conn)\
+                        .squeeze()
+    invalid_fields = []
+    for field in numeric_fields:
+        if field in data.columns:
+            if data[field].dtype == np.object:
+                try:
+                    if data[field].str.strip().str.contains('[^\d*]').fillna(False).any():
+                        invalid_fields.append(field)
+                except Exception as e:
+                    print e
+                    import pdb; pdb.set_trace()
+
+    if invalid_fields:
+        raise ValueError('The following numeric fields in the table {table}{file} contain non-numeric characters:\n\t-{fields}'
+                         .format(table=table_name,
+                                 file=' from %s' % filename if filename else '',
+                                 fields='\n\t-'.join(invalid_fields)
+                                 )
+                         )
+
+def combine_sqlite_dbs(sqlite_paths_str, postgres_engine, delimiter=";"):
+
+    db_paths = sqlite_paths_str.split(delimiter)
+
+    # Create a single db to combine all the data into by copying the first db
+    combined_path = os.path.join(os.path.dirname(db_paths[0]), 'combined_data.db')
+    shutil.copy2(db_paths[0], combined_path)
+    conn = sqlite3.connect(combined_path)
+
+    # Get all table names. These should be the same for all DBs
+    table_names = pd.read_sql("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%')", conn).squeeze()
+
+    # Update the first db with the filename in all tables
+    for table in table_names:
+        column_names = pd.read_sql("SELECT * FROM %s LIMIT 1" % table, conn).columns
+        if 'filename' not in column_names: #might already be there if validate script was run before with this db
+            conn.execute("ALTER TABLE {table} ADD COLUMN filename VARCHAR(255);"
+                         .format(table=table))
+        filename = os.path.basename(db_paths[0])
+        conn.execute("UPDATE {table} SET filename='{filename}';"
+                     .format(table=table, filename=filename))
+        check_numeric_fields(pd.read_sql("SELECT * FROM %s" % table, conn), postgres_engine, table, filename)
+    conn.commit()
+
+    for path in db_paths[1:]:
+        # Append the data (updated with its filename) to the combined db
+        conn_other = sqlite3.connect(path)
+        for table in table_names:
+            df = pd.read_sql("SELECT * FROM %s" % table, conn_other)
+            df['filename'] = os.path.basename(path)
+            check_numeric_fields(df, postgres_engine, table, os.path.basename(path))
+            df.drop(columns='id').to_sql(table, conn, if_exists='append', index=False)
+        conn_other.close()
+    conn.close()
+
+    return combined_path
+
+
 def replace_lookup_values(data, engine, data_field, lookup_params):
 
     lookup_values = get_lookup_table(engine, lookup_params.lookup_table, lookup_params.lookup_value,
@@ -63,18 +129,24 @@ def clean_app_data(data, sqlite_data, table_name, postgres_engine):
     '''Replace full names with codes and correct boolean fields since SQLite doesn't have a boolean dtype'''
 
     df = data.copy()
+
+    # .astype won't work on mixed dtypes, so set anything == '' to NaN
+    null_mask = df == ''
+    df[null_mask] = np.nan
     with postgres_engine.connect() as conn, conn.begin():
         pg_data = pd.read_sql("SELECT * FROM %s LIMIT 1" % table_name, conn)
     for c in df.columns:
+        # Set datatypes for bools because sqlite stores them as 0-1 integers
         if c in sqlite_data.columns:
             dtype = sqlite_data[c].dtype
             if table_name in BOOLEAN_FIELDS:
                 if c in BOOLEAN_FIELDS[table_name]:
                     dtype = bool
             df[c] = df[c].astype(dtype)
+        # Make sure all dtypes match postgres dtypes. This probably covers the boolean dtype change above, but do both
+        #  just to be sure
         if c in pg_data.columns:
-            df[c] = df[c].astype(pg_data[c].dtype)
-
+            df.loc[~df[c].isnull(), c] = df.loc[~df[c].isnull(), c].astype(pg_data[c].dtype)
 
     if 'destination' in df.columns:
         destination_lookup_params = pd.Series({'data_table': table_name,
@@ -106,41 +178,6 @@ def get_missing_lookup(data, table_name, data_field, engine, lookup_params):
     return missing_info
 
 
-def combine_sqlite_dbs(sqlite_paths_str, delimiter=";"):
-
-    db_paths = sqlite_paths_str.split(delimiter)
-
-    # Create a single db to combine all the data into by copying the first db
-    combined_path = os.path.join(os.path.dirname(db_paths[0]), 'combined_data.db')
-    shutil.copy2(db_paths[0], combined_path)
-    conn = sqlite3.connect(combined_path)
-
-    # Get all table names. These should be the same for all DBs
-    table_names = pd.read_sql("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%')", conn).squeeze()
-
-    # Update the first db with the filename in all tables
-    for table in table_names:
-        column_names = pd.read_sql("SELECT * FROM %s LIMIT 1" % table, conn).columns
-        if 'filename' not in column_names: #might already be there if validate script was run before with this db
-            conn.execute("ALTER TABLE {table} ADD COLUMN filename VARCHAR(255);"
-                         .format(table=table))
-        conn.execute("UPDATE {table} SET filename='{filename}';"
-                     .format(table=table, filename=os.path.basename(db_paths[0])))
-    conn.commit()
-
-    for path in db_paths[1:]:
-
-        # Update the the db to attach with it's filename
-        conn_other = sqlite3.connect(path)
-        for table in table_names:
-            df = pd.read_sql("SELECT * FROM %s" % table, conn_other)
-            df['filename'] = os.path.basename(path)
-            df.drop(columns='id').to_sql(table, conn, if_exists='append', index=False)
-
-    conn.close()
-
-    return combined_path
-
 
 def main(sqlite_paths_str, connection_txt):
 
@@ -148,10 +185,10 @@ def main(sqlite_paths_str, connection_txt):
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
-    sqlite_path = combine_sqlite_dbs(sqlite_paths_str)
+    postgres_engine = connect_db(connection_txt)
+    sqlite_path = combine_sqlite_dbs(sqlite_paths_str, postgres_engine)
 
     sqlite_engine = create_engine("sqlite:///" + sqlite_path)
-    postgres_engine = connect_db(connection_txt)
     # Get list of all tables in the master DB
     with postgres_engine.connect() as pg_conn, pg_conn.begin():
         postgres_tables = pd.read_sql("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';",
@@ -211,6 +248,7 @@ def main(sqlite_paths_str, connection_txt):
             pg_data = pd.read_sql("SELECT * FROM {table_name} WHERE extract(year FROM datetime) = {year}"
                                   .format(table_name=table_name, year=datetime.now().year),
                                   pg_conn)
+
         all_data = pd.concat([pg_data, clean_app_data(df, df, table_name, postgres_engine)], sort=False, ignore_index=True)
         # Get all indices from all rows in df whose duplicate columns match those in the master DB
         is_pg_duplicate = all_data.duplicated(subset=duplicate_columns, keep=False)
@@ -229,7 +267,7 @@ def main(sqlite_paths_str, connection_txt):
             df.loc[duplicates.index, 'duplicated_in_app'] = duplicates.duplicated_in_app
         if len(pg_duplicates):
             df.loc[duplicates.index, 'found_in_db'] = duplicates.found_in_db
-        import pdb; pdb.set_trace()
+
         # If this table contains any lookup values, check to see if all data values exist in the corresponding
         #  lookup table
         if 'destination' in df.columns:
@@ -248,6 +286,14 @@ def main(sqlite_paths_str, connection_txt):
 
         # Access expects datetimes in the format mm/dd/yy hh:mm:ss so reformat it
         df.datetime = df.datetime.dt.strftime('%m/%d/%Y %H:%M:%S')
+
+        # This is possibly one of the dumbest things I've ever had to do in code, but Access doesn't handle columns
+        #  with mixed data types well -- it will sometimes assume that a column containing both integers and text as
+        #  integer, meaning the text rows will fail to import. To force Access to read all of it as text, make the
+        #  first 50 rows all nonsense text. These rows will then be deleted as soon as they're imported.
+        df = pd.concat([pd.DataFrame(np.full((50, len(df.columns)), 'aaaa'), columns=df.columns),
+                        df])
+
         df.to_csv(flagged_path)
 
     # If there were any missing lookup values, save the CSV
