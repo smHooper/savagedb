@@ -77,6 +77,7 @@ def check_numeric_fields(data, postgres_engine, table_name, filename=None):
                                  )
                          )
 
+
 def combine_sqlite_dbs(sqlite_paths_str, postgres_engine, delimiter=";"):
 
     db_paths = sqlite_paths_str.split(delimiter)
@@ -90,6 +91,7 @@ def combine_sqlite_dbs(sqlite_paths_str, postgres_engine, delimiter=";"):
     table_names = pd.read_sql("SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%')", conn).squeeze()
 
     # Update the first db with the filename in all tables
+    data_tables = {}
     for table in table_names:
         column_names = pd.read_sql("SELECT * FROM %s LIMIT 1" % table, conn).columns
         if 'filename' not in column_names: #might already be there if validate script was run before with this db
@@ -98,21 +100,38 @@ def combine_sqlite_dbs(sqlite_paths_str, postgres_engine, delimiter=";"):
         filename = os.path.basename(db_paths[0])
         conn.execute("UPDATE {table} SET filename='{filename}';"
                      .format(table=table, filename=filename))
-        check_numeric_fields(pd.read_sql("SELECT * FROM %s" % table, conn), postgres_engine, table, filename)
+        df = pd.read_sql("SELECT * FROM %s" % table, conn)
+        check_numeric_fields(df, postgres_engine, table, filename)
+        data_tables[table] = df
     conn.commit()
+
+    # Check if this first DB is empty. If not, add it to the list of paths that actually have data
+    component_paths = []
+    is_empty = sum([len(df) for name, df in data_tables.iteritems() if name not in ['sessions', 'observations']]) == 0
+    if not is_empty:
+        component_paths.append(db_paths[0])
 
     for path in db_paths[1:]:
         # Append the data (updated with its filename) to the combined db
         conn_other = sqlite3.connect(path)
+        data_tables = {}
         for table in table_names:
             df = pd.read_sql("SELECT * FROM %s" % table, conn_other)
             df['filename'] = os.path.basename(path)
             check_numeric_fields(df, postgres_engine, table, os.path.basename(path))
-            df.drop(columns='id').to_sql(table, conn, if_exists='append', index=False)
+            data_tables[table] = df.drop(columns='id')#.to_sql(table, conn, if_exists='append', index=False)
+
+        # If the database isn't empty, append the data and add the path to the list of non-empty files
+        is_empty = sum([len(df) for name, df in data_tables.iteritems() if name not in ['sessions', 'observations']]) == 0
+        if not is_empty:
+            for tname, df in data_tables.iteritems():
+                df.to_sql(tname, conn, if_exists='append', index=False)
+            component_paths.append(path)
+
         conn_other.close()
     conn.close()
 
-    return combined_path
+    return combined_path, delimiter.join(component_paths)
 
 
 def replace_lookup_values(data, engine, data_field, lookup_params):
@@ -193,7 +212,13 @@ def main(sqlite_paths_str, connection_txt):
     sys.stdout.flush()
 
     postgres_engine = connect_db(connection_txt)
-    sqlite_path = combine_sqlite_dbs(sqlite_paths_str, postgres_engine)
+    sqlite_path, component_paths = combine_sqlite_dbs(sqlite_paths_str, postgres_engine)
+
+    if not len(component_paths):
+        raise RuntimeError('All data files are empty')
+
+    sys.stdout.write('sqlite_paths: %s\n\n' % component_paths)
+    sys.stdout.flush()
 
     sqlite_engine = create_engine("sqlite:///" + sqlite_path)
     # Get list of all tables in the master DB
