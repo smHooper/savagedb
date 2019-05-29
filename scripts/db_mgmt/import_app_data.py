@@ -13,7 +13,7 @@ from query import connect_db, get_lookup_table
 from validate_app_data import LOOKUP_FIELDS, replace_lookup_values, BOOLEAN_FIELDS, clean_app_data
 
 
-def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
+def main(data_dir, sqlite_path, connection_txt, archive_dir="", data_files=None):
 
     sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
@@ -94,10 +94,14 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
     if not os.path.isdir(archive_dir):
         try:
             os.mkdir(archive_dir)
-            shutil.copy(sqlite_path, archive_dir)
+            #shutil.copy(sqlite_path, archive_dir)
         except:
             pass
-    shutil.copy(sqlite_path, archive_dir)#'''
+    if data_files:
+        for path in data_files.split(';'):
+            shutil.copy(path, archive_dir)
+    else:
+        shutil.copy(sqlite_path, archive_dir)
 
     # Clean up the text files and temporary dir created by validate_app_data.py
     try:
