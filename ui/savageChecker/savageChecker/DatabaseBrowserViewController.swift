@@ -21,10 +21,12 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
     let spacing: CGFloat = 16
     let legendIconSize: CGFloat = 25
     let selectedColor = UIColor(red: 0.5, green: 0.6, blue: 0.7, alpha: 0.5)
+    var titleLabel = UILabel()
     //var cancelButton: UI
     var isLoadingDatabase = true
     var delegate: DBBrowserViewControllerDelegate?
     let cancelButton = UIButton(type: .system)
+    var showNoDataAlert = false
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,10 +40,10 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             os_log("Couldn't load user data", log: OSLog.default, type: .debug)
         }
         
-        findFiles()
+        //findFiles()
         
         // Add a title at the top
-        let titleLabel = UILabel()
+        //let titleLabel = UILabel()
         titleLabel.text = self.isLoadingDatabase ? "Select a database file to load" : "Select one or more files to upload" 
         titleLabel.textAlignment = .center
         titleLabel.font = UIFont.boldSystemFont(ofSize: 20)
@@ -122,6 +124,10 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         self.isLoadingDatabase = self.delegate == nil ? true : false
         self.fileTableView.allowsMultipleSelection = self.isLoadingDatabase ? false : true // if uploading to Drive, allow multiple selections
         
+        self.titleLabel.text = self.isLoadingDatabase ? "Select a database file to load" : "Select one or more files to upload"
+        
+        findFiles()
+        
         // Add a done button in the same place as the cancel button. If this browser is being used to select files
         //  for upload to Google Drive, the cancel button will be hidden
         if !self.isLoadingDatabase {
@@ -134,8 +140,34 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             doneButton.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -self.spacing * 2).isActive = true
             doneButton.bottomAnchor.constraint(equalTo: self.view.bottomAnchor, constant: -self.spacing).isActive = true
             self.cancelButton.isHidden = true
+            
         }
     }
+    
+    /*
+     for (index, name) in stmt.columnNames.enumerated() {
+     print ("\(name):\(row[index]!)")
+     */
+    func dbHasData(path: String) -> Bool {
+        // Try to connect to the database
+        if let thisDB = try? Connection(path) {
+            // Try to run a query to get all table names that would have data
+            let tableSQL = "SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions');"
+            if let statement = try? thisDB.prepare(tableSQL) {
+                // Loop through each row (table name)
+                for row in statement {
+                    // If the first column returns something other than nil && you can get a count from it && the count is greater than 0, return true
+                    if let tableName = row[0], let count = try? thisDB.scalar("SELECT count(*) FROM \(tableName)") as? Int64, Int(count ?? 0) > 0 {
+                        return true
+                    }
+                }
+            }
+        }
+        
+        // If we got here, none of the tables had data
+        return false
+    }
+    
     
     private func findFiles(){
         let fileManager = FileManager.default
@@ -144,8 +176,19 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             let fileURLs = try fileManager.contentsOfDirectory(at: documentsURL, includingPropertiesForKeys: nil)
             for url in fileURLs {
                 let fileName = url.lastPathComponent
-                if fileName != "savageChecker.db" && fileName.hasSuffix(".db"){
-                    self.files.append(fileName)
+                // Check if the filename checks out
+                if fileName != "savageChecker.db" && fileName.hasSuffix(".db") {
+                    // If this is a regular DB browser (not called from GDrive upload controller), just add the filename
+                    if self.isLoadingDatabase {
+                        self.files.append(fileName)
+                    // Otherwise, only add the file if the database has data
+                    } else {
+                        if dbHasData(path: url.absoluteString){
+                            self.files.append(fileName)
+                        } else if let index = self.selectedFiles.index(of: fileName) {
+                            self.selectedFiles.remove(at: index)
+                        }
+                    }
                 }
             }
         } catch {
@@ -155,8 +198,13 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         // Sort in reverse alphabetical order
         self.files = self.files.sorted{$0 > $1}//sort()
+        
+        if self.files.count == 0 {
+            let presentingController = presentingViewController
+            self.dismiss(animated: true, completion: {presentingController?.showGenericAlert(message: "All data files on this device are empty. You can only upload data once you have entered observations.", title: "No files to upload", takeScreenshot: false)})
+        }
     }
-    
+
     
     //MARK: - Navigation
     @objc func cancelButtonPressed() {
@@ -175,7 +223,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             // When the user presses "OK", select the currentDB file and add it back to the selectedFiles array
             alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
                 let currentDBFile = String(dbPath.split(separator: "/").last ?? "")
-                self.selectedFiles.append(currentDBFile)
+                //self.selectedFiles.append(currentDBFile)
                 for i in 0..<self.fileTableView.numberOfRows(inSection: 0){
                     let indexPath = IndexPath(row: i, section: 0)
                     let cell = self.fileTableView.cellForRow(at: indexPath) as! DatabaseBrowserTableViewCell
