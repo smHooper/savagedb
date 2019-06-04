@@ -1146,6 +1146,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let comments = self.textFields[self.lastTextFieldIndex]?.text ?? ""
         
         if !observerName.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty && !destination.isEmpty && !nPassengers.isEmpty {
+            self.fieldsFull = true
             //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             self.saveButton.isEnabled = true
 
@@ -4748,6 +4749,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
 
         
         if !observerName.isEmpty && !date.isEmpty && !time.isEmpty && !nPassengers.isEmpty {//}&& !permitNumber.isEmpty {
+            self.fieldsFull = true
+            
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
