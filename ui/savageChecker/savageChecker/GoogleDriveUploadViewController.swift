@@ -32,6 +32,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
     let signInButton = GIDSignInButton() //store this as a property so you can enable/disable depending on whether the user is signed in
     var uploadButton = UIButton(type: .system) //same for this button
     let driveService = GTLRDriveService()
+    var uploadFolderName: String?
     
     //MARK: - Layout
     override func viewDidLoad() {
@@ -156,6 +157,26 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         selectFileButton.addTarget(self, action: #selector(selectFileButtonPressed), for: .touchUpInside)
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        
+        // Check if the file to upload to (which get's created on sign-in) has any files in it. If not, delete the whole folder
+        search(self.uploadFolderName ?? "") { (folderID, error) in
+            if let id = folderID {
+                let query = GTLRDriveQuery_FilesList.query()
+                query.pageSize = 50 // number of items to return
+                query.q = "'\(id)' in parents and trashed=false"
+                self.driveService.executeQuery(query) { (ticket, results, error) in
+                    if (results as? GTLRDrive_FileList)?.files?.count ?? 1 == 0 {
+                        let deleteQuery = GTLRDriveQuery_FilesDelete.query(withFileId: id)
+                        self.driveService.executeQuery(deleteQuery, completionHandler: nil)
+                    }
+                }
+            }
+        }
+    }
+    
+    
     //MARK: - Navigation
     // Sign out automatically when the cancel button is pressed. This way, a separate signout button isn't necessary
     @objc func cancelButtonPressed() {
@@ -167,12 +188,13 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
     public func search(_ fileName: String, onCompleted: @escaping (String?, Error?) -> ()) {
         let query = GTLRDriveQuery_FilesList.query()
         query.pageSize = 1
-        query.q = "name = '\(fileName)'"
+        query.q = "name = '\(fileName)' and trashed=false"
         
         self.driveService.executeQuery(query) { (ticket, results, error) in
             onCompleted((results as? GTLRDrive_FileList)?.files?.first?.identifier, error)
         }
     }
+
     
     public func createFolder(_ name: String, onCompleted: @escaping (String?, Error?) -> ()) {
         let file = GTLRDrive_File()
@@ -185,27 +207,21 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         self.driveService.executeQuery(query) { (ticket, folder, error) in
             onCompleted((folder as? GTLRDrive_File)?.identifier, error)
         }
-    }
+    }//*/
     
-    public func uploadFile(_ folderName: String, filePath: String, MIMEType: String, onCompleted: ((String?, Error?) -> ())?) {
-        
-        search(folderName) { (folderID, error) in
-            
-            if let ID = folderID {
-                self.upload(ID, path: filePath, MIMEType: MIMEType, onCompleted: onCompleted)
-            } else {
-                self.createFolder(folderName, onCompleted: { (folderID, error) in
-                    guard let ID = folderID else {
-                        onCompleted?(nil, error)
-                        return
-                    }
-                    self.upload(ID, path: filePath, MIMEType: MIMEType, onCompleted: onCompleted)
-                })
-            }
+    
+    func getCleanedDeviceName() -> String? {
+        let deviceName = UIDevice.current.name
+        var cleanedDeviceName: String?
+        if let regex = try? NSRegularExpression(pattern: "[^a-zA-Z0-9]", options: .caseInsensitive) {
+            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "_")
         }
+        
+        return cleanedDeviceName
     }
     
-    private func upload(_ parentID: String, path: String, MIMEType: String, onCompleted: ((String?, Error?) -> ())?) {
+    
+    private func upload(_ parentID: String?, path: String, uploadedFileName: String? = nil, MIMEType: String, onCompleted: ((String?, Error?) -> ())?) {
         
         guard let data = FileManager.default.contents(atPath: path) else {
             //onCompleted?(nil, GDriveError.NoDataAtPath)
@@ -215,12 +231,9 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd_hh-mm-ss"
         let now = Date()
-        let deviceName = UIDevice.current.name
-        var cleanedDeviceName: String?
-        if let regex = try? NSRegularExpression(pattern: "[^a-zA-Z0-9]", options: .caseInsensitive) {
-            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "_")
-        }
-        let timestamp = "\(formatter.string(from: now))_\(cleanedDeviceName ?? deviceName)" // Don't make a helper function out of this because timeStyle in uploadButtonPressed = .none
+        let cleanedDeviceName = getCleanedDeviceName() ?? UIDevice.current.name
+        
+        let timestamp = "\(formatter.string(from: now))_\(cleanedDeviceName)" // Don't make a helper function out of this because timeStyle in uploadButtonPressed = .none
             .replacingOccurrences(of: ",", with: "")
             .replacingOccurrences(of: " ", with: "_")
             .replacingOccurrences(of: "/", with: "-")
@@ -229,8 +242,11 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             .replacingOccurrences(of: ":", with: "-")
         
         let file = GTLRDrive_File()
-        file.name = path.components(separatedBy: "/").last?.replacingOccurrences(of: ".db", with: "_\(timestamp).db")
-        file.parents = [parentID] // file can have multiple parents because it can exist in multiple folders
+        let gdriveFileName = uploadedFileName == nil ? path.components(separatedBy: "/").last?.replacingOccurrences(of: ".db", with: "_\(timestamp).db") : uploadedFileName?.replacingOccurrences(of: ".db", with: "_\(timestamp).db")
+        file.name = gdriveFileName
+        if let id = parentID {
+            file.parents = [id] // file can have multiple parents because it can exist in multiple folders
+        }
         
         let uploadParams = GTLRUploadParameters.init(data: data, mimeType: MIMEType)
         uploadParams.shouldUploadWithSingleRequest = true
@@ -243,23 +259,29 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         })
     }
     
+
+    public func uploadFile(_ folderName: String, filePath: String, uploadedFileName: String? = nil, MIMEType: String, onCompleted: ((String?, Error?) -> ())?) {
+        
+        search(folderName) { (folderID, error) in
+            
+            if let ID = folderID {
+                self.upload(ID, path: filePath, uploadedFileName: uploadedFileName, MIMEType: MIMEType, onCompleted: onCompleted)
+            } else {
+                self.createFolder(folderName, onCompleted: { (folderID, error) in
+                    guard let ID = folderID else {
+                        onCompleted?(nil, error)
+                        return
+                    }
+                    self.upload(ID, path: filePath, uploadedFileName: uploadedFileName, MIMEType: MIMEType, onCompleted: onCompleted)
+                })
+            }
+        }
+    }
+    
     
     // Submit uploads
     @objc func uploadButtonPressed() {
-        // Create a folder name with a datestamp tag. If the folder already exists, the selected files will just get uploaded there
-        let formatter = DateFormatter()
-        formatter.timeStyle = .none//.short//
-        formatter.dateStyle = .short
-        let now = Date()
-        let timestamp = "\(formatter.string(from: now))_\(UIDevice.current.name)"
-            .replacingOccurrences(of: ",", with: "")
-            .replacingOccurrences(of: " ", with: "_")
-            .replacingOccurrences(of: "/", with: "-")
-            .replacingOccurrences(of: " ", with: "")
-            .replacingOccurrences(of: "’", with: "-")
-            .replacingOccurrences(of: "'", with: "-")
-            .replacingOccurrences(of: ":", with: "-")
-        let folderName = "savageChecker_data_\(timestamp)"
+        
         
         let sessionsTable = Table("sessions")
         let uploadedColumn = Expression<Bool>("uploaded")
@@ -268,24 +290,37 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         var failedFiles = [String]()
         var uploadError: Error?
         var nFiles = 0
+        var badFiles = [String]()
         for fileName in self.selectedFiles {
             let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
-            uploadFile(folderName, filePath: fullPath, MIMEType: "application/x-sqlite3") { (fileID, error) in
-                //self.showGenericAlert(message: "Upload for file \(fileName) failed because \(error?.localizedDescription)", title: "Google drive upload failed")
+            if !dbHasData(path: fullPath){
+                badFiles.append(fileName)
+            }
+        }
+        for fileName in self.selectedFiles {
+            let fullPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
+            uploadFile(self.uploadFolderName ?? "", filePath: fullPath, MIMEType: "application/x-sqlite3") { (fileID, error) in
                 uploadError = error
                 if error == nil {
                     // Update the uploaded column in the session table
+                    let backupPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup").appendingPathComponent(fileName).path
                     if let db = try? Connection(fullPath) {
                         // Update all records because there should be only 1
                         if let resultCode = try? db.run(sessionsTable.update(uploadedColumn <- true)), resultCode > 0 {
                             print("Updated upload field successful for \(fileName) to \(String(describing: try? db.pluck(Table("sessions"))?[uploadedColumn]))")
                         } else {
-                            print("Update of upload column failed for \(fileName)")
+                            self.showGenericAlert(message: "Upload for \(fileName) was successful, but update of the \"upload\" status for this file failed. This file will still appear with the \"Not uploaded\" icon in the list of files to upload", title: "\"Uploaded\" status not updated")
+                            // If there was a problem updating the table, there could be something wrong with the DB so just upload the backup too
+                            self.uploadFile(self.uploadFolderName ?? "", filePath: backupPath, uploadedFileName: fileName.replacingOccurrences(of: ".db", with: "_backup.db"), MIMEType: "application/x-sqlite3") { (fileID, error) in uploadError = error}
                         }
+                    } else {
+                        // If the user couldn't connect, the db might be corrupt so try to upload the backup
+                        self.showGenericAlert(message: "This file might not have uploaded correctly. A backup of the file has also been uploaded as a measure of safety.", title: "Possible upload failure")
+                        self.uploadFile(self.uploadFolderName ?? "", filePath: backupPath, uploadedFileName: fileName.replacingOccurrences(of: ".db", with: "_backup.db"), MIMEType: "application/x-sqlite3") { (fileID, error) in uploadError = error}
                     }
                 }
             }
-            // Check if there was an error outside the completion closure because appending to a var outside the closure doesn't work
+            // Check if there was an error outside the completion closure because appending to a var inside the closure doesn't work
             if uploadError == nil {
                 successfulFiles.append(fileName)
             } else {
@@ -293,33 +328,28 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             }
             nFiles += 1
         }
+        
         let userName = (self.userNameLabel.text)?.split(separator: "@").first ?? ""
         // Let the user know if the upload was successful
         let alertController = UIAlertController(title: nil, message: nil, preferredStyle: .alert)
-        if successfulFiles.count == nFiles {
+        if badFiles.count > 0 {
+            let badFileString = badFiles.joined(separator: "\n")
+            alertController.message = "The data for the following files might not have uploaded properly. Press OK to continue and then verify that the uploads were successful and/or there is a file with \"_backup_\" in the name uploaded to Google Drive for each of the following files: \n\n\(badFileString)"
+            alertController.title = "Possible invalid data file(s)"
+        } else if successfulFiles.count == nFiles {
             alertController.title = "File upload successful"
             alertController.message = "Your data were successfull uploaded to \(userName)'s Google Drive account."
-            // When the user presses "OK", dismiss the GDriveUpload controller
-            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
-                self.dismiss(animated: true, completion: nil)
-            }))
         } else if failedFiles.count == nFiles {
             alertController.title = "File upload failed"
             alertController.message = "All file uploads to \(userName)'s Google Drive account failed. Make sure you're connected to the internet and you used the correct Google account to log in, then try again."
-            // When the user presses "OK", dismiss the alert controller only
-            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
-                alertController.dismiss(animated: true, completion: nil)
-            }))
         } else {
             let failedFileString = failedFiles.joined(separator: "\n")
             alertController.title = "Only \(successfulFiles.count) of \(nFiles) files uploaded"
             alertController.message = "All files were uploaded successfully to \(userName)'s Google Drive account except: \n\n\(failedFileString)\n\n Make sure your internet connection is reliable and try again."
-            // When the user presses "OK", dismiss the alert controller only
-            alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
-                alertController.dismiss(animated: true, completion: nil)
-            }))
         }
-        
+        alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+            self.dismiss(animated: true, completion: nil)
+        }))
         present(alertController, animated: true, completion: nil)
     }
     
@@ -384,8 +414,35 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             self.uploadButton.isEnabled = true
             self.signInButton.isHidden = true
             self.driveService.authorizer = user.authentication.fetcherAuthorizer()
+            
+            // Create a folder name with a datestamp tag. If the folder already exists, the selected files will just get uploaded there
+            let formatter = DateFormatter()
+            formatter.timeStyle = .none//.short//
+            formatter.dateStyle = .short
+            let now = Date()
+            let timestamp = "\(formatter.string(from: now))_\(getCleanedDeviceName() ?? UIDevice.current.name)"
+                .replacingOccurrences(of: ",", with: "")
+                .replacingOccurrences(of: " ", with: "_")
+                .replacingOccurrences(of: "/", with: "-")
+                .replacingOccurrences(of: " ", with: "")
+                .replacingOccurrences(of: "’", with: "-")
+                .replacingOccurrences(of: "'", with: "-")
+                .replacingOccurrences(of: ":", with: "-")
+            let folderName = "savageChecker_data_\(timestamp)"
+            
+            // If the folder doesn't exist, create it here because GDrives annoying lazy execution will create the folder and files all at once.
+            //  This means that, even though createFolder() is called before the uploads, it doesn't actually exist so the uploadFiles() function
+            //  thinks it needs to create the folder for each file (if there are multiple files)
+            search(folderName) { (folderID, error) in
+                if folderID == nil {
+                    let _ = self.createFolder(folderName) { (folderID, error) in
+                    }
+                }
+                self.uploadFolderName = folderName
+            }
         }
     }
+
 }
 
 

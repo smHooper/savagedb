@@ -144,30 +144,6 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         }
     }
     
-    /*
-     for (index, name) in stmt.columnNames.enumerated() {
-     print ("\(name):\(row[index]!)")
-     */
-    func dbHasData(path: String) -> Bool {
-        // Try to connect to the database
-        if let thisDB = try? Connection(path) {
-            // Try to run a query to get all table names that would have data
-            let tableSQL = "SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions');"
-            if let statement = try? thisDB.prepare(tableSQL) {
-                // Loop through each row (table name)
-                for row in statement {
-                    // If the first column returns something other than nil && you can get a count from it && the count is greater than 0, return true
-                    if let tableName = row[0], let count = try? thisDB.scalar("SELECT count(*) FROM \(tableName)") as? Int64, Int(count ?? 0) > 0 {
-                        return true
-                    }
-                }
-            }
-        }
-        
-        // If we got here, none of the tables had data
-        return false
-    }
-    
     
     private func findFiles(){
         let fileManager = FileManager.default
@@ -183,7 +159,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
                         self.files.append(fileName)
                     // Otherwise, only add the file if the database has data
                     } else {
-                        if dbHasData(path: url.absoluteString){
+                        if self.dbHasData(path: url.absoluteString){
                             self.files.append(fileName)
                         } else if let index = self.selectedFiles.index(of: fileName) {
                             self.selectedFiles.remove(at: index)
@@ -221,6 +197,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
             
             // When the user presses "OK", select the currentDB file and add it back to the selectedFiles array
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {action in self.dismiss(animated: true, completion: nil)}))
             alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
                 let currentDBFile = String(dbPath.split(separator: "/").last ?? "")
                 //self.selectedFiles.append(currentDBFile)
@@ -348,8 +325,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
                 presentingController.db = try? Connection(dbPath)
                 presentingController.loadData()
             }
-        
-            
+
             let formatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "MM-dd-yy"

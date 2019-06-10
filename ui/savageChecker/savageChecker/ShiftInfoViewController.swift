@@ -334,6 +334,8 @@ class ShiftInfoViewController: BaseFormViewController {
             self.userData?.update(databaseFileName: URL(fileURLWithPath: dbPath).lastPathComponent)
         }
         
+        backupCurrentDb()
+        
         dismiss(animated: true, completion: nil)
     }
     
@@ -403,7 +405,19 @@ class ShiftInfoViewController: BaseFormViewController {
             }
             rows = Array(try db.prepare(sessionsTable))
         } catch {
-            //fatalError(error.localizedDescription)
+            os_log("Failed to prepare sessionsTable in ShiftInfoViewController", log:.default, type:.debug)
+            
+            let alertTitle = "Could not load shift info"
+            let alertMessage = "Data from the shift info table could not be loaded because \(error.localizedDescription). This database is likely not valid or it could have somehow gotten corrupted. Would you like to try to load a backup of this data file instead (no data will be lost by loading the backup)? Press \"No\" to enter shift info and try repairing the current database"
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .default, handler: {handler in
+                self.loadBackupDb()
+                self.session = self.loadSession()
+            }))
+            alertController.addAction(UIAlertAction(title: "No, keep the current file", style: .cancel, handler: {handler in
+                //alertController.dismiss(animated: false, completion: nil)
+            }))
+            present(alertController, animated: true, completion: nil)
             return nil
         }
         

@@ -1146,6 +1146,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         let comments = self.textFields[self.lastTextFieldIndex]?.text ?? ""
         
         if !observerName.isEmpty && !date.isEmpty && !time.isEmpty && !driverName.isEmpty && !destination.isEmpty && !nPassengers.isEmpty {
+            self.fieldsFull = true
             //self.session = Observation(observerName: observerName, openTime: openTime, closeTime: closeTime, givenDate: date)
             self.saveButton.isEnabled = true
 
@@ -1263,6 +1264,26 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
             alertController.addAction(yesAction)
             alertController.addAction(UIAlertAction(title: "No", style: .cancel, handler: nil))
+            present(alertController, animated: true, completion: nil)
+        }
+    }
+    
+    
+    // Verify that the table exists (it might not if the data were corrupted). If not, warn the user
+    func checkTableIsValid(){
+        var tableName: String? = nil
+        if let tname = self.observationsTable.asSQL().components(separatedBy: " ").last {
+            // .asSQL() produces simple SQL SELECT stmt, but need to get rid of ""
+            tableName = tname.replacingOccurrences(of: "\"", with: "")
+        }
+        if !dbHasData(path: dbPath, tableName: tableName) {
+            let alertController = UIAlertController(title: "Invalid data file", message: "The data in this file are not in the correct format or might have gotten corrupted. Would you like to load the backup file (no data will be lost)? If you press \"No\", you will not be able to record an observaton for this vehicle type", preferredStyle: .actionSheet)
+            alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .cancel, handler: {handler in
+                self.loadBackupDb()
+                self.db = try? Connection(dbPath)
+                self.showGenericAlert(message: "Data successfully loaded from backup.", title: "")
+            }))
+            alertController.addAction(UIAlertAction(title: "No", style: .default, handler: {action in self.dismiss(animated: true, completion: nil)}))
             present(alertController, animated: true, completion: nil)
         }
     }
@@ -1427,7 +1448,7 @@ class BusObservationViewController: BaseObservationViewController {
     
     
     override func autoFillTextFields() {
-
+        
         // This is a completely new observation
         if self.isAddingNewObservation {
             
@@ -1438,12 +1459,12 @@ class BusObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             let currentTime = formatter.string(from: now)
             
-            self.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
+            self.observation = BusObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "", busType: "", busNumber: "", isTraining: false, nOvernightPassengers: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             self.textFields[2]?.text = currentTime
-            self.textFields[6]?.text = "No"
+            //self.textFields[6]?.text = "No"
             //self.saveButton.isEnabled = false
             
             if !self.qrString.isEmpty {
@@ -1457,7 +1478,7 @@ class BusObservationViewController: BaseObservationViewController {
                     return
                 }
 
-                self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: "0", comments: record[commentsColumn])
+                self.observation = BusObservation(id: id, observerName: record[observerNameColumn], date: record[dateColumn], time: record[timeColumn], driverName: record[driverNameColumn], destination: record[destinationColumn], nPassengers: record[nPassengersColumn], busType: record[busTypeColumn], busNumber: record[busNumberColumn], isTraining: record[isTrainingColumn], nOvernightPassengers: "", comments: record[commentsColumn])
 
                 self.dropDownTextFields[0]?.text = self.observation?.observerName
                 self.textFields[1]?.text = self.observation?.date
@@ -1492,6 +1513,9 @@ class BusObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        
+        backupCurrentDb()
+        //dbToCSV(dbConnection: self.db)
     }
     
     func saveObservation(){
@@ -1748,7 +1772,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             let currentTime = formatter.string(from: now)
             
-            self.observation = BusObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", busType: "", busNumber: "", isTraining: false, isOvernight: false, nOvernightPassengers: "")
+            self.observation = BusObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", busType: "", busNumber: "", isTraining: false, isOvernight: false, nOvernightPassengers: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -1807,6 +1831,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -2037,7 +2062,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "", workGroup: "")
+            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "", workGroup: "")
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             
@@ -2116,6 +2141,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -2345,7 +2371,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = NPSApprovedObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", approvedType: "", nExpectedNights: "")
+            self.observation = NPSApprovedObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "", approvedType: "", nExpectedNights: "")
             
             // Fill in text fields with defaults
             self.dropDownTextFields[0]?.text = session?.observerName
@@ -2396,6 +2422,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -2623,7 +2650,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             
             // Initialize the observation
-            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", nExpectedNights: "", organizationName: "")
+            self.observation = NPSContractorObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", nExpectedNights: "", organizationName: "")
             
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
@@ -2675,6 +2702,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -2892,7 +2920,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
             formatter.dateStyle = .none
             
             // Initialize the observation
-            self.observation = EmployeeObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", permitNumber: "", permitHolder: "")
+            self.observation = EmployeeObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: formatter.string(from: now), driverName: "", destination: "", nPassengers: "", permitNumber: "", permitHolder: "")
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = session?.date
             
@@ -2940,6 +2968,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -3169,7 +3198,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Create the observation instance
-            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", permitNumber: "", permitHolder: "")
+            self.observation = RightOfWayObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "Kantishna", nPassengers: "", permitNumber: "", permitHolder: "")
             
             //Fill in text fields
             self.dropDownTextFields[0]?.text = session?.observerName
@@ -3218,6 +3247,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -3437,7 +3467,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = TeklanikaCamperObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, destination: "Teklanika", nPassengers: "", hasTekPass: false)
+            self.observation = TeklanikaCamperObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, destination: "Teklanika", nPassengers: "", hasTekPass: false)
             
             // Fill text fields with defaults
             self.dropDownTextFields[0]?.text = session?.observerName
@@ -3495,6 +3525,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -3678,7 +3709,7 @@ class CyclistObservationViewController: BaseObservationViewController {
         if self.isAddingNewObservation {
             // Can get time from text field because super.autfill() already fills it in
             let time = (self.textFields[2]?.text)!
-            self.observation = Observation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: time, driverName: "Null", destination: "", nPassengers: "")
+            self.observation = Observation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: time, driverName: "Null", destination: "", nPassengers: "")
         } else {
             if let id = self.observationId {
                 // Load observation
@@ -3712,6 +3743,7 @@ class CyclistObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -3907,7 +3939,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = PhotographerObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "", permitNumber: "")
+            self.observation = PhotographerObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "", permitNumber: "")
             
             // Fill text fields with defaults
             self.dropDownTextFields[0]?.text = session?.observerName
@@ -3965,6 +3997,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -4184,7 +4217,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             let currentTime = formatter.string(from: now)
             
             // Initialize the observation
-            self.observation = AccessibilityObservation(id: -1, observerName: (session?.observerName)!, date: (session?.date)!, time: currentTime, driverName: "", destination: "", nPassengers: "")
+            self.observation = AccessibilityObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "")
             
             // Fill text fields with defaults
             self.dropDownTextFields[0]?.text = session?.observerName
@@ -4240,6 +4273,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -4439,7 +4473,7 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         
         // Initialize the observation. Also, fill destination field with default.
         if self.isAddingNewObservation {
-            self.observation = SubsistenceObservation(id: -1, observerName: "", date: (session?.date)!, time: self.textFields[2]!.text!, driverName: "", destination: "Kantishna", nPassengers: "")
+            self.observation = SubsistenceObservation(id: -1, observerName: "", date: (session?.date) ?? "", time: self.textFields[2]!.text!, driverName: "", destination: "Kantishna", nPassengers: "")
             self.dropDownTextFields[4]?.text = "Kantishna"
         } else {
             if let id = self.observationId {
@@ -4569,6 +4603,7 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -4666,7 +4701,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         // Initialize the observation. Also, fill destination field with default.
         if self.isAddingNewObservation {
             self.observation = RoadLotteryObservation(id: -1, observerName: "",
-                                                      date: (session?.date)!,
+                                                      date: (session?.date) ?? "",
                                                       time: self.textFields[2]!.text!,
                                                       driverName: "Null", destination: "Null",
                                                       nPassengers: "",
@@ -4714,6 +4749,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
 
         
         if !observerName.isEmpty && !date.isEmpty && !time.isEmpty && !nPassengers.isEmpty {//}&& !permitNumber.isEmpty {
+            self.fieldsFull = true
+            
             // Update the observation instance
             self.observation?.observerName = observerName
             self.observation?.date = date
@@ -4790,6 +4827,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){
@@ -4987,6 +5025,7 @@ class OtherObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
+        backupCurrentDb()
     }
     
     func saveObservation(){

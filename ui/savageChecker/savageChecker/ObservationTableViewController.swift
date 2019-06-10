@@ -882,16 +882,20 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             let table = Table(tableName)
             
             let recordToRemove = table.where(idColumn == id.datatypeValue)
-            if let success = try? db.run(recordToRemove.delete()) {
-                loadObservations()
-                tableView.deleteRows(at: [indexPath], with: .fade)
-            } else {
-                let alertTitle = "Delete failed"
-                let alertMessage = "The delete operation failed for an unknown reason"
-                let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
-                present(alertController, animated: true, completion: nil)
+            
+            do {
+                try db.run(recordToRemove.delete())
+            } catch let Result.error(message, _, _) {
+                showGenericAlert(message: "The delete operation failed because \(message)", title: "Delete failed", takeScreenshot: true)
+                return
+            } catch {
+                os_log("Record insertion failed", log: OSLog.default, type: .debug)
+                showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
             }
+            
+            loadObservations()
+            tableView.deleteRows(at: [indexPath], with: .fade)
+            backupCurrentDb()
 
         } else if editingStyle == .insert {
             // Create a new instance of the appropriate class, insert it into the array, and add a new row to the table view
@@ -940,9 +944,28 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 os_log("Could not load observations", log:.default, type:.debug)
                 
                 let alertTitle = "Error encountered with \(info.tableName) table"
-                let alertMessage = "Data from the \(info.tableName) table could not be loaded. This database is likely not valid or it could have somehow gotten corrupt. Press OK to enter shift info and try repairing the database"
+                let alertMessage = "Data from the \(info.tableName) table could not be loaded because \(error.localizedDescription). This database is likely not valid or it could have somehow gotten corrupted. \n\nWould you like to try to load a backup of this data file instead (no data will be lost by loading the backup)? Press \"No\" to enter shift info and try repairing the current database"
                 let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                alertController.addAction(UIAlertAction(title: "OK", style: .default, handler: {handler in
+                alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .cancel, handler: {handler in
+                    self.loadBackupDb()
+                    self.db = try? Connection(dbPath)
+                    self.loadObservations()
+                    self.tableView.reloadData()
+                    let formatter = DateFormatter()
+                    dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+                    formatter.dateFormat = "MM-dd-yy"
+                    let dateFromFile = URL(fileURLWithPath: dbPath).lastPathComponent.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: ".db", with: "")
+                    var message = ""
+                    if let date = formatter.date(from: dateFromFile) {
+                        formatter.dateStyle = .long
+                        formatter.timeStyle = .none
+                        message = "Backup data file for \(formatter.string(from: date)) successfully loaded."
+                    } else {
+                        message = "Data successfully loaded from backup."
+                    }
+                    self.showGenericAlert(message: message, title: "Backup loaded", takeScreenshot: false)
+                }))
+                alertController.addAction(UIAlertAction(title: "No, keep the current file", style: .default, handler: {handler in
                     //alertController.dismiss(animated: false, completion: nil)
                     self.showShiftInfoForm()
                 }))

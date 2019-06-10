@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SQLite
 
 // Get dimensions of text labels
 extension String {
@@ -328,6 +329,129 @@ extension UIViewController {
             })
         }
     }
+    
+    
+    func dbHasData(path: String, tableName: String? = nil) -> Bool {
+        // Try to connect to the database
+        if let thisDB = try? Connection(path) {
+            // Try to run a query to get all table names that would have data
+            var tableSQL = "SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions')"
+            if let table = tableName {
+                tableSQL += " AND name LIKE('\(table)')"
+            }
+            if let statement = try? thisDB.prepare(tableSQL) {
+                // Loop through each row (table name)
+                for row in statement {
+                    // If the first column returns something other than nil && you can get a count from it && the count is greater than 0, return true
+                    if let tableName = row[0], let count = try? thisDB.scalar("SELECT count(*) FROM \(tableName)") as? Int64, Int(count ?? 0) > 0 {
+                        return true
+                    }
+                }
+            }
+        }
+        
+        // If we got here, none of the tables had data
+        return false
+    }
+    
+    
+    func backupCurrentDb() {
+        
+        let fileManager = FileManager.default
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let backupDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup")
+        var isDir: ObjCBool = false
+        if !fileManager.fileExists(atPath: backupDir.path, isDirectory: &isDir) {
+            try? fileManager.createDirectory(at: backupDir, withIntermediateDirectories: true, attributes: nil)
+        }
+        let currentDbURL = URL(fileURLWithPath: getCurrentDbPath())
+        let backupDbURL = backupDir.appendingPathComponent(currentDbURL.lastPathComponent)
+        
+        if fileManager.fileExists(atPath: backupDbURL.path) {
+            do {
+                try fileManager.removeItem(at: backupDbURL)
+            } catch {
+                showGenericAlert(message: "A problem occurred while trying to delete the current data backup: \(error.localizedDescription)", title: "Data backup failed", takeScreenshot: true)
+                return
+            }
+        }
+        do {
+            try fileManager.copyItem(at: currentDbURL, to: backupDbURL)
+        } catch {
+            showGenericAlert(message: "A problem occurred while backing up the app data to \(backupDbURL): \(error.localizedDescription)", title: "Data backup failed", takeScreenshot: true)
+        }
+        
+    }
+    
+    
+    func loadBackupDb() {
+        let currentDbURL =  URL(fileURLWithPath: getCurrentDbPath())
+        let currentDbName = currentDbURL.lastPathComponent
+        let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+        let backupDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup")
+        let backupDbURL = backupDir.appendingPathComponent(currentDbName)
+        
+        // Try to replace the current db with the backup while saving the corrupt file to documentsDir/<filename>_backup.db
+        let fileManager = FileManager.default
+        let corruptedDbName = currentDbName.replacingOccurrences(of: ".db", with: "_corrupted.db")
+        do {
+            let _ = try fileManager.replaceItemAt(currentDbURL, withItemAt: backupDbURL, backupItemName: corruptedDbName, options: [.withoutDeletingBackupItem])
+            try fileManager.copyItem(at: currentDbURL, to: backupDbURL) //replaceItemAt moves instead of copies, so copy the backup back to the backup dir
+        } catch {
+            showGenericAlert(message: "A problem occurred while trying to replace the current data with the backup: \(error.localizedDescription)", title: "Failed to load data backup", takeScreenshot: true)
+            return
+        }
+        
+        // Move the backed up corrupted file to the 'corrupted' dir.
+        //  Don't try to catch any of the errors because this stuff doesn't matter that much and it's mostly not worth warning the user about or trying to capture the error
+        let corruptFileDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("corrupt_files")
+        var isDir: ObjCBool = false
+        if !fileManager.fileExists(atPath: corruptFileDir.path, isDirectory: &isDir) {
+            try? fileManager.createDirectory(at: corruptFileDir, withIntermediateDirectories: true, attributes: nil)
+        }
+        
+        let corruptDbURL = corruptFileDir.appendingPathComponent(corruptedDbName)
+        if fileManager.fileExists(atPath: URL(fileURLWithPath: documentsDirectory).appendingPathComponent(corruptedDbName).path) {
+            try? fileManager.removeItem(at: corruptDbURL)//fileManager.replaceItemAt(corruptDbURL, withItemAt: backupDbURL, backupItemName: corruptedDbName, options: [])
+        }
+        guard let _ = try? fileManager.moveItem(at: URL(fileURLWithPath: documentsDirectory).appendingPathComponent(corruptedDbName), to: corruptDbURL) else {
+            let message = "The backup file was successfully loaded but archiving the corrupted file failed. You can continue to record new observations, but the corrupted file will still be listed when you try to upload data or switch data files"
+            showGenericAlert(message: message, title: "Could not archive corrupted file", takeScreenshot: false)
+            return
+        }
+        
+        
+    }
+    
+    /*func dbToCSV(dbConnection: Connection?) {
+        if let db = dbConnection {
+            // Try to run a query to get all table names that would have data
+            let tableSQL = "SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions');"
+            if let statement = try? db.prepare(tableSQL) {
+                // Loop through each row (table name)
+                for row in statement {
+                    // If the first column returns something other than nil && you can get a count from it && the count is greater than 0, return true
+                    guard let tableName = row[0] else {
+                        return
+                    }
+                    
+                    var rows: [Row]
+                    let thisTable = Table("\(tableName)")
+                    do {
+                        let rows = Array(try db.prepare(thisTable))
+                        for row in rows {
+                            for (index, name) in
+                        }
+                    } catch {
+                        showGenericAlert(message: "Could not save \(tableName) because \(error.localizedDescription)", title: "Backup data error", takeScreenshot: true)
+                    }
+                }
+            }
+        }
+        
+    }*/
+    
+    
 }
 
 
