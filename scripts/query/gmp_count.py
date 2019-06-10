@@ -55,8 +55,8 @@ PRINT_NAMES = {'tek_campers':                   'Tek campers',
                'nps_contractors':               'Contractors',
                'Denali Backcountry Lodge':      'DBL buses',
                'Denali Backcountry Lodge pax':  'DBL pax',
-               'Denali Natural History Tour':   'DNHT',
-               'Denali Natural History Tour pax': 'DNHT pax',
+               'Denali Natural History Tour':   'Short tour',
+               'Denali Natural History Tour pax': 'Short tour pax',
                'Kantishna Roadhouse':           'KRH buses',
                'Kantishna Roadhouse pax':       'KRH pax',
                'Camp Denali/North Face Lodge':        'CD-NF buses',
@@ -66,10 +66,12 @@ PRINT_NAMES = {'tek_campers':                   'Tek campers',
                'Concessionaire (Primrose)':     'JV (Primrose)',
                'cyclists':                      'Cyclists'
                }
-SORT_ORDER = ['Tour',
-              'Tour pax',
-              'VTS',
-              'VTS pax',
+SORT_ORDER = ['Long tour',
+              'Long tour pax',
+              'Short tour',
+              'Short tour pax',
+              'Transit',
+              'Transit pax',
               'JV training',
               'CD-NF buses',
               'CD-NF pax',
@@ -91,9 +93,9 @@ SORT_ORDER = ['Tour',
               'JV',
               'NPS',
               'Other',
-              'DNHT',
-              'DNHT pax',
-              'JV (Primrose)',
+              'Primrose buses',
+              'Primrose buses pax',
+              #'JV (Primrose)',
               'Contractors',
               'Cyclists']
 
@@ -164,24 +166,47 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         output_fields = cvbt.get_output_field_names(date_range, 'month')
 
         # Query buses
-        bus_names = {'VTS': ['SHU', 'CMP', 'OTH', 'NUL'],#
-                     'Tour': ['KXP', 'EXC', 'TWT', 'WIW']##,
+        bus_names = {'Transit': ['SHU', 'CMP', 'OTH', 'NUL', 'CHT', 'SPR', 'RSC', 'UNK'],#
+                     'Long tour': ['KXP', 'EXC', 'TWT', 'WIW'],
+                     'Short tour': ['DNH'] ##,
                      }
-        other_criteria = "is_training = ''false'' " + gmp_date_clause.replace("'", "''")
+        other_criteria = "(is_training = ''false'') " + gmp_date_clause.replace("'", "''")
         # All non-training buses except DNHTs. Do this separately so I can exclude buses going to Primrose
-        bus_vehicles, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
-                                                        other_criteria=other_criteria + " AND bus_type <> ''DNH'' AND destination <> ''PRM''",
-                                                             dissolve_names=bus_names,
-                                                        field_names=field_names['buses'], summarize_by='month',
-                                                        output_fields=output_fields, filter_fields=True, return_sql=True)
+        bus_vehicles, sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type',
+                                                 other_criteria=other_criteria + " AND destination <> ''PRM''",
+                                                 dissolve_names=bus_names,
+                                                 field_names=field_names['buses'],
+                                                 summarize_by='month',
+                                                 output_fields=output_fields,
+                                                 filter_fields=True,
+                                                 return_sql=True)
         sql_statements.append(sql)
         # Just non-training DNHTs
-        dnhts, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
-                                                        other_criteria=other_criteria + " AND bus_type = ''DNH''",
-                                                        field_names=field_names['buses'], summarize_by='month',
-                                                        output_fields=output_fields, filter_fields=True, return_sql=True)
+        with engine.connect() as conn, conn.begin():
+            dissolve_names = {'Primrose buses': pd.read_sql("SELECT code FROM bus_codes", conn)
+                .squeeze()
+                .tolist()}
+        
+        primrose_buses, sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type',
+                                                   other_criteria=other_criteria + " AND destination = ''PRM''",
+                                                   dissolve_names=dissolve_names,
+                                                   field_names=field_names['buses'], summarize_by='month',
+                                                   output_fields=output_fields, filter_fields=True, return_sql=True)
         sql_statements.append(sql)
-        bus_vehicles = bus_vehicles.append(dnhts)
+        bus_vehicles = bus_vehicles.append(primrose_buses)
+        dissolve_names['Primrose buses pax'] = dissolve_names.pop('Primrose buses')
+        primrose_passengers, sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type',
+                                                        other_criteria=other_criteria + " AND destination = ''PRM''",
+                                                        dissolve_names=dissolve_names,
+                                                        field_names=field_names['buses'],
+                                                        summarize_by='month',
+                                                        output_fields=output_fields,
+                                                        filter_fields=True,
+                                                        summary_field='n_passengers',
+                                                        return_sql=True)
+        sql_statements.append(sql)
+        bus_vehicles = bus_vehicles.append(primrose_passengers)
+        
 
         # Rename lodge bus codes to use actual name
         bus_codes = query.get_lookup_table(engine, 'bus_codes')
@@ -189,9 +214,16 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         bus_vehicles.rename(index=bus_codes, inplace=True)
 
         # Query bus passengers
-        bus_passengers, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',                                                   other_criteria=other_criteria, dissolve_names=bus_names,
-                                                        field_names=field_names['buses'], summarize_by='month',
-                                                        output_fields=output_fields, filter_fields=True, summary_stat='SUM', summary_field='n_passengers', return_sql=True)
+        bus_passengers, sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type',
+                                                   other_criteria=other_criteria + " AND destination <> ''PRM''",
+                                                   dissolve_names=bus_names,
+                                                   field_names=field_names['buses'],
+                                                   summarize_by='month',
+                                                   output_fields=output_fields,
+                                                   filter_fields=True,
+                                                   summary_stat='SUM',
+                                                   summary_field='n_passengers',
+                                                   return_sql=True)
         sql_statements.append(sql)
         # Again, rename lodge bus codes to use actual names
         bus_passengers.rename(index=bus_codes, inplace=True)
@@ -199,36 +231,41 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
 
 
         # Query training buses
-        trn_names = {'JV training': [item for k, v in bus_names.iteritems() for item in v],
+        trn_names = {'JV training': [item for k, v in bus_names.iteritems() for item in v] + ['TRN'],
                      'Lodge bus training': ['CDN', 'KRH', 'DBL']}
-        other_criteria = "is_training " + gmp_date_clause.replace("'", "''")
-        trn_buses, sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type',
-                                                     other_criteria=other_criteria, dissolve_names=trn_names,
-                                                     field_names=field_names['buses'], summarize_by='month',
-                                                     output_fields=output_fields, return_sql=True)
+        other_criteria = "(is_training OR bus_type=''TRN'') " + gmp_date_clause.replace("'", "''")
+        trn_buses, sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type',
+                                              other_criteria=other_criteria,
+                                              dissolve_names=trn_names,
+                                              field_names=field_names['buses'],
+                                              summarize_by='month',
+                                              output_fields=output_fields,
+                                              return_sql=True)
         sql_statements.append(sql)
 
         # Query nps_approved
-        primrose_stmt = " AND destination <> 'PRM' "
-        other_criteria = (gmp_date_clause + primrose_stmt).replace("'", "''")
-        approved_vehicles, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
-                                                             other_criteria=other_criteria,
-                                                             field_names=field_names['nps_approved'], summarize_by='month',
-                                                             output_fields=output_fields, return_sql=True,
-                                                                  dissolve_names= {'Other': ['OTH', 'NUL']})
+        #primrose_stmt = " AND destination <> 'PRM' "
+        other_criteria = (gmp_date_clause).replace("'", "''")
+        approved_vehicles, sql = query.crosstab_query(engine, 'nps_approved', start_date, end_date, 'approved_type',
+                                                      other_criteria=other_criteria,
+                                                      field_names=field_names['nps_approved'],
+                                                      summarize_by='month',
+                                                      output_fields=output_fields, return_sql=True,
+                                                      dissolve_names={'Other': ['OTH', 'NUL']})
         approved_codes = query.get_lookup_table(engine, 'nps_approved_codes')
         approved_vehicles.rename(index=approved_codes, inplace=True)
         sql_statements.append(sql)
 
-        # Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
-        other_criteria = "destination = ''PRM'' AND approved_type = ''CON'' "
-        approved_vehicles_primrose, sql = query.crosstab_query_by_datetime(engine, 'nps_approved', start_date, end_date, 'approved_type',
-                                                             other_criteria=other_criteria + gmp_date_clause.replace("'", "''"),
-                                                             field_names=field_names['nps_approved'], summarize_by='month',
-                                                             output_fields=output_fields, return_sql=True)
+        '''# Get concessionaire (i.e., JV) trips to Primrose separately because it's not included in the GMP count
+        #other_criteria = "destination = ''PRM'' AND approved_type = ''CON'' "
+        approved_vehicles_primrose, sql = query.crosstab_query(engine, 'nps_approved', start_date, end_date, 'approved_type',
+                                                               other_criteria=gmp_date_clause.replace("'", "''"),
+                                                               field_names=field_names['nps_approved'], summarize_by='month',
+                                                               output_fields=output_fields, return_sql=True)
         sql_statements.append(sql)
         if len(approved_vehicles_primrose) > 0:
-            approved_vehicles_primrose.index = ['JV (Primrose)']
+            import pdb; pdb.set_trace()
+            approved_vehicles_primrose.index = ['JV (Primrose)']'''
 
         # Rename Nulls to other.
         approved_vehicles.rename(index={'Null': 'Other'}, inplace=True)
@@ -236,28 +273,50 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
 
         # Query all other vehicle types with a regular GROUP BY query
         simple_counts = []
-        other_criteria = (gmp_date_clause + primrose_stmt).lstrip('AND ')
+        other_criteria = (gmp_date_clause).lstrip('AND ')
         for table_name in SIMPLE_COUNT_QUERIES:
-            counts, sql = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, return_sql=True)
+            counts, sql = query.simple_query(engine, table_name,
+                                             field_names=field_names[table_name],
+                                             other_criteria=other_criteria,
+                                             summarize_by='month',
+                                             output_fields=output_fields,
+                                             return_sql=True)
             simple_counts.append(counts)
             sql_statements.append(sql)
         simple_counts = pd.concat(simple_counts, sort=False)
 
         # Get tek and accessibility passengers and number of cyclists
-        accessibility_passengers, sql = query.simple_query_by_datetime(engine, 'accessibility', field_names=field_names['accessibility'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM', return_sql=True)
+        accessibility_passengers, sql = query.simple_query(engine, 'accessibility',
+                                                           field_names=field_names['accessibility'],
+                                                           other_criteria=other_criteria,
+                                                           summarize_by='month',
+                                                           output_fields=output_fields,
+                                                           summary_field='n_passengers',
+                                                           summary_stat='SUM',
+                                                           return_sql=True)
         sql_statements.append(sql)
         if len(accessibility_passengers) > 0:
             accessibility_passengers.index = [PRINT_NAMES['accessibility'] + ' pax']
 
-        tek_passengers, sql = query.simple_query_by_datetime(engine, 'tek_campers', field_names=field_names['tek_campers'], other_criteria=other_criteria, summarize_by='month', output_fields=output_fields, summary_field='n_passengers', summary_stat='SUM', return_sql=True)
+        tek_passengers, sql = query.simple_query(engine, 'tek_campers',
+                                                 field_names=field_names['tek_campers'],
+                                                 other_criteria=other_criteria,
+                                                 summarize_by='month',
+                                                 output_fields=output_fields,
+                                                 summary_field='n_passengers',
+                                                 summary_stat='SUM',
+                                                 return_sql=True)
         if len(tek_passengers) > 0:
             tek_passengers.index = [PRINT_NAMES['tek_campers'] + ' pax']
         sql_statements.append(sql)
 
-        cyclists, sql = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
-                                                        other_criteria=other_criteria, summarize_by='month',
-                                                        output_fields=output_fields, summary_field='n_passengers',
-                                                        summary_stat='SUM', return_sql=True)
+        cyclists, sql = query.simple_query(engine, 'cyclists',
+                                           field_names=field_names['cyclists'],
+                                           other_criteria=other_criteria,
+                                           summarize_by='month',
+                                           output_fields=output_fields,
+                                           summary_field='n_passengers',
+                                           summary_stat='SUM', return_sql=True)
         sql_statements.append(sql)
         if len(cyclists) > 0:
             cyclists.index = [PRINT_NAMES['cyclists']]
@@ -266,7 +325,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
                              bus_passengers,
                              trn_buses,
                              approved_vehicles,
-                             approved_vehicles_primrose,
+                             #approved_vehicles_primrose,
                              simple_counts,
                              accessibility_passengers,
                              tek_passengers,
@@ -285,7 +344,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         all_data = all_data.reindex(index=SORT_ORDER, columns=['May', 'Jun', 'Jul', 'Aug', 'Sep', 'total']).fillna(0)
 
         # Set a multiindex for GMP stats (rows)
-        gmp_rows = all_data.index[:-5]
+        gmp_rows = all_data.index[:-4]
         all_data.index = [['GMP'] * len(gmp_rows) + ['Non-GMP'] * (len(all_data) - len(gmp_rows)), all_data.index]
 
         # Calculate totals
@@ -297,7 +356,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         yearly_data.append(all_data)
 
     # Combine all years into one df and calculate % change if
-    all_data = pd.concat(yearly_data, axis=1)
+    all_data = pd.concat(yearly_data, axis=1, sort=False)
     last_year = years[-1]
     for year in years[:-1]:
         all_data.loc[:, ('total_pct_change', 'from_%s' % year)] = \
@@ -316,6 +375,51 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         for stmt in sql_statements:
             f.write(stmt + '\n\n%s\n\n' % break_str)
         f.write('\n\n\n')
+
+    # Write metadata
+    descr = "This text file {out_csv} summarizes data from the Savage Check Station database by month and vehicle type for {start_year}-{end_year}. Vehicles that count toward the General Management Plan 10,512 vehicle limit (labeled 'GMP' in the first column of the text file) are tallied separately from those that do not. Veehicle lables are defined using the following types of vehicles (all labels ending with 'pax' represent a count of passengers for the corresponding vehicle label): \n"
+    descr += "\n\t- Long tour: All Tundra Wilderness Tour, Kantishna Experience, and Eielson Excursion buses that were not training" \
+             "\n\t- Short tour: All Denali Natural History Tours going further west than Primrose that were not training" \
+             "\n\t- Transit: All Transit (formely 'Shuttle'), Camper, Other, Commerical charter, Spare, Rescue, Unknown, and Null bus types that were not training" \
+             "\n\t- JV Training: All concessionaire buses marked as training" \
+             "\n\t- CD-NF buses: All Camp Denali/North Face buses that were not training" \
+             "\n\t- DBL buses: All Denali Backcountry Lodge buses that were not training" \
+             "\n\t- KRH buses: All Kantishna Roadhouse buses that are were training" \
+             "\n\t- Lodge bus training: All lodge buses marked as trianing" \
+             "\n\t- Inholders: All private vehicles using a Right-of-Way special use road permit" \
+             "\n\t- Subsistence: All private vehicles using a Subsistence special user road permit" \
+             "\n\t- Tek campers: All private vehicles camping at the Teklanika Campground" \
+             "\n\t- Prophos: All private vehicles using a professional photographer and commerical filming special use road permit" \
+             "\n\t- Accessibility: All private vehicles using an accessibility special use road permit" \
+             "\n\t- Researchers: All private vehicles using an 'NPS Approved' special use road permit for conducting research" \
+             "\n\t- Education: All private vehicles using an 'NPS Approved' special use road permit for education purposes (typically the Murie Science and Learning Center)" \
+             "\n\t- JV: All private vehicles using an 'NPS Approved' special use road permit assigned to the concessionaire" \
+             "\n\t- NPS: All government vehicles" \
+             "\n\t- Primrose buses: All JV buses going only to Primrose Rest Area that were not training" \
+             "\n\t- Contractors: All private vehicles using a 'Contractor' special use road permit" \
+             "\n\t- Cyclists: All visitors riding bicycles"
+
+    descr += "\n\nOther files created:" \
+             "\n\t- {out_sql_txt}: All Postgres SQL commands submitted to query the data"
+    descr.format(out_csv=os.path.basename(out_csv),
+                 start_year=years[0],
+                 end_year=years[-1],
+                 out_sql_txt=os.path.basename(out_sql_txt))
+
+    command = 'python ' + subprocess.list2cmdline(sys.argv)
+    datestamp = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+    msg = descr + \
+          "\n\nFor questions, please contact Sam Hooper at samuel_hooper@nps.gov\n" \
+          "\nSCRIPT: {script}" \
+          "\nTIME PROCESSED: {datestamp}" \
+          "\nCOMMAND: {command}"\
+              .format(script=__file__,
+                      datestamp=datestamp,
+                      command=command)
+
+    readme_path = out_csv.replace('.csv', '_README.txt')
+    with open(readme_path, 'w') as readme:
+        readme.write(msg)
 
     print '\nOutput file written to: %s' % out_csv
 

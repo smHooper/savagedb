@@ -349,11 +349,10 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
 
     # Query GOVs
     #simple_output_fields = get_output_field_names(date_range, summarize_by)
-    where_clause = "datetime::date BETWEEN '{start_date}' AND '{end_date}' " \
-                   "AND destination <> 'PRM' "\
+    where_clause = "datetime::date BETWEEN '{start_date}' AND '{end_date}' "\
         .format(start_date=start_date, end_date=end_date) \
         + other_criteria
-    govs, gov_sql = query.simple_query_by_datetime(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=output_fields, get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
+    govs, gov_sql = query.simple_query(engine, 'nps_vehicles', field_names=field_names['nps_vehicles'], other_criteria=where_clause, summarize_by=summarize_by, output_fields=output_fields, get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
     govs.index = ['GOV']
 
     # POVs
@@ -378,22 +377,23 @@ def query_all_vehicles(output_fields, field_names, start_date, end_date, date_ra
 
 def query_buses(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, is_subquery=False, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
 
-    if use_gmp_vehicles:
+    # Remove this error since this is no longer true (as of 3/22/19)
+    '''if use_gmp_vehicles:
         if value_filter == 'DNH' or category_filter == 'Short tour':
             raise ValueError("You selected the option to limit this query to only vehicles counted toward the"
                              " GMP limit (10,512), but you also selected DNHTs as the only buses to count. DNHTs,"
                              " however, do not count toward that limit. Either remove the SQL value filter for DNHTs"
                              " or deselect the 'Use GMP vehicles' option")
-        other_criteria += " AND bus_type <> 'DNH' "
+        #other_criteria += " AND bus_type <> 'DNH' "
         # remove it from any position in value_filter if it's in there
-        value_filter = value_filter.replace(', DNH,', '').replace('DNH, ', '').replace(', DNH', '')
+        value_filter = value_filter.replace(', DNH,', '').replace('DNH, ', '').replace(', DNH', '')'''
 
     if value_filter:
         values = ["'%s'" % v for v in value_filter.split(',')]
         other_criteria += " AND bus_type IN (%s) " % ','.join(values)
 
     ########## Query non-training buses
-    bus_other_criteria = "is_training = ''false'' " \
+    bus_other_criteria = "(is_training = ''false'' OR bus_type <> ''TRN'') " \
                      "AND datetime::date between ''{start_date}'' AND ''{end_date}'' "\
                      .format(start_date=start_date, end_date=end_date) \
                      + other_criteria.replace("'", "''")
@@ -409,7 +409,7 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     #   is being called as just a query of buses, don't aggregate at all so no need to set dissolve_names
     if is_subquery:
         bus_names = {'VTS': ['SHU', 'CMP'],
-                     'Other JV bus': ['OTH', 'NUL'],
+                     'Other JV bus': ['OTH', 'NUL', 'CHT', 'SPR', 'RSC', 'UNK'],
                      'Long tour': ['KXP', 'EXC', 'TWT', 'WIW'],
                      'Short tour': ['DNH'],
                      'Lodge bus': ['KRH', 'DBL', 'CDN']
@@ -420,10 +420,10 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
 
     kwargs['output_fields'] = output_fields
 
-    buses, buses_sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, summary_stat=summary_stat, return_sql=True, summary_field=summary_field, start_time=start_time, end_time=end_time, **kwargs)
+    buses, buses_sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, summary_stat=summary_stat, return_sql=True, summary_field=summary_field, start_time=start_time, end_time=end_time, **kwargs)
 
     ######### Query training buses
-    trn_other_criteria = "is_training " \
+    trn_other_criteria = "(is_training OR bus_type = ''TRN'') " \
                          "AND datetime::date between ''{start_date}'' AND ''{end_date}'' " \
                         .format(start_date=start_date, end_date=end_date) \
                         + other_criteria.replace("'", "''")
@@ -431,12 +431,12 @@ def query_buses(output_fields, field_names, start_date, end_date, date_range, su
     kwargs['other_criteria'] = trn_other_criteria
 
     if is_subquery:
-        kwargs['dissolve_names'] = {'Other JV bus': ['SHU', 'CMP', 'KXP', 'EXC', 'TWT', 'WIW', 'DNH', 'OTH', 'NUL'],
+        kwargs['dissolve_names'] = {'Other JV bus': ['SHU', 'CMP', 'KXP', 'EXC', 'TWT', 'WIW', 'DNH', 'OTH', 'NUL', 'CHT', 'SPR', 'RSC', 'UNK', 'TRN'],
                                     'Lodge bus': ['KRH', 'DBL', 'CDN']
                                     }
 
     # Get appropriate field names as with non-training buses
-    training_buses, trn_sql = query.crosstab_query_by_datetime(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, summary_stat=summary_stat, return_sql=True, summary_field=summary_field, start_time=start_time, end_time=end_time, **kwargs)
+    training_buses, trn_sql = query.crosstab_query(engine, 'buses', start_date, end_date, 'bus_type', get_totals=get_totals, summary_stat=summary_stat, return_sql=True, summary_field=summary_field, start_time=start_time, end_time=end_time, **kwargs)
 
 
 
@@ -475,7 +475,7 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
                         + other_criteria.replace("'", "''")
 
     #output_fields = get_output_field_names(date_range, summarize_by)
-    data, sql = query.crosstab_query_by_datetime(engine, 'nps_vehicles', start_date, end_date, 'work_group',
+    data, sql = query.crosstab_query(engine, 'nps_vehicles', start_date, end_date, 'work_group',
                                             field_names=field_names['nps_vehicles'], other_criteria=other_criteria,
                                             summarize_by=summarize_by, output_fields=output_fields, filter_fields=True,
                                             get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
@@ -520,7 +520,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
     all_data = []
     sql_statements = []
     for table_name, print_name, criteria in sql_queries:
-        data, sql = query.simple_query_by_datetime(engine, table_name, field_names=field_names[table_name],
+        data, sql = query.simple_query(engine, table_name, field_names=field_names[table_name],
                                               summarize_by=summarize_by, output_fields=output_fields,
                                               other_criteria="datetime::date between '%s' AND '%s' " %
                                                              (start_date, end_date) + criteria + other_criteria,
@@ -545,7 +545,7 @@ def query_pov(output_fields, field_names, start_date, end_date, date_range, summ
 
 def query_bikes(output_fields, field_names, start_date, end_date, date_range, summarize_by, engine, sort_order=None, other_criteria='', get_totals=False, value_filter='', category_filter='', summary_stat='COUNT', summary_field='datetime', start_time=None, end_time=None, use_gmp_vehicles=False):
 
-    data, sql = query.simple_query_by_datetime(engine, 'cyclists', field_names=field_names['cyclists'],
+    data, sql = query.simple_query(engine, 'cyclists', field_names=field_names['cyclists'],
                                           summarize_by=summarize_by, output_fields=output_fields,
                                           other_criteria="datetime::date between '%s' AND '%s' " %
                                                          (start_date, end_date) + other_criteria,
@@ -827,7 +827,7 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
 
     command = 'python ' + subprocess.list2cmdline(sys.argv)
 
-    descr = "This folder contains queried data and derived plots from the Savage Box database. Data were summarized " \
+    descr = "This folder contains queried data and derived plots from the Savage Check Station database. Data were summarized " \
             "by {agg_stat}{summary_stat} of {summary_field} by {summarize_by} for dates between {start} and {end}. "\
         .format(agg_stat='the %s of the %s per ' % (summary_functions[agg_stat.upper()], aggregate_by) if agg_stat else '',
                 summarize_by=summarize_by,
@@ -961,17 +961,17 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
             sql_criteria = sql_criteria.split('WHERE')[-1].split('where')[-1]
         sql_criteria = " AND " + sql_criteria
 
-    if use_gmp_vehicles:
-       sql_criteria += " AND destination <> 'PRM' "
+    '''if use_gmp_vehicles:
+       sql_criteria += " AND destination <> 'PRM' " '''
 
     destination_criteria = ''
     if destinations:
-        if use_gmp_vehicles and 'PRM' in destinations:
+        '''if use_gmp_vehicles and 'PRM' in destinations:
             warnings.warn("Primrose was included in destinations, but you also elected to only query vehicles"
                           " that count toward the annual GMP limit (10,512). Vehicles going to Primrose will"
                           " not be counted in this query.")
             destinations = destinations.replace(', PRM,', '').replace('PRM,', '')\
-                .replace(', PRM', '').replace('PRM', '')
+                .replace(', PRM', '').replace('PRM', '')'''
         if destinations: # check this because if PRM was the only dest, the SQL will throw an error
             destinations = ', '.join(["'%s'" % d.strip() for d in destinations.split(',')])
             destination_criteria = " AND destination IN (%s) " % destinations
