@@ -12,7 +12,7 @@ from sqlalchemy import create_engine
 sys.path.append(os.path.join(os.path.join(os.path.dirname(__file__), '..'), 'query'))
 from query import connect_db, get_lookup_table
 
-
+pd.options.mode.chained_assignment = None
 
 DUPLICATE_FIELDS_ALL = ['datetime', 'n_passengers', 'destination', 'comments']
 DUPLICATE_FIELDS_TBL = {'accessibility': [],
@@ -62,12 +62,8 @@ def check_numeric_fields(data, postgres_engine, table_name, filename=None):
     for field in numeric_fields:
         if field in data.columns:
             if data[field].dtype == np.object:
-                try:
-                    if data[field].str.strip().str.contains('[^\d*]').fillna(False).any():
-                        invalid_fields.append(field)
-                except Exception as e:
-                    print e
-                    import pdb; pdb.set_trace()
+                if data[field].str.strip().str.contains('[^\d*]').fillna(False).any():
+                    invalid_fields.append(field)
 
     if invalid_fields:
         raise ValueError('The following numeric fields in the table {table}{file} contain non-numeric characters:\n\t-{fields}'
