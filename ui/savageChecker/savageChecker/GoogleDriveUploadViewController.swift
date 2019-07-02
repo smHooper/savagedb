@@ -210,17 +210,6 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
     }//*/
     
     
-    func getCleanedDeviceName() -> String? {
-        let deviceName = UIDevice.current.name
-        var cleanedDeviceName: String?
-        if let regex = try? NSRegularExpression(pattern: "[^a-zA-Z0-9]", options: .caseInsensitive) {
-            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "_")
-        }
-        
-        return cleanedDeviceName
-    }
-    
-    
     private func upload(_ parentID: String?, path: String, uploadedFileName: String? = nil, MIMEType: String, onCompleted: ((String?, Error?) -> ())?) {
         
         guard let data = FileManager.default.contents(atPath: path) else {

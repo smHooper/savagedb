@@ -178,7 +178,7 @@ class ShiftInfoViewController: BaseFormViewController {
             // Try to connect to the DB
             self.db = try? Connection(dbPath)
             if self.db == nil {
-                os_log("Connecting to DB in ShiftInfoViewController.loadData() circa line 169 failed", log: OSLog.default, type: .debug)
+                os_log("Connecting to DB in ShiftInfoViewController.loadData() circa line 179 failed", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Connection failed with dbPath \(dbPath)", title: "Database connection error")
             }
 

@@ -217,6 +217,16 @@ extension UIViewController {
     }
     
     
+    func getCleanedDeviceName() -> String? {
+        let deviceName = UIDevice.current.name
+        var cleanedDeviceName: String?
+        if let regex = try? NSRegularExpression(pattern: "[^a-zA-Z0-9]", options: .caseInsensitive) {
+            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "_")
+        }
+        
+        return cleanedDeviceName
+    }
+    
     // Get the datestamp for the dbPath
     func getFileNameTag() -> String {
         let formatter = DateFormatter()
@@ -225,7 +235,7 @@ extension UIViewController {
         formatter.timeStyle = .none
         let dateString = formatter.string(from: now).replacingOccurrences(of: "/", with: "-")//.replacingOccurrences(of: "1", with: "2")
         
-        return dateString
+        return "\(dateString)_\(getCleanedDeviceName() ?? UIDevice.current.name)"
     }
     
     
