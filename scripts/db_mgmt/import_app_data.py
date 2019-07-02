@@ -13,7 +13,7 @@ from query import connect_db, get_lookup_table
 from validate_app_data import LOOKUP_FIELDS, replace_lookup_values, BOOLEAN_FIELDS, clean_app_data
 
 
-def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
+def main(data_dir, sqlite_path, connection_txt, archive_dir="", data_files=None):
 
     sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
@@ -80,11 +80,18 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
 
     # Update the imported column
     try:
-        with sqlite_engine.connect() as conn, conn.begin():
-            session_columns = pd.read_sql_table('sessions', conn).columns
-        if 'imported' not in session_columns:
-            sqlite_engine.execute("ALTER TABLE sessions ADD COLUMN imported INTEGER;")
-        sqlite_engine.execute("UPDATE sessions SET imported = 1;")
+        # Loop through each file and set it's 'imported' field. If only a single path was given, set data_files equal to
+        #   a 1-item list of just the path
+        if not data_files:
+            data_files = [sqlite_path]
+
+        for db_path in data_files.split(';'):
+            sqlite_engine = create_engine("sqlite:///" + db_path)
+            with sqlite_engine.connect() as conn, conn.begin():
+                session_columns = pd.read_sql_table('sessions', conn).columns
+            if 'imported' not in session_columns:
+                sqlite_engine.execute("ALTER TABLE sessions ADD COLUMN imported INTEGER;")
+            sqlite_engine.execute("UPDATE sessions SET imported = 1;")
 
     except:
         warnings.warn("Failed to update 'imported' field in the data from the app. If you try to run this script again,"
@@ -94,16 +101,27 @@ def main(data_dir, sqlite_path, connection_txt, archive_dir=""):
     if not os.path.isdir(archive_dir):
         try:
             os.mkdir(archive_dir)
-            shutil.copy(sqlite_path, archive_dir)
+            #shutil.copy(sqlite_path, archive_dir)
         except:
             pass
-    shutil.copy(sqlite_path, archive_dir)#'''
+    if data_files:
+        for path in data_files.split(';'):
+            shutil.copy(path, archive_dir)
+    else:
+        shutil.copy(sqlite_path, archive_dir)
 
     # Clean up the text files and temporary dir created by validate_app_data.py
     try:
         shutil.rmtree(data_dir)
     except:
         pass
+
+    # Try to delete the "combined_data.db"
+    if os.path.basename(sqlite_path) == 'combined_data.db':
+        try:
+            os.remove(sqlite_path)
+        except:
+            pass
 
 
 if __name__ == '__main__':
