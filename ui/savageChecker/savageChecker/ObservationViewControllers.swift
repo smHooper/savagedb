@@ -489,6 +489,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
+    func getAutoCompleteOptions(textField: UITextField, minCharacters: Int = 3) {
+        
+    }
+    
     // Setup dropdown background view
     func setDropdownBackground(textField: DropDownTextField) {
         // Make sure the background is clear
@@ -674,28 +678,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     // Send a notification with the value from pickerView
     @objc func handleDatetimePicker(sender: UIDatePicker) {
         
-        if let currentValue = self.textFields[sender.tag]?.text {
-            var datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
+        if self.textFields[sender.tag]?.text != nil {//let currentValue = self.textFields[sender.tag]?.text {
+            let datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
 
             // If this is a date field, check if the date is today. If not, send an alert to make sure this is intentional
             if self.textFieldIds[sender.tag].type == "date" {
-                let today = Date()
-                let formatter = DateFormatter()
-                formatter.dateStyle = .short
-                formatter.timeStyle = .none
-                let todayString = formatter.string(from: today)
-                if datetimeString != todayString && sendDateEntryAlert {
-                    let alertTitle = "Date Entry Alert"
-                    let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
-                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                    alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString}))
-                    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
-                    alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString;
-                        sendDateEntryAlert = false}))
-                    present(alertController, animated: true, completion: nil)
-                } else {
-                    self.textFields[sender.tag]?.text = datetimeString
-                }
+                checkDateEntry(textFieldId: sender.tag, datetimeString: datetimeString)
             } else {
                 self.textFields[sender.tag]?.text = datetimeString
             }
@@ -733,34 +721,39 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     
+    func checkDateEntry(textFieldId: Int, datetimeString: String) {
+        let today = Date()
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        formatter.timeStyle = .none
+        let todayString = formatter.string(from: today)
+        if datetimeString != todayString && sendDateEntryAlert {
+            let alertTitle = "Date Entry Alert"
+            let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[textFieldId]?.text = datetimeString}))
+            alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))//{handler in datetimeString = currentValue}))
+            alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[textFieldId]?.text = datetimeString;
+                sendDateEntryAlert = false}))
+            present(alertController, animated: true, completion: nil)
+        } else {
+            self.textFields[textFieldId]?.text = datetimeString
+        }
+
+    }
+    
     // Check that the done button on custom DatePicker was pressed
     @objc func datetimeDonePressed(sender: UIBarButtonItem) {
 
         
-        if let currentValue = self.textFields[sender.tag]?.text {
+        if self.textFields[sender.tag]?.text != nil {//let currentValue = self.textFields[sender.tag]?.text {
             let datetimePickerView = textFields[sender.tag]?.inputView as! UIDatePicker
-            var datetimeString = formatDatetime(textFieldId: sender.tag, date: datetimePickerView.date)
+            let datetimeString = formatDatetime(textFieldId: sender.tag, date: datetimePickerView.date)
             //var datetimeString = formatDatetime(textFieldId: sender.tag, date: sender.date)
             
             // If this is a date field, check if the date is today. If not, send an alert to make sure this is intentional
             if self.textFieldIds[sender.tag].type == "date" {
-                let today = Date()
-                let formatter = DateFormatter()
-                formatter.dateStyle = .short
-                formatter.timeStyle = .none
-                let todayString = formatter.string(from: today)
-                if datetimeString != todayString && sendDateEntryAlert {
-                    let alertTitle = "Date Entry Alert"
-                    let alertMessage = "You selected a date other than today. Was this intentional? If not, press Cancel."
-                    let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
-                    alertController.addAction(UIAlertAction(title: "Yes", style: .default, handler: {action in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString}))
-                    alertController.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: {handler in datetimeString = currentValue}))
-                    alertController.addAction(UIAlertAction(title: "Yes, and don't ask again", style: .default, handler: {handler in self.dismissInputView(); self.textFields[sender.tag]?.text = datetimeString;
-                        sendDateEntryAlert = false}))
-                    present(alertController, animated: true, completion: nil)
-                } else {
-                    self.textFields[sender.tag]?.text = datetimeString
-                }
+                checkDateEntry(textFieldId: sender.tag, datetimeString: datetimeString)
             } else {
                 self.textFields[sender.tag]?.text = datetimeString
             }
@@ -774,6 +767,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         //textFields[sender.tag]?.text = datetimeString
         textFields[sender.tag]?.resignFirstResponder()
     }
+    
+    
+    
     
     
     @objc func updateData(){
@@ -804,6 +800,15 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         self.navigationBar.heightAnchor.constraint(equalToConstant: navigationBarSize).isActive = true
         // Customize buttons and title in all subclasses
     }
+    
+    func checkDateFields() {
+        for (offset: i, element: (label: label, placeholder: _, type: type)) in self.textFieldIds.enumerated() {
+            if type == "date" {
+                checkDateEntry(textFieldId: i, datetimeString: self.textFields[i]?.text ?? "")
+            }
+        }
+    }
+    
     
 }
 
