@@ -78,3 +78,19 @@ let navBarColors = ["Bus": UIColor(red: 145/255, green: 90/255, blue: 119/255, a
                     "Subsistence": UIColor(red: 214/255, green: 204/255, blue: 45/255, alpha: 1),
                     "Road Lottery": UIColor(red: 145/255, green: 90/255, blue: 119/255, alpha: 1),
                     "Other": UIColor(red: 145/255, green: 90/255, blue: 119/255, alpha: 1)]
+
+let tableNames = ["BusObservationViewController": "buses",
+                  "LodgeBusObservationViewController": "buses",
+                  "NPSVehicleObservationViewController": "nps_vehicles",
+                  "NPSApprovedObservationViewController": "nps_approved",
+                  "NPSContractorObservationViewController": "nps_contractors",
+                  "EmployeeObservationViewController": "employee_vehicles",
+                  "RightOfWayObservationViewController": "inholders",
+                  "TeklanikaCamperObservationViewController": "tek_campers",
+                  "CyclistObservationViewController": "cyclists",
+                  "PhotographerObservationViewController": "photographers",
+                  "AccessibilityObservationViewController": "accessibility",
+                  "SubsistenceObservationViewController": "subsistence",
+                  "RoadLotteryObservationViewController": "road_lottery",
+                  "OtherObservationViewController": "other_vehicles"]
+let autoCompleteDBURL = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("autoCompleteOptions.db")

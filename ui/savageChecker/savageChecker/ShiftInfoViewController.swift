@@ -31,19 +31,19 @@ class ShiftInfoViewController: BaseFormViewController {
     //MARK: - Initialization
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
-                             (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                            (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                            (label: "Open time",     placeholder: "Select the check station openning time", type: "time", column: "open_time"),
+                            (label: "Close time",    placeholder: "Select the check station closing time", type: "time", column: "close_time")]
         self.dropDownMenuOptions = ["Observer name": observers]
     }
     
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Open time",     placeholder: "Select the check station openning time", type: "time"),
-                             (label: "Close time",    placeholder: "Select the check station closing time", type: "time")]
+        self.textFieldIds =  [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                              (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                              (label: "Open time",     placeholder: "Select the check station openning time", type: "time", column: "open_time"),
+                              (label: "Close time",    placeholder: "Select the check station closing time", type: "time", column: "close_time")]
         self.dropDownMenuOptions = ["Observer name": observers]
     }
     
@@ -273,7 +273,7 @@ class ShiftInfoViewController: BaseFormViewController {
         }
     }
     
-    @objc func saveButtonPressed(){
+    @objc override func saveButtonPressed(){
         
         // Check that all text fields are filled in
         let observerName = self.dropDownTextFields[0]?.text ?? ""
@@ -439,7 +439,7 @@ class ShiftInfoViewController: BaseFormViewController {
         do {
             self.db = try Connection(dbPath)
         } catch {
-            os_log("Couldn't cofigure the DB", log: OSLog.default, type: .debug)
+            os_log("Couldn't configure the DB", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Connection failed with dbPath \(dbPath)", title: "Database connection error")
         }
         
@@ -447,12 +447,12 @@ class ShiftInfoViewController: BaseFormViewController {
         
         // MARK: - Session table
         let idColumn = Expression<Int64>("id")
-        let observerNameColumn = Expression<String>("observer_name")
-        let dateColumn = Expression<String>("date")
-        let openTimeColumn = Expression<String>("open_time")
-        let closeTimeColumn = Expression<String>("close_time")
-        let uploadedColumn = Expression<Bool>("uploaded")
-        let importedColumn = Expression<Bool>("imported")
+        let observerNameColumn = Expression<String?>("observer_name")
+        let dateColumn = Expression<String?>("date")
+        let openTimeColumn = Expression<String?>("open_time")
+        let closeTimeColumn = Expression<String?>("close_time")
+        let uploadedColumn = Expression<Bool?>("uploaded")
+        let importedColumn = Expression<Bool?>("imported")
         
         let sessionsTable = Table("sessions")
         do {

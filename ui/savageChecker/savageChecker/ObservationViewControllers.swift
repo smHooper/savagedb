@@ -17,14 +17,15 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     //MARK: - Properties
     //MARK: Textfield layout properties
-    var textFieldIds: [(label: String, placeholder: String, type: String)] = []
+    var textFieldIds: [(label: String, placeholder: String, type: String, column: String)] = []
     var dropDownMenuOptions = Dictionary<String, [String]>()
     var textFields = [Int: UITextField]()
     var dropDownTextFields = [Int: DropDownTextField]()
     var boolSwitches = [Int: UISwitch]()
     var checkBoxes = [Int: CheckBoxControl]()
     var labels = [UILabel]()
-
+    var autoCompleteOptions = [String]()
+    var lastTextFieldValue = ""
     
     // track when the text field in focus changes with a property observer
     var currentTextField = 0 {
@@ -209,7 +210,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             containerHeight += stackHeight + CGFloat(self.textFieldSpacing)
             
             switch(textFieldIds[i].type) {
-            case "normal", "date", "time", "number":
+            case "normal", "date", "time", "number", "autoComplete":
                 // Don't do anything special
                 textFields[i] = textField
                 container.addSubview(textFields[i]!)
@@ -219,6 +220,10 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 textFields[i]?.topAnchor.constraint(equalTo: labels[i].bottomAnchor, constant: self.sideSpacing).isActive = true
                 textFields[i]?.heightAnchor.constraint(equalToConstant: textFieldHeight).isActive = true
                 lastBottomAnchor = (textFields[i]?.bottomAnchor)!
+                
+                //if self.textFieldIds[i].type == "autoComplete" {
+                self.textFields[i]?.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
+                //}
             
             case "dropDown":
                 // re-configure the text field
@@ -409,6 +414,9 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     //######################################################################
     func textFieldDidBeginEditing(_ textField: UITextField) {
         
+        // Used for autoComplete. Reset to whatever the value of this field is so this field isn't being compared to the last one
+        self.lastTextFieldValue = textField.text ?? ""
+        
         // Dismiss all dropdowns except this one if it is a dropDown
         for dropDownID in dropDownTextFields.keys {
             if dropDownID != textField.tag {
@@ -418,7 +426,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         
         let fieldType = textFieldIds[textField.tag].type
         switch(fieldType){
-        case "normal":
+        case "normal", "autoComplete":
             textField.selectAll(nil)
         case "number":
             textField.selectAll(nil)
@@ -454,6 +462,84 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         return true
     }
     
+    
+    func getAutoCompleteOptions(columnName: String, tableName: String, startsWith: String) {
+        
+        // Create the SQL statement that will count the instances of unique values in columnName and return them in order of occurrence, most frequent first
+        let sql = "SELECT options FROM (SELECT \(columnName) as options, count(\(columnName)) FROM \(tableName) WHERE \(columnName) LIKE '\(startsWith)%' GROUP BY \(columnName) ORDER BY count(\(columnName)) DESC);"
+        print(sql)
+        //let autoCompleteDBURL = URL(fileURLWithPath: autoCompleteDBP)
+        if !FileManager.default.fileExists(atPath: autoCompleteDBURL.path) {
+            do {
+                try FileManager.default.copyItem(at: URL(fileURLWithPath: dbPath), to: autoCompleteDBURL)
+            } catch {
+                return
+            }
+        }
+        guard let autoCompleteDB = try? Connection(autoCompleteDBURL.path) else {
+            return
+        }
+        
+        // Try to run the query, appending each item if it's not blank
+        do {
+            for row in try autoCompleteDB.run(sql) {
+                let value = row.first as? String ?? startsWith
+                if !value.isEmpty {
+                    self.autoCompleteOptions.append(value)
+                }
+            }
+        } catch {
+            return
+        }
+    }
+    
+    
+    // Selector method to detect change
+    @objc func textFieldChanged(_ textField: UITextField) {
+        
+        // String(describing: delegate) will produce "Optional(savageCheck.<className>: <memory address>"
+        let className = "\(String(describing: textField.delegate).split(separator: ".")[1].split(separator: ":")[0])"
+        if let tableName = tableNames[className] {
+            let fieldInfo = self.textFieldIds[textField.tag]
+            let columnName = fieldInfo.column
+            let userInputLength = textField.text?.count ?? 0
+            let searchString = textField.text ?? "_"
+            
+            if fieldInfo.type == "autoComplete" && userInputLength >= 3 && self.lastTextFieldValue.count <= userInputLength {
+                
+                // If the autoCompleteOptions list is empty, query the mast list to try to populate it
+                if self.autoCompleteOptions.count == 0 {
+                    getAutoCompleteOptions(columnName: columnName, tableName: tableName, startsWith: searchString)
+                }
+                // Otherwise, try to filter the existing options by only those that start with the text that's already been entered
+                else {
+                    self.autoCompleteOptions = self.autoCompleteOptions.filter({
+                        (option) -> Bool in option.starts(with: searchString)
+                    })
+                }
+                
+                // It's possible that there might not be any options so check the count first before proceeding
+                if self.autoCompleteOptions.count > 0 {
+                    textField.text = self.autoCompleteOptions[0]
+                    
+                    // Highlight everything that the user has not typed so if they continue to type, it will be overwritten
+                    let startPosition = textField.position(from: textField.beginningOfDocument, offset: userInputLength)
+                    let endPosition = textField.position(from: textField.endOfDocument, offset: 0)
+                    
+                    if startPosition != nil && endPosition != nil {
+                        textField.selectedTextRange = textField.textRange(from: startPosition!, to: endPosition!)
+                        if textField.text?.last ?? Character("") != " " {
+                            
+                        }
+                    }
+                }
+            }
+        }
+        self.lastTextFieldValue = textField.text ?? ""
+        
+    }
+    
+    
     // Hide the keyboard when the return button is pressed
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
@@ -462,6 +548,12 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     // When finished editing, check if the data model instance should be updated
     func textFieldDidEndEditing(_ textField: UITextField) {
+        
+        // If this is an autoComplete text field, empty the autoCompleteOptions array for the next text field
+        if self.textFieldIds[textField.tag].type == "autoComplete" {
+            self.autoCompleteOptions.removeAll()
+        }
+        
         // Don't update after a dropDown finished editing because this method is
         //  called when it's first pressed and when a menu item is selected.
         //  dropDownDidChange() handles the latter via notification, and the former
@@ -470,6 +562,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             updateData()
             dismissInputView()
         }
+        
+        
     }
     
     
@@ -489,9 +583,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
-    func getAutoCompleteOptions(textField: UITextField, minCharacters: Int = 3) {
-        
-    }
+
     
     // Setup dropdown background view
     func setDropdownBackground(textField: DropDownTextField) {
@@ -802,9 +894,42 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     }
     
     func checkDateFields() {
-        for (offset: i, element: (label: label, placeholder: _, type: type)) in self.textFieldIds.enumerated() {
+        for (offset: i, element: (label: label, placeholder: _, type: type, column: column)) in self.textFieldIds.enumerated() {
             if type == "date" {
                 checkDateEntry(textFieldId: i, datetimeString: self.textFields[i]?.text ?? "")
+            }
+        }
+    }
+    
+    func saveButtonPressed() {
+        // populate the autoCompleteDb
+        var fields = [String]()
+        var values = [String]()
+        var className = ""
+        
+        // Loop through all fields and get the column names and values for any autoComplete fields
+        for (i, fieldInfo) in self.textFieldIds.enumerated() {
+            if fieldInfo.type == "autoComplete" {
+                fields.append(fieldInfo.column)
+                values.append("'\(self.textFields[i]?.text ?? "")'") // put single quotes around value since it's a string
+                // Get the classname each time (even though it should be the same with each iteration) because it can only be retrieved from a textField's delegate
+                className = "\(String(describing: self.textFields[i]?.delegate).split(separator: ".")[1].split(separator: ":")[0])"
+            }
+        }
+        
+        // If there were any autoComplete textFields in this ViewController, insert their values into the autoCompleteDB
+        if fields.count > 0, let tableName = tableNames[className] {
+            let sql = "INSERT INTO \(tableName) (\(fields.joined(separator: ", "))) VALUES (\(values.joined(separator: ", ")))"
+            if let autoCompleteDB = try? Connection(autoCompleteDBURL.path) {
+                do {
+                    try autoCompleteDB.execute(sql)
+                } catch let Result.error(message, _, _) {
+                    os_log("Record insertion failed", log: OSLog.default, type: .debug)
+                    print( "Could not insert new record because \(message)")
+                } catch {
+                    os_log("Record insertion failed", log: OSLog.default, type: .debug)
+                    print("Could not insert new record because \(error.localizedDescription)")
+                }
             }
         }
     }
@@ -881,13 +1006,13 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name", type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
@@ -896,13 +1021,13 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name", type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
@@ -940,12 +1065,13 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             }
         }
         
-        // Make sure if driverName is a field for this vehicle type, the UITextField has autocapitalization set
+        // This doesn't work when the autoComplete is in effect because as soon as the 
+        /*// Make sure if driverName is a field for this vehicle type, the UITextField has autocapitalization set
         for (index, fieldInfo) in self.textFieldIds.enumerated() {
             if fieldInfo.label == "Driver's full name" {
                 self.textFields[index]?.autocapitalizationType = .words
             }
-        }
+        }*/
     }
     
     // Parse a JSON string from a QR code. The value of each item in the JSON string will only be used to fill a
@@ -1058,9 +1184,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     
-    // Configure tableview controller before it's presented
-    @objc func saveButtonPressed() {
-        
+    /*// Configure tableview controller before it's presented
+    @objc override func saveButtonPressed() {
+     
+        super.saveButtonPressed()
+     
         if !checkCurrentDb() { return }
         // Reconnect in case the last time save button was pressed, the db didn't exist
         self.db = try? Connection(dbPath)
@@ -1088,6 +1216,10 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         
         dismissController()
         
+    }*/
+    
+    @objc override func saveButtonPressed() {
+        super.saveButtonPressed()
     }
     
     func dismissController() {
@@ -1402,15 +1534,15 @@ class BusObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
-                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown",     column: "bus_type"),
+                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "autoComplete", column: "bus_number"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Training bus?", placeholder: "",                                    type: "checkBox",     column: "is_training"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -1421,15 +1553,15 @@ class BusObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown"),
-                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "number"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Training bus?", placeholder: "",                                    type: "checkBox"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Bus type",      placeholder: "Select the type of bus",              type: "dropDown",     column: "bus_type"),
+                             (label: "Bus number",    placeholder: "Enter the bus number (printed on the bus)", type: "normal", column: "bus_number"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Training bus?", placeholder: "",                                    type: "checkBox",     column: "is_training"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -1449,6 +1581,9 @@ class BusObservationViewController: BaseObservationViewController {
         super.viewDidAppear(animated)
         // This needs to go in viewDidAppear() because viewDidLoad() only gets called the first time you push to each type of view controller
         autoFillTextFields()
+        
+        //Bus number is autoComplete (i.e. text), but pretty much always starts with and is mostly made up of numbers
+        self.textFields[4]?.keyboardType = .numberPad
     }
     
     
@@ -1510,6 +1645,9 @@ class BusObservationViewController: BaseObservationViewController {
 
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -1702,17 +1840,17 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Lodge",         placeholder: "Select the lodge operating the bus",              type: "dropDown"),
-                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)", type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "This bus is training", placeholder: "",                             type: "checkBox"),
-                             (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
-                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Lodge",         placeholder: "Select the lodge operating the bus",  type: "dropDown",     column: "bus_type"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)", type: "normal", column: "bus_number"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "This bus is training", placeholder: "",                             type: "checkBox",     column: "is_training"),
+                             (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox",     column: "is_overnight"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number", column: "n_lodge_ovrnt"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -1725,17 +1863,17 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Lodge",         placeholder: "Select the lodge operating the bus",              type: "dropDown"),
-                             (label: "Permit number", placeholder: "Enter the bus number (printed on the bus)", type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "This bus is training", placeholder: "",                             type: "checkBox"),
-                             (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number"),
-                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Lodge",         placeholder: "Select the lodge operating the bus",  type: "dropDown",     column: "bus_type"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)", type: "normal", column: "bus_number"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "This bus is training", placeholder: "",                             type: "checkBox",     column: "is_training"),
+                             (label: "This bus is staying overnight", placeholder: "",                    type: "checkBox",     column: "is_overnight"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (excluding the driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of overnight lodge guests", placeholder: "Enter the number of overnight lodge guests (excluding the driver and employees)", type: "number", column: "n_lodge_ovrnt"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -1828,6 +1966,9 @@ class LodgeBusObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -2008,16 +2149,16 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name",     type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",             type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",             type: "time"),
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              //(label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
-                             (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
-                             (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown", column: "work_group"),
+                             (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -2030,16 +2171,16 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name",     type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",             type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",             type: "time"),
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              //(label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",         type: "dropDown"),
-                             (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown"),
-                             (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)",    type: "normal")]
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown", column: "work_group"),
+                             (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -2138,6 +2279,9 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -2310,16 +2454,16 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Approved category",  placeholder: "Select the type of vehicle",          type: "dropDown"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Approved category",  placeholder: "Select the type of vehicle",     type: "dropDown",     column: "approved_type"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -2331,16 +2475,16 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Approved category",  placeholder: "Select the type of vehicle",          type: "dropDown"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Approved category",  placeholder: "Select the type of vehicle",     type: "dropDown",     column: "approved_type"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -2419,6 +2563,9 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -2591,17 +2738,16 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "normal"),
-                             //(label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "autoComplete", column: "organization"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]//"Project type": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Project type")]
@@ -2612,17 +2758,16 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "normal"),
-                             //(label: "Project type",   placeholder: "Select a the type of project the contract is for (if known)",   type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "autoComplete", column: "organization"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]//"Project type": parseJSON(controllerLabel: "NPS Contractor", fieldName: "Project type")]
@@ -2699,6 +2844,9 @@ class NPSContractorObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -2872,15 +3020,15 @@ class EmployeeObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "normal"),
-                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
-                             (label: "Permit holder",   placeholder: "Enter the name of the person the permit was issued to",   type: "normal"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete",       column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Permit holder",   placeholder: "Enter the name of the person the permit was issued to",   type: "autoComplete", column: "permit_holder"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
@@ -2891,15 +3039,15 @@ class EmployeeObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "normal"),
-                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",           type: "number"),
-                             (label: "Permit holder",   placeholder: "Enter the name of the person the permit was issued to",   type: "normal"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete",       column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Permit holder",   placeholder: "Enter the name of the person the permit was issued to",   type: "autoComplete", column: "permit_holder"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations]
@@ -2965,6 +3113,9 @@ class EmployeeObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -3133,15 +3284,15 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
-                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
-                             (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)", type: "autoComplete", column: "driver_name"),
+                             (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown", column: "permit_holder"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -3153,15 +3304,15 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Destination",   placeholder: "Select the destination",              type: "dropDown"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "normal"),
-                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)",        type: "normal"),
-                             (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Permit holder", placeholder: "Enter the permit holder from the permit (if different from the inholder)", type: "autoComplete", column: "driver_name"),
+                             (label: "Inholder name",   placeholder: "Select the inholder whose permit the driver is using",   type: "dropDown", column: "permit_holder"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -3244,6 +3395,9 @@ class RightOfWayObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -3410,17 +3564,17 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Driver reminded one trip in; one trip out (no driving past Tek CG)?", placeholder: "",                 type: "checkBox"),
-                             (label: "Has a bus ticket (Tek Pass)?", placeholder: "",                                                       type: "checkBox"),
-                             (label: "Has supplies for 3 nights (food, RV water and dump)?", placeholder: "",                               type: "checkBox"),
-                             (label: "Driving the road (no dust speed, soft shoulders, bus passing)?", placeholder: "", type: "checkBox"),
-                             (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox"),
-                             (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Driver reminded one trip in; one trip out (no driving past Tek CG)?", placeholder: "",   type: "checkBox", column: ""),
+                             (label: "Has a bus ticket (Tek Pass)?", placeholder: "",                                          type: "checkBox", column: ""),
+                             (label: "Has supplies for 3 nights (food, RV water and dump)?", placeholder: "",                  type: "checkBox", column: ""),
+                             (label: "Driving the road (no dust speed, soft shoulders, bus passing)?", placeholder: "", type: "checkBox", column: ""),
+                             (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox", column: ""),
+                             (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox", column: ""),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
         
@@ -3430,17 +3584,17 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Driver reminded one trip in; one trip out (no driving past Tek CG)?", placeholder: "",                 type: "checkBox"),
-                             (label: "Driver has a bus ticket (Tek Pass)?", placeholder: "",                                                type: "checkBox"),
-                             (label: "Has supplies for 3 nights (food, RV water and dump)?", placeholder: "",                               type: "checkBox"),
-                             (label: "Driving the road (no dust speed, soft shoulders, bus passing)?", placeholder: "", type: "checkBox"),
-                             (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox"),
-                             (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Driver reminded one trip in; one trip out (no driving past Tek CG)?", placeholder: "",   type: "checkBox", column: ""),
+                             (label: "Has a bus ticket (Tek Pass)?", placeholder: "",                                          type: "checkBox", column: ""),
+                             (label: "Has supplies for 3 nights (food, RV water and dump)?", placeholder: "",                  type: "checkBox", column: ""),
+                             (label: "Driving the road (no dust speed, soft shoulders, bus passing)?", placeholder: "", type: "checkBox", column: ""),
+                             (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox", column: ""),
+                             (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox", column: ""),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
         
@@ -3522,6 +3676,9 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -3675,12 +3832,12 @@ class CyclistObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
 
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                             (label: "Number of bikes", placeholder: "Enter the total number of bikes", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of bikes", placeholder: "Enter the total number of bikes", type: "number",         column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("cyclists")
     }
@@ -3688,12 +3845,12 @@ class CyclistObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Destination",   placeholder: "Select or enter the destination", type: "dropDown"),
-                             (label: "Number of bikes", placeholder: "Enter the total number of bikes", type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of bikes", placeholder: "Enter the total number of bikes", type: "number",         column: "n_passengers"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("cyclists")
     }
@@ -3740,6 +3897,9 @@ class CyclistObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -3890,15 +4050,15 @@ class PhotographerObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete",       column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("photographers")
     }
@@ -3906,16 +4066,15 @@ class PhotographerObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Permit number", placeholder: "Enter the permit number",             type: "number"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
-        
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date", type: "date",                 column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete",       column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         self.observationsTable = Table("photographers")
     }
     
@@ -3994,6 +4153,9 @@ class PhotographerObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -4160,14 +4322,14 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -4179,14 +4341,14 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -4270,6 +4432,9 @@ class AccessibilityObservationViewController: BaseObservationViewController {
     //MARK:  - Navigation
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -4427,14 +4592,14 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -4446,14 +4611,14 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date",         type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time",         type: "time"),
-                             (label: "Driver's full name", placeholder: "Enter the driver's full name",        type: "normal"),
-                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)",   type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
+                             (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
@@ -4600,6 +4765,9 @@ class SubsistenceObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -4664,12 +4832,12 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
     override init(nibName nibNameOrNil: String?, bundle nibBundleOrNil: Bundle?) {
         super.init(nibName: nibNameOrNil, bundle: nibBundleOrNil)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("road_lottery")
     }
@@ -4677,12 +4845,12 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         
-        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown"),
-                             (label: "Date",          placeholder: "Select the observation date", type: "date"),
-                             (label: "Time",          placeholder: "Select the observation time", type: "time"),
-                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number"),
-                             (label: "Permit number", placeholder: "Enter the permit number",  type: "number"),
-                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal")]
+        self.textFieldIds = [(label: "Observer name", placeholder: "Select or enter the observer's name", type: "dropDown",     column: "observer_name"),
+                             (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
+                             (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
+                             (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("road_lottery")
     }
@@ -4824,6 +4992,9 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
@@ -5022,6 +5193,9 @@ class OtherObservationViewController: BaseObservationViewController {
     
     //MARK:  - Navigation
     @objc override func saveButtonPressed() {
+        
+        super.saveButtonPressed()
+        
         if !checkCurrentDb() { return }
         
         if !self.fieldsFull {
