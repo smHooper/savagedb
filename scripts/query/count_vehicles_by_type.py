@@ -224,7 +224,10 @@ def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summar
                                    freq=FREQ_STRS[summarize_by])
 
     elif summarize_by == 'month':
-        date_range = pd.date_range(start_datetime - pd.offsets.MonthBegin(),
+        # Only use the pd.offset if this isn't the beginning of the month because if the start date is the
+        #   start_datetime - the month offset and the start date is the first of the month, this will actually return
+        #   datetimes for just the previous month.
+        date_range = pd.date_range(start_datetime - pd.offsets.MonthBegin() if start_datetime.day > 1 else start_datetime,
                                    periods=(end_datetime.month - start_datetime.month + 1),
                                    freq=FREQ_STRS[summarize_by])
 
