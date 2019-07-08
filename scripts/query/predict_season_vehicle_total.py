@@ -1,4 +1,5 @@
 import os, sys
+import subprocess
 import pandas as pd
 from datetime import datetime
 import matplotlib.pyplot as plt
@@ -75,13 +76,18 @@ def get_normalized_daily_mean(query_year, connection_txt):
             dfs.append(df)
         else:
             current_data = df.set_index('day_of_season')
+
     previous_data = pd.concat(dfs)
     normalized_mean = previous_data.groupby('day_of_season').normalized_total.mean()
 
     return current_data, normalized_mean
 
 
-def main(query_year, connection_txt, out_path, mean_accuracy_txt=None):
+def main(connection_txt, query_year, out_path, mean_accuracy_txt=None):
+
+    sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
+    sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
+    sys.stdout.flush()
 
     BAR_SPACING = 3
 
@@ -100,13 +106,20 @@ def main(query_year, connection_txt, out_path, mean_accuracy_txt=None):
     #   with the remaining days of projected values. Only use the projected values that are before the last day of data
     #   for this year beign evaluated since there could be a year in two in the previous 5 years where the season was
     #   longer than the current one
-    remaining_days = normalized_mean.index[~normalized_mean.index.isin(current_data.index) &
-                                           (normalized_mean.index >= current_data.index.max())]
+    start_date, end_date = count.get_gmp_dates(datetime(query_year, 1, 1), datetime(query_year, 9, 30))
+
+    date_range = count.get_date_range(start_date.strftime(count.DATETIME_FORMAT)[0],
+                                      end_date.strftime(count.DATETIME_FORMAT)[0],
+                                      summarize_by=SUMMARIZE_BY)
+
+    remaining_days = normalized_mean.index[normalized_mean.index.isin(range(len(date_range))) &
+                                           (normalized_mean.index > current_data.index.max())]
+
     projected_remaining = (normalized_mean[remaining_days] * mean_pct_diff) + normalized_mean[remaining_days]
     projected_daily = pd.concat([current_data.daily_total, projected_remaining]).round(0).astype(int)
 
     # Plot the data. Projected values should be slightly grayed out (translucent)
-    x_inds = normalized_mean.index * BAR_SPACING
+    x_inds = pd.Series(projected_daily.index * BAR_SPACING, index=projected_daily.index)
     plt.bar(x_inds[current_data.index], projected_daily[current_data.index], 2, label='Actual daily total', color='k')
     plt.bar(x_inds[remaining_days], projected_daily[remaining_days], 2, label='Projected daily total', color='k', alpha=0.25)
     plt.hlines(normalized_mean[current_data.index], x_inds[current_data.index] - 1, x_inds[current_data.index] + 1,
@@ -115,11 +128,6 @@ def main(query_year, connection_txt, out_path, mean_accuracy_txt=None):
                color='firebrick', alpha=0.5, zorder=101)
 
     # Get date labels for this year
-    start_date, end_date = count.get_gmp_dates(datetime(query_year, 1, 1), datetime(query_year, 9, 30))
-    #import pdb; pdb.set_trace()
-    date_range = count.get_date_range(start_date.strftime(count.DATETIME_FORMAT)[0],
-                                      end_date.strftime(count.DATETIME_FORMAT)[0],
-                                      summarize_by=SUMMARIZE_BY)
     x_labels = count.get_x_labels(date_range, SUMMARIZE_BY)
 
     plt.xticks(x_inds[::10], x_labels[::10], rotation=45, rotation_mode='anchor', ha='right')
@@ -134,8 +142,7 @@ def main(query_year, connection_txt, out_path, mean_accuracy_txt=None):
             error_margin = int(round(mean_accuracy[day_of_season] * projected_daily.sum()))
             error_str = r' $\pm$ %s' % error_margin
         except Exception as e:
-            print e.message
-            import pdb; pdb.set_trace()
+            pass
     plt.title('Projected daily total vehicle counts per day for {year} as of {today}\nProjected season total - {total:,}{error}'
               .format(year=query_year,
                       today=x_labels[current_data.index.max()],
@@ -150,6 +157,7 @@ def main(query_year, connection_txt, out_path, mean_accuracy_txt=None):
 
     plt.savefig(out_path, dpi=300)
 
+    print '\nOutput files written to', os.path.dirname(out_path)
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv[1:]))
