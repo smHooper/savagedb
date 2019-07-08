@@ -143,7 +143,6 @@ def replace_lookup_values(data, engine, data_field, lookup_params):
     data.replace({data_field: lookup_values}, inplace=True)
     data[[data_field]] = data[[data_field]].fillna(value='NUL') # make sure any empty data are marked as NUL, which should be in every lookup table
 
-
     return data
 
 
@@ -181,6 +180,23 @@ def clean_app_data(data, sqlite_data, table_name, postgres_engine):
             if lookup_params.lookup_index == 'inholder_code':
                 df['inholder_code'] = df.permit_holder
 
+    if table_name == 'buses':
+        try:
+            data.loc[data.bus_type == 'TRN', 'is_training'] = True
+        except:
+            pass
+
+    return df
+
+
+def fill_null(df, numeric_fields):
+    '''Make sure the NaN values are all the same for numeric and text fields. For text fields, somewhere NaNs
+    (or just the 'comments' column) are getting filled with 'None' (could be NoneType but it's re-read as string)'''
+    df[numeric_fields] = df[numeric_fields] \
+        .fillna(0) \
+        .astype(np.int64)
+    df.loc[:, df.dtypes == np.object] = df.loc[:, df.dtypes == np.object].fillna('None')
+
     return df
 
 
@@ -198,7 +214,6 @@ def get_missing_lookup(data, table_name, data_field, engine, lookup_params):
                                  'lookup_field': [lookup_params.lookup_value for _ in range(n_missing)]})
 
     return missing_info
-
 
 
 def main(sqlite_paths_str, connection_txt):
@@ -260,14 +275,19 @@ def main(sqlite_paths_str, connection_txt):
                           .format(table_name=table_name, pg_tables='\n\t\t'.join(postgres_tables)))
             continue
 
+        # If there's no data in this table, write the empty dataframe and continue
+        flagged_path = os.path.join(output_dir, '%s_flagged.csv' % table_name)
+        if not len(df):
+            df.to_csv(flagged_path, index=False, encoding='utf-8')
+            continue
+
         # Combine date and time columns
         df['datetime'] = pd.to_datetime(df.date + ' ' + df.time)  # format should be automatically undersood
         df.drop(['date', 'time'], axis=1, inplace=True)
 
-        flagged_path = os.path.join(output_dir, '%s_flagged.csv' % table_name)
         # Check for duplicates within the DB from the app
         duplicate_columns = [c for c in DUPLICATE_FIELDS_ALL + DUPLICATE_FIELDS_TBL[table_name] if c in df.columns]
-        sl_duplicates = df.loc[df.duplicated(subset=duplicate_columns, keep=False)]# keep=false keeps all dups
+        sl_duplicates = df.loc[df.duplicated(subset=duplicate_columns, keep=False)].copy()# keep=false keeps all dups
         sl_duplicates['duplicated_in_app'] = True
 
         # Check for duplicates with the Postgres db. Limit the check to only Postgres records from this year to
@@ -280,25 +300,28 @@ def main(sqlite_paths_str, connection_txt):
                                   .format(table_name=table_name, year=datetime.now().year),
                                   pg_conn)
 
-        cleaned_data = clean_app_data(df, df, table_name, postgres_engine)
-        cleaned_data['id_value'] = cleaned_data.index
-        all_data = pd.concat([pg_data, cleaned_data], sort=False, ignore_index=True)
+        # If there are no data in the DB for this table, the pd.merge() line will balk because the column dtypes to
+        #   merge on won't match. So check, and create an empty dataframe if true
+        if len(pg_data):
+            cleaned_data = clean_app_data(df, df, table_name, postgres_engine)
 
-        # Make sure the NaN values are all the same for numeric and text fields. For text fields, somewhere NaNs
-        #  (or just the 'comments' column) are getting filled with 'None' (could be NoneType but it's re-read as string)
-        all_data[numeric_fields] = all_data[numeric_fields] \
-            .fillna(0)\
-            .astype(np.int64)
-        all_data.loc[:, all_data.dtypes == np.object] = all_data.loc[:, all_data.dtypes == np.object].fillna('None')
+            # Get all indices from all rows in df whose duplicate columns match those in the master DB.
+            is_pg_duplicate = (pd.merge(fill_null(cleaned_data, numeric_fields),
+                                        fill_null(pg_data, numeric_fields),
+                                        on=duplicate_columns, how='left', indicator='exists')
+                               .exists == 'both')\
+                .values # pd.merge creates a new index so just get array of bool values
 
-        # Get all indices from all rows in df whose duplicate columns match those in the master DB
-        is_pg_duplicate = all_data.duplicated(subset=duplicate_columns, keep=False)
-        pg_duplicates = df.loc[df.index.isin(all_data.loc[is_pg_duplicate].id_value)]
-        pg_duplicates['found_in_db'] = True
+            cleaned_data['found_in_db'] = is_pg_duplicate
+            pg_duplicates = cleaned_data.loc[cleaned_data.found_in_db]
+        else:
+            # Still need the found_in_db column though because
+            pg_duplicates = pd.DataFrame()
 
         duplicates = pd.concat([sl_duplicates, pg_duplicates], sort=False)
+
         # In case any records were duplicated in the app and the DB, reduce the df by the index. max() will return
-        #   True/False if one of the repeated indices is NaN, but another is True/False. All other columns should
+        #   True/False if one of the repeated indices is NaN but another is True/False. All other columns should
         #   be identical since a duplicated index represents the same record from the sqlite DB
         duplicates = duplicates.groupby(duplicates.index).max()
 
@@ -335,7 +358,7 @@ def main(sqlite_paths_str, connection_txt):
         df = pd.concat([pd.DataFrame(np.full((50, len(df.columns)), 'aaaa'), columns=df.columns),
                         df])
 
-        df.to_csv(flagged_path, index=False)
+        df.to_csv(flagged_path, index=False, encoding='utf-8')
 
     # If there were any missing lookup values, save the CSV
     if len(missing_lookup_dfs) > 0:
