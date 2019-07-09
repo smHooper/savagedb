@@ -11,6 +11,7 @@ import UIKit
 import os.log
 
 var dbPath = "\(NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)/savageChecker.db"
+var db: Connection!
 
 // Vars to store dropdownOptions that are redefined when JSON is parsed
 var destinations = [String]()
@@ -71,7 +72,6 @@ func parseJSON(controllerLabel: String?, fieldName: String?, property: String = 
             let fields = configJSON[property][controllerLabel]
             for item in fields[fieldName]["options"].arrayValue {
                 options.append(item.stringValue)
-                print(item.stringValue)
             }
             // Otherwise, the user is just getting a string property
         } else {

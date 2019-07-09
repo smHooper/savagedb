@@ -176,8 +176,8 @@ class ShiftInfoViewController: BaseFormViewController {
             }
             
             // Try to connect to the DB
-            self.db = try? Connection(dbPath)
-            if self.db == nil {
+            db = try? Connection(dbPath)
+            if db == nil {
                 os_log("Connecting to DB in ShiftInfoViewController.loadData() circa line 179 failed", log: OSLog.default, type: .debug)
                 showGenericAlert(message: "Connection failed with dbPath \(dbPath)", title: "Database connection error")
             }
@@ -400,7 +400,7 @@ class ShiftInfoViewController: BaseFormViewController {
         // ************* check that the table exists first **********************
         var rows = [Row]()
         do {
-            guard let db = self.db else {
+            if db == nil {
                 return nil
             }
             rows = Array(try db.prepare(sessionsTable))
@@ -437,7 +437,7 @@ class ShiftInfoViewController: BaseFormViewController {
         // Open a connection to the database
         //var db : Connection?
         do {
-            self.db = try Connection(dbPath)
+            db = try Connection(dbPath)
         } catch {
             os_log("Couldn't configure the DB", log: OSLog.default, type: .debug)
             showGenericAlert(message: "Connection failed with dbPath \(dbPath)", title: "Database connection error")

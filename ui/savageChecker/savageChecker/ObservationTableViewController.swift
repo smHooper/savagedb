@@ -105,7 +105,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     //var modelObjects = [Any]()
     private var observations = [Observation]()
     var session: Session?
-    var db: Connection!
+    //var db: Connection!
     
     //MARK: observation DB properties
     let idColumn = Expression<Int64>("id")
@@ -219,44 +219,37 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             }
         }
         
-        
     }
+    
     
     func checkCurrentDb() -> Bool {
         // Helper function to verify that the data have not been deleted. If so, show an alert and reload the table
-        if !currentDbExists() {
-            showDbNotExistsAlert()
-            self.observationCells.removeAll() // Make sure the table is blank so the user can't select an observation that doesn't exist
-            self.tableView.reloadData()
+        if !(currentDbExists() && dbHasData(path: dbPath, excludeShiftInfo: false)) {
+            presentLoadBackupAlert(presentCompletion: {self.loadObservations()})//showDbNotExistsAlert()
+            //loadObservations()
             return false
         } else {
             return true
         }
     }
     
-    // Convenience function to load all tableView data
+    // Convenience function to load all tableView data. loadObservations() is a mid-stream function for re-loading data
     func loadData() {
         
         if !checkCurrentDb() { return }
-        self.db = try? Connection(dbPath)
+        if db == nil || !dbHasData(path: dbPath, excludeShiftInfo: false) {
+            db = try? Connection(dbPath)
+        }
         
-        if self.db != nil {
+        // The try? Connection() could have failed, so make sure db is valid
+        if db != nil {
             try? loadSession()
-            //self.observations = loadObservations()!
             loadObservations()
         } else{
             showGenericAlert(message: "Could not connect to the database at \(dbPath)", title: "Database connection error")
             os_log("could not connect to DB in tableViewController.loadData()", log: .default, type: .debug)
         }
         
-        self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
-
-        let range = NSMakeRange(0, self.tableView.numberOfSections)
-        let sections = NSIndexSet(indexesIn: range)
-        self.tableView.reloadSections(sections as IndexSet, with: .automatic)
-        
-        // Set scrollable area so you can scroll past toolBar*/
-        self.tableView.contentSize.height += self.toolBar.frame.height
     }
     
     
@@ -893,8 +886,9 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 showGenericAlert(message: "Could not insert new record because \(error.localizedDescription)", title: "Database error")
             }
             
-            loadObservations()
+            loadObservations(reloadData: false)
             tableView.deleteRows(at: [indexPath], with: .fade)
+            
             backupCurrentDb()
 
         } else if editingStyle == .insert {
@@ -903,7 +897,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     }
     
     //MARK: - Private Methods
-    func loadObservations(){// -> [Observation]?{
+    func loadObservations(reloadData: Bool = true){// -> [Observation]?{
         // ************* check that the table exists first **********************
         
         let formatter = DateFormatter()
@@ -948,9 +942,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                 let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
                 alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .cancel, handler: {handler in
                     self.loadBackupDb()
-                    self.db = try? Connection(dbPath)
+                    db = try? Connection(dbPath)
                     self.loadObservations()
-                    self.tableView.reloadData()
                     let formatter = DateFormatter()
                     dateFormatter.locale = Locale(identifier: "en_US_POSIX")
                     formatter.dateFormat = "MM-dd-yy"
@@ -1038,6 +1031,17 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         }
         
         self.observations = loadedObservations
+        
+        // Reload the table and set scoll height
+        if reloadData {
+            self.tableView.reloadData()//This probably gets called twicce in veiwDidLoad(), but data needs to be reloaded from form view controller when an observation is added or updated
+            let range = NSMakeRange(0, self.tableView.numberOfSections)
+            let sections = NSIndexSet(indexesIn: range)
+            self.tableView.reloadSections(sections as IndexSet, with: .automatic)
+        }
+        
+        // Set scrollable area so you can scroll past toolBar*/
+        self.tableView.contentSize.height += self.toolBar.frame.height
         
     }
     

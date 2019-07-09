@@ -545,12 +545,13 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
 
     
     @objc func moveToTableView(){
-        if !currentDbExists() {
+        /*if !currentDbExists() {
             showDbNotExistsAlert()
-        }
+        }*/
         
         let tableViewController = BaseTableViewController()
-        tableViewController.loadData()
+        //let _ = tableViewController.checkCurrentDb()
+        //tableViewController.loadData()
         tableViewController.transitioningDelegate = self
         tableViewController.modalPresentationStyle = .custom
         self.presentTransition = RightToLeftTransition()
@@ -588,7 +589,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     func loadSession() -> Session? {
         // ************* check that the table exists first **********************
         var rows = [Row]()
-        let db: Connection!
+        //let db: Connection!
         let sessionsTable = Table("sessions")
         let idColumn = Expression<Int64>("id")
         let observerNameColumn = Expression<String>("observer_name")
@@ -596,7 +597,14 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         let openTimeColumn = Expression<String>("open_time")
         let closeTimeColumn = Expression<String>("close_time")
         do {
+            // Try reconnecting the DB. For some reason, the prepare statement fails only some of the time
             db = try Connection(dbPath)
+            
+            // Check if the DB has any data. If not, load the backup
+            if !dbHasData(path: dbPath, excludeShiftInfo: false) {
+                loadBackupDb()
+                db = try Connection(dbPath)
+            }
             rows = Array(try db.prepare(sessionsTable))
         } catch {
             showGenericAlert(message: "Problem getting shift info: \(error.localizedDescription)", title: "Database error")

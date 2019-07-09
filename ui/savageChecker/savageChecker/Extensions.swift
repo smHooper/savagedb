@@ -316,38 +316,58 @@ extension UIViewController {
         present(alertController, animated: true, completion: nil)
     }
     
+    
+    func presentLoadBackupAlert(presentCompletion: (() -> Void)? = nil) {
+        let alertController = UIAlertController(title: "Invalid data file", message: "The data in this file are not in the correct format or might have gotten corrupted. Would you like to load the backup file (no data will be lost)? If you press \"No\", you will not be able to record an observaton for this vehicle type", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .cancel, handler: {handler in
+            self.loadBackupDb()
+            db = try? Connection(dbPath)
+            self.showGenericAlert(message: "You should now be able to continue doing what you were before.", title: "Backup successfully loaded", takeScreenshot: false, presentCompletion: presentCompletion)
+        }))
+        alertController.addAction(UIAlertAction(title: "No", style: .default, handler: nil))//{action in self.dismiss(animated: true, completion: nil)}))
+        present(alertController, animated: true, completion: nil)
+    }
+    
+    
+    
     // Show a generic warning.info message
-    func showGenericAlert(message: String = "An unknown error has occurred", title: String = "Error", takeScreenshot: Bool = true) {
+    func showGenericAlert(message: String = "An unknown error has occurred", title: String = "Error", takeScreenshot: Bool = true, presentCompletion: (() -> Void)? = nil) {
         let alertController = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alertController.addAction(UIAlertAction(title: "OK", style: .cancel, handler: nil))
+        
+        // Code block for completion if takeScreenshot is true
+        let takeScreenshotCompletion = {
+            if takeScreenshot {
+                let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
+                let fileName = "error_screenshot \(Date()).png"
+                let screenshotDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("errors")
+                let fileManager = FileManager.default
+                var isDir: ObjCBool = false
+                if !fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) {
+                    try? fileManager.createDirectory(at: screenshotDir, withIntermediateDirectories: true, attributes: nil)
+                }
+                let imgURL = fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) ? screenshotDir.appendingPathComponent(fileName) : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName)
+                let screenshot = alertController.view.takeSnapshot()
+                try? UIImagePNGRepresentation(screenshot)?.write(to: imgURL)
+            }
+        }
         // run in separate process so that it present works in viewDidLoad
         DispatchQueue.main.async {
-            self.present(alertController, animated: true, completion: {
-                if takeScreenshot {
-                    let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-                    let fileName = "error_screenshot \(Date()).png"
-                    let screenshotDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("errors")
-                    let fileManager = FileManager.default
-                    var isDir: ObjCBool = false
-                    if !fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) {
-                        try? fileManager.createDirectory(at: screenshotDir, withIntermediateDirectories: true, attributes: nil)
-                    }
-                    let imgURL = fileManager.fileExists(atPath: screenshotDir.path, isDirectory:&isDir) ? screenshotDir.appendingPathComponent(fileName) : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName)
-                    let screenshot = alertController.view.takeSnapshot()
-                    try? UIImagePNGRepresentation(screenshot)?.write(to: imgURL)
-                }
-            })
+            self.present(alertController, animated: true, completion: takeScreenshot ? takeScreenshotCompletion : presentCompletion)
         }
     }
     
     
-    func dbHasData(path: String, tableName: String? = nil) -> Bool {
+    func dbHasData(path: String, tableName: String? = nil, excludeShiftInfo: Bool = true) -> Bool {
         // Try to connect to the database
         if let thisDB = try? Connection(path) {
             // Try to run a query to get all table names that would have data
-            var tableSQL = "SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%') AND name NOT LIKE('sessions')"
+            var tableSQL = "SELECT name FROM sqlite_master WHERE name NOT LIKE('sqlite%')"
             if let table = tableName {
                 tableSQL += " AND name LIKE('\(table)')"
+            }
+            if excludeShiftInfo {
+                tableSQL += " AND name NOT LIKE('sessions')"
             }
             if let statement = try? thisDB.prepare(tableSQL) {
                 // Loop through each row (table name)
@@ -400,19 +420,9 @@ extension UIViewController {
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
         let backupDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup")
         let backupDbURL = backupDir.appendingPathComponent(currentDbName)
-        
-        // Try to replace the current db with the backup while saving the corrupt file to documentsDir/<filename>_backup.db
         let fileManager = FileManager.default
-        let corruptedDbName = currentDbName.replacingOccurrences(of: ".db", with: "_corrupted.db")
-        do {
-            let _ = try fileManager.replaceItemAt(currentDbURL, withItemAt: backupDbURL, backupItemName: corruptedDbName, options: [.withoutDeletingBackupItem])
-            try fileManager.copyItem(at: currentDbURL, to: backupDbURL) //replaceItemAt moves instead of copies, so copy the backup back to the backup dir
-        } catch {
-            showGenericAlert(message: "A problem occurred while trying to replace the current data with the backup: \(error.localizedDescription)", title: "Failed to load data backup", takeScreenshot: true)
-            return
-        }
         
-        // Move the backed up corrupted file to the 'corrupted' dir.
+        // Create a directory for currupted files if one doesn't already exist
         //  Don't try to catch any of the errors because this stuff doesn't matter that much and it's mostly not worth warning the user about or trying to capture the error
         let corruptFileDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("corrupt_files")
         var isDir: ObjCBool = false
@@ -420,16 +430,27 @@ extension UIViewController {
             try? fileManager.createDirectory(at: corruptFileDir, withIntermediateDirectories: true, attributes: nil)
         }
         
+        let corruptedDbName = currentDbName.replacingOccurrences(of: ".db", with: "_corrupted.db")
         let corruptDbURL = corruptFileDir.appendingPathComponent(corruptedDbName)
-        if fileManager.fileExists(atPath: URL(fileURLWithPath: documentsDirectory).appendingPathComponent(corruptedDbName).path) {
+        // First, if there's already a version of this file in the "corrupted" dir, delete it
+        if fileManager.fileExists(atPath: corruptDbURL.path) {
             try? fileManager.removeItem(at: corruptDbURL)//fileManager.replaceItemAt(corruptDbURL, withItemAt: backupDbURL, backupItemName: corruptedDbName, options: [])
         }
-        guard let _ = try? fileManager.moveItem(at: URL(fileURLWithPath: documentsDirectory).appendingPathComponent(corruptedDbName), to: corruptDbURL) else {
-            let message = "The backup file was successfully loaded but archiving the corrupted file failed. You can continue to record new observations, but the corrupted file will still be listed when you try to upload data or switch data files"
-            showGenericAlert(message: message, title: "Could not archive corrupted file", takeScreenshot: false)
-            return
+        
+        // Try to move the currentDB to the corrupted dir. If that fails, just delete it
+        do {
+            try fileManager.moveItem(at: currentDbURL, to: corruptDbURL)
+        } catch {
+            try? fileManager.removeItem(at: currentDbURL)
         }
         
+        // Now try to copy the backup to the current DB path
+        do {
+            try fileManager.copyItem(atPath: backupDbURL.path, toPath: currentDbURL.path)
+        } catch {
+            showGenericAlert(message: "A problem occurred while trying to replace the current data with the backup: \(error.localizedDescription)", title: "Failed to load data backup", takeScreenshot: true)
+            return
+        }
         
     }
     

@@ -318,11 +318,11 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             
             // Open the new datbase
             if let presentingController = self.presentingViewController as? AddObservationViewController {
-                presentingController.db = try? Connection(dbPath)
+                db = try? Connection(dbPath)
                 presentingController.loadSession()
             } else {
                 let presentingController = self.presentingViewController as! BaseTableViewController
-                presentingController.db = try? Connection(dbPath)
+                db = try? Connection(dbPath)
                 presentingController.loadData()
             }
 

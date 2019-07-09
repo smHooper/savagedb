@@ -38,7 +38,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     var navigationBar: CustomNavigationBar!
-    var db: Connection!// SQLiteDatabase!
+    //var db: Connection!// SQLiteDatabase!
     var session: Session?
     
     
@@ -901,6 +901,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
     }
     
+
     func saveButtonPressed() {
         // populate the autoCompleteDb
         var fields = [String]()
@@ -918,17 +919,21 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
         }
         
         // If there were any autoComplete textFields in this ViewController, insert their values into the autoCompleteDB
+
         if fields.count > 0, let tableName = tableNames[className] {
             let sql = "INSERT INTO \(tableName) (\(fields.joined(separator: ", "))) VALUES (\(values.joined(separator: ", ")))"
             if let autoCompleteDB = try? Connection(autoCompleteDBURL.path) {
                 do {
                     try autoCompleteDB.execute(sql)
-                } catch let Result.error(message, _, _) {
-                    os_log("Record insertion failed", log: OSLog.default, type: .debug)
-                    print( "Could not insert new record because \(message)")
                 } catch {
-                    os_log("Record insertion failed", log: OSLog.default, type: .debug)
-                    print("Could not insert new record because \(error.localizedDescription)")
+                    os_log("Record insertion failed in autoCompleteDB", log: OSLog.default, type: .debug)
+                    let backupDBPath = URL(fileURLWithPath: NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)
+                        .appendingPathComponent("backup")
+                        .appendingPathComponent(loadUserData()?.activeDatabase ?? "")
+                        .path
+                    try? FileManager.default.removeItem(at: autoCompleteDBURL)
+                    try? FileManager.default.copyItem(atPath: backupDBPath,
+                                                      toPath: autoCompleteDBURL.path)
                 }
             }
         }
@@ -1047,11 +1052,14 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         }
         
         //Load the session
-        do {
-            try loadSession()
-        } catch {
-            showGenericAlert(message: "Could not load shift info because \(error.localizedDescription)", title: "Datbase error")
+        if self.session == nil {
+            do {
+                try loadSession()
+            } catch {
+                showGenericAlert(message: "Could not load shift info because \(error.localizedDescription)", title: "Datbase error")
+            }
         }
+        
         setNavigationBar()
         self.lastTextFieldIndex = self.textFields.count + self.dropDownTextFields.count - 1
         
@@ -1184,40 +1192,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     
-    /*// Configure tableview controller before it's presented
-    @objc override func saveButtonPressed() {
-     
-        super.saveButtonPressed()
-     
-        if !checkCurrentDb() { return }
-        // Reconnect in case the last time save button was pressed, the db didn't exist
-        self.db = try? Connection(dbPath)
-        
-        // update the observation
-        updateData()
-        
-        // Update the database
-        // Add a new record
-        if self.isAddingNewObservation {
-        if !insertRecord() {return} // return so the alert message can be presented
-        // Update an existing record
-        } else {
-            if !updateRecord() {return} // return so the alert message can be presented
-        }
-        
-        // Get the actual id of the insert row and assign it to the observation that was just inserted. Now when the cell in the obsTableView is selected (e.g., for delete()), the right ID will be returned. This is exclusively so that when if an observation is deleted right after it's created, the right ID is given to retreive a record to delete from the DB.
-        var max: Int64!
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-        } catch {
-            print(error.localizedDescription)
-        }
-        observation?.id = Int(max)
-        
-        dismissController()
-        
-    }*/
-    
     @objc override func saveButtonPressed() {
         super.saveButtonPressed()
     }
@@ -1255,20 +1229,6 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
 
     
     //MARK: - Private methods
-    
-    func checkCurrentDb() -> Bool {
-        // Helper function to verify that the data have not been deleted. If so, show an alert and reload the table
-        if !currentDbExists() {
-            showDbNotExistsAlert()
-            print(false)
-            self.isAddingNewObservation = true // Because the db will be new, this is a new observation
-            return false
-        } else {
-            print(true)
-            return true
-        }
-    }
-    
     
     // Update save button status
     @objc override func updateData(){
@@ -1406,23 +1366,55 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     }
     
     
-    // Verify that the table exists (it might not if the data were corrupted). If not, warn the user
-    func checkTableIsValid(){
+    func showTableInvalidAlert() {
+        let alertController = UIAlertController(title: "Invalid data file", message: "The data in this file are not in the correct format or might have gotten corrupted. Would you like to load the backup file (no data will be lost)? If you press \"No\", you will not be able to record an observaton for this vehicle type", preferredStyle: .alert)
+        alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .cancel, handler: {handler in
+            self.loadBackupDb()
+            db = try? Connection(dbPath)
+            self.showGenericAlert(message: "Backup successfully loaded")
+        }))
+        alertController.addAction(UIAlertAction(title: "No", style: .default, handler: nil))//{action in self.dismiss(animated: true, completion: nil)}))
+        present(alertController, animated: true, completion: nil)
+    }
+    
+    
+    func checkCurrentDb() -> Bool {
+        // Helper function to verify that the data have not been deleted. If so, show an alert and reload the table
+        if !currentDbExists() {
+            //showDbNotExistsAlert()
+            //self.isAddingNewObservation = true // Because the db will be new, this is a new observation
+            presentLoadBackupAlert()
+            return false
+        } else {
+            return true
+        }
+    }
+    
+    
+    func checkTableExists() -> Bool {
         var tableName: String? = nil
         if let tname = self.observationsTable.asSQL().components(separatedBy: " ").last {
             // .asSQL() produces simple SQL SELECT stmt, but need to get rid of ""
             tableName = tname.replacingOccurrences(of: "\"", with: "")
         }
-        if !dbHasData(path: dbPath, tableName: tableName) {
-            let alertController = UIAlertController(title: "Invalid data file", message: "The data in this file are not in the correct format or might have gotten corrupted. Would you like to load the backup file (no data will be lost)? If you press \"No\", you will not be able to record an observaton for this vehicle type", preferredStyle: .actionSheet)
-            alertController.addAction(UIAlertAction(title: "Yes, load the backup file", style: .cancel, handler: {handler in
-                self.loadBackupDb()
-                self.db = try? Connection(dbPath)
-                self.showGenericAlert(message: "Data successfully loaded from backup.", title: "")
-            }))
-            alertController.addAction(UIAlertAction(title: "No", style: .default, handler: {action in self.dismiss(animated: true, completion: nil)}))
-            present(alertController, animated: true, completion: nil)
+        // Count the number of tables with the current table name
+        if let count = try? db.scalar("SELECT count(*) FROM sqlite_master WHERE name LIKE '\(tableName ?? "")'") as? Int64, Int(count ?? 0) > 0 {
+            return true
+        } else {
+            return false
         }
+    }
+    
+    
+    // Verify that the table exists (it might not if the data were corrupted). If not, warn the user
+    func checkTableIsValid() -> Bool{
+
+        if !(dbHasData(path: dbPath, excludeShiftInfo: false) && checkTableExists()) {
+            presentLoadBackupAlert()
+            return false
+        }
+        
+        return true
     }
     
     
@@ -1498,9 +1490,11 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
     
     private func loadSession() throws { //}-> Session?{
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         // Reconnect in case the last time save button was pressed, the db didn't exist
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try Connection(dbPath)
+        }
         
         let rows = Array(try db.prepare(sessionsTable))
         if rows.count > 1 {
@@ -1510,6 +1504,25 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
             self.session = Session(id: Int(row[idColumn]), observerName: row[observerNameColumn], openTime:row[openTimeColumn], closeTime: row[closeTimeColumn], givenDate: row[dateColumn])
         }
     }
+    
+    
+    func getDataTableName() -> String? {
+        
+        for (_, textField) in self.textFields {
+            //"\(String(describing: self.textFields[i]?.delegate).split(separator: ".")[1].split(separator: ":")[0])"
+            if let controller = textField.delegate {
+                let className = "\(String(describing: controller).split(separator: ".")[1].split(separator: ":")[0])"
+                if let tableName = tableNames[className] {
+                    return tableName
+                }
+            }
+        }
+        
+        return nil //if we got here, there were no textfields, which shouldn't ever be the case
+    }
+    
+    
+    
 }
 
 //MARK: -
@@ -1648,7 +1661,10 @@ class BusObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        //let tableName = getDataTableName()
+        if !(checkCurrentDb() && checkTableIsValid()) {
+            return
+        }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -1656,14 +1672,14 @@ class BusObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        
-        backupCurrentDb()
-        //dbToCSV(dbConnection: self.db)
+
     }
     
     func saveObservation(){
         // Reconnect in case the last time save button was pressed, the db didn't exist
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -1700,6 +1716,9 @@ class BusObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
     
     
@@ -1969,7 +1988,7 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -1977,11 +1996,13 @@ class LodgeBusObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -2018,6 +2039,9 @@ class LodgeBusObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
     
     
@@ -2282,7 +2306,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -2290,11 +2314,13 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -2331,6 +2357,9 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
 
     
@@ -2566,7 +2595,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -2574,11 +2603,13 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -2615,6 +2646,9 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
     
     //MARK: - Private methods
@@ -2847,7 +2881,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -2855,11 +2889,13 @@ class NPSContractorObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -2896,6 +2932,9 @@ class NPSContractorObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
     
     
@@ -3116,7 +3155,7 @@ class EmployeeObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -3124,12 +3163,13 @@ class EmployeeObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
-        
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -3166,6 +3206,9 @@ class EmployeeObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
     
     
@@ -3398,7 +3441,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -3406,11 +3449,13 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -3447,6 +3492,9 @@ class RightOfWayObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
 
     
@@ -3679,7 +3727,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -3687,11 +3735,13 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -3722,6 +3772,9 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
         observation?.id = Int(max!)
         
         dismissController()
+        
+        backupCurrentDb()
+        
     }
 
     
@@ -3900,7 +3953,7 @@ class CyclistObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -3908,11 +3961,13 @@ class CyclistObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -3943,6 +3998,8 @@ class CyclistObservationViewController: BaseObservationViewController {
         observation?.id = Int(max!)
         
         dismissController()
+        backupCurrentDb()
+        
     }
     
     
@@ -4055,7 +4112,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete",       column: "driver_name"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
-                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "number", column: "permit_number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
@@ -4071,7 +4128,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete",       column: "driver_name"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
-                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "number", column: "permit_number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
                              (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
@@ -4156,7 +4213,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -4164,11 +4221,13 @@ class PhotographerObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -4188,23 +4247,26 @@ class PhotographerObservationViewController: BaseObservationViewController {
             
         } else {
             
-        // Assign the right ID to the observation
-        var max: Int64? = 2147483647
-        do {
-            max = try db.scalar(observationsTable.select(idColumn.max))
-            if max == nil {
-                max = 0
+            // Assign the right ID to the observation
+            var max: Int64? = 2147483647
+            do {
+                max = try db.scalar(observationsTable.select(idColumn.max))
+                if max == nil {
+                    max = 0
+                    return
+                }
+            } catch {
+                showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
+                os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
                 return
             }
-        } catch {
-            showGenericAlert(message:"Problem saving data: \(error.localizedDescription)", title: "Database error")
-            os_log("failed to save data properly because the observationID could not be properly set", log: .default, type: .debug)
-            return
+            observation?.id = Int(max!)
+            
+            dismissController()
         }
-        observation?.id = Int(max!)
         
-        dismissController()
-        }
+        backupCurrentDb()
+        
     }
     
     //MARK: - DB methods
@@ -4435,7 +4497,7 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -4443,11 +4505,13 @@ class AccessibilityObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+        
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -4484,6 +4548,8 @@ class AccessibilityObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
     }
     
     //MARK: - DB methods
@@ -4768,7 +4834,7 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -4776,11 +4842,13 @@ class SubsistenceObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -4817,7 +4885,11 @@ class SubsistenceObservationViewController: BaseObservationViewController {
             
             dismissController()
         }
+        
+        backupCurrentDb()
+        
     }
+    
 }
 
 
@@ -4836,7 +4908,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "number", column: "permit_number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("road_lottery")
@@ -4849,7 +4921,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
                              (label: "Date",          placeholder: "Select the observation date",         type: "date",         column: "date"),
                              (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "normal", column: "permit_number"),
+                             (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "number", column: "permit_number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("road_lottery")
@@ -4995,7 +5067,7 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -5003,11 +5075,13 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -5038,6 +5112,8 @@ class RoadLotteryObservationViewController: BaseObservationViewController {
         observation?.id = Int(max!)
         
         dismissController()
+        backupCurrentDb()
+        
     }
 }
 
@@ -5196,7 +5272,7 @@ class OtherObservationViewController: BaseObservationViewController {
         
         super.saveButtonPressed()
         
-        if !checkCurrentDb() { return }
+        if !(checkCurrentDb() && checkTableIsValid()) { return }
         
         if !self.fieldsFull {
             showFieldsEmptyAlert(yesAction: UIAlertAction(title: "Yes", style: .destructive, handler: {_ in self.saveObservation()}))
@@ -5204,11 +5280,13 @@ class OtherObservationViewController: BaseObservationViewController {
         } else {
             saveObservation()
         }
-        backupCurrentDb()
+
     }
     
     func saveObservation(){
-        self.db = try? Connection(dbPath)
+        if db == nil {
+            db = try? Connection(dbPath)
+        }
         
         // update the observation
         updateData()
@@ -5239,6 +5317,8 @@ class OtherObservationViewController: BaseObservationViewController {
         observation?.id = Int(max!)
         
         dismissController()
+        backupCurrentDb()
+        
     }
 }
 
