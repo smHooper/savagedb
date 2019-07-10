@@ -147,24 +147,36 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
         // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
         //print("applicationDidEnterBackground")
-        self.window?.rootViewController?.backupCurrentDb()
+        //self.window?.rootViewController?.backupCurrentDb()
         
     }
 
     func applicationWillEnterForeground(_ application: UIApplication) {
         // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
         
-        // Try to reload the database connection
-        if let userData = self.window?.rootViewController?.loadUserData(),
-            let dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(userData.activeDatabase).path {
-                db = try? Connection(dbPath)
-        }
-        
     }
 
     func applicationDidBecomeActive(_ application: UIApplication) {
-        // Restart any tasks that were paused (or not yet started) while the application was inactive. If the application was previously in the background, optionally refresh the user interface.
-        //print("applicationDidBecomeActive")
+        
+        // Try to reload the database connection
+        let rootController = self.window?.rootViewController
+        if let userData = rootController?.loadUserData(),
+            let dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent(userData.activeDatabase).path {
+            db = try? Connection(dbPath)
+            
+            // If the db doesn't have any data in any tables, try to load the backup
+            if !(rootController?.dbHasData(path: dbPath) ?? true) {
+                rootController?.loadBackupDb()
+            }
+            
+            // If this is a new day (i.e., the app was left open overnight), alert the user and show the shiftInfo form.
+            //  Check that the animation is complete because this code will run when the app first starts up too. In that case,
+            //  we want the main menu controller to handle calls to showNewShiftAlert() because it needs to happen after animations
+            //  are complete
+            if let tag = rootController?.getFileNameTag(), tag != userData.creationDate, (rootController as? AddObservationViewController)?.animationComplete ?? true {
+                rootController?.showNewShiftAlert()
+            }
+        }
     }
 
     func applicationWillTerminate(_ application: UIApplication) {

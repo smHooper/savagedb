@@ -211,7 +211,7 @@ extension UIViewController {
     
     func loadUserData() -> UserData? {
         let userData = NSKeyedUnarchiver.unarchiveObject(withFile: userDataPath) as? UserData
-        if userData != nil { print("User data successfully loaded: \(userData!.activeDatabase)") }
+        //if userData != nil { print("User data successfully loaded: \(userData!.activeDatabase)") }
         
         return userData
     }
@@ -300,6 +300,45 @@ extension UIViewController {
         shiftViewController.view.sendSubview(toBack: backgroundView)
         
         present(shiftViewController, animated: true, completion: nil)
+    }
+    
+    // Either show the shift info form or send an alert askin the user if they want to start a new shift.
+    //  This gets called when the app gets back the focus after being paused or the device was sleeping and at startup.
+    func showNewShiftAlert() {
+        
+        // If userData doesn't exist, just show the shift info form (this is likely because this is the first time the app is being opened after install)
+        guard let userData = loadUserData() else {
+            showShiftInfoForm()
+            return
+        }
+        
+        let tag = getFileNameTag()
+
+        // If the user has the shift info form open, close it. This way, if it's opened again, the proper loadData() code will run.
+        //  Also, since the controller is shown modally as a .formsheet, another shiftinfo form will just be opened on top of the existing one
+        var currentViewController = getTopMostController()
+        let currentControllerClassName = "\(String(describing: currentViewController).split(separator: ".")[1].split(separator: ":")[0])"
+        if currentControllerClassName == "ShiftInfoViewController" {
+            let presentedController = currentViewController
+            currentViewController = currentViewController.presentingViewController!
+            presentedController.dismiss(animated: false, completion: nil)
+        }
+        
+        // If the current date (really the filenam tag, which includes the device name now) is different from the date the user data was created, that means this should be a new shift
+        //  Also, don't show this form on top of a DB browser, G Drive Upload, or a QR Scanner controller because the shiftinfo form doesn't load properly. Also, the scanner controller
+        //  and the G Drive upload controllers send their own alerts, which cause the app to lose and regain focus. This means that the code gets called when this happens, which shouldn't happen.
+        if tag != userData.creationDate && currentViewController.modalPresentationStyle != .formSheet && currentControllerClassName != "ScannerViewController" {
+            let alertTitle = "New shift?"
+            let alertMessage = "It looks like this is a new day (full of promise and excitement!). All observations should, therefore, be recorded as a new shift. Would you like to start a new shift now? If you press \"No\", you'll have close and re-open the app later to do so."
+            let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+            alertController.addAction(UIAlertAction(title: "Yes, start a new one", style: .cancel, handler: {handler in
+                currentViewController.showShiftInfoForm()
+            }))
+            alertController.addAction(UIAlertAction(title: "No, keep using the same one", style: .default, handler: nil))
+            currentViewController.present(alertController, animated: true, completion: nil)
+        } else {
+            showShiftInfoForm()
+        }
     }
     
     
