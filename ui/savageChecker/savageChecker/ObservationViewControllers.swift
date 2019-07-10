@@ -1094,7 +1094,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                     if controlName == "Number of expected nights" {continue}//Make sure "Number of expected nights" isn't autofilled because Savage staff requested it be so
                     if jsonDictionary?[controlName]?.string != nil {
                         switch fieldInfo.type {
-                        case "normal", "number":
+                        case "normal", "number", "autoComplete":
                             self.textFields[i]?.text = value
                         case "dropDown":
                             self.dropDownTextFields[i]?.text = value
@@ -1342,7 +1342,7 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
         var emptyFields = [String]()
         for (i, fieldInfo) in self.textFieldIds.enumerated() {
             switch fieldInfo.type {
-            case "normal", "date", "time", "number":
+            case "normal", "date", "time", "number", "autoComplete":
                 if (self.textFields[i]?.text ?? "").isEmpty && fieldInfo.label != "Comments" {
                     emptyFields.append(fieldInfo.label)
                 }
