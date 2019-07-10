@@ -153,7 +153,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             for url in fileURLs {
                 let fileName = url.lastPathComponent
                 // Check if the filename checks out
-                if fileName != "savageChecker.db" && fileName.hasSuffix(".db") {
+                if fileName != "savageChecker.db" && fileName.hasSuffix(".db") && fileName.hasPrefix("savageChecker") {
                     // If this is a regular DB browser (not called from GDrive upload controller), just add the filename
                     if self.isLoadingDatabase {
                         self.files.append(fileName)
