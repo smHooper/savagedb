@@ -329,7 +329,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             let formatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             formatter.dateFormat = "MM-dd-yy"
-            let dateFromFile = selectedFileName.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: ".db", with: "")
+            let dateFromFile = selectedFileName.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: "_\(getCleanedDeviceName() ?? UIDevice.current.name).db", with: "")
             if let date = formatter.date(from: dateFromFile) {
                 formatter.dateStyle = .long
                 formatter.timeStyle = .none
@@ -339,7 +339,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             } else {
                 dismiss(animated: true, completion: nil)
             }
-            
+        // Otherwise, add the selected file to the list
         } else {
             if let indexPathNotSelected = (tableView.indexPathsForSelectedRows?.contains(indexPath)) {
                 self.selectedFiles.append(self.files[indexPath.row])
