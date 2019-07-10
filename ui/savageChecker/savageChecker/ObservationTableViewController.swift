@@ -237,6 +237,11 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     func loadData() {
         
         if !checkCurrentDb() { return }
+        
+        // Close and re-open the db connection
+        db = try? Connection()
+        db = try? Connection(dbPath)
+        
         if db == nil || !dbHasData(path: dbPath, excludeShiftInfo: false) {
             db = try? Connection(dbPath)
         }

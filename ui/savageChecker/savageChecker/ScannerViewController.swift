@@ -172,11 +172,9 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             if let property = item.split(separator: ":").first, let value = item.split(separator: ":").last {
                 let this_property = property.replacingOccurrences(of: "{", with: "").trimmingCharacters(in: .whitespaces)
                 let this_value = value.replacingOccurrences(of: "}", with: "").trimmingCharacters(in: .whitespaces)
-                print(this_property.hasPrefix("\""))
                 let trimmed_property = this_property.hasPrefix("\"") ?
                     "\(this_property.trimmingCharacters(in: .whitespaces))" :
                 "\"\(this_property.trimmingCharacters(in: .whitespaces))\""
-                print(this_property.trimmingCharacters(in: .whitespaces))
                 let trimmed_value = this_value.trimmingCharacters(in: .whitespaces).hasPrefix("\"") ?
                     "\(this_value.trimmingCharacters(in: .whitespaces))" :
                 "\"\(this_value.trimmingCharacters(in: .whitespaces))\""
