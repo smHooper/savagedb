@@ -643,7 +643,8 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
                     [y_value, y_value], '--', alpha=0.3, color='0.3',
                     zorder=100)# zorder = 2 because seaborn grid lines will plot on top if 0 or 1
 
-    value_text_offset = all_data.values.max() * 0.025
+
+    value_text_offset = all_data.values.max() * 0.025#all_data.cumsum(axis=1) - all_data/2 if plot_type == 'stacked bar' else all_data.values.max() * 0.025
     last_top = np.zeros(n_dates)
     for i, (vehicle_type, data) in enumerate(all_data.iterrows()):
         # If a color for this vehicle type isn't given, set a random color
@@ -661,27 +662,29 @@ def plot_bar(all_data, x_labels, out_img, plot_type='stacked bar', vehicle_limit
             else:
                 x_inds = date_index
 
-        ax.bar(x_inds, data, bar_width, bottom=last_top, label=vehicle_type, zorder=i + 3, color=color)
+        ax.bar(x_inds, data, bar_width, bottom=last_top, label=vehicle_type, zorder=i + 3, color=color, ec='none')
 
-        if show_percents:
+        if show_percents or (show_values and plot_type == 'stacked bar'):
+            formatting = '%d%%' if show_percents else '%d'
             try:
-                percents = data / all_data.sum(axis=0) * 100
+                values = data / all_data.sum(axis=0) * 100 if show_percents else data
             except ZeroDivisionError:
-                percents = np.zeros(len(data))
-            percent_y = last_top + data/2 # center them in each bar
+                values = np.zeros(len(data))
+            value_y = last_top + data/2 # center them in each bar
 
             for i in range(len(x_inds)):
-                ax.text(x_inds[i], percent_y[i], '%d%%' % round(percents.iloc[i]), color='white', fontsize=6,
-                        horizontalalignment='center', verticalalignment='center',
-                        zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
+                if data.iloc[i] > 0:
+                    ax.text(x_inds[i], value_y[i], formatting % round(values.iloc[i]), color='white', fontsize=6,
+                            horizontalalignment='center', verticalalignment='center',
+                            zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
 
-        if show_values:
-
+        elif show_values:
+            these_offsets = value_text_offset.loc[vehicle_type] if plot_type == 'stacked bar' else value_text_offset
             for i in range(len(x_inds)):
-                #import pdb; pdb.set_trace()
-                ax.text(x_inds[i], data.iloc[i] + value_text_offset, '%d' % data.iloc[i], color='k', fontsize=6,
-                        horizontalalignment='center', verticalalignment='center',
-                        zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
+                if data.iloc[i] > 0:
+                    ax.text(x_inds[i], data.iloc[i] + value_text_offset, '%d' % data.iloc[i], color='k', fontsize=6,
+                            horizontalalignment='center', verticalalignment='center',
+                            zorder=i + 100)# for some reason, zorder has to be way higher to actually plot on top
 
         last_top += data if plot_type == 'stacked bar' else 0
 
@@ -1195,20 +1198,23 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
         else:
             title = custom_plot_title
 
-        if 'bar' in plot_types:
-            plot_bar(data, these_labels, out_img, plot_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
-        if 'stacked bar' in plot_types:
-            plot_bar(data, these_labels, out_img, plot_type='stacked bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
-        if 'grouped bar' in plot_types:
-            plot_bar(data, these_labels, out_img, plot_type='grouped bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
-        if 'line' in plot_types:
-            plot_line(data, these_labels, out_img, vehicle_limits=None, title=title, colors=colors, plot_totals=plot_totals)
-        if 'best fit' in plot_types:
-            plot_line(data, these_labels, out_img, vehicle_limits=None, title=title, colors=colors,
-                      plot_type='best fit', show_stats=show_stats, plot_totals=plot_totals)
-        if 'stacked area' in plot_types:
-            plot_line(data, these_labels, out_img, vehicle_limits=vehicle_limits, title=title, colors=colors,
-                      plot_type='stacked area', show_stats=show_stats, plot_totals=plot_totals)
+        if len(data):
+            if 'bar' in plot_types:
+                plot_bar(data, these_labels, out_img, plot_type='bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
+            if 'stacked bar' in plot_types:
+                plot_bar(data, these_labels, out_img, plot_type='stacked bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
+            if 'grouped bar' in plot_types:
+                plot_bar(data, these_labels, out_img, plot_type='grouped bar', vehicle_limits=vehicle_limits, title=title, colors=colors, show_percents=show_percents, show_values=show_values, remove_gaps=remove_gaps)
+            if 'line' in plot_types:
+                plot_line(data, these_labels, out_img, vehicle_limits=None, title=title, colors=colors, plot_totals=plot_totals)
+            if 'best fit' in plot_types:
+                plot_line(data, these_labels, out_img, vehicle_limits=None, title=title, colors=colors,
+                          plot_type='best fit', show_stats=show_stats, plot_totals=plot_totals)
+            if 'stacked area' in plot_types:
+                plot_line(data, these_labels, out_img, vehicle_limits=vehicle_limits, title=title, colors=colors,
+                          plot_type='stacked area', show_stats=show_stats, plot_totals=plot_totals)
+        else:
+            warnings.warn('Data for %s to %s was empty. No plot will be made' % (x_labels[0], x_labels[-1]))
 
         # Write all SQL statements to a text file
         if write_sql:
