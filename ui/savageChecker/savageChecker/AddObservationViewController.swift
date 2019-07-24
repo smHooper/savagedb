@@ -559,7 +559,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     }
     
     //MARK: Data model
-    func loadData() {
+    func loadData(showAlert: Bool = true) {
         // First check if there's user data from a previous session
         if let userData = loadUserData() {
             dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
@@ -571,7 +571,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
                showShiftInfoForm()
             // If the dbPath does exist, check that the dbPath is for today. Since loadData() is only called in viewDidAppear() if userData don't exist
             //  it shouldn't cause any problems when opening a database other than today's
-            } else {
+            } else if showAlert{
                 let today = getFileNameTag()//"7-10-19_Sam_s_dev_iPad"//
                 let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("savageChecker_\(today).db").path
                 let activePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path

@@ -660,7 +660,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         
         // Reload session info so it reflects the active DB
         if let presentingContoller = self.presentingViewController as? AddObservationViewController {
-            presentingContoller.loadData()
+            presentingContoller.loadData(showAlert: false)
         }
         
         self.dismissTransition = LeftToRightTransition()
