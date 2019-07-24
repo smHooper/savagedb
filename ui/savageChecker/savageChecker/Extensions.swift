@@ -87,7 +87,20 @@ extension UIViewController {
         }*/
     }
     
-    
+    func getCurrentDateTime() -> (date: String, time: String) {
+        
+        let now = Date()
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        let currentTime = formatter.string(from: now)
+        
+        formatter.timeStyle = .none
+        formatter.dateStyle = .short
+        let currentDate = formatter.string(from: now)
+        
+        return (date: currentDate, time: currentTime)
+    }
     
     func addBackground(showWhiteView: Bool = true) {
         /*let startingBackGroundView = UIImageView(image: UIImage(named: "viewControllerBackground"))
@@ -317,7 +330,10 @@ extension UIViewController {
         // If the user has the shift info form open, close it. This way, if it's opened again, the proper loadData() code will run.
         //  Also, since the controller is shown modally as a .formsheet, another shiftinfo form will just be opened on top of the existing one
         var currentViewController = getTopMostController()
-        let currentControllerClassName = "\(String(describing: currentViewController).split(separator: ".")[1].split(separator: ":")[0])"
+        let controllerDescription = String(describing: currentViewController)
+        let currentControllerClassName = controllerDescription.contains("UIAlertController") ?
+            "\(controllerDescription.split(separator: ":")[0])".replacingOccurrences(of: "<", with: "") :
+            "\(controllerDescription.split(separator: ".")[1].split(separator: ":")[0])"
         if currentControllerClassName == "ShiftInfoViewController" {
             let presentedController = currentViewController
             currentViewController = currentViewController.presentingViewController!
@@ -327,11 +343,13 @@ extension UIViewController {
         // If the current date (really the filenam tag, which includes the device name now) is different from the date the user data was created, that means this should be a new shift
         //  Also, don't show this form on top of a DB browser, G Drive Upload, or a QR Scanner controller because the shiftinfo form doesn't load properly. Also, the scanner controller
         //  and the G Drive upload controllers send their own alerts, which cause the app to lose and regain focus. This means that the code gets called when this happens, which shouldn't happen.
-        if tag != userData.creationDate && currentViewController.modalPresentationStyle != .formSheet && currentControllerClassName != "ScannerViewController" {
+        //  Lastly, if the new shift alert is already open, don't try to open it again
+        if tag != userData.creationDate && currentViewController.modalPresentationStyle != .formSheet && currentControllerClassName != "ScannerViewController" && currentViewController.title != "New shift?" {//currentControllerClassName != "UIAlertController" {
             let alertTitle = "New shift?"
-            let alertMessage = "It looks like this is a new day (full of promise and excitement!). All observations should, therefore, be recorded as a new shift. Would you like to start a new shift now? If you press \"No\", you'll have close and re-open the app later to do so."
+            let alertMessage = "It looks like this is a new day (full of promise and excitement!). All observations should, therefore, be recorded as a new shift. Would you like to start a new shift now? If you press \"No\", you can press the shift info button later to start a new shift."
             let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "Yes, start a new one", style: .cancel, handler: {handler in
+                try? FileManager.default.removeItem(atPath: userDataPath)
                 currentViewController.showShiftInfoForm()
             }))
             alertController.addAction(UIAlertAction(title: "No, keep using the same one", style: .default, handler: nil))
