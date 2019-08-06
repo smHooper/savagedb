@@ -1,8 +1,11 @@
 import os, sys
 import subprocess
 import pandas as pd
+import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
+from matplotlib import collections
+from matplotlib.legend_handler import HandlerLineCollection
 import seaborn as sns
 
 
@@ -78,18 +81,29 @@ def get_normalized_daily_mean(query_year, connection_txt):
             current_data = df.set_index('day_of_season')
 
     previous_data = pd.concat(dfs)
-    normalized_mean = previous_data.groupby('day_of_season').normalized_total.mean()
+    grouped = previous_data.groupby('day_of_season').normalized_total
+    normalized_data = pd.DataFrame({'nmean': grouped.mean(), 'nmax': grouped.max(), 'nmin': grouped.min()})
 
-    return current_data, normalized_mean
+    return current_data, normalized_data
+
+class VerticalDashedLineHandler(object):
+    def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        width, height = handlebox.width, handlebox.height
+        new_x = x0 + width/2
+        line = plt.Line2D([new_x, new_x], [y0 - height/4, height * 1.5], linestyle=(0, (1.5, 1.5)), color='k')
+        handlebox.add_artist(line)
+
+        return line
 
 
-def main(connection_txt, query_year, out_path, mean_accuracy_txt=None):
+def main(connection_txt, query_year, out_path, mean_accuracy_txt=None, plot_type='bar'):
 
     sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
     sys.stdout.flush()
 
-    BAR_SPACING = 3
+    BAR_SPACING = 1
 
     sns.set_style('white')
     sns.set_context('paper')
@@ -98,7 +112,7 @@ def main(connection_txt, query_year, out_path, mean_accuracy_txt=None):
     current_data, normalized_mean = get_normalized_daily_mean(query_year, connection_txt)
 
     # Calculate projected total and get projected daily values for plotting
-    pct_difference = ((current_data.daily_total - normalized_mean) / normalized_mean).dropna()
+    pct_difference = ((current_data.daily_total - normalized_mean.nmean) / normalized_mean.nmean).dropna()
     mean_pct_diff = pct_difference.mean()
     #projected_total = int(round(GMP_LIMIT + mean_pct_diff * GMP_LIMIT))
 
@@ -115,24 +129,30 @@ def main(connection_txt, query_year, out_path, mean_accuracy_txt=None):
     remaining_days = normalized_mean.index[normalized_mean.index.isin(range(len(date_range))) &
                                            (normalized_mean.index > current_data.index.max())]
 
-    projected_remaining = (normalized_mean[remaining_days] * mean_pct_diff) + normalized_mean[remaining_days]
+    projected_remaining = (normalized_mean.loc[remaining_days, 'nmean'] * mean_pct_diff) + normalized_mean.loc[remaining_days, 'nmean']
     projected_daily = pd.concat([current_data.daily_total, projected_remaining]).round(0).astype(int)
 
     # Plot the data. Projected values should be slightly grayed out (translucent)
     x_inds = pd.Series(projected_daily.index * BAR_SPACING, index=projected_daily.index)
-    plt.bar(x_inds[current_data.index], projected_daily[current_data.index], 2, label='Actual daily total', color='k')
-    plt.bar(x_inds[remaining_days], projected_daily[remaining_days], 2, label='Projected daily total', color='k', alpha=0.25)
-    plt.hlines(normalized_mean[current_data.index], x_inds[current_data.index] - 1, x_inds[current_data.index] + 1,
-               label='Typical daily total', color='firebrick', zorder=100)
-    plt.hlines(normalized_mean[remaining_days], x_inds[remaining_days] - 1, x_inds[remaining_days] + 1,
-               color='firebrick', alpha=0.5, zorder=101)
+    if plot_type == 'bar':
+        plt.bar(x_inds[current_data.index], projected_daily[current_data.index], 1, label='Actual daily total', color='k', ec='white', lw=0.5)
+        plt.bar(x_inds[remaining_days], projected_daily[remaining_days], 1, label='Projected daily total', color='k', ec='white', lw=0.5, alpha=0.3)
+        plt.hlines(normalized_mean.loc[current_data.index, 'nmean'], x_inds[current_data.index] - 0.45, x_inds[current_data.index] + 0.45, label='Typical daily total', color='firebrick', zorder=100)
+        plt.hlines(normalized_mean.loc[remaining_days, 'nmean'], x_inds[remaining_days] - 0.45, x_inds[remaining_days] + 0.45, color='firebrick', alpha=0.3, zorder=101)
+        plt.legend(frameon=False)#'''
+    else:
+        plt.vlines(x_inds[current_data.index], normalized_mean.loc[current_data.index, 'nmin'], normalized_mean.loc[current_data.index, 'nmax'],
+                   label='Typical daily range', linestyle=(0, (1.5, 2)))
+        plt.vlines(x_inds[remaining_days], normalized_mean.loc[remaining_days, 'nmin'], normalized_mean.loc[remaining_days, 'nmax'],
+                   colors='0.7', linestyle=(0, (1.5, 2)))
+        plt.scatter(x_inds[current_data.index], projected_daily[current_data.index], s=10, color='k', label='Actual daily total')
+        plt.scatter(x_inds[remaining_days], projected_daily[remaining_days], s=10, color='0.7', label='Projected daily total')
+        plt.legend(frameon=False, handler_map={collections.LineCollection: VerticalDashedLineHandler()})
 
     # Get date labels for this year
     x_labels = count.get_x_labels(date_range, SUMMARIZE_BY)
 
     plt.xticks(x_inds[::10], x_labels[::10], rotation=45, rotation_mode='anchor', ha='right')
-
-    plt.legend()
 
     error_str = ''
     if mean_accuracy_txt:
@@ -149,6 +169,7 @@ def main(connection_txt, query_year, out_path, mean_accuracy_txt=None):
                       total=projected_daily.sum(),
                       error=error_str))
     plt.xlim(-BAR_SPACING, max(remaining_days) * BAR_SPACING + BAR_SPACING)
+    #plt.ylim(0, max(normalized_mean.nmax.max(), projected_daily.max()) + 20)
     sns.despine()
 
     # Widen the plot
