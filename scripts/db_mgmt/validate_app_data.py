@@ -292,9 +292,9 @@ def main(sqlite_paths_str, connection_txt):
 
         # Check for duplicates with the Postgres db. Limit the check to only Postgres records from this year to
         #   reduce read times
-        numeric_fields = get_numeric_pg_fields(postgres_engine, table_name)
+        numeric_fields = pd.Series([f for f in get_numeric_pg_fields(postgres_engine, table_name) if f in df.columns])
         if hasattr(numeric_fields, '__iter__'):
-            numeric_fields = numeric_fields[numeric_fields.isin(duplicate_columns) & numeric_fields.isin(df.columns)]
+            numeric_fields = numeric_fields[numeric_fields.isin(duplicate_columns)]# & numeric_fields.isin(df.columns)]
         with postgres_engine.connect() as pg_conn, pg_conn.begin():
             pg_data = pd.read_sql("SELECT * FROM {table_name} WHERE extract(year FROM datetime) = {year}"
                                   .format(table_name=table_name, year=datetime.now().year),
@@ -306,12 +306,11 @@ def main(sqlite_paths_str, connection_txt):
             cleaned_data = clean_app_data(df, df, table_name, postgres_engine)
 
             # Get all indices from all rows in df whose duplicate columns match those in the master DB.
-            is_pg_duplicate = (pd.merge(fill_null(cleaned_data, numeric_fields),
+            cleaned_data['id_'] = cleaned_data.index
+            merged = pd.merge(fill_null(cleaned_data, numeric_fields),
                                         fill_null(pg_data, numeric_fields),
                                         on=duplicate_columns, how='left', indicator='exists')
-                               .exists == 'both')\
-                .values # pd.merge creates a new index so just get array of bool values
-
+            is_pg_duplicate = (merged.drop_duplicates('id_').exists == 'both').values # pd.merge creates a new index so just get array of bool values
             cleaned_data['found_in_db'] = is_pg_duplicate
             pg_duplicates = cleaned_data.loc[cleaned_data.found_in_db]
         else:
@@ -323,7 +322,9 @@ def main(sqlite_paths_str, connection_txt):
         # In case any records were duplicated in the app and the DB, reduce the df by the index. max() will return
         #   True/False if one of the repeated indices is NaN but another is True/False. All other columns should
         #   be identical since a duplicated index represents the same record from the sqlite DB
-        duplicates = duplicates.groupby(duplicates.index).max()
+        duplicates = duplicates.groupby(duplicates.index)\
+            .max()\
+            .fillna(False)
 
         df['duplicated_in_app'] = False
         df['found_in_db'] = False
