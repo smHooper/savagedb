@@ -202,6 +202,19 @@ FORMAT_STRS = {'day': '_%Y_%m_%d',
                'anniversary month': '%b'
                }
 
+
+def get_cl_args():
+
+    # Any args that don't have a default value and weren't specified will be None
+    cl_args = {k: v for k, v in docopt.docopt(__doc__).iteritems() if v is not None}
+
+    # get rid of extra characters from doc string and 'help' entry
+    args = {re.sub('[<>-]*', '', k): v for k, v in cl_args.iteritems()
+            if k != '--help' and k != '-h'}
+
+    return args
+
+
 def get_date_range(start_date, end_date, date_format='%Y-%m-%d %H:%M:%S', summarize_by='day'):
 
     FREQ_STRS = {'day':         'D',
@@ -885,14 +898,17 @@ def write_metadata(out_csv, queries, summarize_by, summary_field, summary_stat, 
         descr += options_desc
 
     datestamp = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
+
     msg = descr + \
           "\n\nFor questions, please contact Sam Hooper at samuel_hooper@nps.gov\n" \
           "\nSCRIPT: {script}" \
           "\nTIME PROCESSED: {datestamp}" \
-          "\nCOMMAND: {command}"\
+          "\nCOMMAND: {command}" \
+          "\nARGUMENTS: {args}"\
               .format(script=__file__,
                       datestamp=datestamp,
-                      command=command)
+                      command=command,
+                      args='||'.join(sys.argv))
 
     readme_path = out_csv.replace('.csv', '_README.txt')
     with open(readme_path, 'w') as readme:
@@ -1234,11 +1250,6 @@ def main(connection_txt, start_date, end_date, out_dir=None, out_csv=None, plot_
 
 if __name__ == '__main__':
 
-    # Any args that don't have a default value and weren't specified will be None
-    cl_args = {k: v for k, v in docopt.docopt(__doc__).iteritems() if v is not None}
-
-    # get rid of extra characters from doc string and 'help' entry
-    args = {re.sub('[<>-]*', '', k): v for k, v in cl_args.iteritems()
-            if k != '--help' and k != '-h'}
+    args = get_cl_args()
 
     sys.exit(main(**args))
