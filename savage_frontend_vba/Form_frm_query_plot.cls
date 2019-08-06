@@ -10,7 +10,6 @@ Attribute VB_Exposed = False
 Option Compare Database
 
 
-
 Private Sub dpd_time_step_AfterUpdate()
     
     On Error GoTo err_handler
@@ -329,7 +328,7 @@ Dim count_true As Integer
     If count_true = 0 Then
         MsgBox "You must select 1 (and only 1) query to retreive category values for", vbExclamation, "No query selected"
         check_selected_queries = False
-    ElseIf count_true > 1 Then
+    ElseIf count_true > 1 And Me.chk_filter_values.Value Then
         MsgBox "Only one query can be run at a time if you are filtering values. Please check only one box under 'Query types'", _
                 vbExclamation, _
                 "Multiple queries selected"
@@ -372,7 +371,7 @@ Private Sub btn_show_categories_Click()
                                 " " & CONNECTION_TXT
                         Me.btn_show_categories.Enabled = False 'disable the button so the user can't click it again
                         Me.txt_category_filter.Enabled = False
-                        categories_str = savagedb.run_sdout_command(cmd)
+                        categories_str = savagedb.run_stdout_command(cmd)
                         Me.txt_category_filter.Enabled = True
                         Me.btn_show_categories.Enabled = True
                         Me.lbx_categories.Visible = True
@@ -830,3 +829,119 @@ Err_btn_run_Click:
 End Sub
 
 
+Public Function parse_command_from_readme(ByVal readme_path As String)
+' Get the command from a previous run of count_vehicle_by_type and set form options accordingly
+    
+    On Error GoTo err_handler
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set text_file = fso.OpenTextFile(readme_path, 1)
+    readme_text = text_file.ReadAll
+    text_file.Close
+    
+    Dim line As Variant
+    Dim args() As String
+    Dim a As Variant
+    Dim arg_dict As New Dictionary
+    Dim arg_options() As String
+    Dim i As Integer
+    For Each line In Split(readme_text, vbCrLf)
+        If line Like "ARGUMENTS:*" Then
+            args = Split(Replace(line, "ARGUMENTS: ", ""), "||")
+            Me.txt_start_date = args(2)
+            Me.txt_end_date = args(3)
+            For Each a In args
+                If a Like "--*=*" Then
+                    arg_dict(Split(a, "=")(0)) = Split(a, "=")(1)
+                ElseIf a Like "--*" Then
+                    ReDim Preserve arg_options(i)
+                    arg_options(i) = a
+                    i = i + 1
+                End If
+            Next a
+            Exit For
+        End If
+    Next line
+    
+    If arg_dict.exists("--time_range") Then
+        Me.txt_start_time = Split(arg_dict("--time_range"), "-")(0)
+        Me.txt_end_time = Split(arg_dict("--time_range"), "-")(1)
+    End If
+    
+    Dim plot_types() As String
+    If arg_dict.exists("--plot_types") Then
+        plot_types = Split(arg_dict("--plot_types"), ", ")
+    Else
+        select_all_checkboxes ("chk_plot*")
+    End If
+    
+    Dim query_types() As String
+    If arg_dict.exists("--queries") Then
+        query_types = Split(arg_dict("--queries"), ", ")
+    Else
+        select_all_checkboxes ("chk_query*")
+    End If
+    
+    ' If either of the filter args are given, show them
+    If (arg_dict.exists("--sql_values_filter") Or arg_dict.exists("--category_filter")) Then
+        Me.chk_filter_values.Value = True
+        show_hide_filters
+    End If
+    
+    If arg_dict.exists("--plot_extension") Then
+        Select Case arg_dict("--plot_extension")
+            Case Is = ".png"
+                Me.opg_plot_format = 1
+            Case Is = ".jpg"
+                Me.opg_plot_format = 2
+            Case Is = ".pdf"
+                Me.opg_plot_format = 3
+            Case Else
+                Me.opg_plot_format = 1
+        End Select
+    End If
+    
+    ' Get plot/query options
+    Dim ctl As Control
+    Dim arg_names() As Variant: arg_names = arg_dict.Keys()
+    For Each ctl In Me.Controls
+        For Each a In query_types
+            If ctl.Tag = a And ctl.ControlType = acCheckBox Then
+                ctl.Value = True
+                GoTo continue_loop
+            End If
+        Next a
+        
+        For Each a In plot_types
+            If ctl.Tag = a And ctl.ControlType = acCheckBox Then
+                ctl.Value = True
+                GoTo continue_loop
+            End If
+        Next a
+        
+        For Each a In arg_options
+            If ctl.Tag = a And ctl.ControlType = acCheckBox Then
+                ctl.Value = True
+                GoTo continue_loop
+            End If
+        Next a
+        
+        For Each a In arg_names
+            If ctl.Tag = a And (ctl.ControlType = acTextBox Or ctl.ControlType = acComboBox) Then
+                ctl.Value = arg_dict(a)
+                GoTo continue_loop
+            End If
+        Next a
+        
+continue_loop:
+    Next ctl
+    
+    
+exit_sub:
+    Exit Function
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
+End Function

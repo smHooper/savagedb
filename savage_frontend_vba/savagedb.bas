@@ -1,10 +1,46 @@
 Attribute VB_Name = "savagedb"
 Option Compare Database
-Public Const CONNECTION_STR = "DRIVER={PostgreSQL ANSI};DATABASE=savage;SERVER=165.83.50.66;PORT=5432"
-Public Const PYTHON_PATH = "C:\ProgramData\Anaconda2\python.exe"
+Public Const CONNECTION_STR = "DRIVER={PostgreSQL ANSI};DATABASE=db_name;SERVER=ip_address;PORT=port"
+Public Const PYTHON_PATH = "C:\ProgramData\Anaconda3\envs\savagedb\python.exe"
 Public Const CONNECTION_TXT = "C:\users\shooper\proj\savagedb\connection_info.txt"
 Public Const SCRIPT_DIR = "C:\users\shooper\proj\savagedb\git\scripts"
 Public Const MASTER_DB_DIR = "C:\Users\shooper\proj\savagedb\db\test" '"D:\savage"
+
+
+Public Function parse_parameter_file(path As String, Optional delimiter As String = ";") As Dictionary
+    
+    Dim fso As Object
+    Dim text_file As Object
+
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set text_file = fso.OpenTextFile(path, 1)
+    lines = Split(text_file.ReadAll(), vbCrLf)
+    text_file.Close
+    
+    Dim parameters As New Dictionary
+    Dim line As Variant
+    For Each line In lines
+        If line Like "*" & delimiter & "*" Then parameters(Trim(Split(line, delimiter)(0))) = Trim(Split(line, delimiter)(1))
+    Next line
+    
+    Set parse_parameter_file = parameters
+
+End Function
+
+Public Function get_connection_str(Optional user_key As String) As String
+
+    Dim conn_str As String
+    Dim conn_info As New Dictionary: Set conn_info = parse_parameter_file(CONNECTION_TXT)
+    conn_str = Replace(Replace(Replace(CONNECTION_STR, "db_name", conn_info("db_name")), "ip_address", conn_info("ip_address")), "port", conn_info("port"))
+    
+    Dim credential_info As New Dictionary: Set credential_info = parse_parameter_file(Replace(CONNECTION_TXT, "connection_info.txt", "savage_db_credentials.txt"))
+    If Len(Nz(user_key, "")) Then
+        conn_str = conn_str & ";UID=" & credential_info(user_key & "_un") & ";PWD=" & credential_info(user_key & "_pw") & ";"
+    End If
+    
+    get_connection_str = conn_str
+
+End Function
 
 
 Public Function pass_through_query(sql_str As String, Optional return_records As Boolean, Optional conn_str As String) As ADODB.Recordset
@@ -15,7 +51,7 @@ Public Function pass_through_query(sql_str As String, Optional return_records As
     If Len(conn_str) Then
         connection.Open conn_str
     Else
-        connection.Open CONNECTION_STR & ";Trusted_Connection=Yes"
+        connection.Open get_connection_str() & ";Trusted_Connection=Yes"
     End If
     
     record_set.CursorLocation = adUseClient
@@ -66,7 +102,7 @@ Public Function script_status(logfile As String) As String
     Do While Not EOF(file_number)
         Line Input #file_number, logged_line ' read in data 1 line at a time
         ' If there was an error, the log will have traceback info
-        If logged_line Like "Traceback*" Then
+        If logged_line Like "*Traceback*" Then
             status = "with errors. " & details_msg
             Exit Do ' Exit because an error was found
         ' If the script ran successfully, the last line in the log will give the output dir
@@ -140,7 +176,7 @@ ErrHndlr:
     Err.Clear
 End Function
 
-Public Function run_sdout_command(cmd As String) As String
+Public Function run_stdout_command(cmd As String) As String
 'Run a shell command, returning the output as a string
 Dim wShell As Object
 Dim output As Object
@@ -166,7 +202,7 @@ Dim stdout_str As String
     file.Delete
     Set file = Nothing
 
-    run_sdout_command = stdout_str
+    run_stdout_command = stdout_str
     
     Exit Function
 
@@ -255,7 +291,7 @@ Public Function get_user_state() As String
 
 End Function
 
-Public Function set_read_write(Optional username As String, Optional password As String) As String
+Public Function set_read_write(new_user_state As String) As String 'Optional username As String, Optional password As String) As String
 
     On Error GoTo error_login
     
@@ -263,25 +299,10 @@ Public Function set_read_write(Optional username As String, Optional password As
     Dim current_user_state As String
     current_user_state = get_user_state
     
-    Dim new_user_state As String
     Dim new_cnn_str As String
-'    If current_user_state = "read-only" Then
-'        new_user_state = "admin"
-'        If Len(username) And Len(password) Then
-'            new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=" & username & ";PWD=" & password & ";"
-'        Else
-'            MsgBox "No username or password given", vbCritical, "Invalid arguments for savagedb.set_read_write()"
-'            set_read_write = ""
-'            Exit Function
-'        End If
-'    Else
-'        new_user_state = "read-only"
-'        new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=savage_read;PWD=0l@usmur!e;"
-'    End If
 
-    If Len(username) And Len(password) Then
-        new_cnn_str = "ODBC;" & CONNECTION_STR & ";UID=" & username & ";PWD=" & password & ";"
-        new_user_state = Split(username, "_")(1) ' all usernames are in the form savage_<userstate>
+    If Len(new_user_state) Then 'Len(username) And Len(password) Then
+        new_cnn_str = "ODBC;" & get_connection_str(new_user_state)
     Else
         MsgBox "No username or password given", vbCritical, "Invalid arguments for savagedb.set_read_write()"
         set_read_write = ""
@@ -336,6 +357,192 @@ error_login:
     
 End Function
 
+Private Function test_connection() As Boolean
+    
+    On Error GoTo err_handler
+    
+    Dim db As DAO.Database
+    Dim tdf As TableDef
+    Dim current_cnn_str As String
+    Set db = CurrentDb
+    Set tdf = db.TableDefs("inholder_allotments")
+    current_cnn_str = Right(tdf.Connect, Len(tdf.Connect) - 5)
+    
+    Dim cnn As ADODB.connection
+    Set cnn = New ADODB.connection
+    
+    cnn.Open current_cnn_str
+    If cnn.State = adStateOpen Then test_connection = True Else test_connection = False
+    
+    cnn.Close
+ 
+exit_err:
+    Exit Function
+
+err_handler:
+    ' If the error is anything other than a bad connection, show the error
+    If Err.Number <> -2147467259 Then MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_err
+
+End Function
+
+
+Public Function read_change_log() As String
+    
+    Dim log_path As String: log_path = "D:\savage\" & Dir("D:\savage\change_log*.txt", vbHidden)
+    If log_path = "D:\savage\" Then Exit Function
+    
+    Dim fso As Object
+    Dim text_file As Object
+    
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    Set text_file = fso.OpenTextFile(log_path, 1)
+    log_str = text_file.ReadAll()
+    text_file.Close
+    
+    Dim line As Variant
+    Dim changes As String
+    For Each line In Split(log_str, vbCrLf)
+        If line Like "[!#]*" And Trim(line) <> "" Then changes = changes & line & vbCrLf
+    Next line
+    
+    read_change_log = changes
+    
+End Function
+
+
+Public Function check_version()
+    
+    Dim master_db_path As String: master_db_path = MASTER_DB_DIR & "\" & Dir(MASTER_DB_DIR & "\savage_frontend_v*.accdb")
+    If master_db_path <> MASTER_DB_DIR & "\" Then
+        Dim rs As Recordset: Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state;")
+        rs.MoveFirst
+        Dim this_version() As String: this_version = Split(rs.fields("version"), ".")
+        Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state IN '" & master_db_path & "';")
+        rs.MoveFirst
+        Dim master_version() As String: master_version = Split(rs.fields("version"), ".")
+        Set rs = Nothing
+        
+        Dim prompt_user As Boolean: prompt_user = False
+        ' If they have different lengths, the versions aren't in the same format
+        If UBound(this_version) = UBound(master_version) Then
+            ' Loop through each version number decimal starting with the left side (highest level)
+            
+            Dim i As Integer
+            For i = 0 To UBound(this_version)
+                ' If the master version decimal is higher than the decimal of this version, prompt the user
+                If Int(master_version(i)) > Int(this_version(i)) Then
+                    Dim msg As String
+                    msg = "A new version of the database is available at " & master_db_path & ". To take advantage of the latest functionality of the database, please" & _
+                           " save a new copy of the latest version to your preferred location and use that for all future Savage database operations. If you created" & _
+                           " queries, reports, or other Access objects in this old copy of the front end, use the 'Import objects from DB' button in your new copy" & _
+                           " to continue using them in the new copy."
+                    Dim changes As String: changes = read_change_log()
+                    If changes <> "" Then msg = msg & vbCrLf & vbCrLf & "Changes for this version include:" & vbCrLf & vbCrLf & changes
+                    MsgBox msg, vbInformation, "New version available"
+                    Exit Function
+                ' If the opposite is true, this version is new than the master (this should never actually happen)
+                ElseIf Int(master_version(i)) < Int(this_version(i)) Then
+                    Exit Function
+                End If
+            Next i
+        End If
+    End If
+
+End Function
+
+
+Public Function open_main_form()
+' Check the user state, and open the appropriate form.
+' If the user is logged in as "admin", warn them, and set the log in/out button accordingly
+' Also warn the user if their version of the DB is outdated
+
+    On Error GoTo err_handler
+    
+    ' Show the datbase version in the caption
+    
+    Dim rs As Recordset: Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state;")
+    rs.MoveFirst
+    
+    Dim main_form As Form
+    DoCmd.OpenForm "frm_main"
+    Set main_form = Forms("frm_main").Form
+    main_form.Caption = "Savage Check Station Database Main Menu - " & Nz(rs.fields("version"), "")
+    Set rs = Nothing
+    
+    ' Check connection
+    If Not test_connection() Then GoTo bad_connection
+    
+    Dim user_state As String
+    user_state = savagedb.get_user_state()
+    
+    If user_state = "admin" Then
+        MsgBox "You are currently logged in as an administrator. Database records are now editable, and " & _
+               "all edits are permanent. To log out as an administrator, click the 'Log in as read-only' button.", _
+               vbExclamation, _
+               "Logged in as administrator"
+        main_form.btn_login_admin.Caption = "Log in as read-only"
+        main_form.btn_open_edit_inholders_form.Enabled = True
+    ElseIf user_state = "permit" Then
+        'Notify user that they can edit permits and nothing else
+        DoCmd.Close acForm, main_form.Name
+        MsgBox "You are currently logged in as a permit administrator. You can edit permit info in the road_permits table only, " & _
+               " but no other tables are editable. To log out as an administrator, click the 'Log out' button.", _
+               vbExclamation, _
+               "Logged in as permit administrator"
+        DoCmd.OpenForm "frm_permit_menu"
+        
+        ' Hide nav pane
+        DoCmd.NavigateTo ("acNavigationCategoryObjectType")
+        DoCmd.RunCommand (acCmdWindowHide)
+    Else
+        GoTo default_open
+    End If
+    
+    ' Check to see if there's a later version and prompt the user if so
+    check_version
+    
+    Exit Function
+
+
+default_open:
+    
+    main_form.btn_login_admin.Caption = "Edit vehicle data in tables"
+    main_form.btn_open_edit_inholders_form.Enabled = False
+    
+    ' Hide nav pane
+    DoCmd.NavigateTo ("acNavigationCategoryObjectType")
+    DoCmd.RunCommand (acCmdWindowHide)
+    
+    ' Check to see if there's a later version and prompt the user if so
+    check_version
+    
+    Exit Function
+
+bad_connection:
+    MsgBox "The front end database application could not connect to the back-end database." & _
+           " Check your network connection, then close and re-open the front end application to try again.", _
+           vbCritical, _
+           "Could not connect to back-end database"
+    GoTo default_open
+    Exit Function
+
+exit_err:
+    On Error Resume Next
+    current_db.Close
+    Set current_db = Nothing
+    Exit Function
+
+err_handler:
+    If Err.Number = -2147467259 Or Err.Description Like "*Could not connect*" Then
+        GoTo bad_connection
+    Else
+        MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    End If
+    Resume exit_err
+
+End Function
+
 
 Public Function cleanODBCConection()
     
@@ -383,32 +590,47 @@ errHandler:
 End Function
 
 
-Public Function open_file_dialog(Optional title As String = "Select an output folder", Optional dialog_type As Integer = msoFileDialogFolderPicker, Optional filter_str As String = "", Optional filter_name As String = "") As String
+Public Function open_file_dialog(Optional ByVal title As String = "Select an output folder", _
+                                 Optional ByVal dialog_type As Integer = msoFileDialogFolderPicker, _
+                                 Optional ByVal filter_str As String = "", _
+                                 Optional ByVal filter_name As String = "", _
+                                 Optional ByVal allows_multiple As Boolean = False, _
+                                 Optional ByVal initial_view As Integer = msoFileDialogViewDetails) As String
 'NOTE: To use this code, you must reference
 'The Microsoft Office 16.0 (or current version)
 'Object Library by clicking menu Tools > References
 '   -Check the box for Microsoft Office 16.0 Object Library
 '   -Click OK
-
+    
+    Dim selection As Variant
+    Dim selected_string As String
+    Dim item As Variant
     With Application.FileDialog(dialog_type)
         .title = title
+        .AllowMultiSelect = allows_multiple
+        .InitialView = msoFileDialogViewDetails ' For some stupid reason, it always opens as large icon view
         
         If Len(Nz(filter_str)) > 0 Then
             .Filters.Add filter_name, filter_str, 1
         End If
         
         If .Show Then
-            open_file_dialog = .SelectedItems(1)
+            For Each item In .SelectedItems
+                selected_string = selected_string & item & "|"
+            Next item
+            If Right(selected_string, 1) = "|" Then selected_string = Left(selected_string, Len(selected_string) - 1)
+            open_file_dialog = selected_string
         End If
         
     End With
 
 End Function
 
-Public Sub export_vba_code(Optional out_dir As String = "")
+Public Function export_vba_code(Optional out_dir As String = "")
 
     Dim c As VBComponent
     Dim ext As String
+    'Dim out_dir As String
     
     If out_dir & "" = "" Then
         out_dir = CurrentProject.path & "\" & Left(CurrentProject.Name, InStrRev(CurrentProject.Name, ".") - 1) & "_vba"
@@ -435,7 +657,22 @@ Public Sub export_vba_code(Optional out_dir As String = "")
         End If
     Next c
 
-End Sub
+End Function
+
+Public Function get_inholder_name(inholder_code As String) As String
+    
+    Dim rs As Recordset
+    Set rs = CurrentDb.OpenRecordset("SELECT inholder_name FROM inholder_allotments WHERE inholder_code = '" & inholder_code & "';")
+    rs.MoveFirst
+    If rs.RecordCount > 0 Then
+        get_inholder_name = Nz(rs.fields("inholder_name"), "")
+    Else
+        get_inholder_name = ""
+    End If
+    
+    Set rs = Nothing
+
+End Function
 
 
 Public Function make_qr_str(id_number As Integer) As String
@@ -452,16 +689,19 @@ Public Function make_qr_str(id_number As Integer) As String
         Exit Function
     End If
     
+    Dim inholder_name As String
     Dim q As String: q = """""" ' this will produce a double quote ("") in the cmd
     Dim vehicle_type As String: vehicle_type = rs.fields("permit_type")
     Select Case vehicle_type
         Case Is = "Right of Way"
+            inholder_name = get_inholder_name(rs.fields("permit_number_prefix"))
             If rs.fields("is_lodge_bus") Then
                 qr_str = "{" & q & "vehicle_type" & q & ": " & q & "Lodge Bus" & q & "," & _
-                         " " & q & "Lodge" & q & ": " & q & rs.fields("permit_holder") & q & ","
+                         " " & q & "Lodge" & q & ": " & q & inholder_name & q & ","
             Else
                 qr_str = "{" & q & "vehicle_type" & q & ": " & q & "Right of Way" & q & "," & _
-                         " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ","
+                         " " & q & "Inholder name" & q & ": " & q & inholder_name & q & "," '& _
+                         '" " & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & ","
             End If
         Case Is = "NPS Approved"
             qr_str = "{" & q & "vehicle_type" & q & ": " & q & "NPS Approved" & q & "," & _
@@ -471,24 +711,23 @@ Public Function make_qr_str(id_number As Integer) As String
             End If
         Case Is = "NPS Contractor"
             qr_str = "{" & q & "vehicle_type" & q & ": " & q & "NPS Contractor" & q & "," & _
-                     " " & q & "Company/Organization name" & q & ": " & q & rs.fields("permit_holder") & q & "," & _
-                     " " & q & "Project type" & q & ": " & q & rs.fields("contractor_project_type") & q & ","
+                     " " & q & "Company/Organization name" & q & ": " & q & rs.fields("permit_holder") & q & ","
         Case Is = "Pro Film/Photo"
             qr_str = "{" & q & "vehicle_type" & q & ": " & q & "Photographer" & q & "," & _
                      " " & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & ","
         Case Else ' Accessibility, Employee, Subsistence
             qr_str = "{" & q & "vehicle_type" & q & ": " & q & vehicle_type & q & "," & _
-                     " " & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & "," & _
-                     " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ","
+                     " " & q & "Driver's full name" & q & ": " & q & rs.fields("permit_holder") & q & ","
     End Select
     
     Dim n_days As Integer: n_days = DateDiff("d", rs.fields("date_in"), rs.fields("date_out"))
+    'qr_str = qr_str & " " & q & "Number of expected nights" & q & ": " & q & n_days & q & ","
     'Dim permit_number As String: permit_number = Replace(Me.lbl_permit_number.Caption, "Permit #: ", "")
     
-    qr_str = qr_str & " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ", " & _
-                      " " & q & "Number of expected nights" & q & ": " & q & n_days & q & "," & _
-                      " " & q & "Permit number" & q & ": " & q & rs.fields("permit_number_prefix") & rs.fields("permit_number") & q & "}"
+    If Not qr_str Like "*Permit holder: *" Then qr_str = qr_str & " " & q & "Permit holder" & q & ": " & q & rs.fields("permit_holder") & q & ", "
+    qr_str = qr_str & " " & q & "Permit number" & q & ": " & q & rs.fields("permit_number_prefix") & rs.fields("permit_number") & q & "}"
     make_qr_str = qr_str
+    Debug.Print qr_str
 
 End Function
 
@@ -577,14 +816,14 @@ Public Function save_permit_to_file(ByVal row_id As Integer, permit_type As Stri
     Kill qr_path
     
     ' Deselect all permits
-    CurrentDb.Execute ("UPDATE road_permits SET select_permit = 0;")
+    CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = 0;")
     
     save_permit_to_file = out_path ' return the path
     
 End Function
 
 
-Public Function restart_db(uid As String, pwd As String) As Integer
+Public Function restart_db(user_key As String) As Integer
         
     Const TIMEOUT = 5 ' seconds to wait before quitting the restart script
     
@@ -596,7 +835,7 @@ Public Function restart_db(uid As String, pwd As String) As Integer
     restart_db = response
     If response = vbYes Then
         ' reset connection
-        savagedb.set_read_write uid, pwd
+        savagedb.set_read_write user_key
         
         ' run script to reopen db once it's closed
         Dim cmd As String: cmd = SCRIPT_DIR & "\open_db.cmd " & Application.CurrentProject.FullName & " " & TIMEOUT
@@ -659,3 +898,4 @@ Public Function make_road_permit_number(Optional inholder_code As String = "") A
     make_road_permit_number = id_number
 
 End Function
+

@@ -179,7 +179,7 @@ Private Sub btn_run_Click()
     
     ' Run a pass through query
     Set qdf = CurrentDb.CreateQueryDef(query_name)
-    qdf.Connect = "ODBC;" & savagedb.CONNECTION_STR & "UID=savage_read;PWD=0l@usmur!e;"
+    qdf.Connect = "ODBC;" & savagedb.get_connection_str("read")
     qdf.sql = sql_str
     qdf.Close
     DoCmd.OpenQuery qdf.Name

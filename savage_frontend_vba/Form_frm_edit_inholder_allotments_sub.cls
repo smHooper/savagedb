@@ -73,7 +73,7 @@ Private Sub btn_insert_inholder_Click()
     Dim tdf As TableDef
     Set db = CurrentDb
     Set tdf = db.TableDefs("inholder_allotments")
-    pass_through_query "INSERT INTO inholder_allotments (permit_holder) VALUES ('" & Me.txt_new_permit_holder & "');", _
+    pass_through_query "INSERT INTO inholder_allotments (inholder_name) VALUES ('" & Me.txt_new_permit_holder & "');", _
                         False, _
                         Right(tdf.Connect, Len(tdf.Connect) - 5)
     Set tdf = Nothing

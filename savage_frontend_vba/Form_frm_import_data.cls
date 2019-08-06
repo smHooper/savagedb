@@ -8,17 +8,60 @@ Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Compare Database
-Private Const ARCHIVE_DIR As String = "C:\users\shooper\desktop\temp\import_test\archive"
-Private Const DB_BROWSER_PATH As String = "C:\Program Files\DB Browser for SQLite\DB Browser for SQLite.exe"
+Private Const ARCHIVE_DIR = "\\inpdenards\savage\app_data"
+Private Const DB_BROWSER_PATH = "\\inpdenards\savage\db_browser_for_sqlite\DB Browser for SQLite.exe"
 
 
 
 Private Sub btn_open_filepicker_Click()
     
-    Me.txt_sqlitedb_path = savagedb.open_file_dialog("Select a .db file to import", msoFileDialogFilePicker, _
-                             "*.db", "SQLite database files")
+    On Error GoTo err_handler
+    
+    Dim selection As String
+    selection = savagedb.open_file_dialog("Select a .db file to import", _
+                                          msoFileDialogFilePicker, _
+                                          "*.db", _
+                                          "SQLite database files", _
+                                          allows_multiple:=True)
+    
+    ' If the user actually selected 1 or more paths, update the txt box. Otherwise, keep whatever was there
+    If Len(selection) > 0 Then
+        Me.txt_sqlitedb_path = Replace(selection, "|", vbCrLf)
+        break_links ' In case the user selected a different file after loading data, remove the data
+    End If
+    
+    ' Update the background color and enable/disable the load data button
+    txt_sqlitedb_path_AfterUpdate
+
+exit_err:
+    Exit Sub
+
+err_handler:
+    If Err.Number = 75 Or Err.Number = 70 Then
+            MsgBox "A file for folder could not be deleted because it's currently in use. " & _
+                    "Close all other applications and try again.", _
+                    vbCritical, _
+                    "File access error"
+    Else
+        MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    End If
+    Resume exit_err
 
 End Sub
+
+
+Private Sub txt_sqlitedb_path_AfterUpdate()
+    
+    If Len(Me.txt_sqlitedb_path) > 0 Then
+        Me.btn_open_sqlitedb.Enabled = True
+    Else
+        Me.btn_open_sqlitedb.Enabled = False
+        Me.txt_sqlitedb_path.Enabled = True
+        Me.txt_sqlitedb_path.BackColor = Me.tcl_data.PressedColor
+    End If
+
+End Sub
+
 
 Private Function set_tab_datasource(Optional tab_name As String)
     
@@ -71,25 +114,33 @@ End Function
 
 Private Sub btn_open_sqlitedb_Click()
     
-    'On Error Resume Next
     On Error GoTo err_handler
     
-    Dim sqlite_path As String
+    Dim sqlite_paths As String
     Dim temp_dir As String
     
-    sqlite_path = Nz(Me.txt_sqlitedb_path, "")
-    If Len(sqlite_path) = 0 Then
-        MsgBox "You must select or enter the path of a database file to import", _
+    sqlite_paths = Nz(Me.txt_sqlitedb_path, "")
+    If Len(sqlite_paths) = 0 Then
+        MsgBox "You must select or enter the path of 1 or more database files to import", _
                vbCritical, _
                "No DB file selected"
         Exit Sub
     End If
     
     ' Set the recordsource of all tabs' subforms to drop the connection to the temp DB if there is one
+    Dim response As Integer
+    If Not check_all_empty() Then
+        response = MsgBox("Are you sure you want to load the data again? Any edits you've made to the currently loaded data will be lost", _
+                           vbYesNoCancel + vbExclamation, _
+                           "Reload data?")
+        If response = vbNo Or response = vbCancel Then Exit Sub
+    End If
+    ' The user clicked "Yes" so continue
     break_links
     
     ' If the temp dir exists, delete it and re-make it
-    temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+    Dim first_path As String: first_path = Split(sqlite_paths, vbCrLf)(0)
+    temp_dir = Left(first_path, InStrRev(first_path, "\")) & "_temp"
     If Dir(temp_dir, vbDirectory + vbHidden) <> "" Then
         If Dir(temp_dir & "\*.*") <> "" Then
             Kill temp_dir & "\*.*"
@@ -104,41 +155,54 @@ Private Sub btn_open_sqlitedb_Click()
     Dim logfile As String
     logfile = temp_dir & "\log_validate.txt"
     validate_cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\validate_app_data.py " & _
-                   sqlite_path & _
+                   """" & Replace(sqlite_paths, vbCrLf, ";") & """" & _
                    " " & CONNECTION_TXT & _
-                   " > " & logfile & " 2>&1"
+                   " > """ & logfile & """ 2>&1"
 
     savagedb.run_io_command validate_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Validating data from file..."
     
-    
+    ' Check for errors
     Dim filestream As Integer: filestream = FreeFile
     Dim lines() As String
     Dim i As Integer
-    Dim already_imported As Boolean: already_imported = False
+    Dim j As Integer
+    Dim already_imported As String ': already_imported = False
+    Dim message As String
     Open logfile For Input As #filestream
         lines = Split(Input$(LOF(filestream), #filestream), vbNewLine)
     Close #filestream
     
     For i = 0 To UBound(lines)
-        If lines(i) Like "*These data have already been uploaded*" Then
-            already_imported = True
+        If lines(i) Like "*These data have already been uploaded*" And Not lines(i) Like "*raise RuntimeError(*" Then
+            already_imported = Trim(Split(lines(i), ":")(2)) 'Get's the path of the file
+            message = "The data from the file " & already_imported & " have already been imported. Check that you selected " & _
+                      "the right file and that no one else has already imported this file."
             Exit For
+        ' Check if any numeric fields have non-numeric characters
+        ElseIf lines(i) Like "ValueError: The following numeric fields in the table*" Then
+            message = Replace(lines(i), "ValueError: ", "")
+            For j = i + 1 To UBound(lines)
+                message = message & vbCrLf & lines(j)
+            Next j
+            message = message & vbCrLf & "Open the database using 'DB Browser for SQLite' to edit the data before trying to import again."
+            Exit For
+        ' Also check for the line with filtered data file paths
+        ElseIf lines(i) Like "sqlite_paths: *" Then
+            sqlite_paths = Replace(Replace(lines(i), "sqlite_paths: ", ""), ";", vbCrLf)
+            Me.txt_sqlitedb_path = sqlite_paths
         End If
     Next i
     
     ' Close the script status form immediately if there wasn't an error
     If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
         If Forms.frm_query_plot_wait.label_status.Caption Like "*error*" Then
-            If already_imported Then
+            If Len(message) > 0 Then
                 DoCmd.Close acForm, "frm_query_plot_wait"
-                MsgBox "The data from this file have already been imported. Check that you selected " & _
-                        "the right file and that no one else has already imported this file.", _
-                        vbCritical, _
-                        "Import error"
-                Exit Sub
-            Else
-                Exit Sub
+                MsgBox message, _
+                       vbCritical, _
+                       "Import error"
             End If
+            Exit Sub
         Else
             DoCmd.Close acForm, "frm_query_plot_wait"
         End If
@@ -161,10 +225,10 @@ Private Sub btn_open_sqlitedb_Click()
     Dim prp As DAO.Property
     Dim qdf As DAO.QueryDef
     Dim query_name As String
+    Dim query_sql As String
     i = 0 ' Reset to keep track of tables with data for the tables array
     Dim tables() As String
     Dim tab_IDs() As Integer
-    Dim response As Integer
     Dim missing_lookups As Boolean: missing_lookups = False
     
     Set temp_app = New Access.Application
@@ -206,7 +270,7 @@ Private Sub btn_open_sqlitedb_Click()
                 If response = vbYes Then
                     Dim wShell As Object
                     Set wShell = VBA.CreateObject("WScript.Shell")
-                    Dim cmd As String: cmd = """" & DB_BROWSER_PATH & """ " & sqlite_path
+                    Dim cmd As String: cmd = """" & DB_BROWSER_PATH & """ " & sqlite_paths
                     wShell.Run cmd, 1, False ' Run command silently and but don't wait for process to finish
                 End If
                 
@@ -217,6 +281,9 @@ Private Sub btn_open_sqlitedb_Click()
                 'Exit Sub
                 'GoTo ContinueDoWhile
             End If
+            
+            ' Delete the bogus rows that the validate Python script had to create because Access can't handle mixed dytpes
+            temp_db.Execute ("DELETE * FROM " & table_name & " WHERE destination='aaaa'")
             
             ' Add the import column so the user can check whether or not to keep each record.
             '   Set all records to checked by default
@@ -233,32 +300,30 @@ Private Sub btn_open_sqlitedb_Click()
             query_name = "qry_import_" & table_name
             For Each qdf In current_db.QueryDefs
                 If qdf.Name = query_name Then
-                    qdf.sql = "SELECT import, duplicated_in_app, found_in_db, datetime, *, '" & _
-                               Environ$("Username") & "' AS entered_by, 'imported' AS entry_method " & _
-                              "FROM " & table_name & " IN '" & temp_db_path & "';"
+                    query_sql = "SELECT import, duplicated_in_app, found_in_db, datetime, *, '" & _
+                                Environ$("Username") & "' AS entered_by, 'imported' AS entry_method " & _
+                                "FROM " & table_name & " IN '" & temp_db_path & "';"
+                    qdf.sql = query_sql
                     query_exists = True
                 End If
             Next qdf
             Set qdf = Nothing
             If Not query_exists Then
-                Set qdf = current_db.CreateQueryDef(query_name, _
-                            "SELECT import, duplicated_in_app, found_in_db, datetime, *, '" & _
-                            Environ$("Username") & "' AS entered_by, 'imported' AS entry_method " & _
-                            "FROM " & table_name & " IN '" & temp_db_path & "';")
+                Set qdf = current_db.CreateQueryDef(query_name, query_sql)
                 SetHiddenAttribute acQuery, query_name, True
             End If
             
             ' Set the datasource for this tab if the table has any data. Otherwise,
             '   make the corresponding tab invisible
-            If .DCount("id", table_name) > 0 Then
-                ReDim Preserve tables(i)
-                tables(i) = table_name
+            If .DCount("destination", table_name) > 0 Then
                 i = i + 1
+                ReDim Preserve tables(i - 1)
+                tables(i - 1) = table_name
             Else
                 For j = 0 To Me.tcl_data.Pages.Count - 1
                     With Me.tcl_data.Pages(j)
                         If .Name = "tab_" & table_name Then
-                            Me.SetFocus
+                            Me.btn_open_sqlitedb.SetFocus
                             .Visible = False
                             Exit For
                         End If
@@ -287,6 +352,13 @@ ContinueDoWhile:
     
     Dim tname As Variant
     Dim field_ctl As Control
+    If i = 0 Then
+        MsgBox "All tables in this data file are empty. Make sure you selected the right file to import.", _
+               vbExclamation, _
+               "Data file empty"
+        break_links
+        GoTo exit_err
+    End If
     For Each tname In tables
         set_tab_datasource "tab_" & tname
     Next tname
@@ -306,8 +378,13 @@ ContinueDoWhile:
     Me.txt_sqlitedb_path.Locked = True
     Me.txt_sqlitedb_path.BackColor = Me.tcl_data.BackColor
     Me.txt_sqlitedb_path.BorderColor = Me.Detail.BackColor
+    Me.btn_open_sqlitedb.Enabled = True
+    
+    ' Enable the import button
+    Me.btn_import.Enabled = True
     
     Exit Sub
+    
 
 exit_err:
     On Error Resume Next
@@ -336,38 +413,30 @@ ErrFileAccess:
 
 End Sub
 
-
-
-Private Function validate_lookup_values(data_table, data_field, temp_db_path, lookup_table, lookup_field) As Boolean
-' Make sure that all values in the data_field of data_table exist
-' in the lookup_field of lookup_table
+Private Function check_all_empty() As Boolean
+' Check if all of the tabs are empty
+   
+    check_all_empty = True 'Initialize to true
     
-    Dim data_rs As DAO.Recordset
-    Dim lookup_rs As DAO.Recordset
-    
-    ' Get recordset for both data_table and lookup_table
-    Set data_rs = CurrentDb.OpenRecordset("SELECT " & data_field & " FROM " & data_table & " IN '" & temp_db_path & "';")
-    Set lookup_rs = CurrentDb.OpenRecordset("SELECT " & lookup_field & " FROM " & lookup_table & ";")
-    
-    ' For each value in data field
-    '      For each value in lookup table
-    '       check if data field value matches lookup value
-    '       If so, exit for twice
-    '       Else, add to array of missing values
-    ' Return the array
-    
-    ' In main sub,
-    ' check if the array has more than a length of 0
-    ' If so, ask the user if they would like to add these values to lookup
-    '   If yes, show form that has all records for the whole lookup table (probably have to make a different form for each lookup table
-    '   If no, cancel import
-
+    Dim subform_name As String
+    For i = 0 To Me.tcl_data.Pages.Count - 1
+        subform_name = Replace(Me.tcl_data.Pages(i).Name, "tab_", "sub_")
+        If Me.Form.Controls(subform_name).SourceObject <> "frm_import_data_sub" Then
+            check_all_empty = False
+            Exit For
+        End If
+    Next i
 
 End Function
 
 Private Sub btn_import_Click()
     
     On Error GoTo err_handler
+    
+    If check_all_empty() Then
+        MsgBox "You must click the ""Load data"" button first before importing these data", vbCritical, "No data loaded"
+        Exit Sub
+    End If
     
     Dim response As Integer
     response = MsgBox("Are you sure you want to import the data? If you click 'yes', " & _
@@ -376,7 +445,7 @@ Private Sub btn_import_Click()
                        "Import data?")
     
     If response = vbYes Then
-        Dim sqlite_path As String
+        Dim sqlite_paths As String
         Dim i As Integer ' Counts tabs
         Dim j As Integer ' Counts fields
         Dim table_name As String
@@ -387,8 +456,9 @@ Private Sub btn_import_Click()
         Dim field_names As String
         Dim export_sql As String
         
-        sqlite_path = Me.txt_sqlitedb_path
-        temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+        sqlite_paths = Me.txt_sqlitedb_path
+        Dim first_path As String: first_path = Split(sqlite_paths, vbCrLf)(0)
+        temp_dir = Left(first_path, InStrRev(first_path, "\")) & "_temp"
         DoCmd.OpenForm "frm_query_plot_wait"
         Forms.frm_query_plot_wait.Form.label_status.Caption = vbCrLf & vbCrLf & "Saving changes to app data..."
         DoCmd.RepaintObject acForm, "frm_query_plot_wait"
@@ -426,35 +496,44 @@ Private Sub btn_import_Click()
         Set record_set = Nothing
         DoCmd.Close acForm, "frm_query_plot_wait"
         
-        ' Reset subform data sources (so temp db isn't connected) so the Python script can delete the temp dir
-        break_links
-        
         ' run script to import data into postgres
         Dim import_cmd As String
         Dim logfile As String
         logfile = temp_dir & "\log_import.txt"
         import_cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\import_app_data.py " & _
-                        temp_dir & " " & _
-                        sqlite_path & _
+                        """" & temp_dir & """" & _
+                        " """ & Replace(temp_dir, "_temp", "combined_data.db") & """" & _
                         " " & CONNECTION_TXT & _
                         " " & ARCHIVE_DIR & _
-                        " > " & logfile & " 2>&1"
+                        " """ & Replace(sqlite_paths, vbCrLf, ";") & """" & _
+                        " > """ & logfile & """ 2>&1"
 
         savagedb.run_io_command import_cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Importing data..."
         
         ' Close the script status form immediately
+        Dim status_message As String
         If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
             If Not (Forms.frm_query_plot_wait.label_status.Caption Like "*error*") Then
                 DoCmd.Close acForm, "frm_query_plot_wait"
             Else
+                status_message = Forms.frm_query_plot_wait.label_status.Caption
+                Forms.frm_query_plot_wait.label_status.Caption = "None of the data were imported because the s" & Right(status_message, Len(status_message) - 1)
                 Exit Sub
             End If
         End If
         
-        MsgBox "Your data were successfully imported. You might have to close and reopen the any currently open tables to see the changes.", _
+        MsgBox "Your data were successfully imported. You might have to close and reopen any currently open tables to see the changes.", _
                 vbInformation, _
                 "Import successful"
-
+        
+        ' Reset subform data sources (so temp db isn't connected) so the Python script can delete the temp dir
+        break_links
+        Me.txt_sqlitedb_path = ""
+        Me.txt_sqlitedb_path.BackColor = Me.tcl_data.PressedColor
+        Me.txt_sqlitedb_path.Enabled = True
+        Me.btn_open_sqlitedb.Enabled = False
+        Me.btn_import.Enabled = False
+        
     End If
 
 exit_sub:
@@ -471,16 +550,19 @@ Private Function delete_temp_files() As String
 
     ' If the temp dir exists, delete it and re-make it
     Dim temp_dir As String
-    Dim sqlite_path As String: sqlite_path = Nz(Me.txt_sqlitedb_path, "")
+    Dim sqlite_paths As String: sqlite_paths = Nz(Me.txt_sqlitedb_path, "")
     Dim fso As Object
-    temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+    Dim first_path As String
+    If Len(sqlite_paths) > 0 Then first_path = Split(sqlite_paths, vbCrLf)(0)
+    temp_dir = Left(first_path, InStrRev(first_path, "\")) & "_temp"
     delete_temp_files = temp_dir
     If Dir(temp_dir, vbDirectory + vbHidden) <> "" Then
-        If Dir(temp_dir & "\*.*") <> "" Then
-            Kill temp_dir & "\*.*"
-        End If
-        SetAttr temp_dir, vbNormal
-        RmDir temp_dir
+        CreateObject("Scripting.FileSystemObject").DeleteFolder temp_dir
+'        If Dir(temp_dir & "\*.*") <> "" Then
+'            Kill temp_dir & "\*.*"
+'        End If
+'        SetAttr temp_dir, vbNormal
+'        RmDir temp_dir
     End If
 
 End Function
@@ -504,8 +586,11 @@ Private Sub btn_cancel_Click()
     Next i
     
     Dim temp_dir As String
-    Dim sqlite_path As String: sqlite_path = Nz(Me.txt_sqlitedb_path, "")
-    temp_dir = Left(sqlite_path, InStrRev(sqlite_path, "\")) & "_temp"
+    Dim sqlite_paths As String: sqlite_paths = Nz(Me.txt_sqlitedb_path, "")
+    Dim first_path As String
+    If Len(sqlite_paths) > 0 Then first_path = Split(sqlite_paths, vbCrLf)(0)
+    temp_dir = Left(first_path, InStrRev(first_path, "\")) & "_temp"
+        
     If data_loaded Then
         Dim response As Integer
         response = MsgBox("Are you sure you want to close this form? If you click 'yes', " & _

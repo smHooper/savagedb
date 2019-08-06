@@ -51,7 +51,9 @@ End Function
 
 Public Function show_hide_dropdowns()
 ' Display the corresponding dropdown menus for inholders or NPS approved if applicable
-
+    
+    On Error GoTo err_handler
+    
     Dim permit_type As String
     permit_type = Me.dpd_permit_type
     
@@ -68,16 +70,15 @@ Public Function show_hide_dropdowns()
         Me.dpd_inholder.ControlTipText = "Select the inholder's name"
         Me.chk_lodge_bus.Locked = False
         Me.chk_lodge_bus.Visible = True
-        
-'        Me.dpd_project_type = ""
-'        Me.dpd_project_type.Visible = False
-'        Me.lbl_project_type.Visible = False
+        Me.rct_lodge_bus_disabled.Visible = False
         
         Me.dpd_nps_work_group = ""
-        Me.dpd_nps_work_group.Visible = False
-        Me.lbl_nps_work_group.Visible = False
-        Me.chk_contractor_reg_ops.Visible = False
-        Me.lbl_contractor_reg_ops.Visible = False
+        'Me.dpd_nps_work_group.Visible = False
+        'Me.lbl_nps_work_group.Visible = False
+        Me.chk_contractor_reg_ops.Locked = True
+        Me.chk_contractor_reg_ops = 0
+        'Me.lbl_contractor_reg_ops.Visible = False
+        Me.rct_regular_ops.Visible = True
         Me.lbl_lodge_bus.Visible = True
         
     ElseIf permit_type = "NPS Approved" Then
@@ -91,20 +92,22 @@ Public Function show_hide_dropdowns()
         Me.dpd_inholder = "" '"NUL"
         Me.chk_lodge_bus = 0
         Me.chk_lodge_bus.Locked = True
-        Me.chk_lodge_bus.Visible = False
+        Me.rct_lodge_bus_disabled.Visible = True
+        'Me.chk_lodge_bus.Visible = False
         Me.dpd_inholder.Locked = True
         Me.dpd_inholder.BackColor = Me.txt_entered_by.BackColor
         Me.dpd_inholder.ControlTipText = ""
+        
         
 '        Me.dpd_project_type = ""
 '        Me.dpd_project_type.Visible = False
 '        Me.lbl_project_type.Visible = False
         
         Me.dpd_nps_work_group = ""
-        Me.dpd_nps_work_group.Visible = False
-        Me.lbl_nps_work_group.Visible = False
-        Me.chk_contractor_reg_ops.Visible = False
-        Me.lbl_contractor_reg_ops.Visible = False
+        Me.chk_contractor_reg_ops.Locked = True
+        Me.chk_contractor_reg_ops = 0
+        'Me.lbl_contractor_reg_ops.Visible = False
+        Me.rct_regular_ops.Visible = True
         Me.lbl_lodge_bus.Visible = True
         
     ElseIf permit_type = "NPS Contractor" Then
@@ -114,20 +117,26 @@ Public Function show_hide_dropdowns()
         Me.dpd_approved_type.ControlTipText = ""
         'Me.lbl_approved_type.Visible = False
         
-        Me.lbl_inholder.Visible = False
+        'Me.lbl_inholder.Visible = False
         Me.dpd_inholder = "" '"NUL"
         Me.chk_lodge_bus = 0
         Me.chk_lodge_bus.Locked = True
-        Me.chk_lodge_bus.Visible = False
+        'Me.chk_lodge_bus.Visible = False
+        Me.rct_lodge_bus_disabled.Visible = True
         Me.dpd_inholder.Locked = True
         Me.dpd_inholder.BackColor = Me.txt_entered_by.BackColor
         Me.dpd_inholder.ControlTipText = ""
         
-        Me.dpd_nps_work_group.Visible = True
-        Me.lbl_nps_work_group.Visible = True
+        'Me.dpd_nps_work_group.Visible = True
+        'Me.lbl_nps_work_group.Visible = True
+        Me.dpd_nps_work_group.BackColor = Me.txt_date_in.BackColor
+        Me.dpd_nps_work_group.Locked = False
         Me.chk_contractor_reg_ops.Visible = True
+        Me.chk_contractor_reg_ops.Locked = False
+        Me.rct_regular_ops.Visible = False
         Me.lbl_contractor_reg_ops.Visible = True
-        Me.lbl_lodge_bus.Visible = False
+        Me.rct_regular_ops.Visible = False
+        'Me.lbl_lodge_bus.Visible = False
     
     Else
         Me.dpd_approved_type = ""
@@ -136,26 +145,35 @@ Public Function show_hide_dropdowns()
         Me.dpd_approved_type.ControlTipText = ""
         'Me.lbl_approved_type.Visible = True
         
-        Me.lbl_inholder.Visible = True
+        'Me.lbl_inholder.Visible = True
         Me.dpd_inholder = "" '"NUL"
         Me.chk_lodge_bus = 0
         Me.chk_lodge_bus.Visible = False
         Me.dpd_inholder.Locked = True
         Me.dpd_inholder.BackColor = Me.txt_entered_by.BackColor
         Me.dpd_inholder.ControlTipText = ""
+        Me.rct_lodge_bus_disabled.Visible = True
         
 '        Me.dpd_project_type = ""
 '        Me.dpd_project_type.Visible = False
 '        Me.lbl_project_type.Visible = False
         
         Me.dpd_nps_work_group = ""
-        Me.dpd_nps_work_group.Visible = False
-        Me.lbl_nps_work_group.Visible = False
-        Me.chk_contractor_reg_ops.Visible = False
-        Me.lbl_contractor_reg_ops.Visible = False
+        Me.dpd_nps_work_group.BackColor = Me.txt_entered_by.BackColor
+        Me.dpd_nps_work_group.Locked = True
+        Me.chk_contractor_reg_ops.Locked = True
+        Me.chk_contractor_reg_ops = 0
+        'Me.lbl_contractor_reg_ops.Visible = False
+        Me.rct_regular_ops.Visible = True
         Me.lbl_lodge_bus.Visible = True
     End If
 
+exit_sub:
+    Exit Function
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
 
 End Function
 
@@ -167,11 +185,11 @@ Private Function update_permit_numnber()
     ' the same ID number. If we called get_permit_number() when editing an
     ' existing record, it would increment the ID number 1 because get_permit_number()
     ' would find the next highest permit number.
-    If Me.lbl_is_new_permit.Caption = "new permit" Then
-        Me.lbl_permit_number.Caption = "Permit #: " & get_permit_number()
+    'If Me.lbl_is_new_permit.Caption = "new permit" Then
+    '    Me.lbl_permit_number.Caption = "Permit #: " & get_permit_number()
     
     ' If editing, just update the inholder code if necessary
-    Else
+    If Me.lbl_is_new_permit.Caption <> "new permit" Then
         Dim permit_number As String
         Dim inholder_code As String
         inholder_code = Me.dpd_inholder & "" '.Column(1, Me.dpd_inholder.ListIndex) & ""
@@ -208,7 +226,6 @@ err_handler:
     Resume exit_sub
 
 End Sub
-
 
 
 Private Sub txt_plate_number_AfterUpdate()
@@ -387,7 +404,7 @@ Private Sub save_edits()
     Dim supports_ops As Boolean
     For Each ctl In Me.Controls
         If ctl.ControlType = acTextBox Or ctl.ControlType = acComboBox And ctl.Tag <> "" Then
-            sql = sql & ctl.Tag & "='" & ctl.Value & "', "
+            sql = sql & ctl.Tag & "='" & Replace(Nz(ctl.Value, ""), "'", "''") & "', " ' Make sure apostrophes are doubled up ('')
         ElseIf ctl.ControlType = acCheckBox Then
             If ctl.Tag = "is_lodge_bus" Then
                 If ctl.Value = 0 Then is_lodge = False Else is_lodge = True
@@ -404,7 +421,9 @@ Private Sub save_edits()
     sql = sql & " permit_number=" & Replace(Me.lbl_permit_number.Caption, "Permit #: " & inholder_code, "") & _
                 " WHERE id=" & current_id & ";"
     CurrentDb.Execute (sql)
-
+    
+    Forms.frm_permit_menu.refresh_permit_table
+    Forms.frm_permit_menu.sub_permits.Requery
 
 End Sub
 
@@ -485,7 +504,7 @@ Private Function get_insert_sql() As String
                 If ctl.Tag = "vehicle_year" Then ' this is an Int, so it can't have quotes
                     values = values & ctl.Value & ", "
                 Else
-                    values = values & "'" & ctl.Value & "', "
+                    values = values & "'" & Replace(Nz(ctl.Value, ""), "'", "''") & "', " ' Make sure any apostrophes are doubled up ('')
                 End If
             End If
         ElseIf ctl.ControlType = acCheckBox And (ctl.Tag = "is_lodge_bus" Or ctl.Tag = "is_nps_operations_support") Then
@@ -506,6 +525,44 @@ Private Function get_insert_sql() As String
 
 End Function
 
+Private Function check_user_info()
+
+    Dim rs As Recordset
+    Dim response As Integer
+    Dim sql As String
+    Set rs = CurrentDb.OpenRecordset("SELECT * FROM permit_users WHERE username = '" & LCase(Me.txt_entered_by) & "';")
+    If rs.RecordCount = 0 Then
+        response = MsgBox("Entrant info for " & Me.txt_entered_by & " has not been saved to the database yet. Would you like to save it so the entrant's phone number, email," & _
+                            " and work scedule will be autofilled in the future?", _
+                          vbQuestion + vbYesNo, _
+                          "Save entrant info?")
+        If response = vbYes Then
+            sql = "INSERT INTO permit_users (username, phone_number, email, work_schedule)" & _
+                  " VALUES ('" & LCase(Me.txt_entered_by) & "', '" & Nz(Me.txt_phone, "") & "', '" & Nz(Me.txt_email, "") & "', '" & Nz(Me.txt_schedule, "") & "')"
+            CurrentDb.Execute sql
+        End If
+    Else
+        ' Check if the info matches what was saved before
+        rs.MoveFirst
+        If Not (rs.fields("phone_number") = Me.txt_phone Or rs.fields("email") = Me.txt_email Or rs.fields("work_schedule") = Me.txt_schedule) Then
+            response = MsgBox("The entrant info you entered differs from what was saved in the database." & _
+                              " Would you like to update the entrant info for " & Me.txt_entered_by & "?", _
+                              vbQuestion + vbYesNo, _
+                              "Update entrant info?")
+            If response = vbYes Then
+                sql = "UPDATE permit_users SET" & _
+                      " phone_number='" & Nz(Me.txt_phone, "") & _
+                      "', email='" & Nz(Me.txt_email, "") & _
+                      "', work_schedule='" & Nz(Me.txt_email, "") & "'" & _
+                      " WHERE username='" & LCase(Me.txt_entered_by) & "';"
+                CurrentDb.Execute sql
+            End If
+        End If
+    End If
+        
+
+End Function
+
 
 Private Sub btn_save_Click()
 ' Insert new record or save changes to existing record
@@ -522,6 +579,9 @@ Private Sub btn_save_Click()
     Dim ctl As Control
     ' If this is a new permit, loop through controls and construct the sql
     If Me.lbl_is_new_permit.Caption = "new permit" Then
+        ' Create the permit number here so get_permit_number() gets the most current max permit number
+        Me.lbl_permit_number.Caption = "Permit #: " & get_permit_number()
+        
         Dim sql As String: sql = get_insert_sql()
         CurrentDb.Execute (sql)
         
@@ -537,7 +597,7 @@ Private Sub btn_save_Click()
                    " was added to the table (if the table is currently open, you'll have to close and" & _
                    " re-open it to see the new permit record).", _
                    vbInformation, _
-                   "Error encountered during save"
+                   "Error encountered during save operation"
             Exit Sub
         End If
         
@@ -546,11 +606,15 @@ Private Sub btn_save_Click()
         Me.btn_print.Enabled = True
         Me.btn_duplicate.Enabled = True
         
+        Set rs = Nothing
+        
     ' Otherwise, do the same, but for an UPDATE and add WHERE statement to select this record
     ElseIf Me.lbl_is_new_permit.Caption Like "editing: *" Then
         save_edits
     
     End If
+    
+    check_user_info
     
     MsgBox "Changes saved to the ""road_permits"" table", vbInformation, "Permit info successfully saved"
     
@@ -569,13 +633,21 @@ Private Sub btn_delete_Click()
     
     On Error GoTo err_handler
     
+    Dim current_id As String: current_id = Replace(Me.lbl_is_new_permit.Caption, "editing: ", "")
+    
+    If LCase(Me.txt_entered_by) <> LCase(Environ$("username")) Then
+        MsgBox "You can only delete permits that were created by you (" & Environ$("username") & "), and this permit was created by " & Me.txt_entered_by & ".", _
+                vbExclamation, _
+                "Permit created by another user"
+        Exit Sub
+    End If
+    
     Dim response As Integer
     response = MsgBox("You're about to delete this permit record. If you click 'Yes', this permit will be" & _
                       " permanently deleted. Are you sure you want to continue?", _
                       vbYesNoCancel + vbExclamation, _
                       "Delete permit?")
     If response = vbYes Then
-        Dim current_id As String: current_id = Replace(Me.lbl_is_new_permit.Caption, "editing: ", "")
         CurrentDb.Execute ("DELETE * FROM road_permits WHERE id=" & current_id & ";")
         MsgBox "Permit successfully deleted from ""road_permits"" table", vbInformation, "Delete successful"
         DoCmd.Close acForm, Me.Name
@@ -612,12 +684,13 @@ Private Function check_edits() As Integer
     If rs.RecordCount = 1 Then
         For Each ctl In Me.Controls
             If ctl.ControlType = acTextBox Or ctl.ControlType = acComboBox And ctl.Tag <> "" Then
-                If ctl.Value <> Nz(rs.fields(ctl.Tag), "") Then
+                a = Trim(rs.fields(ctl.Tag))
+                b = ctl.Value
+                Dim db_value As String: db_value = Nz(rs.fields(ctl.Tag), "")
+                If Len(Trim(db_value)) <> Len(db_value) Then db_value = Trim(db_value)
+                If ctl.Value <> db_value Then ', " ", "") Then 'For some reason, Trim() doesn't work even though Trim(rs.Fields(ctl.tag)) = Replace(rs.Fields(ctl.tag), " ", "")
                     show_save_msgbox = True
                     If show_save_msgbox Then
-                        Debug.Print ctl.Name
-                    End If
-                    If ctl.Name = "txt_parking" Then
                         Debug.Print ctl.Name
                     End If
                     Exit For
@@ -665,8 +738,9 @@ Private Sub btn_print_Click()
     If save_edits_response = vbCancel Then Exit Sub ' The user decided to cancel the print action
     
     ' Make sure this record is the only selected record
-    CurrentDb.Execute ("UPDATE road_permits SET select_permit = 0;")
-    CurrentDb.Execute ("UPDATE road_permits SET select_permit = -1 WHERE id=" & row_id) ' -1 is 'True' for some reason
+    CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = 0;")
+    Forms.frm_permit_menu.refresh_permit_table
+    CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = -1 WHERE id=" & row_id) ' -1 is 'True' for some reason
     
     ' Make the qr_code
     'Dim file_path As String
@@ -754,6 +828,7 @@ Private Sub refresh_permit_menu()
     Dim menu_form As Form
     Set menu_form = Forms("frm_permit_menu")
     'Dim menu_form_open As Boolean: menu_form_open = savagedb.object_is_open("frm_permit_menu", acForm)
+    menu_form.refresh_permit_table
     menu_form.Controls("sub_permits").Requery
 
 exit_sub:
@@ -795,15 +870,5 @@ Public Sub show_notes_alert()
             vbInformation, _
             "This permit has notes to read"
 
-End Sub
-
-Private Sub Form_Open(Cancel As Integer)
-    
-    If Trim(Me.txt_notes) <> "" Then show_notes_alert
-    
-End Sub
-
-Private Sub Form_Close()
-    refresh_permit_menu
 End Sub
 

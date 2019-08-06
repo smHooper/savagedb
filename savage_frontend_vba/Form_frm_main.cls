@@ -104,6 +104,8 @@ Error_Handler:
     Resume Error_Handler_Exit
 End Function
 
+
+
 Private Sub btn_import_objects_Click()
 ' Import all access objects (tables, queries, forms, reports, modules, and macros) if they don't
 ' exist in the current DB (i.e., there is no object of same type and name).
@@ -305,20 +307,10 @@ Private Sub btn_login_admin_Click()
     Dim response As Integer
     If current_user_state <> "read" Then ' The user is signed in either as admin or permit user
         ' Run the restart script only if the user selected "Yes". Othwerwise, exit
-        response = restart_db("savage_read", "0l@usmur!e")
-        If response <> vbYes Then
-            DoCmd.Close acForm, Me.Name
-            Exit Sub
-        End If
-        
-'        response = MsgBox("To log in as a different user, the database will need to close and you'll have to re-open it (I know, " & _
-'              "Access is pretty annoying, right?). Would you like to close and re-open the database now?", _
-'              vbYesNoCancel, _
-'              "Close and re-open database?")
-'        If response = vbYes Then
-'            ' Just set privileges (to read-only) and exit
-'            savagedb.set_read_write "savage_read", "0l@usmur!e"
-'            Application.Quit
+        response = restart_db("read")
+'        If response <> vbYes Then
+'            DoCmd.Close acForm, Me.Name
+'            Exit Sub
 '        End If
     Else
         DoCmd.OpenForm "frm_login" ' Defaults to expect admin credentials
@@ -427,6 +419,10 @@ Private Sub dpd_query_AfterUpdate()
         Case Is = "Custom query"
             ' do nothing
             Dim a As String: a = "a"
+        Case Is = "Load from README"
+            Dim readme_file As String
+            readme_file = savagedb.open_file_dialog("Select a README file", msoFileDialogFilePicker, "*.txt", "Text file")
+            If Len(Nz(readme_file, "")) > 0 Then Form_frm_query_plot.parse_command_from_readme readme_file
         Case Else
             Dim response As Integer
             response = MsgBox("The query was not understood. Would you like to open the query/plot form anyway " & _
@@ -457,6 +453,26 @@ err_handler:
 End Sub
 
 
+Private Sub btn_create_config_Click()
+    On Error GoTo err_handler
+    
+    DoCmd.OpenForm "frm_read_write_json"
+'    Dim config_form As Form
+'    Set config_form = Forms("frm_read_write_json")
+'    config_form.SetFocus
+    DoCmd.SelectObject acForm, Me.Name
+    DoCmd.Minimize
+
+exit_err:
+    On Error Resume Next
+    Exit Sub
+
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_err
+    
+End Sub
+
 Private Sub btn_permits_Click()
     
     On Error GoTo err_handler
@@ -483,167 +499,88 @@ Private Sub Command48_Click()
     test_connection
 End Sub
 
-Private Function test_connection() As Boolean
-    
-    On Error GoTo err_handler
-    
-    Dim db As DAO.Database
-    Dim tdf As TableDef
-    Dim current_cnn_str As String
-    Set db = CurrentDb
-    Set tdf = db.TableDefs("inholder_allotments")
-    current_cnn_str = Right(tdf.Connect, Len(tdf.Connect) - 5)
-    
-    Dim cnn As ADODB.connection
-    Set cnn = New ADODB.connection
-    
-    cnn.Open current_cnn_str
-    If cnn.State = adStateOpen Then test_connection = True Else test_connection = False
-    
-    cnn.Close
- 
-exit_err:
-    Exit Function
 
-err_handler:
-    ' If the error is anything other than a bad connection, show the error
-    If Err.Number <> -2147467259 Then MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
-    Resume exit_err
-
-End Function
-
-
-Public Function read_change_log() As String
-    
-    Dim log_path As String: log_path = "D:\savage\" & Dir("D:\savage\change_log*.txt", vbHidden)
-    If log_path = "D:\savage\" Then Exit Function
-    
-    Dim fso As Object
-    Dim text_file As Object
-    
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set text_file = fso.OpenTextFile(log_path, 1)
-    log_str = text_file.ReadAll()
-    text_file.Close
-    
-    Dim line As Variant
-    Dim changes As String
-    For Each line In Split(log_str, vbCrLf)
-        If line Like "[!#]*" And Trim(line) <> "" Then changes = changes & line & vbCrLf
-    Next line
-    
-    read_change_log = changes
-    
-End Function
-
-
-Private Function check_version()
-    
-    Dim master_db_path As String: master_db_path = MASTER_DB_DIR & "\" & Dir(MASTER_DB_DIR & "\savage_frontend_v*.accdb")
-    If master_db_path <> MASTER_DB_DIR & "\" Then
-        Dim rs As Recordset: Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state;")
-        rs.MoveFirst
-        Dim this_version() As String: this_version = Split(rs.fields("version"), ".")
-        Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state IN '" & master_db_path & "';")
-        rs.MoveFirst
-        Dim master_version() As String: master_version = Split(rs.fields("version"), ".")
-        Set rs = Nothing
-        
-        Dim prompt_user As Boolean: prompt_user = False
-        ' If they have different lengths, the versions aren't in the same format
-        If UBound(this_version) = UBound(master_version) Then
-            ' Loop through each version number decimal starting with the left side (highest level)
-            
-            Dim i As Integer
-            For i = 0 To UBound(this_version)
-                ' If the master version decimal is higher than the decimal of this version, prompt the user
-                If Int(master_version(i)) > Int(this_version(i)) Then
-                    Dim msg As String
-                    msg = "A new version of the database is available at " & master_db_path & ". To take advantage of the latest functionality of the database, please" & _
-                           " save a new copy of the latest version to your preferred location and use that for all future Savage database operations. If you created" & _
-                           " queries, reports, or other Access objects in this old copy of the front end, use the 'Import objects from DB' button in your new copy" & _
-                           " to continue using them in the new copy."
-                    Dim changes As String: changes = read_change_log()
-                    If changes <> "" Then msg = msg & vbCrLf & vbCrLf & "Changes for this version include:" & vbCrLf & vbCrLf & changes
-                    MsgBox msg, vbInformation, "New version available"
-                    Exit Function
-                ' If the opposite is true, this version is new than the master (this should never actually happen)
-                ElseIf Int(master_version(i)) < Int(this_version(i)) Then
-                    Exit Function
-                End If
-            Next i
-        End If
-    End If
-
-End Function
-
-
-
-Private Sub Form_Open(Cancel As Integer)
-' Check the user state. If the user is logged in as "admin", warn them.
-' Also set the log in/out button accordingly
-    On Error GoTo err_handler
-    
-    ' Check connection
-    If Not test_connection() Then GoTo bad_connection
-    
-    Dim user_state As String
-    user_state = savagedb.get_user_state()
-    
-    If user_state = "admin" Then
-        MsgBox "You are currently logged in as an administrator. Database records are now editable, and " & _
-               "all edits are permanent. To log out as an administrator, click the 'Log in as read-only' button.", _
-               vbExclamation, _
-               "Logged in as administrator"
-        Me.btn_login_admin.Caption = "Log in as read-only"
-        Me.btn_open_edit_inholders_form.Enabled = True
-    ElseIf user_state = "permit" Then
-        'Notify user that they can edit permits and nothing else
-        DoCmd.Close acForm, Me.Name
-        MsgBox "You are currently logged in as a permit administrator. You can edit permit info in the road_permits table only, " & _
-               " but no other tables are editable. To log out as an administrator, click the 'Log out' button.", _
-               vbExclamation, _
-               "Logged in as permit administrator"
-        DoCmd.OpenForm "frm_permit_menu"
-        
-        ' Hide nav pane
-        DoCmd.NavigateTo ("acNavigationCategoryObjectType")
-        DoCmd.RunCommand (acCmdWindowHide)
-    Else
-        Me.btn_login_admin.Caption = "Log in as admin"
-        Me.btn_open_edit_inholders_form.Enabled = False
-        
-        ' Hide nav pane
-        DoCmd.NavigateTo ("acNavigationCategoryObjectType")
-        DoCmd.RunCommand (acCmdWindowHide)
-    End If
-    
-    ' Check to see if there's a later version and prompt the user if so
-    check_version
-    
-    Exit Sub
-
-
-bad_connection:
-        MsgBox "The front end database application could not connect to the back-end database." & _
-               " Check your network connection, then close and re-open the front end application to try again.", _
-               vbCritical, _
-               "Could not connect to back-end database"
-        Exit Sub
-
-exit_err:
-    On Error Resume Next
-    current_db.Close
-    Set current_db = Nothing
-    Exit Sub
-
-err_handler:
-    If Err.Number = -2147467259 Or Err.Description Like "*Could not connect*" Then
-        GoTo bad_connection
-    Else
-        MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
-    End If
-    Resume exit_err
-    
-End Sub
+'Private Sub Form_Open(Cancel As Integer)
+'' Check the user state. If the user is logged in as "admin", warn them.
+'' Also set the log in/out button accordingly
+'    On Error GoTo err_handler
+'
+'    ' Show the datbase version in the caption
+'
+'    Dim rs As Recordset: Set rs = CurrentDb.OpenRecordset("SELECT version FROM user_state;")
+'    rs.MoveFirst
+'    Me.Caption = "Savage Check Station Database Main Menu - " & Nz(rs.fields("version"), "")
+'    Set rs = Nothing
+'
+'    ' Check connection
+'    If Not test_connection() Then GoTo bad_connection
+'
+'    Dim user_state As String
+'    user_state = savagedb.get_user_state()
+'
+'    If user_state = "admin" Then
+'        MsgBox "You are currently logged in as an administrator. Database records are now editable, and " & _
+'               "all edits are permanent. To log out as an administrator, click the 'Log in as read-only' button.", _
+'               vbExclamation, _
+'               "Logged in as administrator"
+'        Me.btn_login_admin.Caption = "Log in as read-only"
+'        Me.btn_open_edit_inholders_form.Enabled = True
+'    ElseIf user_state = "permit" Then
+'        'Notify user that they can edit permits and nothing else
+'        DoCmd.Close acForm, Me.Name
+'        MsgBox "You are currently logged in as a permit administrator. You can edit permit info in the road_permits table only, " & _
+'               " but no other tables are editable. To log out as an administrator, click the 'Log out' button.", _
+'               vbExclamation, _
+'               "Logged in as permit administrator"
+'        DoCmd.OpenForm "frm_permit_menu"
+'
+'        ' Hide nav pane
+'        DoCmd.NavigateTo ("acNavigationCategoryObjectType")
+'        DoCmd.RunCommand (acCmdWindowHide)
+'    Else
+'        GoTo default_open
+'    End If
+'
+'    ' Check to see if there's a later version and prompt the user if so
+'    check_version
+'
+'    Exit Sub
+'
+'
+'default_open:
+'    Me.btn_login_admin.Caption = "Edit vehicle data in tables"
+'    Me.btn_open_edit_inholders_form.Enabled = False
+'
+'    ' Hide nav pane
+'    DoCmd.NavigateTo ("acNavigationCategoryObjectType")
+'    DoCmd.RunCommand (acCmdWindowHide)
+'
+'    ' Check to see if there's a later version and prompt the user if so
+'    check_version
+'
+'    Exit Sub
+'
+'bad_connection:
+'    MsgBox "The front end database application could not connect to the back-end database." & _
+'           " Check your network connection, then close and re-open the front end application to try again.", _
+'           vbCritical, _
+'           "Could not connect to back-end database"
+'    GoTo default_open
+'    Exit Sub
+'
+'exit_err:
+'    On Error Resume Next
+'    current_db.Close
+'    Set current_db = Nothing
+'    Exit Sub
+'
+'err_handler:
+'    If Err.Number = -2147467259 Or Err.Description Like "*Could not connect*" Then
+'        GoTo bad_connection
+'    Else
+'        MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+'    End If
+'    Resume exit_err
+'
+'End Sub
 

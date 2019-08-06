@@ -93,10 +93,14 @@ Public Function deploy()
         End If
     Next
     
+    ' Open the permit menu form so the on open code that creates a checkbox field is run
+    DoCmd.OpenForm "frm_permit_menu"
+    DoCmd.Close acForm, "frm_permit_menu"
+    
     savagedb.export_vba_code "C:\Users\shooper\proj\savagedb\git\savage_frontend_vba"
     
     ' Set to read-only user
-    savagedb.set_read_write "savage_read", "0l@usmur!e"
+    savagedb.set_read_write "read"
     
     ' Set version number
     CurrentDb.Execute ("UPDATE user_state SET version = '" & new_version & "';")
@@ -137,9 +141,11 @@ Public Function deploy()
     wShell.Run "cmd.exe /c " & cmd, 0, True ' Run command silently and wait for process to finish
     
     ' Set user state back to admin
-    savagedb.set_read_write "savage_admin", "@d0lphmur!e"
+    savagedb.set_read_write "admin"
     
     MsgBox "Front end succesfully deployed to " & master_path, vbInformation
+    
+    Application.Quit acQuitPrompt
     
 End Function
 

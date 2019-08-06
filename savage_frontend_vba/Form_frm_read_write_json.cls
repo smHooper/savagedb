@@ -133,6 +133,33 @@ err_handler:
 
 End Function
 
+
+Private Function autofill_properties()
+    
+    Dim query_field As Field
+    Dim qdf As QueryDef
+    Dim rs As Recordset
+    For Each qdf In CurrentDb.QueryDefs
+        If qdf.Name = "qry_json_config_global_properties" Then
+            Set rs = qdf.OpenRecordset
+            For Each query_field In qdf.fields
+                If query_field.Name = "default_open_time" Then
+                    Me.txt_open_time = rs.fields("default_open_time")
+                ElseIf query_field.Name = "default_close_time" Then
+                    Me.txt_close_time = rs.fields("default_close_time").Value
+                End If
+            Next query_field
+            Exit For
+        End If
+    Next qdf
+    
+    If query_exists Then
+        
+    End If
+    
+End Function
+
+
 Private Sub btn_load_json_Click()
     
     On Error GoTo err_handler
@@ -156,8 +183,8 @@ Private Sub btn_load_json_Click()
     Dim logfile As String
     logfile = temp_dir & "\log_parse_json_config.txt"
     cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\parse_json_config.py " & _
-          Me.txt_json_path & _
-          " > " & logfile & " 2>&1"
+          """" & Me.txt_json_path & """" & _
+          " > """ & logfile & """ 2>&1"
 
     savagedb.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Loading data from JSON..."
     
@@ -180,6 +207,7 @@ Private Sub btn_load_json_Click()
     ' Set subform sources to new queries and set up the 'sorted' checkboxes
     set_subform_source Me.sub_dropdown_options, "Query.qry_json_config_dropdown_options"
     configure_checkboxes
+    autofill_properties
     Me.btn_export_json.Enabled = True
     
     Exit Sub
@@ -268,6 +296,9 @@ Private Sub configure_checkboxes()
     
 End Sub
 
+
+
+
 Private Sub btn_load_db_values_Click()
     
     On Error GoTo err_handler
@@ -313,9 +344,9 @@ Private Sub btn_load_db_values_Click()
     ' json_path is an optional argument
     cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\load_config_data_from_db.py " & _
           CONNECTION_TXT & _
-          " " & csv_dir & _
-          " " & json_path & _
-          " > " & logfile & " 2>&1"
+          " """ & csv_dir & """" & _
+          " """ & json_path & """" & _
+          " > """ & logfile & """ 2>&1"
 
     savagedb.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Loading config options from database..."
     
@@ -466,6 +497,19 @@ Private Function validate_json_config() As Boolean
 
 End Function
 
+Private Function update_global_properties()
+    Dim qdf As QueryDef
+    For Each qdf In CurrentDb.QueryDefs
+        If qdf.Name = "qry_json_config_global_properties" Then
+            Me.txt_open_time.SetFocus
+            CurrentDb.Execute ("UPDATE qry_json_config_global_properties SET default_open_time = '" & Replace(Me.txt_open_time.text, "_", "") & "';")
+            Me.txt_close_time.SetFocus
+            CurrentDb.Execute ("UPDATE qry_json_config_global_properties SET default_close_time = '" & Replace(Me.txt_close_time.text, "_", "") & "';")
+            Exit For
+        End If
+    Next qdf
+
+End Function
 
 
 Private Sub btn_export_json_Click()
@@ -481,7 +525,7 @@ Private Sub btn_export_json_Click()
                 "No output folder given"
         Exit Sub
     ElseIf Len(Dir(out_dir & "\savageCheckerConfig.json")) <> 0 Then
-        response = MsgBox("The output folder you selected already contains a file named 'savageCheckConfig.json'" & _
+        response = MsgBox("The output folder you selected already contains a file named 'savageCheckerConfig.json'" & _
                           " (the filename the configuration file will be saved to). Would you like to write over" & _
                           " the existing file?", _
                           vbYesNoCancel + vbExclamation, _
@@ -494,6 +538,12 @@ Private Sub btn_export_json_Click()
     
     'Verify that values in the table are all present in their corresponding lookup fields in the DB
     If Not validate_json_config() Then Exit Sub
+    
+    ' Set values in the query from user input (or the defaults if they weren't changed. The config options
+    '   will be set from the values in the corresponding queries, so if the user didn't change those
+    '   we need to set them here. Otherwise, the config file will be created with whatever the previous values
+    '   in the query were
+    update_global_properties
     
     Dim temp_dir As String
     Dim temp_db_path As String
@@ -539,9 +589,9 @@ Private Sub btn_export_json_Click()
     Dim logfile As String
     logfile = out_dir & "\log_write_json_config.txt"
     cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\write_json_config.py " & _
-          temp_dir & " " & _
-          out_dir & _
-          " > " & logfile & " 2>&1"
+          """" & temp_dir & """ " & _
+          """" & out_dir & """" & _
+          " > """ & logfile & """ 2>&1"
     
     savagedb.run_io_command cmd, logfile, out_dir, False, vbCrLf & vbCrLf & "Saving config options to JSON..."
     
@@ -592,11 +642,7 @@ Private Sub delete_temp_files()
     temp_dir = get_temp_dir_path()
     If Not Len(Trim(temp_dir)) = 0 Then
         If Dir(temp_dir, vbDirectory + vbHidden) <> "" Then
-            If Dir(temp_dir & "\*.*") <> "" Then
-                Kill temp_dir & "\*.*"
-            End If
-            SetAttr temp_dir, vbNormal
-            RmDir temp_dir
+            CreateObject("Scripting.FileSystemObject").DeleteFolder temp_dir
         End If
     End If
     
@@ -636,5 +682,4 @@ err_handler:
     Resume exit_sub
 
 End Sub
-
 

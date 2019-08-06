@@ -98,7 +98,7 @@ Private Sub btn_run_Click()
     Dim logfile As String: logfile = """" & Me.txt_output_path & "\log.txt"""
     Dim out_dir_arg As String: out_dir_arg = " --out_dir=""" & Me.txt_output_path & """"
     Dim years_arg As String: years_arg = " --years=""" & Me.dropdown_start & "-" & Me.dropdown_end & """"
-    Dim stdout_str As String: stdout_str = " > " & logfile & " 2>&1"
+    Dim stdout_str As String: stdout_str = " > """ & logfile & """ 2>&1"
     cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\query\gmp_count.py " & _
            CONNECTION_TXT & _
            out_dir_arg & _

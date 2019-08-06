@@ -22,7 +22,7 @@ Function regex_find_first(ByVal text As String) As String
     Set matches = re.Execute(text)
     
     If matches.Count <> 0 Then
-        result = matches.Item(0)
+        result = matches.item(0)
     End If
     
     regex_find_first = result
@@ -40,14 +40,22 @@ Private Sub btn_run_Click()
         Me.dpd_year.SetFocus
         Exit Sub
     Else
-        Dim qdf As QueryDef
-        Set qdf = CurrentDb.QueryDefs("qry_remaining_inholder_permits")
-        DoCmd.Close acQuery, qdf.Name, acSaveNo
-        Dim old_sql As String: old_sql = qdf.sql
-        qdf.sql = Replace(old_sql, regex_find_first(old_sql), year)
+        Dim remaining_qdf As QueryDef
+        Set remaining_qdf = CurrentDb.QueryDefs("qry_remaining_inholder_permits")
+        DoCmd.Close acQuery, remaining_qdf.Name, acSaveNo
+        Dim old_sql As String: old_sql = remaining_qdf.sql
+        remaining_qdf.sql = Replace(old_sql, regex_find_first(old_sql), year)
         
-        DoCmd.OpenQuery qdf.Name, DataMode:=acReadOnly
-        DoCmd.RepaintObject acQuery, qdf.Name
+        Dim unmatched_qdf As QueryDef
+        Set unmatched_qdf = CurrentDb.QueryDefs("qry_inholders_unmatched_permits")
+        DoCmd.Close acQuery, unmatched_qdf.Name, acSaveNo
+        old_sql = unmatched_qdf.sql
+        unmatched_qdf.sql = Replace(old_sql, regex_find_first(old_sql), year)
+        
+        DoCmd.OpenQuery remaining_qdf.Name, DataMode:=acReadOnly
+        DoCmd.RepaintObject acQuery, remaining_qdf.Name
+        DoCmd.OpenQuery unmatched_qdf.Name, DataMode:=acReadOnly
+        DoCmd.RepaintObject acQuery, unmatched_qdf.Name
         
     End If
 

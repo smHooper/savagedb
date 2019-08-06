@@ -15,7 +15,7 @@ Private Sub clear_selection()
     On Error GoTo err_handler
     
     ' Reset all checkboxes
-    CurrentDb.Execute ("UPDATE road_permits SET select_permit = 0")
+    CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = 0")
     Me.sub_permits.Requery
 
 exit_sub:
@@ -30,9 +30,31 @@ End Sub
 Private Function get_selected_permits() As Recordset
 
     Dim rs As Recordset
+    
+    ' First, query the local table to get the selected records
     Set rs = CurrentDb.OpenRecordset("SELECT * FROM qry_permit_menu_sub_source WHERE select_permit", dbOpenSnapshot)
-        
-    ' Return the recordset
+    
+    ' Loop through each selected record and get the id. Store as a string to be inserted in another SQL statement
+    Dim selected_ids As String
+    With rs
+        .MoveFirst
+        While Not .EOF
+            selected_ids = selected_ids & .fields("id") & ", "
+            .MoveNext
+        Wend
+    End With
+    
+    ' Trim the last ", " off the end
+    If Len(selected_ids) = 0 Then
+        Set get_selected_permits = CurrentDb.OpenRecordset("SELECT * FROM road_permits WHERE id=-1") 'Returns 0-length recordset
+        Exit Function
+    End If
+    
+    selected_ids = Left(selected_ids, Len(selected_ids) - 2)
+    
+    
+    ' Return a recordset from the linked table using those IDs. This will always provide the most up-to-date records
+    Set rs = CurrentDb.OpenRecordset("SELECT * FROM road_permits WHERE id IN (" & selected_ids & ");")
     Set get_selected_permits = rs
         
 End Function
@@ -41,6 +63,29 @@ Private Sub btn_clear_Click()
     clear_selection
 End Sub
 
+Public Sub refresh_permit_table()
+' Delete all records from the local table and insert all records for the selected year
+    CurrentDb.Execute "DELETE * FROM permit_menu_source"
+    CurrentDb.Execute "INSERT INTO permit_menu_source SELECT * FROM road_permits WHERE Year(date_in) = " & Me.dpd_display_year & ";"
+    clear_selection
+    
+End Sub
+Private Sub btn_refresh_Click()
+    
+    On Error GoTo err_handler
+    
+    refresh_permit_table
+    Me.sub_permits.Requery
+
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    DoCmd.Close acForm, "frm_query_plot_wait", acSaveNo
+    Resume exit_sub
+    
+End Sub
 
 Private Sub btn_select_all_Click()
 
@@ -77,7 +122,7 @@ err_handler:
     If Err.Number = 3021 Or Err.Description Like "*No current record*" Then
         Resume err_no_selection
     ElseIf Err.Number = 3197 Then
-        MsgBox "All records are alread selected", vbExclamation, ""
+        MsgBox "All records are already selected", vbExclamation, ""
     Else
         MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
         Resume exit_sub
@@ -85,10 +130,28 @@ err_handler:
 
 End Sub
 
+Private Sub dpd_display_year_AfterUpdate()
+    
+    On Error GoTo err_handler
+    
+    refresh_permit_table
+    Me.sub_permits.Requery
+    
+exit_sub:
+    Exit Sub
+
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    Resume exit_sub
+    
+End Sub
+
+
 Private Sub btn_edit_Click()
 ' Load the selected permit for editing
     
     On Error GoTo err_handler
+    
     
     ' Get
     Dim rs As Recordset
@@ -151,6 +214,8 @@ Private Sub btn_edit_Click()
     Forms("frm_permit_create_edit").show_hide_dropdowns
     Forms("frm_permit_create_edit").show_hide_lodge_checkbox
     
+    If Trim(Forms("frm_permit_create_edit").txt_notes) <> "" Then Forms("frm_permit_create_edit").show_notes_alert
+    
     DoCmd.RepaintObject acForm, edit_form.Name
     
     ' Deselect check box
@@ -183,8 +248,18 @@ Private Sub btn_delete_Click()
     
     On Error GoTo err_handler
     
+    ' Check if any of the selected records were entered by anyone except the current user
+    Dim response As Integer
+    If DCount("entered_by", "qry_permit_menu_sub_source", "select_permit AND LCASE(entered_by) <> '" & LCase(Environ$("username")) & "'") > 0 Then
+        response = MsgBox("You selected records to delete that were created by another user, but you can only delete records that were created by you." & _
+                          " To continue deleting only the records you created, click 'OK'.", _
+                          vbOKCancel + vbExclamation, _
+                          "Other users' records selected")
+        If response = vbCancel Then Exit Sub
+    End If
+    
     Dim rs As Recordset
-    Set rs = get_selected_permits()
+    Set rs = CurrentDb.OpenRecordset("SELECT * FROM qry_permit_menu_sub_source WHERE select_permit AND LCASE(entered_by) = '" & LCase(Environ$("username")) & "'", dbOpenSnapshot) 'get_selected_permits()
     rs.MoveLast ' Need to do this to retreive the actual record count
     If rs.RecordCount = 0 Then
         MsgBox "You must select at least one permit in the 'select_permit' field", _
@@ -194,9 +269,8 @@ Private Sub btn_delete_Click()
         Exit Sub
     End If
     
-    Dim response As Integer
     response = MsgBox("You're about to delete " & rs.RecordCount & " permit record(s). If you click 'Yes'," & _
-                      " all selected permit records will be permanently deleted. Are you sure you want to continue?", _
+                      " all selected permit records that were created by you will be permanently deleted. Are you sure you want to continue?", _
                       vbYesNoCancel + vbExclamation, _
                       "Delete " & rs.RecordCount & "permit(s)?")
     
@@ -225,6 +299,8 @@ Private Sub btn_delete_Click()
     
     delete_values = Left(delete_values, Len(delete_values) - 2) & ")"
     CurrentDb.Execute ("DELETE * FROM road_permits WHERE id IN " & delete_values & ";")
+    
+    refresh_permit_table
     Me.sub_permits.Requery
     
     Exit Sub
@@ -269,6 +345,29 @@ Private Sub btn_new_permit_Click()
     permit_form.Controls("txt_entered_by") = Environ$("Username")
     permit_form.Controls("lbl_is_new_permit").Caption = "new permit"
     permit_form.Controls("lbl_permit_number").Caption = "Permit #: <Null>"
+    
+    Dim rs As Recordset
+    Set rs = CurrentDb.OpenRecordset("SELECT * FROM permit_users WHERE LCASE(username) = '" & LCase(Environ$("username")) & "';")
+    If rs.RecordCount > 0 Then
+        permit_form.Controls("txt_schedule") = Nz(rs.fields("work_schedule"), "")
+        permit_form.Controls("txt_email") = Nz(rs.fields("email"), "")
+        permit_form.Controls("txt_phone") = Nz(rs.fields("phone_number"), "")
+    End If
+    
+    If Len(Nz(permit_form.Controls("txt_schedule"), "")) = 0 Then
+        permit_form.Controls("txt_schedule").Locked = False
+        permit_form.Controls("txt_schedule").BackColor = permit_form.Controls("txt_notes").BackColor
+    End If
+    
+    If Len(Nz(permit_form.Controls("txt_email"), "")) = 0 Then
+        permit_form.Controls("txt_email").Locked = False
+        permit_form.Controls("txt_email").BackColor = permit_form.Controls("txt_notes").BackColor
+    End If
+    
+    If Len(Nz(permit_form.Controls("txt_phone"), "")) = 0 Then
+        permit_form.Controls("txt_phone").Locked = False
+        permit_form.Controls("txt_phone").BackColor = permit_form.Controls("txt_notes").BackColor
+    End If
 
 exit_sub:
     Exit Sub
@@ -293,6 +392,9 @@ Private Sub btn_print_Click()
     Dim n_selected As Integer: n_selected = rs.RecordCount
     If n_selected = 0 Then GoTo err_no_selection
     
+    refresh_permit_table
+    Me.sub_permits.Requery
+    
     Dim ids() As Long
     Dim permit_types() As String
     Dim permit_numbers() As Long
@@ -305,14 +407,14 @@ Private Sub btn_print_Click()
         ReDim Preserve permit_types(i): permit_types(i) = rs.fields("permit_type") & ""
         ReDim Preserve permit_numbers(i): permit_numbers(i) = rs.fields("permit_number")
         ReDim Preserve permit_prefixes(i): permit_prefixes(i) = rs.fields("permit_number_prefix") & ""
-        ReDim Preserve is_lodge_bus(i): If rs.fields("is_lodge_bus") Then is_lodge_bus(i) = True Else is_lodge_bus(i) = False
+        ReDim Preserve is_lodge_bus(i): If Nz(rs.fields("is_lodge_bus"), False) Then is_lodge_bus(i) = True Else is_lodge_bus(i) = False
         i = i + 1
         rs.MoveNext
     Wend
     Set rs = Nothing
     
     ' Clear selection, then select each record individually and make the permit
-    CurrentDb.Execute ("UPDATE road_permits SET select_permit = 0;")
+    CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = 0;")
     Dim out_path As String
     Dim permit_type As String
     Dim failed_permits() As String
@@ -320,7 +422,7 @@ Private Sub btn_print_Click()
     For i = 0 To n_selected - 1
         out_path = out_dir & "\special_use_road_permit_" & LCase(Replace(Replace(permit_types(i), " ", "_"), "/", "_")) & "_" & _
                                                            permit_prefixes(i) & permit_numbers(i) & ".pdf"
-        CurrentDb.Execute ("UPDATE road_permits SET select_permit = -1 WHERE id=" & ids(i))
+        CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = -1 WHERE id=" & ids(i))
         out_path = savagedb.save_permit_to_file(ids(i), permit_types(i), out_path, False, is_lodge_bus(i))
         If out_path = "" Then
             ReDim Preserve failed_permits(n_failed): failed_permits(n_failed) = permit_prefixes(i) & permit_numbers(i)
@@ -330,7 +432,7 @@ continue_loop:
     Next i
         
     ' Clear selection again and reload the data
-    CurrentDb.Execute ("UPDATE road_permits SET select_permit = 0;")
+    CurrentDb.Execute ("UPDATE permit_menu_source SET select_permit = 0;")
     Me.sub_permits.Requery
 
 show_success_msg:
@@ -413,9 +515,10 @@ Private Function validate_file_for_import(sheet As Worksheet, field_indices As D
     Dim null_rows As String
     Dim field_name As Variant
     Dim r As Integer
+    Dim check_for_null As Boolean
     ' Loop through each field and check if there are any null cells
     For Each field_name In field_indices.Keys()
-        If field_name = "permit_type" Or field_name = "date_in" Or field_name = "date_out" Or field_name = "permit_number_prefix" Or field_name = "permit_holder" Or field_name = "is_lodge_bus" Then
+        If field_name = "permit_type" Or field_name = "date_in" Or field_name = "date_out" Or field_name = "permit_holder" Then
             null_rows = "- " & field_name & ": "
             For r = 2 To sheet.UsedRange.Rows.Count
                 ' If there are any null rows, add them to the string
@@ -454,7 +557,7 @@ Private Sub btn_import_Click()
     On Error GoTo err_handler
     
     ' Open file dialog
-    Dim file_path As String: file_path = savagedb.open_file_dialog("Select a CSV to import", msoFileDialogFilePicker, "*.xls; *.xlsx", "Excel files")
+    Dim file_path As String: file_path = savagedb.open_file_dialog("Select an Excel file to import", msoFileDialogFilePicker, "*.xls; *.xlsx; *.xlsm", "Excel files")
     If Nz(file_path, "") = "" Then Exit Sub
     
     DoCmd.OpenForm "frm_query_plot_wait"
@@ -464,7 +567,7 @@ Private Sub btn_import_Click()
     '   It's best just to create the sql myself
     Dim excel_app As Excel.Application: Set excel_app = CreateObject("Excel.Application")
     Dim workbook As Excel.workbook: Set workbook = GetObject(file_path)
-    Dim sheet As Excel.Worksheet: Set sheet = workbook.Worksheets(1)
+    Dim sheet As Excel.Worksheet: Set sheet = workbook.Worksheets("road_permits")
     
     ' Get column names
     Dim n_columns As Integer: n_columns = sheet.UsedRange.Columns.Count
@@ -491,10 +594,29 @@ Private Sub btn_import_Click()
     If Not field_names Like "*is_lodge_bus*" Then
         field_names = field_names & ", is_lodge_bus"
         other_values = other_values & ", 0"
+    ElseIf Not field_names Like "*is_nps_operations_support*" Then
+        field_names = field_names & ", is_nps_operations_support"
+        other_values = other_values & ", 0"
     End If
     
     ' Check if all required fields are filled for all rows
     If Not validate_file_for_import(sheet, field_indices) Then Exit Sub
+    
+    Dim used_rows() As Long
+    Dim i As Long
+    Dim rr As Long
+    Dim cc As Integer
+    For rr = 2 To sheet.UsedRange.Rows.Count
+        For cc = 2 To n_columns
+            If Len(sheet.Cells(rr, cc)) > 0 Then
+                ReDim Preserve used_rows(i)
+                used_rows(i) = rr
+                i = i + 1
+                Exit For
+            End If
+        Next cc
+    Next rr
+    
     
     ' Loop through all rows after header and execute insert
     Dim values As String
@@ -502,25 +624,39 @@ Private Sub btn_import_Click()
     Dim these_field_names As String
     Dim permit_number As String
     Dim inholder_code As String
-    Dim r As Integer
-    For r = 2 To sheet.UsedRange.Rows.Count
+    Dim r As Variant
+    For Each r In used_rows 'sheet.UsedRange.Rows.Count
         these_field_names = field_names
-        this_value = sheet.Cells(r, c)
         values = " VALUES("
         For c = 1 To n_columns
+            this_value = sheet.Cells(r, c)
             If c = skip_index Then
                 GoTo continue_col_for
             ElseIf sheet.Cells(1, c).Value = "vehicle_year" Then
                 ' If year is null, the SQL will throw and error, so remove the vehicle_year field from the SQL
-                If IsEmpty(this_value) Then
+                If IsEmpty(this_value) Or Len(this_value) = 0 Then
                     these_field_names = Replace(these_field_names, ", vehicle_year", "")
+                Else
+                    values = values & this_value & ", "
+                End If
+            ElseIf sheet.Cells(1, c).Value = "is_lodge_bus" Then
+                ' If year is null, the SQL will throw and error, so remove the vehicle_year field from the SQL
+                If IsEmpty(this_value) Or Len(this_value) = 0 Then
+                    these_field_names = Replace(these_field_names, ", is_lodge_bus", "")
+                Else
+                    values = values & this_value & ", "
+                End If
+            ElseIf sheet.Cells(1, c).Value = "is_nps_operations_support" Then
+                ' If year is null, the SQL will throw and error, so remove the vehicle_year field from the SQL
+                If IsEmpty(this_value) Or Len(this_value) = 0 Then
+                    these_field_names = Replace(these_field_names, ", is_nps_operations_support", "")
                 Else
                     values = values & this_value & ", "
                 End If
             Else
                 values = values & "'" & sheet.Cells(r, c) & "', "
             End If
-            
+              
 continue_col_for:
         Next c
         
@@ -531,10 +667,12 @@ continue_col_for:
     Next r
     
     ' Reload the subform to show changes
+    'Me.sub_permits.Requery
+    refresh_permit_table
     Me.sub_permits.Requery
     
     DoCmd.Close acForm, "frm_query_plot_wait"
-    MsgBox "Import of " & sheet.UsedRange.Rows.Count - 1 & " permits successful from " & file_path, vbInformation, "Import successful"
+    MsgBox "Import of " & UBound(used_rows()) + 1 & " permits successful from " & file_path, vbInformation, "Import successful"
     
     Exit Sub
     
@@ -543,6 +681,7 @@ exit_sub:
     
 err_handler:
     MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    DoCmd.Close acForm, "frm_query_plot_wait", acSaveNo
     Resume exit_sub
 
 End Sub
@@ -556,12 +695,59 @@ Private Sub btn_logout_Click()
     Dim response As Integer
     If current_user_state <> "read" Then ' The user is signed in either as admin or permit user
         ' Run the restart script only if the user selected "Yes". Othwerwise, exit
-        response = restart_db("savage_read", "0l@usmur!e")
+        response = restart_db("read")
         If response <> vbYes Then
             Exit Sub
         End If
     Else
         DoCmd.OpenForm "frm_login" ' Defaults to expect admin credentials
     End If
+
+End Sub
+
+
+
+
+Private Sub Form_Open(Cancel As Integer)
+    
+    On Error GoTo err_handler
+    
+    refresh_permit_table
+    Me.sub_permits.Requery
+ 
+exit_sub:
+    Exit Sub
+    
+err_handler:
+    MsgBox Err.Number & ": " & Err.Description, vbCritical, "Error"
+    DoCmd.Close acForm, "frm_query_plot_wait", acSaveNo
+    Resume exit_sub
+    
+' Make the select_permit_ field a checkbox. Do this check every time form is opened, but
+' if the field is always a checkbox, don't do anything (so this really needs to be run once)
+'    Dim qdf As QueryDef
+'    Dim field As field
+'    Dim prp As Property
+'    Set qdf = CurrentDb.QueryDefs(Replace(Me.sub_permits.SourceObject, "Query.", ""))
+'    Set fld = qdf.fields("select_permit_")
+'
+'    ' Check if the property already exists
+'    Dim prop As Variant
+'    Dim set_property As Boolean: set_property = True
+'    For Each prop In fld.Properties
+'        If prop.Name = "DisplayControl" Then
+'            set_property = False
+'            Exit For
+'        End If
+'    Next prop
+'
+'    If set_property Then
+'        Set prp = fld.CreateProperty("DisplayControl", dbInteger, acCheckBox)
+'        fld.Properties.Append prp
+'
+'        Me.sub_permits.Requery
+'        DoCmd.RepaintObject acForm, Me.Name
+'    End If
+
 
 End Sub
