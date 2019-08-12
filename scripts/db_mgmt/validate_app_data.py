@@ -216,7 +216,7 @@ def get_missing_lookup(data, table_name, data_field, engine, lookup_params):
     return missing_info
 
 
-def main(sqlite_paths_str, connection_txt):
+def main(sqlite_paths_str, connection_txt, output_dir=None):
 
     sys.stdout.write("Log file for %s: %s\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
@@ -256,7 +256,7 @@ def main(sqlite_paths_str, connection_txt):
                 raise RuntimeError("These data have already been uploaded: %s" % this_shift_info.filename)
 
     # Make temp dir and set up vars for looping through tables
-    output_dir = os.path.join(os.path.dirname(sqlite_path), '_temp')
+    output_dir = os.path.join(os.path.dirname(sqlite_path), '_temp') if not output_dir else output_dir
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     subprocess.call(["attrib", "+H", output_dir])
