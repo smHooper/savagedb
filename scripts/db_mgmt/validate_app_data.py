@@ -3,6 +3,7 @@ import os
 import shutil
 import warnings
 import subprocess
+import unicodedata
 import sqlite3
 import pandas as pd
 import numpy as np
@@ -205,13 +206,15 @@ def get_missing_lookup(data, table_name, data_field, engine, lookup_params):
                                      lookup_params.lookup_value) \
         .values()  # returns dict, but only need list-like
     # Ignore data == "" because this will just be changed to NUL in the import process
-    missing_lookup = data.loc[~data[data_field].isin(lookup_values) & (data[data_field] != ''), data_field].unique()
+    missing_mask = ~data[data_field].isin(lookup_values) & (data[data_field] != '')
+    missing_lookup = data.loc[missing_mask, data_field].unique()
     n_missing = len(missing_lookup)
     missing_info = pd.DataFrame({'data_value': missing_lookup,
                                  'data_table': [table_name for _ in range(n_missing)],
                                  'data_field': [data_field for _ in range(n_missing)],
                                  'lookup_table': [lookup_params.lookup_table for _ in range(n_missing)],
-                                 'lookup_field': [lookup_params.lookup_value for _ in range(n_missing)]})
+                                 'lookup_field': [lookup_params.lookup_value for _ in range(n_missing)],
+                                 'filename': data.loc[missing_mask, 'filename']})
 
     return missing_info
 
@@ -280,6 +283,10 @@ def main(sqlite_paths_str, connection_txt, output_dir=None):
         if not len(df):
             df.to_csv(flagged_path, index=False, encoding='utf-8')
             continue
+
+        # Clean up unicode strings so sqlalchemy doesn't freak out when importing
+        df.loc[:, df.dtypes == object] = df.loc[:, df.dtypes == object]\
+            .applymap(lambda x: x if x == None else str(unicodedata.normalize('NFKD', x)))
 
         # Combine date and time columns
         df['datetime'] = pd.to_datetime(df.date + ' ' + df.time)  # format should be automatically undersood
