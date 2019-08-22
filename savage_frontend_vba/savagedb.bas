@@ -2,9 +2,9 @@ Attribute VB_Name = "savagedb"
 Option Compare Database
 Public Const CONNECTION_STR = "DRIVER={PostgreSQL ANSI};DATABASE=db_name;SERVER=ip_address;PORT=port"
 Public Const PYTHON_PATH = "C:\ProgramData\Anaconda3\envs\savagedb\python.exe"
-Public Const CONNECTION_TXT = "C:\users\shooper\proj\savagedb\connection_info.txt"
-Public Const SCRIPT_DIR = "C:\users\shooper\proj\savagedb\git\scripts"
-Public Const MASTER_DB_DIR = "C:\Users\shooper\proj\savagedb\db\test" '"D:\savage"
+Public Const CONNECTION_TXT = "T:\ResMgmt\Users\sam_h\proj\savagedb\connection_info.txt"
+Public Const SCRIPT_DIR = "T:\ResMgmt\Users\sam_h\proj\savagedb\git\scripts"
+Public Const MASTER_DB_DIR = "T:\ResMgmt\Users\sam_h\proj\savagedb\db\test" '"D:\savage"
 
 
 Public Function parse_parameter_file(path As String, Optional delimiter As String = ";") As Dictionary

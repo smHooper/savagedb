@@ -54,34 +54,6 @@ err_handler:
 End Function
 
 
-
-Private Function validate_lookup_values(data_table, data_field, temp_db_path, lookup_table, lookup_field) As Boolean
-' Make sure that all values in the data_field of data_table exist
-' in the lookup_field of lookup_table
-    
-    Dim data_rs As DAO.Recordset
-    Dim lookup_rs As DAO.Recordset
-    
-    ' Get recordset for both data_table and lookup_table
-    Set data_rs = CurrentDb.OpenRecordset("SELECT " & data_field & " FROM " & data_table & " IN '" & temp_db_path & "';")
-    Set lookup_rs = CurrentDb.OpenRecordset("SELECT " & lookup_field & " FROM " & lookup_table & ";")
-    
-    
-    ' For each value in data field
-    '      For each value in lookup table
-    '       check if data field value matches lookup value
-    '       If so, exit for twice
-    '       Else, add to array of missing values
-    ' Return the array
-    
-    ' In main sub,
-    ' check if the array has more than a length of 0
-    ' If so, ask the user if they would like to add these values to lookup
-    '   If yes, show form that has all records for the whole lookup table (probably have to make a different form for each lookup table
-    '   If no, cancel import
-
-
-End Function
 Public Function load_missing_codes(temp_db_path As String, missing_val_table As String)
 ' For each distinct table in missing_lookup_values in temp_db
 ' show the all values from the data_value column as a comma-separated
@@ -144,7 +116,7 @@ Public Function load_missing_codes(temp_db_path As String, missing_val_table As 
                             Else
                                 missing_value = values_rs!data_value
                             End If
-                            values_str = values_str & Chr(149) & "  " & values_rs!data_table & ": " & missing_value & vbCrLf
+                            values_str = values_str & Chr(149) & "  " & values_rs!data_table & " (" & values_rs!FileName & "): " & missing_value & vbCrLf
                             values_rs.MoveNext
                         Wend
                         ' Trim the last comma off the end. This would only be necessary if .RecordCount > 1

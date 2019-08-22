@@ -230,6 +230,7 @@ Private Sub btn_open_sqlitedb_Click()
     Dim tables() As String
     Dim tab_IDs() As Integer
     Dim missing_lookups As Boolean: missing_lookups = False
+    Dim rs As Recordset
     
     Set temp_app = New Access.Application
     Set current_db = CurrentDb()
@@ -264,14 +265,26 @@ Private Sub btn_open_sqlitedb_Click()
                     Form_frm_add_codes.load_missing_codes temp_db_path, "missing_lookup_values"
                 End If
                 
-                response = MsgBox("Would you like to open the app data to edit the unmatched values?", _
+                response = MsgBox("Would you like to open the app data to edit the unmatched values? You might be prompted to open multiple files.", _
                                   vbQuestion + vbYesNoCancel, _
                                   "Edit app data?")
                 If response = vbYes Then
+                    Dim path As Variant
                     Dim wShell As Object
                     Set wShell = VBA.CreateObject("WScript.Shell")
-                    Dim cmd As String: cmd = """" & DB_BROWSER_PATH & """ " & sqlite_paths
-                    wShell.Run cmd, 1, False ' Run command silently and but don't wait for process to finish
+                    'Dim cmd As String
+                    Set rs = temp_db.OpenRecordset("SELECT DISTINCT filename FROM missing_lookup_values;")
+                    rs.MoveFirst
+                    ' Because there could be multiple DBs, open each one that has a missing value
+                    While Not rs.EOF
+                        For Each path In Split(sqlite_paths, vbCrLf)
+                            If path Like "*" & rs!FileName Then
+                                wShell.Run """" & DB_BROWSER_PATH & """ """ & path & """", 1, False
+                            End If
+                        Next path
+                        rs.MoveNext
+                    Wend
+                    Set rs = Nothing
                 End If
                 
                 ' Reset form
@@ -287,7 +300,7 @@ Private Sub btn_open_sqlitedb_Click()
             
             ' Add the import column so the user can check whether or not to keep each record.
             '   Set all records to checked by default
-            temp_db.Execute "ALTER TABLE " & table_name & " ADD COLUMN import YESNO;", dbFailOnError
+            .CurrentProject.connection.Execute "ALTER TABLE " & table_name & " ADD COLUMN import YESNO DEFAULT -1", dbFailOnError ' For some stupid reason, temp_db.Execute doesn't work with DEFAULT clause
             temp_db.Execute "UPDATE " & table_name & " SET import = -1;", dbFailOnError
             Set tdf = temp_db.TableDefs(table_name)
             Set fld = tdf.fields("import")
@@ -496,9 +509,96 @@ Private Sub btn_import_Click()
         Set record_set = Nothing
         DoCmd.Close acForm, "frm_query_plot_wait"
         
+        ' Validate the edited data
+        Dim logfile As String: logfile = temp_dir & "\log_validate.txt"
+        Dim cmd As String: cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\validate_edited_data.py " & _
+                                 """" & temp_dir & """" & _
+                                 " " & CONNECTION_TXT & _
+                                 " ""_checked""" & _
+                                 " > """ & logfile & """ 2>&1"
+        savagedb.run_io_command cmd, logfile, temp_dir, False, vbCrLf & vbCrLf & "Validating edited data..."
+        
+        ' Close the script status form immediately if there wasn't an error
+        If CurrentProject.AllForms("frm_query_plot_wait").IsLoaded Then
+            If Forms.frm_query_plot_wait.label_status.Caption Like "*error*" Then
+                Exit Sub
+            Else
+                DoCmd.Close acForm, "frm_query_plot_wait"
+            End If
+        End If
+        
+        ' Check that there were no missing values
+        Dim csv_name As String: csv_name = Dir(temp_dir & "\*_flagged.csv")
+        Dim temp_app As Application: Set temp_app = New Access.Application
+        Dim temp_db As Database
+        Dim tdf As TableDef
+        Dim temp_db_path As String: temp_db_path = temp_dir & "\temp.accdb"
+        With temp_app
+            .OpenCurrentDatabase temp_db_path, False
+            Set temp_db = .CurrentDb()
+            Do While Len(csv_name) > 0
+                csv_path = temp_dir & "\" & csv_name
+                table_name = Replace(csv_name, "_flagged.csv", "")
+        
+                If Replace(csv_name, "_flagged.csv", "") Like "missing_lookup_values" Then
+                    response = MsgBox("There are values you entered in the app data in fields with look-up values that" & _
+                                      " don't match any values in the corresponding look-up tables in the database. You cannot" & _
+                                      " import these data without either changing the unmatched values or adding new" & _
+                                      " entries to the corresponding tables (requires admin access). Would you like to" & _
+                                      " see which values are unmatched?", _
+                                      vbYesNoCancel + vbCritical + vbQuestion, _
+                                      "Import error")
+                    If response = vbYes Then
+                        
+                        ' Delete the table if it already exists to show only the currently missing values
+                        For Each tdf In temp_db.TableDefs
+                            If tdf.Name = "missing_lookup_values" Then
+                                DoCmd.DeleteObject acTable, "missing_lookup_values"
+                                Exit For
+                            End If
+                        Next tdf
+                        
+                        ' Import the csv into the temp db
+                        .DoCmd.TransferText TransferType:=acImportDelim, _
+                            TableName:=table_name, _
+                            FileName:=csv_path, _
+                            HasFieldNames:=True
+                        temp_db.TableDefs.Refresh
+                        
+                        ' Load the form to show/edit missing codes
+                        DoCmd.OpenForm "frm_add_codes"
+                        Forms.frm_add_codes.SetFocus
+                        Form_frm_add_codes.load_missing_codes temp_db_path, "missing_lookup_values"
+                    End If
+                    
+                    response = MsgBox("Would you like to open the app data to edit the unmatched values?", _
+                                      vbQuestion + vbYesNoCancel, _
+                                      "Edit app data?")
+                    If response = vbYes Then
+                        Dim wShell As Object
+                        Set wShell = VBA.CreateObject("WScript.Shell")
+                        cmd = """" & DB_BROWSER_PATH & """ " & sqlite_paths
+                        wShell.Run cmd, 1, False ' Run command silently and but don't wait for process to finish
+                    End If
+                    
+                    ' Reset form
+                    'break_links
+                    
+                    GoTo exit_sub
+                End If
+                
+                ' Get the next csv name
+                csv_name = Dir
+            Loop
+            temp_db.Close
+            .CloseCurrentDatabase
+            .DoCmd.Quit acQuitSaveNone
+        End With
+        Set temp_db = Nothing
+        Set temp_app = Nothing
+        
         ' run script to import data into postgres
         Dim import_cmd As String
-        Dim logfile As String
         logfile = temp_dir & "\log_import.txt"
         import_cmd = PYTHON_PATH & " " & SCRIPT_DIR & "\db_mgmt\import_app_data.py " & _
                         """" & temp_dir & """" & _
@@ -537,6 +637,8 @@ Private Sub btn_import_Click()
     End If
 
 exit_sub:
+    Set temp_app = Nothing
+    Set temp_db = Nothing
     Exit Sub
     
 err_handler:

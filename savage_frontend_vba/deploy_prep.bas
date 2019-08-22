@@ -97,7 +97,7 @@ Public Function deploy()
     DoCmd.OpenForm "frm_permit_menu"
     DoCmd.Close acForm, "frm_permit_menu"
     
-    savagedb.export_vba_code "C:\Users\shooper\proj\savagedb\git\savage_frontend_vba"
+    savagedb.export_vba_code CurrentProject.path & "\..\git\savage_frontend_vba"
     
     ' Set to read-only user
     savagedb.set_read_write "read"
