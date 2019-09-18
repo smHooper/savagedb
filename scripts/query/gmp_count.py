@@ -64,7 +64,8 @@ PRINT_NAMES = {'tek_campers':                   'Tek campers',
                'Researcher':                    'Researchers',
                'Concessionaire':                'JV',
                'Concessionaire (Primrose)':     'JV (Primrose)',
-               'cyclists':                      'Cyclists'
+               'cyclists':                      'Cyclists',
+               'Educational Charter':           'Educational buses'
                }
 SORT_ORDER = ['Long tour',
               'Long tour pax',
@@ -95,6 +96,8 @@ SORT_ORDER = ['Long tour',
               'Other',
               'Primrose buses',
               'Primrose buses pax',
+              'Educational buses',
+              'Educational buses pax',
               #'JV (Primrose)',
               'Contractors',
               'Cyclists']
@@ -168,7 +171,8 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         # Query buses
         bus_names = {'Transit': ['SHU', 'CMP', 'OTH', 'NUL', 'CHT', 'SPR', 'RSC', 'UNK'],#
                      'Long tour': ['KXP', 'EXC', 'TWT', 'WIW'],
-                     'Short tour': ['DNH'] ##,
+                     'Short tour': ['DNH'],
+                     'Educational buses': ['EDU']##,
                      }
         other_criteria = "(is_training = ''false'') " + gmp_date_clause.replace("'", "''")
         # All non-training buses except DNHTs. Do this separately so I can exclude buses going to Primrose
@@ -344,7 +348,7 @@ def main(connection_txt, years=None, out_dir=None, out_csv=None):
         all_data = all_data.reindex(index=SORT_ORDER, columns=['May', 'Jun', 'Jul', 'Aug', 'Sep', 'total']).fillna(0)
 
         # Set a multiindex for GMP stats (rows)
-        gmp_rows = all_data.index[:-4]
+        gmp_rows = all_data.index[:-6]
         all_data.index = [['GMP'] * len(gmp_rows) + ['Non-GMP'] * (len(all_data) - len(gmp_rows)), all_data.index]
 
         # Calculate totals
