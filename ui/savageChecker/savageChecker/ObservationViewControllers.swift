@@ -2233,7 +2233,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown", column: "work_group"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
@@ -2255,7 +2255,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown", column: "work_group"),
                              (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
@@ -2539,7 +2539,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
@@ -2560,7 +2560,7 @@ class NPSApprovedObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
@@ -2824,7 +2824,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
                              (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "autoComplete", column: "organization"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
@@ -2844,7 +2844,7 @@ class NPSContractorObservationViewController: BaseObservationViewController {
                              (label: "Driver's full name", placeholder: "Enter the driver's full name",   type: "autoComplete", column: "driver_name"),
                              (label: "Permit holder", placeholder: "Enter the contractor's company or organization name (Permit holder on the permit)",   type: "autoComplete", column: "organization"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Permit number",   placeholder: "Enter the permit number (printed on the permit)", type: "number", column: "permit_number"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
@@ -4146,7 +4146,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "number", column: "permit_number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("photographers")
@@ -4162,7 +4162,7 @@ class PhotographerObservationViewController: BaseObservationViewController {
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Permit number", placeholder: "Enter the permit number (printed on the permit)",   type: "number", column: "permit_number"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
-                             (label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
+                             //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         self.observationsTable = Table("photographers")
     }

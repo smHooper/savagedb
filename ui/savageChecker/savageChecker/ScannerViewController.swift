@@ -124,7 +124,7 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
             guard let stringValue = readableObject.stringValue else { return }
             AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-            found(code: stringValue)
+            qrFound(qrString: stringValue)
         }
     }
     
@@ -165,10 +165,10 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         present(alertController, animated: true, completion: nil)
     }
     
-    func sanitizeQRString(code: String)-> String {
+    func sanitizeQRString(qrString: String)-> String {
         // Some permits created with an early version of the front end weren't quoted correctly, so handle those properly
         var qr_items = [String]()
-        for item in code.split(separator: ",") {
+        for item in qrString.split(separator: ",") {
             if let property = item.split(separator: ":").first, let value = item.split(separator: ":").last {
                 let this_property = property.replacingOccurrences(of: "{", with: "").trimmingCharacters(in: .whitespaces)
                 let this_value = value.replacingOccurrences(of: "}", with: "").trimmingCharacters(in: .whitespaces)
@@ -184,29 +184,66 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
         return "{\(qr_items.joined(separator: ", "))}"
     }
     
-    func found(code: String) {
-        // parse code from format label: comma-separated string
-        
-        if let data = sanitizeQRString(code: code).data(using: .utf8) {
+    func showVehicleViewController(qrString: String, vehicleType: String) {
+        if let viewController = observationViewControllers[vehicleType]?.init() {
+            viewController.qrString = qrString
+            viewController.isAddingNewObservation = true
+            viewController.session = loadSession()
+            viewController.modalPresentationStyle = .fullScreen
+            viewController.title = "New \(vehicleType) Observation"
+            present(viewController, animated: true, completion: nil)//{self.presentingViewController?.dismiss(animated: false, completion: nil)})
+        } else {
+            let typesString = Array(observationViewControllers.keys).joined(separator: "\n")
+            let alertMessage = "The vehicle type '\(vehicleType)' from the QR code string '\(qrString)' did not match one of these types: \n\n\(typesString)\n"
+            showCodeReadErrorAlert(alertMessage: alertMessage)
+        }
+    }
+    
+    func qrFound(qrString: String) {
+        // parse code from format <label: comma-separated string>
+        if let data = sanitizeQRString(qrString: qrString).data(using: .utf8) {
             // Try to read it as a JSON struct (from JSONParser)
             if let jsonObject = try? JSON(data: data) {
                 let vehicleType = jsonObject["vehicle_type"].string ?? ""
-                if let viewController = observationViewControllers[vehicleType]?.init() {
-                    viewController.qrString = code
-                    viewController.isAddingNewObservation = true
-                    viewController.session = loadSession()
-                    viewController.title = "New \(vehicleType) Observation"
-                    present(viewController, animated: true, completion: nil)//{self.presentingViewController?.dismiss(animated: false, completion: nil)})
+                let inholderName = jsonObject["Inholder name"].string ?? ""
+                let rightOfWayText = "Right of Way"
+                let lodgeBusText = "Lodge Bus"
+                if vehicleType == rightOfWayText && lodges.contains(inholderName){
+                    let alertTitle = "Right of Way or Lodge Bus?"
+                    //let alertMessageText = "This permit was recorded as a \(rightOfWayText) vehicle. Is it supposed to be a \(rightOfWayText) or a \(lodgeBusText)?"
+                    let boldAttribute = [NSAttributedStringKey.font: UIFont.boldSystemFont(ofSize: UIFont.systemFontSize + 2)]
+                    let attributedROWString = NSMutableAttributedString(string: rightOfWayText, attributes: boldAttribute)
+                    let attributedBusString = NSMutableAttributedString(string: lodgeBusText, attributes: boldAttribute)
+                    
+                    let attributedMessageString = NSMutableAttributedString(string: "\nThis permit was recorded as a \(rightOfWayText) vehicle. Is it supposed to be a ")
+                    attributedMessageString.append(attributedROWString)
+                    attributedMessageString.append(NSMutableAttributedString(string: " or a "))
+                    attributedMessageString.append(attributedBusString)
+                    attributedMessageString.append(NSMutableAttributedString(string: "?"))
+                    
+                    let alertController = UIAlertController(title: alertTitle, message: "", preferredStyle: .alert)
+                    alertController.addAction(UIAlertAction(title: rightOfWayText, style: .default, handler: {handler in
+                        self.showVehicleViewController(qrString: qrString, vehicleType: rightOfWayText)
+                    }))
+                    alertController.addAction(UIAlertAction(title: lodgeBusText, style: .default, handler: {handler in
+                        // The lodge name is given with the "Inholder name" key so replace it so that the lodge field autopopulates
+                        let correctedQRString = qrString.replacingOccurrences(of:"Inholder name", with: "Lodge")
+                        self.showVehicleViewController(qrString: correctedQRString, vehicleType: lodgeBusText)
+                    }))
+                    
+                    alertController.setValue(attributedMessageString, forKey: "attributedMessage")
+                    
+                    present(alertController, animated: true, completion: nil)
                 } else {
-                    let typesString = Array(observationViewControllers.keys).joined(separator: "\n")
-                    let alertMessage = "The vehicle type '\(vehicleType)' from the QR code string '\(code)' did not match one of these types: \n\n\(typesString)\n"
-                    showCodeReadErrorAlert(alertMessage: alertMessage)
+                    showVehicleViewController(qrString: qrString, vehicleType: vehicleType)
                 }
+                
+
             } else {
-                showCodeReadErrorAlert(alertMessage: "String from QR code not understood: \(code)")
+                showCodeReadErrorAlert(alertMessage: "String from QR code not understood: \(qrString)")
             }
         } else {
-            showCodeReadErrorAlert(alertMessage: "String from QR code not understood: \(code)")
+            showCodeReadErrorAlert(alertMessage: "String from QR code not understood: \(qrString)")
         }
     }
     
