@@ -51,6 +51,7 @@ import UIKit
         self.labelText = labelText
         label.font = UIFont.systemFont(ofSize: 25.0)
         label.translatesAutoresizingMaskIntoConstraints = false
+        //label.textColor = UIColor.black
         addArrangedSubview(label)
         
         self.spacing = 8.0

@@ -189,15 +189,23 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             textField.placeholder = textFieldIds[i].placeholder
             textField.autocorrectionType = .no
             textField.borderStyle = .roundedRect
-            textField.layer.borderColor = UIColor.clear.cgColor//.lightGray.cgColor
+            textField.layer.borderColor = UIColor(named: "textFieldBackgroundColor")?.cgColor//UIColor.clear.cgColor//.lightGray.cgColor
             textField.layer.borderWidth = 0.01//0.25
-            textField.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
             textField.font = UIFont.systemFont(ofSize: 16.0)
             textField.layer.cornerRadius = 5
-            //textField.frame.size.height = 28.5
             textField.frame = CGRect(x: 0, y: 0, width: self.view.frame.size.width, height: textFieldHeight)//safeArea.left, y: 0, width: self.view.frame.size.width - safeArea.right, height: 28.5)
             textField.tag = i
             textField.delegate = self
+            
+            // Set background color of text field depending on whether dark mode is enabled
+            /*var textFieldBackgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+            if #available(iOS 13.0, *) {
+                if UITraitCollection.current.userInterfaceStyle == .dark {
+                    textFieldBackgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.25)
+                }
+            }*/
+            textField.backgroundColor = UIColor(named: "textFieldBackgroundColor")
+            
             //textFields.append(textField)
             
             let stack = UIStackView()

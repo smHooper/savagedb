@@ -65,7 +65,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        addBackground(showWhiteView: false)
+        addBackground(showBackgroundColorFilter: false)
         setNavigationBar()
         self.backgroundImage = self.view.takeSnapshot()
         

@@ -78,7 +78,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         
         // Draw lines to separate buttons from text
         //  Horizontal line
-        let lineColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.4)
+        let lineColor = UIColor(named: "neutralAccent40")//UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.4)
         let horizontalLine = UIView(frame: CGRect(x:0, y: 0, width: controllerFrame.width, height: 1))
         self.view.addSubview(horizontalLine)
         horizontalLine.backgroundColor = lineColor
@@ -105,7 +105,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         self.fileTableView = FileTableView(frame: CGRect(x: 0, y: 0, width: 0, height: 0))
         self.view.addSubview(self.fileTableView)
         self.fileTableView.translatesAutoresizingMaskIntoConstraints = false
-        self.fileTableView.tableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
+        self.fileTableView.tableView.backgroundColor = UIColor(named: "backgroundContrast40")//UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
         self.fileTableView.leftAnchor.constraint(equalTo: self.view.leftAnchor, constant: self.spacing * 2).isActive = true
         self.fileTableView.rightAnchor.constraint(equalTo: self.view.rightAnchor, constant: -(self.spacing * 2)).isActive = true
         self.fileTableView.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: self.spacing * 2).isActive = true

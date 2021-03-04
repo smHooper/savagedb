@@ -181,11 +181,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         super.viewDidAppear(animated)
         loadData()
     }
-    
-    
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-    }
+
     
     // Handle rotation
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {

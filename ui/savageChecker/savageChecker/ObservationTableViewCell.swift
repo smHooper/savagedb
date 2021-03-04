@@ -106,6 +106,7 @@ class BaseObservationTableViewCell: UITableViewCell {
         rightLabel.textAlignment = .left
         rightLabel.font = UIFont.systemFont(ofSize: smallTextSize)
         
+        
         self.backgroundColor = UIColor.clear
     }
     
