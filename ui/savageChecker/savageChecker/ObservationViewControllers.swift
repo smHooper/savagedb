@@ -1143,6 +1143,28 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
                         }
                     }
                 }
+                
+                // Check that the permit is being used witin its valid dates
+                let dateFormatter = DateFormatter()
+                dateFormatter.dateFormat = "yyyy-MM-dd"
+                dateFormatter.timeZone = TimeZone.current
+                let nowString = dateFormatter.string(from: Date())
+                if let startDateString = json["start_date"].string, let endDateString = json["end_date"].string {
+                    // Since dates are in YYYY-mm-dd format, a simple string comparison will work
+                    if (startDateString > nowString && !startDateString.isEmpty) || (endDateString < nowString && !endDateString.isEmpty) {
+                        let startDate = dateFormatter.date(from: startDateString)!
+                        let endDate = dateFormatter.date(from: endDateString)!
+                        //reformat dates to be more human-readable
+                        dateFormatter.dateStyle = .short
+                        dateFormatter.timeStyle = .none
+                        
+                        let alertTitle = "Permit dates not valid"
+                        let alertMessage = "\nThis permit is being used outside the valid dates from \(dateFormatter.string(from: startDate)) to \(dateFormatter.string(from: endDate)). You might want to check that the permit is valid."
+                        let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
+                        alertController.addAction(UIAlertAction(title: "OK", style: .default))
+                        present(alertController, animated: true, completion: nil)
+                    }
+                }
             } else {
                 os_log("Could not parse self.qrString", log: .default, type: .debug)
                 showGenericAlert(message: "Problem encountered while parsing QR code string: \(self.qrString)", title: "QR code read error")
