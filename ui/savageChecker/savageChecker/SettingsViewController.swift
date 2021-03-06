@@ -125,7 +125,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         self.mainTableView.backgroundView = mainViewBackground
         
         self.view.addSubview(self.dividingLine)
-        self.dividingLine.backgroundColor = UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.4)
+        self.dividingLine.backgroundColor = UIColor(named: "neutralAccent40")//UIColor(red: 0.5, green: 0.5, blue: 0.5, alpha: 0.4)
         self.dividingLine.translatesAutoresizingMaskIntoConstraints = false
         self.dividingLine.leftAnchor.constraint(equalTo: self.mainTableView.rightAnchor).isActive = true
         self.dividingLine.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
@@ -134,7 +134,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         
         self.childView = UIView(frame: CGRect(x: displayWidth/3, y: statusBarHeight + navigationBarSize, width: 0, height: displayHeight - (statusBarHeight + navigationBarSize)))
         self.view.addSubview(childView)
-        self.childView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        self.childView.backgroundColor = UIColor(named: "backgroundContrast30")//UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
         self.childView.translatesAutoresizingMaskIntoConstraints = false
         self.childView.topAnchor.constraint(equalTo: self.navigationBar.bottomAnchor).isActive = true
         self.childView.bottomAnchor.constraint(equalTo: self.view.bottomAnchor).isActive = true
@@ -144,7 +144,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
         self.childViewWidthConstraint.isActive = true
         
         self.dropdownTableView = UITableView(frame: CGRect(x: 0, y: 0, width: 0, height: displayHeight - (statusBarHeight + navigationBarSize)))
-        self.dropdownTableView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        self.dropdownTableView.backgroundColor = UIColor(named: "backgroundContrast30")//UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
         self.dropdownTableView.register(DropdownSettingsTableViewCell.self, forCellReuseIdentifier: "dropdown")
         self.dropdownTableView.rowHeight = 60
         self.dropdownTableView.dataSource = self
@@ -288,7 +288,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
     func tableView(_ tableView: UITableView, willDisplayHeaderView view: UIView, forSection section: Int){
         //view.tintColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.4)
         let header = view as! UITableViewHeaderFooterView
-        header.backgroundView?.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+        header.backgroundView?.backgroundColor = UIColor(named: "backgroundContrast30")//UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
     }
     
     
@@ -356,7 +356,7 @@ class SettingsViewController: UIViewController, UITableViewDelegate, UITableView
             cell.label.text = self.dropdownOptions[indexPath.row]
             
             let selectedBackgroundView = UIView()
-            selectedBackgroundView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
+            selectedBackgroundView.backgroundColor = UIColor(named: "backgroundContrast30")//UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
             cell.selectedBackgroundView = selectedBackgroundView
             
             return cell
@@ -744,7 +744,7 @@ protocol checkBoxCellProtocol {
 
 class MainSettingsTableViewCell: UITableViewCell {
     
-    let bgColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
+    let bgColor = UIColor(named: "backgroundImageFilterColor")//UIColor(red: 1, green: 1, blue: 1, alpha: 0.5)
     let spacing: CGFloat = 16
     let label = UILabel()
     let checkBoxButton = CheckBoxControl()
