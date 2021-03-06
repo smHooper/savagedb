@@ -205,7 +205,7 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
             // Try to read it as a JSON struct (from JSONParser)
             if let jsonObject = try? JSON(data: data) {
                 let vehicleType = jsonObject["vehicle_type"].string ?? ""
-                let inholderName = jsonObject["Inholder name"].string ?? ""
+                let inholderName = jsonObject["Permit holder"].string ?? ""
                 let rightOfWayText = "Right of Way"
                 let lodgeBusText = "Lodge Bus"
                 if vehicleType == rightOfWayText && lodges.contains(inholderName){
@@ -226,8 +226,8 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
                         self.showVehicleViewController(qrString: qrString, vehicleType: rightOfWayText)
                     }))
                     alertController.addAction(UIAlertAction(title: lodgeBusText, style: .default, handler: {handler in
-                        // The lodge name is given with the "Inholder name" key so replace it so that the lodge field autopopulates
-                        let correctedQRString = qrString.replacingOccurrences(of:"Inholder name", with: "Lodge")
+                        // The lodge name is given with the "Permit holder" key so replace it so that the lodge field autopopulates
+                        let correctedQRString = qrString.replacingOccurrences(of:"Permit holder", with: "Lodge")
                         self.showVehicleViewController(qrString: correctedQRString, vehicleType: lodgeBusText)
                     }))
                     
