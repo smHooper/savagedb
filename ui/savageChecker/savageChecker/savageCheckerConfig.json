@@ -2,7 +2,7 @@
     "default_close_time": "9:30 PM",
     "fields": {
         "Right of Way": {
-            "Inholder name": {
+            "Permit holder": {
                 "validation_table": "inholder_allotments", 
                 "sorted": false, 
                 "validation_field": "inholder_name", 
