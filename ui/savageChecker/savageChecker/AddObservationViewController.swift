@@ -138,7 +138,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.messageView.backgroundColor = UIColor(red: 1, green: 1, blue: 1, alpha: 0.3)
         self.messageView.textContainerInset = UIEdgeInsets(top: borderSpacing, left: borderSpacing, bottom: borderSpacing, right: borderSpacing)
         self.messageView.text = randomQuote
-        let blurEffect = UIBlurEffect(style: .light)
+        let blurEffect = UIBlurEffect(style: .regular)
         self.messageViewBackground = UIVisualEffectView(effect: blurEffect)
         self.messageViewBackground.frame = messageFrame
         self.messageViewBackground.layer.cornerRadius = self.messageView.layer.cornerRadius
@@ -468,6 +468,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     @objc func settingsButtonPressed() {
         
         let settingsController = SettingsViewController()
+        settingsController.modalPresentationStyle = .fullScreen
         present(settingsController, animated: true, completion: nil)
         
     }
