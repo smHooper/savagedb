@@ -192,9 +192,10 @@ def main(connection_txt, out_img_path, mean_accuracy_txt=None, query_end_date=No
             error_str = r' $\pm$ %s' % error_margin
         except Exception as e:
             pass
+    most_recent_data = x_labels[current_data.index.max()]
     plt.title('Projected daily total vehicle counts per day for {year} as of {today}\nProjected season total - {total:,}{error}'
               .format(year=query_year,
-                      today=x_labels[current_data.index.max()],
+                      today=most_recent_data,
                       total=projected_daily.sum(),
                       error=error_str))
     plt.xlim(-BAR_SPACING, max(remaining_days) * BAR_SPACING + BAR_SPACING)
@@ -208,6 +209,8 @@ def main(connection_txt, out_img_path, mean_accuracy_txt=None, query_end_date=No
     plt.savefig(out_img_path, dpi=300)
 
     print '\nOutput files written to', os.path.dirname(out_img_path)
+
+    return most_recent_data
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv[1:]))
