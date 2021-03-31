@@ -8,7 +8,7 @@ from predict_season_vehicle_total import get_normalized_daily_mean, GMP_LIMIT
 
 pd.options.mode.chained_assignment = None
 
-def main(connection_txt, out_path, start_year=None, end_year=None):
+def main(connection_txt, out_img_path, start_year=None, end_year=None):
 
     sns.set_style('darkgrid')
 
@@ -21,7 +21,8 @@ def main(connection_txt, out_path, start_year=None, end_year=None):
     for year in range(current_year - 5 if not start_year else int(start_year), current_year if not end_year else int(end_year) + 1):
         #if year < 2016: continue
         print '%s...' % year,
-        current_data, normalized_mean = get_normalized_daily_mean(year, connection_txt)
+        current_data, normalized_stats = get_normalized_daily_mean(datetime(year, 9, 30), connection_txt)
+        normalized_mean = normalized_stats.nmean
         this_sum = float(current_data.daily_total.sum())
 
         # Calculate projected value for each day in this year's data (should always be a full season
@@ -45,12 +46,20 @@ def main(connection_txt, out_path, start_year=None, end_year=None):
         accuracy_data = pd.Series(accuracies)
         accuracy_curves[year] = accuracy_data
         all_predictions[year] = pd.Series(predictions)
-        plt.plot(current_data.index, accuracy_data, label=year)
+        plt.plot(current_data.index, accuracy_data, label=year, alpha=0.5)
 
     sns.despine()
 
+    accuracy_txt = out_img_path.replace(out_img_path.split('.')[-1], 'csv')
+    accuracy_curves = pd.DataFrame(accuracy_curves)
+    accuracy_curves.index.name = 'day_of_season'
+    accuracy_curves['mean_accuracy'] = accuracy_curves.apply(lambda x: x.abs().mean() * .01, axis=1)
+    accuracy_curves.to_csv(accuracy_txt)
+
+    # Plot that average accuracy
+    plt.plot(accuracy_curves.index, accuracy_curves.mean_accuracy * 100, color='k', label='Absolute mean')
+
     plt.title('Accuracy of projected season total per day of the season')
-    plt.legend()
     plt.xlabel('Day of season')
     plt.ylabel('% difference from actual total')
 
@@ -58,15 +67,14 @@ def main(connection_txt, out_path, start_year=None, end_year=None):
     figure = plt.gcf()
     figure.set_figwidth(figure.get_figwidth() * 2.5)
 
-    accuracy_txt = out_path.replace(out_path.split('.')[-1], 'csv')
-    accuracy_curves = pd.DataFrame(accuracy_curves)
-    accuracy_curves.index.name = 'day_of_season'
-    accuracy_curves['mean_accuracy'] = accuracy_curves.apply(lambda x: x.abs().mean() * .01, axis=1)
-    accuracy_curves.to_csv(accuracy_txt)
+    legend = plt.legend(bbox_to_anchor=(1.04, 1))
+
+    plt.tight_layout()
+
     pd.DataFrame(all_predictions, index=accuracy_curves.index).to_csv(accuracy_txt.replace('.csv', '_predicted_totals.csv'))
 
-    print '\n\nPlot image written to %s' % out_path
-    plt.savefig(out_path, dpi=300)
+    print '\n\nPlot image written to %s' % out_img_path
+    plt.savefig(out_img_path, dpi=300)
 
 
 if __name__ == '__main__':
