@@ -38,7 +38,7 @@ def main(query_name, connection_txt):
     category_names = {'summary': all_categories['summary'],
                       'buses': all_categories['buses'],
                       'pov': all_categories['pov'],
-                      'nps': get_nps_work_groups(connection_txt),
+                      'nps': all_categories['nps'],#get_nps_work_groups(connection_txt),
                       'bikes': [" "],
                       'total': all_categories['summary']
                       }
