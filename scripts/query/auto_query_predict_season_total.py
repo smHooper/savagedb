@@ -14,7 +14,7 @@ IMG_OUTPUT_DIR = r'\\inpdenafiles\parkwide\databases\savage_check_station\total_
 
 def main():
 
-    today = datetime.now().date()
+    today = datetime(2020, 8, 15).date()#datetime.now().date()
     current_year = today.year
     gmp_start, gmp_end = zip(count.get_gmp_dates(datetime(current_year, 5, 1), datetime(current_year, 9, 30)))
     gmp_start = gmp_start[0].date[0]
@@ -39,7 +39,7 @@ def main():
         os.mkdir(IMG_OUTPUT_DIR)
 
     out_img_path = os.path.join(IMG_OUTPUT_DIR, 'predicted_season_vehicle_total.png')
-    predict.main(CONNECTION_TXT, out_img_path, mean_accuracy_txt, today.strftime('%Y-%m-%d'))
+    most_recent_data = predict.main(CONNECTION_TXT, out_img_path, mean_accuracy_txt, today.strftime('%Y-%m-%d'))
 
     # Copy the sensitivity plot
     if os.path.isfile(SENSITIVITY_PLOT_PATH):
@@ -65,7 +65,7 @@ def main():
 
 
     readme_text = (
-        'Description of {}:'
+        'Description of {plot_basename}:'
         '\n\n'
         'This graph was created with a script scheduled to run automatically once a day during the General Management'
         ' Plan (GMP) regulatory season (the Saturday before Memorial Day to the second Thursday of September or'
@@ -77,14 +77,21 @@ def main():
         ' on a different day of the year each year, daily patterns are compared by relative day of the season as'
         ' opposed to the actual date.'
         '\n\n'
-        'The accuracy of estimations generally increases as the season progresses. The file {} is a graph demonstrating'
-        ' this pattern. As demonstrated in this additional graph, total estimations for the season are typically within'
-        ' 5% of the eventual actual total by approximately 30 days into the season. Estimations before the 20th day of'
-        ' the season are generally within 10% of the eventual total. The reliability of the estimate should be'
-        ' considered accordingly.'
+        'The accuracy of estimations generally increases as the season progresses. The file {sensitivity_basename} is a'
+        ' graph demonstrating this pattern. As demonstrated in this additional graph, total estimations for the season'
+        ' are typically within 5% of the eventual actual total by approximately 30 days into the season. Estimations'
+        ' before the 20th day of the season are generally within 10% of the eventual total. The reliability of the'
+        ' estimate should be considered accordingly.'
+        '\n\n'
+        'This file was created on {today} with data as recent as {most_recent_data}'
         '\n\n'
         '*2020 is excluded from estimation calculations since vehicle patterns departed significantly from normal.'
-    ).format(os.path.basename(out_img_path), os.path.basename(SENSITIVITY_PLOT_PATH))
+    ).format(
+        plot_basename=os.path.basename(out_img_path),
+        sensitivity_basename=os.path.basename(SENSITIVITY_PLOT_PATH),
+        today=today.strftime('%B %d, %Y'),
+        most_recent_data=datetime.strptime(most_recent_data, '%m/%d/%y').strftime('%B %d, %Y')
+    )
 
     readme_path = os.path.join(IMG_OUTPUT_DIR, 'README.txt')
     with open(readme_path, 'w') as f:
