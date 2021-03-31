@@ -134,7 +134,22 @@ SORT_ORDER = {'summary':   ['Long tour',
                             'NPS contractors',
                             'Other'],
               'total':      [],
-              'nps':        [],
+              'nps':        ["Administration",
+                            "Commercial Services",
+                            "Interpretation",
+                            "Maintenance - Autoshop",
+                            "Maintenance - B and U",
+                            "Maintenance - Roads",
+                            "Maintenance - Special Projects",
+                            "Maintenance - Trails",
+                            "Planning",
+                            "Resources - Cultural",
+                            "Resources - Natural",
+                            "Superintendent's Office",
+                            "Visitor and Resource Protection",
+                            "Other",
+                            "Unknown",
+                            "Null"],
               'bikes':      []
               }
 
@@ -177,16 +192,18 @@ COLORS = {'summary':   {'Long tour':  '#462970',
                         'NPS contractors': '#ADADAD',
                         'Other':         '#CDCB62'},
           'nps':        {'Administration': '#723C7D',
-                         'Concessions': '#779F84',
+                         'Commercial Services': '#6B9F7C',
                          'Interpretation': '#875E4D',
-                         'Maintenance-BU': '#82142B',
-                         'Maintenance-Roads': '#B43234',
-                         'Maintenance-Support': '#CB7F2C',
-                         'Maintenance-Trails':  '#E8DF60',
-                         'Natural-Cultural Resources': '#4D766F',
+                         "Maintenance - Autoshop": '#52003C',
+                         'Maintenance - B and U': '#82142B',
+                         'Maintenance - Roads': '#B43234',
+                         'Maintenance - Support': '#CB7F2C',
+                         'Maintenance - Trails':  '#E8DF60',
+                         'Resources - Natural': '#317E8F',
+                         'Resources - Cultural': '#7FBCC9',
                          'Planning': '#3E5297',
-                         "Superintendent's Office": '#6790BB',
-                         'VRP Rangers': '#C289BC',
+                         "Superintendent's Office": '#769FC9',
+                         'Visitor and Resource Protection': '#C289BC',
                          'Other': '#8F8E8E'},
           'bikes':      {'cyclists': '#587C97'},
           'total':      {0: '#587C97'}
@@ -506,6 +523,8 @@ def query_nps(output_fields, field_names, start_date, end_date, date_range, summ
                                             summarize_by=summarize_by, output_fields=output_fields, filter_fields=True,
                                             get_totals=get_totals, summary_stat=summary_stat, summary_field=summary_field, return_sql=True, start_time=start_time, end_time=end_time)
 
+    work_groups = query.get_lookup_table(engine, 'nps_work_groups')
+    data.rename(index=work_groups, inplace=True)
     if sort_order:
         data = data.reindex(sort_order)
 
