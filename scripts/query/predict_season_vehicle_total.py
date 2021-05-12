@@ -14,26 +14,43 @@ import count_vehicles_by_type as count
 
 SUMMARIZE_BY = 'day'
 GMP_LIMIT = 10512
+EXCLUDE_ESTIMATION_YEARS = pd.Series([2020]) #anomalous years to exclude from estimations
 
 # turn off the stupid setting as copy warning, which getting the day of the season will set off
 pd.options.mode.chained_assignment = None
 
-def get_normalized_daily_mean(query_year, connection_txt):
+def get_normalized_daily_mean(query_end_datetime, connection_txt):
     ''' Return a dataframe of daily totals for query year and a series of mean daily totals for the last 5 years normalized to 10,512 (sum of daily totals == 10512)'''
 
     # We want to compare to the last 5 years of data so go 6 years back. The first 5 are for comparison and the most
     #  recent is the year of interest
-    start_datetime = datetime(query_year - 6, 5, 15)
+    query_year = query_end_datetime.year
+    exclude_years = EXCLUDE_ESTIMATION_YEARS[
+        (EXCLUDE_ESTIMATION_YEARS >= (query_year - 6)) &
+        (EXCLUDE_ESTIMATION_YEARS < query_year)
+    ]
+
+    # Make sure at least 5 years of old data are used
+    start_datetime = datetime(query_year - (6 + len(exclude_years)), 5, 15)
+
     # Just get all the data at first, then filter out this year's data. That way we only have to query the DB once
     end_datetime = datetime(query_year, 9, 30)
+    # If querying for a particular day in the season, make end_datetime the earlier of either the given date or Sep 30
+    if query_end_datetime < end_datetime:
+        end_datetime = query_end_datetime
 
     # Get start and end dates for each season
     gmp_starts, gmp_ends = count.get_gmp_dates(start_datetime, end_datetime)
     btw_stmts = []
     for gmp_start, gmp_end in zip(gmp_starts, gmp_ends):
+        # Skip any years in the EXCLUDE series
+        gmp_year = gmp_start.year
+        if gmp_year in exclude_years.values and gmp_year != query_year:
+            continue
+        this_end_date = gmp_end if gmp_end < end_datetime else end_datetime
         btw_stmts.append("(datetime::date BETWEEN '{start}' AND '{end}') "
                          .format(start=gmp_start.strftime('%Y-%m-%d'),
-                                 end=gmp_end.strftime('%Y-%m-%d'))
+                                 end=this_end_date.strftime('%Y-%m-%d'))
                          )
     gmp_date_criteria = ' AND (%s) ' % ('OR '.join(btw_stmts))
     start_datetime = max(start_datetime, gmp_starts.min().to_pydatetime())
@@ -43,6 +60,7 @@ def get_normalized_daily_mean(query_year, connection_txt):
 
     # Get date range and names of output fields (formatted dates)
     date_range = count.get_date_range(start_date, end_date, summarize_by=SUMMARIZE_BY)
+    date_range = date_range[~date_range.year.isin(exclude_years)]
     output_fields = count.get_output_field_names(date_range, SUMMARIZE_BY, gmp_dates=[gmp_starts, gmp_ends])
 
     engine = query.connect_db(connection_txt)
@@ -86,6 +104,7 @@ def get_normalized_daily_mean(query_year, connection_txt):
 
     return current_data, normalized_data
 
+
 class VerticalDashedLineHandler(object):
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
         x0, y0 = handlebox.xdescent, handlebox.ydescent
@@ -97,7 +116,7 @@ class VerticalDashedLineHandler(object):
         return line
 
 
-def main(connection_txt, query_year, out_path, mean_accuracy_txt=None, plot_type='bar'):
+def main(connection_txt, out_img_path, mean_accuracy_txt=None, query_end_date=None, plot_type='bar'):
 
     sys.stdout.write("Log file for %s\n%s\n\n" % (__file__, datetime.now().strftime('%H:%M:%S %m/%d/%Y')))
     sys.stdout.write('Command: python %s\n\n' % subprocess.list2cmdline(sys.argv))
@@ -108,8 +127,18 @@ def main(connection_txt, query_year, out_path, mean_accuracy_txt=None, plot_type
     sns.set_style('white')
     sns.set_context('paper')
 
-    query_year = int(query_year)
-    current_data, normalized_mean = get_normalized_daily_mean(query_year, connection_txt)
+    if query_end_date:
+        try:
+            query_end_datetime = datetime.strptime(query_end_date, '%Y-%m-%d')
+        except:
+            raise ValueError(
+                'Could not understand query_end_date %s. It must be in the format YYYY-MM-DD.' % query_end_date
+            )
+    else:
+        query_end_datetime = datetime.now()
+    query_year = query_end_datetime.year
+
+    current_data, normalized_mean = get_normalized_daily_mean(query_end_datetime, connection_txt)
 
     # Calculate projected total and get projected daily values for plotting
     pct_difference = ((current_data.daily_total - normalized_mean.nmean) / normalized_mean.nmean).dropna()
@@ -163,9 +192,10 @@ def main(connection_txt, query_year, out_path, mean_accuracy_txt=None, plot_type
             error_str = r' $\pm$ %s' % error_margin
         except Exception as e:
             pass
+    most_recent_data = x_labels[current_data.index.max()]
     plt.title('Projected daily total vehicle counts per day for {year} as of {today}\nProjected season total - {total:,}{error}'
               .format(year=query_year,
-                      today=x_labels[current_data.index.max()],
+                      today=most_recent_data,
                       total=projected_daily.sum(),
                       error=error_str))
     plt.xlim(-BAR_SPACING, max(remaining_days) * BAR_SPACING + BAR_SPACING)
@@ -176,9 +206,11 @@ def main(connection_txt, query_year, out_path, mean_accuracy_txt=None, plot_type
     figure = plt.gcf()
     figure.set_figwidth(figure.get_figwidth() * 2.5)
 
-    plt.savefig(out_path, dpi=300)
+    plt.savefig(out_img_path, dpi=300)
 
-    print '\nOutput files written to', os.path.dirname(out_path)
+    print '\nOutput files written to', os.path.dirname(out_img_path)
+
+    return most_recent_data
 
 if __name__ == '__main__':
     sys.exit(main(*sys.argv[1:]))
