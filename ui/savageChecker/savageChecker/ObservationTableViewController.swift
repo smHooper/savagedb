@@ -87,14 +87,14 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var cellOrder = [Int]()
     let cellLabelColumns = ["Bus":            (label2: "bus_type",         label3: "destination"), //Each label is the column name in the DB the label is derived from and the icon name (with "Icon" at the end)
                             "Lodge Bus":      (label2: "bus_type",         label3: "bus_number"),
-                            "NPS Vehicle":    (label2: "driver_name",      label3: "work_group"),
+                            "NPS Vehicle":    (label2: "work_group",      label3: "destination"),
                             "NPS Approved":   (label2: "approved_type",    label3: "destination"),
                             "NPS Contractor": (label2: "destination",     label3: "organization"),
                             "Employee":       (label2: "driver_name",      label3: "n_passengers"),
                             "Right of Way":   (label2: "driver_name",      label3: "n_passengers"),
                             "Tek Camper":     (label2: "n_passengers",     label3: ""),
                             "Bicycle":        (label2: "destination",     label3: "n_passengers"),
-                            "Photographer":   (label2: "driver_name",      label3: "n_nights"),
+                            "Photographer":   (label2: "driver_name",      label3: "destination"),
                             "Accessibility":  (label2: "driver_name",      label3: "destination"),
                             "Subsistence":    (label2: "driver_name",      label3: "n_passengers"),
                             "Road Lottery":   (label2: "permit_number",    label3: "n_passengers"),

@@ -68,8 +68,14 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         setNavigationBar()
         
         // Make buttons to arrange
-        for (offset: index, (key: labelText, value: iconName)) in self.icons.enumerated() {
+        for (offset: index, (key: label, value: iconName)) in self.icons.enumerated() {
             let thisButton = VehicleButtonControl()
+            var labelText = label
+            if (label == "NPS Contractor") {
+                labelText = "Contractor - NPS"
+            } else if (label == "Photographer") {
+                labelText = "Special Use"
+            }
             thisButton.setupButtonLayout(imageName: iconName, labelText: labelText, tag: index)
             thisButton.tag = -1//index
             thisButton.button.addTarget(self, action: #selector(AddObservationViewController.moveToObservationViewController(button:)), for: .touchUpInside)

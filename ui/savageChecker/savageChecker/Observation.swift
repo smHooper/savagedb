@@ -92,7 +92,7 @@ class NPSVehicleObservation: Observation {
     var workGroup: String?
     var nExpectedNights = "0"
     
-    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, tripPurpose: String, workGroup: String, nExpectedNights: String = "0", comments: String = ""){
+    init?(id: Int, observerName: String, date: String, time: String, driverName: String, destination: String, nPassengers: String, workGroup: String, tripPurpose: String = "", nExpectedNights: String = "0", comments: String = ""){
         
         super.init(id: id, observerName: observerName, date: date, time: time, driverName: driverName, destination: destination, nPassengers: nPassengers, comments: comments)
         

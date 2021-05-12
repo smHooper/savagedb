@@ -2271,7 +2271,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              //(label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown", column: "work_group"),
-                             (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
+                             //(label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
                              //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
@@ -2293,7 +2293,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                              //(label: "Driver's full name", placeholder: "Enter the driver's full name",            type: "normal"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Work group",    placeholder: "Select or enter the work group",          type: "dropDown", column: "work_group"),
-                             (label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
+                             //(label: "Trip purpose",  placeholder: "Select or enter the purpose of the trip", type: "dropDown", column: "trip_purpose"),
                              //(label: "Number of expected nights", placeholder: "Enter the number of anticipated nights beyond the check station",   type: "number", column: "n_nights"),
                              (label: "Number of passengers", placeholder: "Enter the number of passengers (including driver)", type: "number", column: "n_passengers"),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
@@ -2301,8 +2301,9 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
                                     //"Work division": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work division"),
-                                    "Work group": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work group"),
-                                    "Trip purpose": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Trip purpose")]
+                                    "Work group": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Work group")//,
+                                    //"Trip purpose": parseJSON(controllerLabel: "NPS Vehicle", fieldName: "Trip purpose")
+        ]
         self.observationsTable = Table("nps_vehicles")
     }
     
@@ -2320,14 +2321,14 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             let (currentDate, currentTime) = getCurrentDateTime()
             
             // Initialize the observation
-            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "", tripPurpose: "", workGroup: "")
+            self.observation = NPSVehicleObservation(id: -1, observerName: (session?.observerName) ?? "", date: (session?.date) ?? "", time: currentTime, driverName: "", destination: "", nPassengers: "", workGroup: "")
             self.dropDownTextFields[0]?.text = session?.observerName
             self.textFields[1]?.text = currentDate
             
             // Fill text fields with defaults
             self.textFields[2]?.text = currentTime
             //self.dropDownTextFields[7]?.text = "N/A"
-            self.textFields[6]?.text = "0"
+            self.textFields[5]?.text = "0"
             //self.saveButton.isEnabled = false
             
         } else {
@@ -2343,7 +2344,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                                          driverName: record[driverNameColumn],
                                                          destination: record[destinationColumn],
                                                          nPassengers: record[nPassengersColumn],
-                                                         tripPurpose: record[tripPurposeColumn],
+                                                         //tripPurpose: record[tripPurposeColumn],
                                                          workGroup: record[workGroupColumn],
                                                          //nExpectedNights: record[nExpectedNightsColumn],
                                                          comments: record[commentsColumn])
@@ -2355,10 +2356,10 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 //self.textFields[3]?.text = self.observation?.driverName
                 self.dropDownTextFields[3]?.text = self.observation?.destination
                 self.dropDownTextFields[4]?.text = self.observation?.workGroup
-                self.dropDownTextFields[5]?.text  = self.observation?.tripPurpose
+                //self.dropDownTextFields[5]?.text  = self.observation?.tripPurpose
                 //self.textFields[6]?.text = self.observation?.nExpectedNights
-                self.textFields[6]?.text = self.observation?.nPassengers
-                self.textFields[7]?.text = self.observation?.comments
+                self.textFields[5]?.text = self.observation?.nPassengers
+                self.textFields[6]?.text = self.observation?.comments
                 self.saveButton.isEnabled = true
             } else {
                 os_log("Could not load data because no ID passed from the tableViewController", log: .default, type: .debug)
@@ -2470,9 +2471,9 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
         let driverName = "" //self.textFields[3]?.text ?? ""
         let destination = self.dropDownTextFields[3]?.text ?? ""
         let workGroup = self.dropDownTextFields[4]?.text ?? ""
-        let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
-        let nPassengers = self.textFields[6]?.text ?? ""
-        let comments = self.textFields[7]?.text ?? ""
+        //let tripPurpose = self.dropDownTextFields[5]?.text ?? ""
+        let nPassengers = self.textFields[5]?.text ?? ""
+        let comments = self.textFields[6]?.text ?? ""
         
         self.fieldsFull =
             !observerName.isEmpty &&
@@ -2480,7 +2481,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                 !time.isEmpty &&
                 //!driverName.isEmpty &&
                 !workGroup.isEmpty &&
-                !tripPurpose.isEmpty &&
+                //!tripPurpose.isEmpty &&
                 !destination.isEmpty &&
                 !nPassengers.isEmpty
         
@@ -2489,7 +2490,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             self.observation?.time = time
             self.observation?.driverName = driverName
             self.observation?.workGroup = workGroup
-            self.observation?.tripPurpose = tripPurpose
+            //self.observation?.tripPurpose = tripPurpose
             self.observation?.destination = destination
             self.observation?.nPassengers = nPassengers
             self.observation?.comments = comments
@@ -2508,7 +2509,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                                             timeColumn <- (self.observation?.time)!,
                                                             driverNameColumn <- (self.observation?.driverName)!,
                                                             workGroupColumn <- (self.observation?.workGroup)!,
-                                                            tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                                            //tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                                             destinationColumn <- (self.observation?.destination)!,
                                                             nPassengersColumn <- (self.observation?.nPassengers)!,
                                                             commentsColumn <- (self.observation?.comments)!))
@@ -2537,7 +2538,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
                                         driverNameColumn <- (self.observation?.driverName)!,
                                         destinationColumn <- (self.observation?.destination)!,
                                         nPassengersColumn <- (self.observation?.nPassengers)!,
-                                        tripPurposeColumn <- (self.observation?.tripPurpose)!,
+                                        //tripPurposeColumn <- (self.observation?.tripPurpose)!,
                                         workGroupColumn <- (self.observation?.workGroup)!,
                                         commentsColumn <- (self.observation?.comments)!)) > 0 {
                 success = true
@@ -3420,7 +3421,7 @@ class RightOfWayObservationViewController: BaseObservationViewController {
         
         self.dropDownMenuOptions = ["Observer name": observers,
                                     "Destination": destinations,
-                                    "Permit holder": parseJSON(controllerLabel: "Right of Way", fieldName: "Permit holder")]
+                                    "Permit holder": parseJSON(controllerLabel: "Right of Way", fieldName: "Inholder name")]
         
         self.observationsTable = Table("inholders")
     }
