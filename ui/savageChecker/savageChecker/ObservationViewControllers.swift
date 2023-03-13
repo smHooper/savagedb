@@ -1629,15 +1629,15 @@ class BaseObservationViewController: BaseFormViewController {//}, UITableViewDel
 class BusObservationViewController: BaseObservationViewController {
     
     //MARK: - Properties
-    //MARK: DB properties
+    //MARK: DB properties   
     var observation: BusObservation?
     let busTypeColumn = Expression<String>("bus_type")
     let busNumberColumn = Expression<String>("bus_number")
     let isTrainingColumn = Expression<Bool>("is_training")
     let nOvernightPassengersColumn = Expression<String>("n_lodge_ovrnt")
     
-    let destinationLookup = ["Denali Natural History Tour": "Teklanika",
-                             "Tundra Wilderness Tour": "Stony Overlook",
+    let destinationLookup = ["Denali Natural History Tour": "Primrose/Mile 17",
+                             "Tundra Wilderness Tour": "Polychrome",
                              "Kantishna Experience": "Kantishna",
                              "Camper": "Kantishna",
                              "Spare": "Igloo"]
@@ -3701,6 +3701,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                              (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox", column: ""),
                              (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox", column: ""),
                              (label: "Headlights on?", placeholder: "",            type: "checkBox", column: ""),
+                             (label: "Sheep gap reminder?", placeholder: "",       type: "checkBox", column: ""),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
@@ -3722,6 +3723,7 @@ class TeklanikaCamperObservationViewController: BaseObservationViewController {
                              (label: "Driver informed about bear proof food storage at campground?", placeholder: "",                       type: "checkBox", column: ""),
                              (label: "Driver informed about dogs (on leash, on roads only, dog food storage)?", placeholder: "",            type: "checkBox", column: ""),
                              (label: "Headlights on?", placeholder: "",            type: "checkBox", column: ""),
+                             (label: "Sheep gap reminder?", placeholder: "",       type: "checkBox", column: ""),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.dropDownMenuOptions = ["Observer name": observers]
@@ -3966,6 +3968,10 @@ class CyclistObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Number of bikes", placeholder: "Enter the total number of bikes", type: "number",         column: "n_passengers"),
+                             (label: "Reminded to bike single file along the right side of the road?",  placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded to stop behind parked buses with flashing lights?",      placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded to allow traffic to pass and pull over if necessary?",   placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Wildlife rule reminder and encouraged to carry bear spray?",     placeholder: "",    type: "checkBox", column: ""),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("cyclists")
@@ -3979,6 +3985,10 @@ class CyclistObservationViewController: BaseObservationViewController {
                              (label: "Time",          placeholder: "Select the observation time",         type: "time",         column: "time"),
                              (label: "Destination",   placeholder: "Select or enter the destination",     type: "dropDown",     column: "destination"),
                              (label: "Number of bikes", placeholder: "Enter the total number of bikes", type: "number",         column: "n_passengers"),
+                             (label: "Reminded to bike single file along the right side of the road?",  placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded to stop behind parked buses with flashing lights?",      placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded to allow traffic to pass and pull over if necessary?",   placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Wildlife rule reminder and encouraged to carry bear spray?",     placeholder: "",    type: "checkBox", column: ""),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("cyclists")

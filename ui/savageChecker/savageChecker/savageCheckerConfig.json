@@ -1,5 +1,7 @@
 {
-    "default_close_time": "4:45 PM", 
+    "show_quote_at_startup": true,
+    "default_open_time": "6:00 AM",
+    "default_close_time": "9:00 PM",
     "fields": {
         "Right of Way": {
             "Inholder name": {
@@ -42,7 +44,7 @@
                     "Denali Natural History Tour", 
                     "Tundra Wilderness Tour", 
                     "Transit", 
-                    "Camper", 
+                    "Camper",
                     "Kantishna Experience", 
                     "Commerical Charter", 
                     "Educational Charter", 
@@ -60,38 +62,40 @@
                 "sorted": true, 
                 "validation_field": "", 
                 "options": [
-                    "Anne Triest",
-                    "Bill Reynolds",
+                    "Ana Brease",
                     "Brian Taylor",
+                    "Candace Cahill",
+                    "Chris Grahn",
+                    "Chris McCloud",
+                    "Cindy Watson-Pottebaum",
+                    "Curt Rogers",
+                    "Damian Popovic",
+                    "Dan Irelan",
                     "Danielle O'Connor",
                     "Dawn Conroy",
-                    "Eliza Kurth",
                     "Elizabeth Beavers",
                     "Emile Toledano",
-                    "Emily LaPorte ",
-                    "Emily Wong",
-                    "Eric Filardi",
-                    "Halbe Brown",
+                    "Emily LaPorte",
+                    "Emily Miller",
+                    "Emma Tomeo",
+                    "Everly Jazi",
+                    "Greg Henry",
+                    "James Riley",
                     "Jamie Milliken",
                     "Jan Tomson",
-                    "Jennifer Harris",
+                    "Jess Millman",
                     "Jessica Drain",
-                    "Julia DeNoto",
+                    "Jules DeNoto",
                     "Katie Karnes",
                     "Katie Mikulla",
-                    "Laura Vachula ",
-                    "Lida Wise",
+                    "Kelly Kitka",
+                    "Lauren Ivan",
+                    "Maureen Hayes",
                     "Meadow Galasso",
-                    "Melanie Randall",
-                    "Monica Magari ",
-                    "Nicole Dalton",
-                    "Pattie Reed ",
+                    "Monica Magari",
+                    "Nick Guarino",
+                    "Nick Virgil",
                     "Paul Ollig",
-                    "Sabrena Pitcher",
-                    "Sierra McLane",
-                    "Susan Trucano",
-                    "Tim Melnick ",
-                    "Tyler Dempsey",
                     "Tyler Devine",
                     "Other"
                 ]
@@ -104,12 +108,7 @@
                     "Primrose/Mile 17", 
                     "Teklanika", 
                     "Igloo", 
-                    "Polychrome"    , 
-                    "Toklat", 
-                    "Stony Overlook", 
-                    "Eielson", 
-                    "Wonder Lake", 
-                    "Kantishna", 
+                    "Polychrome", 
                     "Unknown"
                 ]
             }
@@ -184,7 +183,5 @@
                 ]
             }
         }
-    }, 
-    "show_quote_at_startup": true, 
-    "default_open_time": "9:00 AM"
+    }
 }
