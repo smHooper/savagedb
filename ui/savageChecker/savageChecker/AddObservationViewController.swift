@@ -25,7 +25,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     var messageViewBackground: UIVisualEffectView!
     var blurredBackground: UIImageView!
     var animationComplete = false
-    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .whiteLarge)
+    let activityIndicator = UIActivityIndicatorView(activityIndicatorStyle: .large)
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         get {
             if self.animationComplete {

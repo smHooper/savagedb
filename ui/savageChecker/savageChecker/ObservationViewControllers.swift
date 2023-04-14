@@ -1639,7 +1639,7 @@ class BusObservationViewController: BaseObservationViewController {
     let destinationLookup = ["Denali Natural History Tour": "Primrose/Mile 17",
                              "Tundra Wilderness Tour": "Polychrome",
                              "Kantishna Experience": "Kantishna",
-                             "Camper": "Kantishna",
+                             "Camper": "Polychrome",
                              "Spare": "Igloo"]
     
     //MARK: - Initialization
@@ -2328,7 +2328,7 @@ class NPSVehicleObservationViewController: BaseObservationViewController {
             // Fill text fields with defaults
             self.textFields[2]?.text = currentTime
             //self.dropDownTextFields[7]?.text = "N/A"
-            self.textFields[5]?.text = "0"
+            //self.textFields[5]?.text = "0"
             //self.saveButton.isEnabled = false
             
         } else {

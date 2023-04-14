@@ -36,30 +36,18 @@ extension String {
 }
 
 
-let stamp = "4/4/18, 8:26 AM"
+let stamp = "2021-03-05"
 let formatter = DateFormatter()
-formatter.dateStyle = .short
-formatter.timeStyle = .short
+//formatter.locale = Locale(identifier: "en_US_POSIX")
+formatter.dateFormat = "yyyy-MM-dd"
+formatter.timeZone = TimeZone.current
+//formatter.timeStyle = .short
 //formatter.dateFormat = "MM/dd/yy HH:mm a"
 let date = formatter.date(from: stamp)
-let date2 = formatter.date(from: "5/4/18 8:01 AM")
-let now = Date()
+//let date2 = formatter.date(from: "5/4/18 8:01 AM")
+let now = formatter.string(from: Date())
 
-now + 2
-
-
-let dict = ["0": "a", "1": "b"]
-var empty = [String: String]()
-for key in dict.keys {
-    empty[key] = dict[key]
-}
-for i in 0...3 {
-    print(i)
-}
-
-var name = "something, "
-print(name[..<name.index(name.endIndex, offsetBy: -2)])
-
-
-
-
+let dateFormatter = DateFormatter()
+dateFormatter.dateFormat = "yyyy-MM-dd"
+dateFormatter.timeZone = TimeZone.current
+let nowString = dateFormatter.string(from: Date())
