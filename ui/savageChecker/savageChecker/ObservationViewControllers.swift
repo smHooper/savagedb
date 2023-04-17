@@ -953,8 +953,7 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                     try autoCompleteDB.execute(sql)
                 } catch {
                     os_log("Record insertion failed in autoCompleteDB", log: OSLog.default, type: .debug)
-                    let backupDBPath = URL(fileURLWithPath: NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!)
-                        .appendingPathComponent("backup")
+                    let backupDBPath = getBackupDir()
                         .appendingPathComponent(loadUserData()?.activeDatabase ?? "")
                         .path
                     try? FileManager.default.removeItem(at: autoCompleteDBURL)

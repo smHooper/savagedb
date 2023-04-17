@@ -138,7 +138,7 @@ class ArchivePopoverViewController: UIViewController, UITextFieldDelegate {
         label.topAnchor.constraint(equalTo: messageView.bottomAnchor, constant: self.borderSpacing * CGFloat(2)).isActive = true
         
         // Add a text field for the file name
-        self.fileName = URL(fileURLWithPath: dbPath).lastPathComponent //"savageChecker_\(fileNameTag).db"
+        self.fileName = URL(fileURLWithPath: dbPath).lastPathComponent
         let fileNameTextField = UITextField()
         fileNameTextField.text = self.fileName
         self.view.addSubview(fileNameTextField)

@@ -42,11 +42,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
         let logFilePath = fileManager.fileExists(atPath: logDirectory.path, isDirectory:&isDir) ? logDirectory.appendingPathComponent(fileName).path : URL(fileURLWithPath: documentsDirectory).appendingPathComponent(fileName).path
         freopen(logFilePath.cString(using: String.Encoding.ascii)!, "a+", stderr)
         
-        //let sessionController = SessionViewController()
+
         let menuController = AddObservationViewController()
             
         self.window = UIWindow(frame: UIScreen.main.bounds)
-        self.window?.rootViewController = menuController//sessionController
+        self.window?.rootViewController = menuController
         self.window?.makeKeyAndVisible()
         
         return true
@@ -173,7 +173,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, GIDSignInDelegate {
             //  Check that the animation is complete because this code will run when the app first starts up too. In that case,
             //  we want the main menu controller to handle calls to showNewShiftAlert() because it needs to happen after animations
             //  are complete
-            if let tag = rootController?.getFileNameTag(), tag != userData.creationDate, (rootController as? AddObservationViewController)?.animationComplete ?? true {
+            if let tag = rootController?.getTodayDateString(), tag != userData.creationDate, (rootController as? AddObservationViewController)?.animationComplete ?? true {
                 rootController?.showNewShiftAlert()
             }
         }

@@ -153,7 +153,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
             for url in fileURLs {
                 let fileName = url.lastPathComponent
                 // Check if the filename checks out
-                if fileName != "savageChecker.db" && fileName.hasSuffix(".db") && fileName.hasPrefix("savageChecker") {
+                if fileName != "savageChecker.db" && fileName.hasSuffix(".db") && fileName.contains("_SavageChecker_") {
                     // If this is a regular DB browser (not called from GDrive upload controller), just add the filename
                     if self.isLoadingDatabase {
                         self.files.append(fileName)
@@ -177,7 +177,7 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
         
         if self.files.count == 0 {
             let presentingController = presentingViewController
-            self.dismiss(animated: true, completion: {presentingController?.showGenericAlert(message: "All data files on this device are empty. You can only upload data once you have entered observations.", title: "No files to upload", takeScreenshot: false)})
+            self.dismiss(animated: true, completion: {presentingController?.showGenericAlert(message: "All data files on this device are empty. You can only select a data file once you have entered observations.", title: "No files to select", takeScreenshot: false)})
         }
     }
 
@@ -328,8 +328,8 @@ class DatabaseBrowserViewController: UIViewController, UITableViewDelegate, UITa
 
             let formatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "MM-dd-yy"
-            let dateFromFile = selectedFileName.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: "_\(getCleanedDeviceName() ?? UIDevice.current.name).db", with: "")
+            formatter.dateFormat = dateStringFormat
+            let dateFromFile = self.getDateFromDataFile()
             if let date = formatter.date(from: dateFromFile) {
                 formatter.dateStyle = .long
                 formatter.timeStyle = .none

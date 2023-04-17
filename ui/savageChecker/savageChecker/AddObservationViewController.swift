@@ -579,8 +579,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
             // If the dbPath does exist, check that the dbPath is for today. Since loadData() is only called in viewDidAppear() if userData don't exist
             //  it shouldn't cause any problems when opening a database other than today's
             } else if showAlert{
-                let today = getFileNameTag()//"7-10-19_Sam_s_dev_iPad"//
-                let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("savageChecker_\(today).db").path
+                let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(getDataFileName()).path
                 let activePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(userData.activeDatabase).path
                 if todaysPath != activePath {
                     showNewShiftAlert()//showShiftInfoForm()

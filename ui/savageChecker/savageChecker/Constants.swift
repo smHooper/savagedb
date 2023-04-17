@@ -26,7 +26,9 @@ let observationIcons: DictionaryLiteral = ["Bus": "busIcon",
                                            "Road lottery": "busIcon",
                                            "Other": "busIcon"]
 
-let userDataPath = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("userData").path
+let userDataPath = FileManager().urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("__admin__").appendingPathComponent("userData").path
+
+let dateStringFormat = "M-d-yyyy"
 
 let launchScreenQuotes = [
     "Industrial tourism is a threat to the national parks. But the chief victims of the system are the motorized tourists. They are being robbed and robbing themselves. So long as they are unwilling to crawl out of their cars they will not discover the treasures of the national parks and will never escape the stress and turmoil of the urban-suburban complexes which they had hoped, presumably, to leave behind for a while.\n\n\t- Edward Abbey",

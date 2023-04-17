@@ -174,7 +174,10 @@ extension UIViewController {
     
     func loadBackgroundImage(named: String) -> UIImage? {
         if let documentsDirectory = try? FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false) {
-            return UIImage(contentsOfFile: URL(fileURLWithPath: documentsDirectory.absoluteString).appendingPathComponent(named).path)
+            return UIImage(contentsOfFile: URL(fileURLWithPath: documentsDirectory.absoluteString)
+                .appendingPathComponent("__admin__")
+                .appendingPathComponent(named).path
+            )
         }
         return nil
     }
@@ -187,7 +190,7 @@ extension UIViewController {
             return false
         }
         do {
-            try data.write(to: directory.appendingPathComponent("background.png")!)
+            try data.write(to: directory.appendingPathComponent("__admin__")?.appendingPathComponent("background.png") ?? directory.appendingPathComponent("background.png")!)
             return true
         } catch {
             print(error.localizedDescription)
@@ -227,21 +230,42 @@ extension UIViewController {
         let deviceName = UIDevice.current.name
         var cleanedDeviceName: String?
         if let regex = try? NSRegularExpression(pattern: "[^a-zA-Z0-9]", options: .caseInsensitive) {
-            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "_")
+            cleanedDeviceName = regex.stringByReplacingMatches(in: deviceName, options: [], range: NSRange(location: 0, length:  deviceName.count), withTemplate: "-")
         }
         
         return cleanedDeviceName
     }
     
     // Get the datestamp for the dbPath
-    func getFileNameTag() -> String {
-        let formatter = DateFormatter()
-        let now = Date()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .none
-        let dateString = formatter.string(from: now).replacingOccurrences(of: "/", with: "-")//.replacingOccurrences(of: "1", with: "2")
+//    func getFileNameTag() -> String {
+//        let formatter = DateFormatter()
+//        let now = Date()
+//        formatter.dateStyle = .short
+//        formatter.timeStyle = .none
+//        let dateString = formatter.string(from: now).replacingOccurrences(of: "/", with: "-")//.replacingOccurrences(of: "1", with: "2")
+//
+//        return "\(dateString)_\(getCleanedDeviceName() ?? UIDevice.current.name)"
+//    }
+    
+    
+    func getTodayDateString() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = dateStringFormat
+        let dateString = dateFormatter.string(from: Date())
         
-        return "\(dateString)_\(getCleanedDeviceName() ?? UIDevice.current.name)"
+        return dateString
+    }
+    
+    
+    func getDataFileName() -> String {
+        return "\(getTodayDateString())_SavageChecker_\(getCleanedDeviceName() ?? UIDevice.current.name).db"
+    }
+    
+    
+    func getDateFromDataFile() -> String {
+        return String(
+                URL(fileURLWithPath: dbPath).lastPathComponent.split(separator: "_").first ?? ""
+            )
     }
     
     
@@ -317,8 +341,6 @@ extension UIViewController {
             showShiftInfoForm()
             return
         }
-        
-        let tag = getFileNameTag()
 
         // If the user has the shift info form open, close it. This way, if it's opened again, the proper loadData() code will run.
         //  Also, since the controller is shown modally as a .formsheet, another shiftinfo form will just be opened on top of the existing one
@@ -337,9 +359,9 @@ extension UIViewController {
         //  Also, don't show this form on top of a DB browser, G Drive Upload, or a QR Scanner controller because the shiftinfo form doesn't load properly. Also, the scanner controller
         //  and the G Drive upload controllers send their own alerts, which cause the app to lose and regain focus. This means that the code gets called when this happens, which shouldn't happen.
         //  Lastly, if the new shift alert is already open, don't try to open it again
-        if tag != userData.creationDate && currentViewController.modalPresentationStyle != .formSheet && currentControllerClassName != "ScannerViewController" && currentViewController.title != "New shift?" {//currentControllerClassName != "UIAlertController" {
+        if getTodayDateString() != userData.creationDate && currentViewController.modalPresentationStyle != .formSheet && currentControllerClassName != "ScannerViewController" && currentViewController.title != "New shift?" {//currentControllerClassName != "UIAlertController" {
             let alertTitle = "New shift?"
-            let alertMessage = "It looks like this is a new day (full of promise and excitement!). All observations should, therefore, be recorded as a new shift. Would you like to start a new shift now? If you press \"No\", you can press the shift info button later to start a new shift."
+            let alertMessage = "It looks like this is a new day (full of promise and excitement!). All observations should, therefore, be recorded as a new shift. Would you like to start a new shift now? If you press \"No\", you can press the shift info (top right) button later to start a new shift."
             let alertController = UIAlertController(title: alertTitle, message: alertMessage, preferredStyle: .alert)
             alertController.addAction(UIAlertAction(title: "Yes, start a new one", style: .cancel, handler: {handler in
                 try? FileManager.default.removeItem(atPath: userDataPath)
@@ -435,15 +457,28 @@ extension UIViewController {
     }
     
     
-    func backupCurrentDb() {
-        
+    func getBackupDir() -> URL {
         let fileManager = FileManager.default
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let backupDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup")
+        let backupDir = URL(fileURLWithPath: documentsDirectory)
+            .appendingPathComponent("__admin__")
+            .appendingPathComponent("backups")
+        
         var isDir: ObjCBool = false
         if !fileManager.fileExists(atPath: backupDir.path, isDirectory: &isDir) {
             try? fileManager.createDirectory(at: backupDir, withIntermediateDirectories: true, attributes: nil)
         }
+        
+        return backupDir
+    }
+    
+    
+    func backupCurrentDb() {
+        
+        let fileManager = FileManager.default
+        let backupDir = getBackupDir()
+        
+
         let currentDbURL = URL(fileURLWithPath: getCurrentDbPath())
         let backupDbURL = backupDir.appendingPathComponent(currentDbURL.lastPathComponent)
         
@@ -468,7 +503,7 @@ extension UIViewController {
         let currentDbURL =  URL(fileURLWithPath: getCurrentDbPath())
         let currentDbName = currentDbURL.lastPathComponent
         let documentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let backupDir = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup")
+        let backupDir = getBackupDir()
         let backupDbURL = backupDir.appendingPathComponent(currentDbName)
         let fileManager = FileManager.default
         

@@ -292,7 +292,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
                 uploadError = error
                 if error == nil {
                     // Update the uploaded column in the session table
-                    let backupPath = URL(fileURLWithPath: documentsDirectory).appendingPathComponent("backup").appendingPathComponent(fileName).path
+                    let backupPath = self.getBackupDir().appendingPathComponent(fileName).path
                     if let db = try? Connection(fullPath) {
                         // Update all records because there should be only 1
                         if let resultCode = try? db.run(sessionsTable.update(uploadedColumn <- true)), resultCode > 0 {

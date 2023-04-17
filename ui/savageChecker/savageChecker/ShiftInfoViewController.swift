@@ -101,8 +101,7 @@ class ShiftInfoViewController: BaseFormViewController {
         horizontalLine.heightAnchor.constraint(equalToConstant: 1.0).isActive = true
         
         // Set the dbPath with a unique tag that includes the observer's name and a timestamp
-        let dateString = getFileNameTag()
-        let fileName = "savageChecker_\(dateString).db"
+        let fileName = getDataFileName()
         dbPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(fileName).path
         
         loadData()
@@ -154,8 +153,8 @@ class ShiftInfoViewController: BaseFormViewController {
         
  
         // Check if a database exists for today's date
-        let today = getFileNameTag()
-        let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("savageChecker_\(today).db").path
+        //let today = getFileNameTag()
+        let todaysPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent(getDataFileName()).path
         if FileManager.default.fileExists(atPath: todaysPath){
             // If a file exists, but so does user data, always use the activePath from userData
             if let userData = loadUserData() {
@@ -224,7 +223,7 @@ class ShiftInfoViewController: BaseFormViewController {
         self.saveButton.isEnabled = false
         
         // Create the userData instance for storing info
-        let dateStamp = getFileNameTag()
+        let dateStamp = getTodayDateString()
         self.userData = UserData(creationDate: dateStamp, lastModifiedTime: Date(), activeDatabase: URL(fileURLWithPath: dbPath).lastPathComponent)
         
         self.isNewSession = true
@@ -325,8 +324,7 @@ class ShiftInfoViewController: BaseFormViewController {
                 
                 // If observer name was the field just modified, check to see if there's an existing DB from today with this user's name.
                 //  If so, ask user if they wan't to edit the existing DB or create a new one
-                let dateString = getFileNameTag()
-                dbPath = documentsDirectory.appendingPathComponent("savageChecker_\(dateString).db").path // Use new path
+                dbPath = documentsDirectory.appendingPathComponent(getDataFileName()).path // Use new path
                 connectToDB()
             }
             

@@ -947,8 +947,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
                     self.loadObservations()
                     let formatter = DateFormatter()
                     dateFormatter.locale = Locale(identifier: "en_US_POSIX")
-                    formatter.dateFormat = "MM-dd-yy"
-                    let dateFromFile = URL(fileURLWithPath: dbPath).lastPathComponent.replacingOccurrences(of: "savageChecker_", with: "").replacingOccurrences(of: ".db", with: "")
+                    formatter.dateFormat = dateStringFormat
+                    let dateFromFile = self.getDateFromDataFile()
                     var message = ""
                     if let date = formatter.date(from: dateFromFile) {
                         formatter.dateStyle = .long
