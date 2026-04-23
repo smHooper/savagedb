@@ -236,6 +236,11 @@ extension UIViewController {
         return cleanedDeviceName
     }
     
+    func getDeviceID() -> String {
+        // Get the first 8 digits of the UUID
+        return String((UIDevice.current.identifierForVendor?.uuidString ?? "").split(separator: "-").first!)//(UIDevice.current.identifierForVendor?.uuidString ?? "").split(separator: "-").last ?? UIDevice.current.name
+    }
+    
     // Get the datestamp for the dbPath
 //    func getFileNameTag() -> String {
 //        let formatter = DateFormatter()
@@ -244,7 +249,7 @@ extension UIViewController {
 //        formatter.timeStyle = .none
 //        let dateString = formatter.string(from: now).replacingOccurrences(of: "/", with: "-")//.replacingOccurrences(of: "1", with: "2")
 //
-//        return "\(dateString)_\(getCleanedDeviceName() ?? UIDevice.current.name)"
+//        return "\(dateString)_\(getDeviceID() ?? UIDevice.current.name)"
 //    }
     
     
@@ -258,7 +263,7 @@ extension UIViewController {
     
     
     func getDataFileName() -> String {
-        return "\(getTodayDateString())_SavageChecker_\(getCleanedDeviceName() ?? UIDevice.current.name).db"
+        return "\(getTodayDateString())_SavageCheckerData_\(getDeviceID() ?? UIDevice.current.name).db"
     }
     
     

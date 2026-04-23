@@ -220,7 +220,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd_hh-mm-ss"
         let now = Date()
-        let cleanedDeviceName = getCleanedDeviceName() ?? UIDevice.current.name
+        let cleanedDeviceName = getDeviceID() ?? UIDevice.current.name
         
         let timestamp = "\(formatter.string(from: now))_\(cleanedDeviceName)" // Don't make a helper function out of this because timeStyle in uploadButtonPressed = .none
             .replacingOccurrences(of: ",", with: "")
@@ -409,7 +409,7 @@ class GoogleDriveUploadViewController: UIViewController, GIDSignInUIDelegate, GI
             formatter.timeStyle = .none//.short//
             formatter.dateStyle = .short
             let now = Date()
-            let timestamp = "\(formatter.string(from: now))_\(getCleanedDeviceName() ?? UIDevice.current.name)"
+            let timestamp = "\(formatter.string(from: now))_\(getDeviceID() ?? UIDevice.current.name)"
                 .replacingOccurrences(of: ",", with: "")
                 .replacingOccurrences(of: " ", with: "_")
                 .replacingOccurrences(of: "/", with: "-")
