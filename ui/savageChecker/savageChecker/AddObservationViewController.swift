@@ -7,6 +7,7 @@
 //
 
 import UIKit
+import SwiftUI
 import os.log
 import SQLite
 import GoogleSignIn
@@ -209,7 +210,7 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
     
     
     // Lock rotation until animation is complete or dismissed
-    
+
     
     
     // Redo the layout when rotated
@@ -333,11 +334,56 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         self.scrollView.setContentOffset(offset, animated: true)
     }
     
+    @available(iOS 26, *)
+    func makeGlassNavButton(
+        imageName: String,
+        size: CGFloat,
+        target: Any?,
+        action: Selector
+    ) -> UIBarButtonItem {
+
+//        let button = UIButton(type: .custom)
+//        button.setImage(UIImage(named: imageName), for: .normal)
+//        button.frame = CGRect(x: 0, y: 0, width: size, height: size)
+//        button.addTarget(target, action: action, for: .touchUpInside)
+//        button.widthAnchor.constraint(equalToConstant: size).isActive = true
+//        button.heightAnchor.constraint(equalToConstant: size).isActive = true
+//        button.backgroundColor = .clear
+//        button.layoutIfNeeded()
+//
+//        // --- Liquid Glass layer ---
+//        let glass = UIGlassEffect()
+//        glass.isInteractive = true          // gives the press-response feel
+////        let glassView = UIVisualEffectView(effect: glass)
+////        glassView.frame = CGRect(x: 0, y: 0, width: size, height: size)//button.bounds
+////        glassView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+////        glassView.layer.cornerRadius = size / 4   // circle; use a smaller value for rounded-rect
+////        glassView.clipsToBounds = true
+////        glassView.isUserInteractionEnabled = false  // let touches pass through to the button
+//        button.insertSubview(glass, at: 0)      // behind the icon
+////        // --------------------------
+//        
+//        let barButton = UIBarButtonItem(customView: button)
+//        barButton.hidesSharedBackground = true
+//        
+//        return barButton
+//        let image = UIImage(named: imageName)?
+//            .resized(to: CGSize(width: size, height: size))
+        return UIBarButtonItem(
+            image: UIImage(named: imageName),
+            style: .plain,
+            target: target,
+            action: action
+        )
+    }
+    
     // MARK: - Navigation
     func setNavigationBar() {
         let screenSize: CGRect = UIScreen.main.bounds
         let statusBarHeight = UIApplication.shared.statusBarFrame.size.height
-        self.navigationBar = CustomNavigationBar(frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: navigationBarSize))
+        self.navigationBar = CustomNavigationBar(
+            frame: CGRect(x: 0, y: statusBarHeight, width: screenSize.width, height: navigationBarSize)
+        )
         self.view.addSubview(self.navigationBar)
         self.navigationBar.translatesAutoresizingMaskIntoConstraints = false
         self.navigationBar.leftAnchor.constraint(equalTo: self.view.leftAnchor).isActive = true
@@ -352,6 +398,13 @@ class AddObservationViewController: UIViewController, UIGestureRecognizerDelegat
         obsListButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         obsListButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         let observationListButton = UIBarButtonItem(customView: obsListButton)
+  
+//        let observationListButton = makeGlassNavButton(
+//            imageName: "observationListIcon",
+//            size: navigationButtonSize,
+//            target: self,
+//            action: #selector(moveToTableView)
+//        )
         
         let shiftButton = UIButton(type: .custom)
         shiftButton.setImage(UIImage(named: "shiftInfoIcon"), for: .normal)

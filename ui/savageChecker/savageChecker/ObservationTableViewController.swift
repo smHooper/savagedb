@@ -16,6 +16,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     //MARK: General
     var tableView: UITableView!
     private var navigationBar: CustomNavigationBar!
+    private var navigationBarItems: [String: [UIBarButtonItem]] = ["right": [], "left": []]
     private let navigationButtonSize: CGFloat = 30
     private var backButton: UIBarButtonItem!
     private var editBarButton: UIBarButtonItem!
@@ -27,7 +28,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     var isEditingTable = false // Need to track whether the table is editing because tableView.isEditing resets to false as soon as edit button is pressed
     let documentInteractionController = UIDocumentInteractionController()
     var currentScreenFrame = UIScreen.main.bounds // Annoyingly, when 'requires full screen' is checked, the screen size doesn't update until after willTransitionTo() is called. So I'll have to calculate it manually
-    
     
     let icons = ["Bus": (normal: "busIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
                  "Lodge Bus": (normal: "lodgeBusIcon", selected: "shuttleBusImg", tableName: "buses", dataClassName: "BusObservation"),
@@ -65,7 +65,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
     
     let barButtonSize: CGFloat = 65
     let barButtonWidth: CGFloat = 150
-    let barHeight: CGFloat = 140
+    let barHeight: CGFloat = 100
     var nBarGroups = 1
     var currentBarGroup = 0
     var barButtons = [UIBarButtonItem]()
@@ -131,7 +131,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         addBackground()
         
         // Set up nav bar and tab bar
-        self.title = "\(self.barButtonIcons[self.selectedToolBarButton].label) Observations"
         setNavigationBar()
         
         // get width and height of View
@@ -289,8 +288,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         setToolBarButtons()
         
         // Enable/disable the next group buttons depending on self.currentGroup
-        self.leftToolBarButton.isEnabled = self.currentBarGroup == 0 ? false : true // Showing first group
-        self.rightToolBarButton.isEnabled = self.currentBarGroup == self.nBarGroups - 1 ? false : true // Showing last group
+        self.leftToolBarButton.isEnabled = self.currentBarGroup != 0 // Showing first group
+        self.rightToolBarButton.isEnabled = self.currentBarGroup != self.nBarGroups - 1
         
         // Draw group indicators
         addBarGroupIndicators()
@@ -337,6 +336,8 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.barGroupIndicators.removeAll()
         
         let indicatorYSpacing: CGFloat = self.barHeight / 10
+        print("bar height percent")
+        print(self.barHeight / UIScreen.main.bounds.width * 100)
         let indicatorXSpacing = indicatorYSpacing * 2
         //let indicatorTop = self.toolBar.frame.minY + indicatorYSpacing
         let indicatorSize: CGFloat = 7
@@ -356,7 +357,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
             self.view.addSubview(self.barGroupIndicators[i])
             self.barGroupIndicators[i].translatesAutoresizingMaskIntoConstraints = false
             self.barGroupIndicators[i].leftAnchor.constraint(equalTo: self.view.centerXAnchor, constant: indicatorOffset - indicatorWidth / 2).isActive = true
-            self.barGroupIndicators[i].topAnchor.constraint(equalTo: self.toolBar.topAnchor, constant: indicatorYSpacing).isActive = true
+            self.barGroupIndicators[i].topAnchor.constraint(equalTo: self.toolBar.bottomAnchor, constant: -indicatorYSpacing).isActive = true
             self.barGroupIndicators[i].widthAnchor.constraint(equalToConstant: indicatorSize).isActive = true
             self.barGroupIndicators[i].heightAnchor.constraint(equalToConstant: indicatorSize).isActive = true
             
@@ -422,8 +423,7 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         loadData()
         
         // Reset the title of the nav bar. To do this, recreate the whole NavigationBar
-        self.title = "\(self.barButtonIcons[sender.tag].label) Observations"
-        setNavigationBar()
+        updateNavigationBar()
     }
     
     
@@ -518,7 +518,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         self.navigationBar.topAnchor.constraint(equalTo: self.view.topAnchor, constant: statusBarHeight).isActive = true
         self.navigationBar.heightAnchor.constraint(equalToConstant: navigationBarSize).isActive = true
         
-        let navigationItem = UINavigationItem(title: self.title!)
         let backButton = UIButton(type: .custom)
         backButton.setImage(UIImage (named: "backButton"), for: .normal)
         backButton.frame = CGRect(x: 0.0, y: 0.0, width: navigationButtonSize, height: navigationButtonSize)
@@ -526,16 +525,6 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         backButton.widthAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         backButton.heightAnchor.constraint(equalToConstant: navigationButtonSize).isActive = true
         let backBarButton = UIBarButtonItem(customView: backButton)
-        
-        // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
-        let editButton: UIButton
-        if self.isEditingTable {
-            editButton = makeEditButton(imageName: "checkIcon")
-            //self.editBarButton.customView = editButton
-        } else {
-            editButton = makeEditButton(imageName: "deleteIcon")
-        }
-        self.editBarButton = UIBarButtonItem(customView: editButton)
         
         //let addObservationButton = UIBarButtonItem(barButtonSystemItem: .add, target: nil, action: #selector(addButtonPressed))
         // Add button for adding a new observation
@@ -595,11 +584,49 @@ class BaseTableViewController: UITabBarController, UITableViewDelegate, UITableV
         let fixedSpaceRight = UIBarButtonItem(barButtonSystemItem: UIBarButtonSystemItem.fixedSpace, target: nil, action: nil)
         fixedSpaceLeft.width = 50
         fixedSpaceRight.width = 50
-        navigationItem.leftBarButtonItems = [backBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
-        navigationItem.rightBarButtonItems = [self.editBarButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, addObservationButton]
-        self.navigationBar.setItems([navigationItem], animated: false)
+        
+        // Initialize the edit bar button here even though it will be done again
+        //  in updateNavigationBar(). This because it was defined as an optional,
+        //  and adding it to the navigationBarItems dict will unwrap it
+        setEditBarButton()
+        
+        // The nav bar items have to be set each time in updateNavigationBar(). For now, just store the items in a dict
+        self.navigationBarItems["left"] = [backBarButton, fixedSpaceLeft, selectDatabaseButton, fixedSpaceLeft, googleDriveBarButton]
+        self.navigationBarItems["right"] = [self.editBarButton, fixedSpaceRight, qrBarButton, fixedSpaceRight, addObservationButton]
+        
+        updateNavigationBar()
+        
         
     }
+    
+
+    
+    func updateNavigationBar() {
+        
+        self.title = "\(self.barButtonIcons[self.selectedToolBarButton].label) Observations"
+        
+        let navigationItem = UINavigationItem(title: self.title!)
+        navigationItem.leftBarButtonItems = self.navigationBarItems["left"]
+        navigationItem.rightBarButtonItems = self.navigationBarItems["right"]
+        
+        // Since this method is called when the view is loaded and when rotated, check to see if the table is being edited
+        setEditBarButton()
+        
+        self.navigationBar.setItems([navigationItem], animated: false)
+    }
+    
+    
+    func setEditBarButton() {
+        let editButton: UIButton
+        if self.isEditingTable {
+            editButton = makeEditButton(imageName: "checkIcon")
+            //self.editBarButton.customView = editButton
+        } else {
+            editButton = makeEditButton(imageName: "deleteIcon")
+        }
+        self.editBarButton = UIBarButtonItem(customView: editButton)
+    }
+    
     
     // Helper function to create edit button
     func makeEditButton(imageName: String) -> UIButton {

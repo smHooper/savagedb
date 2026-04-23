@@ -232,6 +232,8 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
                 //if self.textFieldIds[i].type == "autoComplete" {
                 self.textFields[i]?.addTarget(self, action: #selector(textFieldChanged(_:)), for: .editingChanged)
                 //}
+                
+                self.textFields[i]?.isUserInteractionEnabled = true
             
             case "dropDown":
                 // re-configure the text field
@@ -349,12 +351,18 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             switch(textFieldIds[i].type) {
             case "normal", "autoComplete":
                 self.textFields[i]?.keyboardType = .asciiCapable
+                if #available(iOS 26.0, *) {
+                    textFields[i]!.allowsNumberPadPopover = false
+                }
             case "time", "date":
                 //let datetimePicker = CustomDatetimePickerControl()
                 //datetimePicker.setupDatetimePicker(textField: textFields[i]!, viewController: self, datetimeMode: textFieldIds[i].type)
                 createDatetimePicker(textField: textFields[i]!)
             case "number":
                 textFields[i]!.keyboardType = .numberPad
+                if #available(iOS 26.0, *) {
+                    textFields[i]!.allowsNumberPadPopover = false
+                }
             default:
                 let _ = 0
             }
@@ -655,15 +663,24 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
     
     
     // If text field would be obscured by keyboard, moving form view up
-    @objc func keyboardWasShown(notification: NSNotification){
-        // Calculate keyboard exact size
+    @objc func keyboardWasShown(notification: NSNotification) {
         var info = notification.userInfo!
-        var keyboardHeight = (info[UIKeyboardFrameBeginUserInfoKey] as? NSValue)!.cgRectValue.size.height
+        
+        // Use UIKeyboardFrameEndUserInfoKey instead of UIKeyboardFrameBeginUserInfoKey.
+        // The "Begin" frame is often CGRectZero or the off-screen position, especially on iOS 26.
+        let keyboardFrame = (info[UIKeyboardFrameEndUserInfoKey] as? NSValue)!.cgRectValue
+        var keyboardHeight = keyboardFrame.size.height
+        
+        // Convert the keyboard frame to the scroll view's coordinate space.
+        // On iOS 26, the keyboard frame may be reported in screen coordinates,
+        // and failing to convert can produce a wildly wrong height (e.g. on iPad).
+        let keyboardFrameInView = self.view.convert(keyboardFrame, from: self.view.window)
+        keyboardHeight = self.view.frame.height - keyboardFrameInView.minY
         
         // If this is a date or time field, add the height of the Done button bar
         let datetimeTypes = ["date", "time"]
         if datetimeTypes.contains(textFieldIds[self.currentTextField].type) {
-            keyboardHeight += CGFloat(40) // add done toolbar height
+            keyboardHeight += CGFloat(40)
         }
         
         let currentFieldFrame: CGRect
@@ -674,11 +691,24 @@ class BaseFormViewController: UIViewController, UITextFieldDelegate, UIScrollVie
             currentFieldFrame = textFields[self.currentTextField]!.frame
         }
         
-        // Check if the currently active text field is obscured. If so, scroll
-        self.currentScrollViewOffset = self.scrollView.contentOffset.y // Record current offset so keyboardWillBeHidden() can get back to this location
-        let offsetFromKeyboard = currentFieldFrame.maxY - (self.view.frame.height - (self.scrollView.frame.minY + CGFloat(self.topSpacing)) - keyboardHeight)
-        if offsetFromKeyboard - self.currentScrollViewOffset > 0 { //If offsetFromKeyboard - currentOffset is positive, the view isn't obscured
-            self.scrollView.contentOffset = CGPoint(x: 0, y: offsetFromKeyboard)
+        // Convert the text field frame to the scroll view's coordinate space.
+        // Your text fields are inside a container inside a scroll view, so their
+        // frame origin is relative to the container, not the screen.
+        let fieldFrameInScrollView = self.scrollView.convert(currentFieldFrame, from: container)
+        let fieldMaxY = fieldFrameInScrollView.maxY
+        
+        self.currentScrollViewOffset = self.scrollView.contentOffset.y
+        
+        // The visible area of the scroll view above the keyboard
+        let visibleScrollHeight = self.scrollView.frame.height - keyboardHeight
+        
+        // How far down the field is relative to current scroll position
+        let offsetNeeded = fieldMaxY - visibleScrollHeight
+        
+        if offsetNeeded > self.currentScrollViewOffset {
+            UIView.animate(withDuration: 0.3) {
+                self.scrollView.contentOffset = CGPoint(x: 0, y: offsetNeeded + 8) // +8 for a little padding
+            }
         }
     }
     
@@ -3970,7 +4000,8 @@ class CyclistObservationViewController: BaseObservationViewController {
                              (label: "Reminded to bike single file along the right side of the road?",  placeholder: "",    type: "checkBox", column: ""),
                              (label: "Reminded to stop behind parked buses with flashing lights?",      placeholder: "",    type: "checkBox", column: ""),
                              (label: "Reminded to allow traffic to pass and pull over if necessary?",   placeholder: "",    type: "checkBox", column: ""),
-                             (label: "Wildlife rule reminder and encouraged to carry bear spray?",     placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded to slow down around corners to avoid surprising a bear?",   placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded about wildlife rule and encouraged to carry bear spray?",     placeholder: "",    type: "checkBox", column: ""),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("cyclists")
@@ -3987,7 +4018,8 @@ class CyclistObservationViewController: BaseObservationViewController {
                              (label: "Reminded to bike single file along the right side of the road?",  placeholder: "",    type: "checkBox", column: ""),
                              (label: "Reminded to stop behind parked buses with flashing lights?",      placeholder: "",    type: "checkBox", column: ""),
                              (label: "Reminded to allow traffic to pass and pull over if necessary?",   placeholder: "",    type: "checkBox", column: ""),
-                             (label: "Wildlife rule reminder and encouraged to carry bear spray?",     placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded to slow down around corners to avoid surprising a bear?",   placeholder: "",    type: "checkBox", column: ""),
+                             (label: "Reminded about wildlife rule and encouraged to carry bear spray?",     placeholder: "",    type: "checkBox", column: ""),
                              (label: "Comments",      placeholder: "Enter additional comments (optional)", type: "normal",      column: "comments")]
         
         self.observationsTable = Table("cyclists")
